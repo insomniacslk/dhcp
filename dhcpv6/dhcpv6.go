@@ -34,6 +34,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 			hopCount:    uint8(data[1]),
 			linkAddr:    append(data[2:18]),
 			peerAddr:    append(data[18:34]),
+			payload:     append(data[34:]),
 		}
 		return &d, nil
 	} else {

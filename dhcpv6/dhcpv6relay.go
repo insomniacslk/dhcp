@@ -29,11 +29,13 @@ func (r *DHCPv6Relay) Summary() string {
 			"  messageType=%v\n"+
 			"  hopcount=%v\n"+
 			"  linkaddr=%v\n"+
-			"  peeraddr=%v\n",
+			"  peeraddr=%v\n"+
+			"  payload=%v\n",
 		r.MessageTypeToString(),
 		r.hopCount,
 		r.linkAddr,
 		r.peerAddr,
+		r.payload,
 	)
 	return ret
 }
