@@ -25,29 +25,29 @@ type Client struct {
 }
 
 // Make a stateful DHCPv6 request
-func (c *Client) Exchange(ifname string, d *DHCPv6) ([]DHCPv6, error) {
-	conversation := make([]DHCPv6, 1)
+func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
+	conversation := make([]DHCPv6, 0)
 	var err error
 
 	// Solicit
-	if d == nil {
-		d, err = NewSolicitForInterface(ifname)
+	if solicit == nil {
+		solicit, err = NewSolicitForInterface(ifname)
 		if err != nil {
 			return conversation, err
 		}
 	}
-	conversation[0] = *d
-	advertise, err := c.ExchangeSolicitAdvertise(ifname, d)
+	conversation = append(conversation, solicit)
+	advertise, err := c.ExchangeSolicitAdvertise(ifname, solicit)
 	if err != nil {
 		return conversation, err
 	}
-	conversation = append(conversation, *advertise)
+	conversation = append(conversation, advertise)
 
 	// TODO request/reply
 	return conversation, nil
 }
 
-func (c *Client) ExchangeSolicitAdvertise(ifname string, d *DHCPv6) (*DHCPv6, error) {
+func (c *Client) ExchangeSolicitAdvertise(ifname string, solicit DHCPv6) (DHCPv6, error) {
 	// if no LocalAddr is specified, get the interface's link-local address
 	var laddr net.UDPAddr
 	if c.LocalAddr == nil {
@@ -93,7 +93,7 @@ func (c *Client) ExchangeSolicitAdvertise(ifname string, d *DHCPv6) (*DHCPv6, er
 	conn.SetWriteDeadline(time.Now().Add(wtimeout))
 
 	// send the SOLICIT packet out
-	_, err = conn.WriteTo(d.ToBytes(), &raddr)
+	_, err = conn.WriteTo(solicit.ToBytes(), &raddr)
 	if err != nil {
 		return nil, err
 	}

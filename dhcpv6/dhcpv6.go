@@ -13,10 +13,23 @@ import (
 
 const HeaderSize = 4
 
-type DHCPv6 struct {
-	message       MessageType
+type DHCPv6 interface {
+	Type() MessageType
+	ToBytes() []byte
+	Summary() string
+}
+
+type DHCPv6Message struct {
+	messageType   MessageType
 	transactionID uint32 // only 24 bits are used though
 	options       []options.Option
+}
+
+type DHCPv6RelayMessage struct {
+	messageType MessageType
+	hopCount    uint8
+	linkAddr    net.IP
+	peerAddr    net.IP
 }
 
 func BytesToTransactionID(data []byte) (*uint32, error) {
@@ -57,7 +70,7 @@ func GenerateTransactionID() (*uint32, error) {
 	return tid, nil
 }
 
-func FromBytes(data []byte) (*DHCPv6, error) {
+func FromBytes(data []byte) (DHCPv6, error) {
 	if len(data) < HeaderSize {
 		return nil, fmt.Errorf("Invalid DHCPv6 header: shorter than %v bytes", HeaderSize)
 	}
@@ -65,8 +78,8 @@ func FromBytes(data []byte) (*DHCPv6, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := DHCPv6{
-		message:       MessageType(data[0]),
+	d := DHCPv6Message{
+		messageType:   MessageType(data[0]),
 		transactionID: *tid,
 	}
 	options, err := options.FromBytes(data[4:])
@@ -77,13 +90,13 @@ func FromBytes(data []byte) (*DHCPv6, error) {
 	return &d, nil
 }
 
-func New() (*DHCPv6, error) {
+func NewMessage() (*DHCPv6Message, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
 	}
-	d := DHCPv6{
-		message:       SOLICIT,
+	d := DHCPv6Message{
+		messageType:   SOLICIT,
 		transactionID: *tid,
 	}
 	return &d, nil
@@ -98,8 +111,8 @@ func GetTime() uint32 {
 
 // Create a new SOLICIT message with DUID-LLT, using the given network
 // interface's hardware address and current time
-func NewSolicitForInterface(ifname string) (*DHCPv6, error) {
-	d, err := New()
+func NewSolicitForInterface(ifname string) (*DHCPv6Message, error) {
+	d, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -133,29 +146,29 @@ func NewSolicitForInterface(ifname string) (*DHCPv6, error) {
 	return d, nil
 }
 
-func (d *DHCPv6) Message() MessageType {
-	return d.message
+func (d *DHCPv6Message) Type() MessageType {
+	return d.messageType
 }
 
-func (d *DHCPv6) SetMessage(message MessageType) {
-	if MessageToString[message] == "" {
-		log.Printf("Warning: unknown DHCPv6 message: %v", message)
+func (d *DHCPv6Message) SetMessage(messageType MessageType) {
+	if MessageToString[messageType] == "" {
+		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
 	}
-	d.message = message
+	d.messageType = messageType
 }
 
-func (d *DHCPv6) MessageToString() string {
-	if m := MessageToString[d.message]; m != "" {
+func (d *DHCPv6Message) MessageToString() string {
+	if m := MessageToString[d.messageType]; m != "" {
 		return m
 	}
 	return "Invalid"
 }
 
-func (d *DHCPv6) TransactionID() uint32 {
+func (d *DHCPv6Message) TransactionID() uint32 {
 	return d.transactionID
 }
 
-func (d *DHCPv6) SetTransactionID(tid uint32) {
+func (d *DHCPv6Message) SetTransactionID(tid uint32) {
 	ttid := tid & 0x00ffffff
 	if ttid != tid {
 		log.Printf("Warning: truncating transaction ID that is longer than 24 bits: %v", tid)
@@ -163,28 +176,28 @@ func (d *DHCPv6) SetTransactionID(tid uint32) {
 	d.transactionID = ttid
 }
 
-func (d *DHCPv6) Options() []options.Option {
+func (d *DHCPv6Message) Options() []options.Option {
 	return d.options
 }
 
-func (d *DHCPv6) SetOptions(options []options.Option) {
+func (d *DHCPv6Message) SetOptions(options []options.Option) {
 	d.options = options
 }
 
-func (d *DHCPv6) AddOption(option options.Option) {
+func (d *DHCPv6Message) AddOption(option options.Option) {
 	d.options = append(d.options, option)
 }
 
-func (d *DHCPv6) String() string {
-	return fmt.Sprintf("DHCPv6(message=%v transactionID=0x%06x, %d options)",
+func (d *DHCPv6Message) String() string {
+	return fmt.Sprintf("DHCPv6Message(messageType=%v transactionID=0x%06x, %d options)",
 		d.MessageToString(), d.TransactionID(), len(d.options),
 	)
 }
 
-func (d *DHCPv6) Summary() string {
+func (d *DHCPv6Message) Summary() string {
 	ret := fmt.Sprintf(
-		"DHCPv6\n"+
-			"  message=%v\n"+
+		"DHCPv6Message\n"+
+			"  messageType=%v\n"+
 			"  transactionid=0x%06x\n",
 		d.MessageToString(),
 		d.TransactionID(),
@@ -200,11 +213,11 @@ func (d *DHCPv6) Summary() string {
 	return ret
 }
 
-// Convert a DHCPv6 structure into its binary representation, suitable for being
+// Convert a DHCPv6Message structure into its binary representation, suitable for being
 // sent over the network
-func (d *DHCPv6) ToBytes() []byte {
+func (d *DHCPv6Message) ToBytes() []byte {
 	var ret []byte
-	ret = append(ret, byte(d.message))
+	ret = append(ret, byte(d.messageType))
 	tidBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(tidBytes, d.transactionID)
 	ret = append(ret, tidBytes[1:4]...) // discard the first byte

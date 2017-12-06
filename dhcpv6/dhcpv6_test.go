@@ -45,16 +45,16 @@ func TestGenerateTransactionID(t *testing.T) {
 	}
 }
 
-func TestNew(t *testing.T) {
-	d, err := New()
+func TestNewMessage(t *testing.T) {
+	d, err := NewMessage()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if d == nil {
 		t.Fatal("Expected non-nil DHCPv6, got nil instead")
 	}
-	if d.message != SOLICIT {
-		t.Fatalf("Invalid message type. Expected %v, got %v", SOLICIT, d.message)
+	if d.messageType != SOLICIT {
+		t.Fatalf("Invalid message type. Expected %v, got %v", SOLICIT, d.messageType)
 	}
 	if d.transactionID == 0 {
 		t.Fatal("Invalid Transaction ID, expected non-zero, got zero")
@@ -65,17 +65,17 @@ func TestNew(t *testing.T) {
 }
 
 func TestSettersAndGetters(t *testing.T) {
-	d := DHCPv6{}
+	d := DHCPv6Message{}
 	// Message
 	d.SetMessage(SOLICIT)
-	msg := d.Message()
+	msg := d.Type()
 	if msg != SOLICIT {
-		t.Fatalf("Invalid Message. Expected %v, got %v", SOLICIT, msg)
+		t.Fatalf("Invalid message type. Expected %v, got %v", SOLICIT, msg)
 	}
 	d.SetMessage(ADVERTISE)
-	msg = d.Message()
+	msg = d.Type()
 	if msg != ADVERTISE {
-		t.Fatalf("Invalid Message. Expected %v, got %v", ADVERTISE, msg)
+		t.Fatalf("Invalid message type. Expected %v, got %v", ADVERTISE, msg)
 	}
 	// TransactionID
 	d.SetTransactionID(12345)
@@ -100,7 +100,7 @@ func TestSettersAndGetters(t *testing.T) {
 }
 
 func TestAddOption(t *testing.T) {
-	d := DHCPv6{}
+	d := DHCPv6Message{}
 	opts := d.Options()
 	if len(opts) != 0 {
 		t.Fatalf("Invalid Options. Expected empty array, got %v", opts)
@@ -117,7 +117,7 @@ func TestAddOption(t *testing.T) {
 }
 
 func TestToBytes(t *testing.T) {
-	d := DHCPv6{}
+	d := DHCPv6Message{}
 	d.SetMessage(SOLICIT)
 	d.SetTransactionID(0xabcdef)
 	opt := options.OptionGeneric{OptionCode: 0, OptionData: []byte{}}
