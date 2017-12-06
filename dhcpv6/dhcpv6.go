@@ -11,7 +11,8 @@ import (
 	"time"
 )
 
-const HeaderSize = 4
+const MessageHeaderSize = 4
+const RelayMessageHeaderSize = 34
 
 type DHCPv6 interface {
 	Type() MessageType
@@ -71,23 +72,40 @@ func GenerateTransactionID() (*uint32, error) {
 }
 
 func FromBytes(data []byte) (DHCPv6, error) {
-	if len(data) < HeaderSize {
-		return nil, fmt.Errorf("Invalid DHCPv6 header: shorter than %v bytes", HeaderSize)
+	var (
+		isRelay     = false
+		headerSize  int
+		messageType = MessageType(data[0])
+	)
+	if messageType == RELAY_FORW || messageType == RELAY_REPL {
+		isRelay = true
 	}
-	tid, err := BytesToTransactionID(data[1:4])
-	if err != nil {
-		return nil, err
+	if isRelay {
+		headerSize = RelayMessageHeaderSize
+	} else {
+		headerSize = MessageHeaderSize
 	}
-	d := DHCPv6Message{
-		messageType:   MessageType(data[0]),
-		transactionID: *tid,
+	if len(data) < headerSize {
+		return nil, fmt.Errorf("Invalid header size: shorter than %v bytes", headerSize)
 	}
-	options, err := options.FromBytes(data[4:])
-	if err != nil {
-		return nil, err
+	if isRelay {
+		return nil, fmt.Errorf("Relay messages not implemented yet")
+	} else {
+		tid, err := BytesToTransactionID(data[1:4])
+		if err != nil {
+			return nil, err
+		}
+		d := DHCPv6Message{
+			messageType:   MessageType(data[0]),
+			transactionID: *tid,
+		}
+		options, err := options.FromBytes(data[4:])
+		if err != nil {
+			return nil, err
+		}
+		d.options = options
+		return &d, nil
 	}
-	d.options = options
-	return &d, nil
 }
 
 func NewMessage() (*DHCPv6Message, error) {
