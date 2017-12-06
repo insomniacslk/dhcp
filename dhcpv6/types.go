@@ -25,7 +25,14 @@ const (
 	LEASEQUERY_DATA
 )
 
-var MessageToString = map[MessageType]string{
+func MessageTypeToString(t MessageType) string {
+	if m := MessageTypeToStringMap[t]; m != "" {
+		return m
+	}
+	return "Unknown"
+}
+
+var MessageTypeToStringMap = map[MessageType]string{
 	SOLICIT:             "SOLICIT",
 	ADVERTISE:           "ADVERTISE",
 	REQUEST:             "REQUEST",
