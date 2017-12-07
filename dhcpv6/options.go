@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 import (
 	"encoding/binary"
@@ -99,7 +99,7 @@ func ParseOption(dataStart []byte) (Option, error) {
 	return opt, nil
 }
 
-func FromBytes(data []byte) ([]Option, error) {
+func OptionsFromBytes(data []byte) ([]Option, error) {
 	// Parse a sequence of bytes until the end and build a list of options from
 	// it. Returns an error if any invalid option or length is found.
 	if len(data) < 4 {

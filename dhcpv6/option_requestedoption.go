@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 // This module defines the OptRequestedOption structure.
 // https://www.ietf.org/rfc/rfc3315.txt

@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 import (
 	"bytes"

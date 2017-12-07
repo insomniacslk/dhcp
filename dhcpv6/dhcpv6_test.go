@@ -2,7 +2,6 @@ package dhcpv6
 
 import (
 	"bytes"
-	"github.com/insomniacslk/dhcp/dhcpv6/options"
 	"testing"
 )
 
@@ -88,13 +87,13 @@ func TestSettersAndGetters(t *testing.T) {
 	if len(opts) != 0 {
 		t.Fatalf("Invalid Options. Expected empty array, got %v", opts)
 	}
-	opt := options.OptionGeneric{OptionCode: 0, OptionData: []byte{}}
-	d.SetOptions([]options.Option{&opt})
+	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
+	d.SetOptions([]Option{&opt})
 	opts = d.Options()
 	if len(opts) != 1 {
 		t.Fatalf("Invalid Options. Expected one-element array, got %v", len(opts))
 	}
-	if _, ok := opts[0].(*options.OptionGeneric); !ok {
+	if _, ok := opts[0].(*OptionGeneric); !ok {
 		t.Fatalf("Invalid Options. Expected one OptionGeneric, got %v", opts[0])
 	}
 }
@@ -105,13 +104,13 @@ func TestAddOption(t *testing.T) {
 	if len(opts) != 0 {
 		t.Fatalf("Invalid Options. Expected empty array, got %v", opts)
 	}
-	opt := options.OptionGeneric{OptionCode: 0, OptionData: []byte{}}
+	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
 	opts = d.Options()
 	if len(opts) != 1 {
 		t.Fatalf("Invalid Options. Expected one-element array, got %v", len(opts))
 	}
-	if _, ok := opts[0].(*options.OptionGeneric); !ok {
+	if _, ok := opts[0].(*OptionGeneric); !ok {
 		t.Fatalf("Invalid Options. Expected one OptionGeneric, got %v", opts[0])
 	}
 }
@@ -120,7 +119,7 @@ func TestToBytes(t *testing.T) {
 	d := DHCPv6Message{}
 	d.SetMessage(SOLICIT)
 	d.SetTransactionID(0xabcdef)
-	opt := options.OptionGeneric{OptionCode: 0, OptionData: []byte{}}
+	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
 	toBytes := d.ToBytes()
 	expected := []byte{01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00}

@@ -2,7 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-	"github.com/insomniacslk/dhcp/dhcpv6/options"
 	"net"
 )
 
@@ -13,7 +12,7 @@ type DHCPv6Relay struct {
 	hopCount    uint8
 	linkAddr    net.IP
 	peerAddr    net.IP
-	options     []options.Option
+	options     []Option
 }
 
 func (r *DHCPv6Relay) Type() MessageType {

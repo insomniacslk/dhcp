@@ -2,7 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-	"github.com/insomniacslk/dhcp/dhcpv6/options"
 )
 
 type DHCPv6 interface {
@@ -35,7 +34,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 			linkAddr:    append(data[2:18]),
 			peerAddr:    append(data[18:34]),
 		}
-		options, err := options.FromBytes(data[34:])
+		options, err := OptionsFromBytes(data[34:])
 		if err != nil {
 			return nil, err
 		}
@@ -50,7 +49,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 			messageType:   messageType,
 			transactionID: *tid,
 		}
-		options, err := options.FromBytes(data[4:])
+		options, err := OptionsFromBytes(data[4:])
 		if err != nil {
 			return nil, err
 		}

@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 // This module defines the OptDNSRecursiveNameServer structure.
 // https://www.ietf.org/rfc/rfc3646.txt

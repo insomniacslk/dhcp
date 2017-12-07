@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 // This module defines the OptIANA structure.
 // https://www.ietf.org/rfc/rfc3633.txt

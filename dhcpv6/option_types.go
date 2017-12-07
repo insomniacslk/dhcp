@@ -1,4 +1,4 @@
-package options
+package dhcpv6
 
 const (
 	_ OptionCode = iota // skip 0

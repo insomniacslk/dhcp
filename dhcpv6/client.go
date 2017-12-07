@@ -37,7 +37,7 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
 		}
 	}
 	conversation = append(conversation, solicit)
-	advertise, err := c.ExchangeSolicitAdvertise(ifname, solicit)
+	advertise, err := c.Solicit(ifname, solicit)
 	if err != nil {
 		return conversation, err
 	}
@@ -47,7 +47,8 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
 	return conversation, nil
 }
 
-func (c *Client) ExchangeSolicitAdvertise(ifname string, solicit DHCPv6) (DHCPv6, error) {
+// send a SOLICIT, return a response, or nil
+func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, error) {
 	// if no LocalAddr is specified, get the interface's link-local address
 	var laddr net.UDPAddr
 	if c.LocalAddr == nil {

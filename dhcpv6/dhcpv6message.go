@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/insomniacslk/dhcp/dhcpv6/options"
 	"github.com/insomniacslk/dhcp/iana"
 	"log"
 	"net"
@@ -16,7 +15,7 @@ const MessageHeaderSize = 4
 type DHCPv6Message struct {
 	messageType   MessageType
 	transactionID uint32 // only 24 bits are used though
-	options       []options.Option
+	options       []Option
 }
 
 func BytesToTransactionID(data []byte) (*uint32, error) {
@@ -76,24 +75,24 @@ func NewSolicitForInterface(ifname string) (*DHCPv6Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	cid := options.OptClientId{}
-	cid.SetClientID(options.Duid{
-		Type:          options.DUID_LLT,
+	cid := OptClientId{}
+	cid.SetClientID(Duid{
+		Type:          DUID_LLT,
 		HwType:        iana.HwTypeEthernet,
 		Time:          GetTime(),
 		LinkLayerAddr: iface.HardwareAddr,
 	})
 
 	d.AddOption(&cid)
-	oro := options.OptRequestedOption{}
-	oro.SetRequestedOptions([]options.OptionCode{
-		options.DNS_RECURSIVE_NAME_SERVER,
-		options.DOMAIN_SEARCH_LIST,
+	oro := OptRequestedOption{}
+	oro.SetRequestedOptions([]OptionCode{
+		DNS_RECURSIVE_NAME_SERVER,
+		DOMAIN_SEARCH_LIST,
 	})
 	d.AddOption(&oro)
-	d.AddOption(&options.OptElapsedTime{})
+	d.AddOption(&OptElapsedTime{})
 	// FIXME use real values for IA_NA
-	iaNa := options.OptIANA{}
+	iaNa := OptIANA{}
 	iaNa.SetIAID([4]byte{0x27, 0xfe, 0x8f, 0x95})
 	iaNa.SetT1(0xe10)
 	iaNa.SetT2(0x1518)
@@ -133,15 +132,15 @@ func (d *DHCPv6Message) SetTransactionID(tid uint32) {
 	d.transactionID = ttid
 }
 
-func (d *DHCPv6Message) Options() []options.Option {
+func (d *DHCPv6Message) Options() []Option {
 	return d.options
 }
 
-func (d *DHCPv6Message) SetOptions(options []options.Option) {
+func (d *DHCPv6Message) SetOptions(options []Option) {
 	d.options = options
 }
 
-func (d *DHCPv6Message) AddOption(option options.Option) {
+func (d *DHCPv6Message) AddOption(option Option) {
 	d.options = append(d.options, option)
 }
 
