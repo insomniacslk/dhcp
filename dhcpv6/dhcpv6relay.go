@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"fmt"
+	"github.com/insomniacslk/dhcp/dhcpv6/options"
 	"net"
 )
 
@@ -12,7 +13,7 @@ type DHCPv6Relay struct {
 	hopCount    uint8
 	linkAddr    net.IP
 	peerAddr    net.IP
-	payload     []byte // TODO implement relay payload
+	options     []options.Option
 }
 
 func (r *DHCPv6Relay) Type() MessageType {
@@ -30,12 +31,12 @@ func (r *DHCPv6Relay) Summary() string {
 			"  hopcount=%v\n"+
 			"  linkaddr=%v\n"+
 			"  peeraddr=%v\n"+
-			"  payload=%v\n",
+			"  options=%v\n",
 		r.MessageTypeToString(),
 		r.hopCount,
 		r.linkAddr,
 		r.peerAddr,
-		r.payload,
+		r.options,
 	)
 	return ret
 }
@@ -46,7 +47,9 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	ret[1] = byte(r.hopCount)
 	copy(ret[2:18], r.peerAddr)
 	copy(ret[18:34], r.linkAddr)
-	ret = append(ret, r.payload...)
+	for _, opt := range r.options {
+		ret = append(opt.ToBytes())
+	}
 
 	return ret
 }

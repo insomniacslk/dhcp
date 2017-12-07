@@ -106,8 +106,13 @@ func (d *DHCPv6Message) Type() MessageType {
 }
 
 func (d *DHCPv6Message) SetMessage(messageType MessageType) {
-	if d.MessageTypeToString() == "" {
+	msgString := MessageTypeToString(messageType)
+	if msgString == "" {
 		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
+	}
+	if messageType == RELAY_FORW || messageType == RELAY_REPL {
+		log.Printf("Warning: using a RELAY message type with a non-relay message: %v (%v)",
+			msgString, messageType)
 	}
 	d.messageType = messageType
 }
