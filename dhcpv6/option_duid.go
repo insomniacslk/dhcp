@@ -9,9 +9,10 @@ import (
 type DuidType uint16
 
 const (
-	DUID_LL DuidType = iota
+	_ DuidType = iota
 	DUID_LLT
 	DUID_EN
+	DUID_LL
 )
 
 var DuidTypeToString = map[DuidType]string{
