@@ -23,6 +23,14 @@ func (r *DHCPv6Relay) MessageTypeToString() string {
 	return MessageTypeToString(r.messageType)
 }
 
+func (r *DHCPv6Relay) String() string {
+	ret := fmt.Sprintf(
+		"DHCPv6Relay(messageType=%v hopcount=%v, linkaddr=%v, peeraddr=%v, %d options)",
+		r.MessageTypeToString(), r.hopCount, r.linkAddr, r.peerAddr, len(r.options),
+	)
+	return ret
+}
+
 func (r *DHCPv6Relay) Summary() string {
 	ret := fmt.Sprintf(
 		"DHCPv6Relay\n"+
