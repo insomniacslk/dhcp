@@ -96,6 +96,9 @@ func ParseOption(dataStart []byte) (Option, error) {
 	if err != nil {
 		return nil, err
 	}
+	if length != opt.Length() {
+		return nil, fmt.Errorf("different lengths for opt %v: %v != %v", code, length, opt.Length())
+	}
 	return opt, nil
 }
 

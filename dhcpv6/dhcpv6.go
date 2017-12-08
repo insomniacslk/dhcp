@@ -8,6 +8,7 @@ type DHCPv6 interface {
 	Type() MessageType
 	ToBytes() []byte
 	Summary() string
+	Length() int
 }
 
 func FromBytes(data []byte) (DHCPv6, error) {
@@ -28,16 +29,22 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		return nil, fmt.Errorf("Invalid header size: shorter than %v bytes", headerSize)
 	}
 	if isRelay {
+		var (
+			linkAddr, peerAddr []byte
+		)
 		d := DHCPv6Relay{
 			messageType: messageType,
 			hopCount:    uint8(data[1]),
-			linkAddr:    append(data[2:18]),
-			peerAddr:    append(data[18:34]),
 		}
+		linkAddr = append(linkAddr, data[2:18]...)
+		d.linkAddr = linkAddr
+		peerAddr = append(peerAddr, data[18:34]...)
+		d.peerAddr = peerAddr
 		options, err := OptionsFromBytes(data[34:])
 		if err != nil {
 			return nil, err
 		}
+		// TODO fail if no OptRelayMessage is present
 		d.options = options
 		return &d, nil
 	} else {

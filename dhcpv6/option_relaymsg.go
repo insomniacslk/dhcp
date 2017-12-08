@@ -28,7 +28,7 @@ func (op *OptRelayMsg) SetRelayMessage(relayMessage DHCPv6) {
 }
 
 func (op *OptRelayMsg) Length() int {
-	return len(op.relayMessage.ToBytes())
+	return op.relayMessage.Length()
 }
 
 func (op *OptRelayMsg) String() string {

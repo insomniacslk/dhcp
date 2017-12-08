@@ -47,8 +47,16 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	copy(ret[2:18], r.peerAddr)
 	copy(ret[18:34], r.linkAddr)
 	for _, opt := range r.options {
-		ret = append(opt.ToBytes())
+		ret = append(ret, opt.ToBytes()...)
 	}
 
 	return ret
+}
+
+func (r *DHCPv6Relay) Length() int {
+	mLen := RelayHeaderSize
+	for _, opt := range r.options {
+		mLen += opt.Length()
+	}
+	return mLen
 }

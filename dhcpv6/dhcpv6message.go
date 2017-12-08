@@ -182,3 +182,11 @@ func (d *DHCPv6Message) ToBytes() []byte {
 	}
 	return ret
 }
+
+func (d *DHCPv6Message) Length() int {
+	mLen := 4
+	for _, opt := range d.options {
+		mLen += opt.Length() + 4 // +4 for opt code and opt len
+	}
+	return mLen
+}
