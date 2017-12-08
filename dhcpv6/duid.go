@@ -37,7 +37,7 @@ func (d *Duid) Length() int {
 	if d.Type == DUID_EN {
 		return 6 + len(d.EnterpriseIdentifier)
 	}
-	return 0 // should never happen
+	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
 
 func (d *Duid) ToBytes() []byte {
@@ -53,7 +53,7 @@ func (d *Duid) ToBytes() []byte {
 		binary.BigEndian.PutUint32(buf[2:6], d.EnterpriseNumber)
 		return append(buf, d.EnterpriseIdentifier...)
 	}
-	return []byte{} // should never happen
+	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
 
 func (d *Duid) String() string {

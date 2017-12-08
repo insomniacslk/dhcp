@@ -56,7 +56,7 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 func (r *DHCPv6Relay) Length() int {
 	mLen := RelayHeaderSize
 	for _, opt := range r.options {
-		mLen += opt.Length()
+		mLen += opt.Length() + 4 // +4 for opt code and opt len
 	}
 	return mLen
 }

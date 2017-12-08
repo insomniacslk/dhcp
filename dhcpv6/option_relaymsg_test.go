@@ -116,3 +116,42 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 		t.Fatal("Invalid elapsed time. Expected 0x1122, got 0x%04x", eTime)
 	}
 }
+
+func TestSample(t *testing.T) {
+	// Nested relay message. This test only checks if it parses correctly, but
+	// could/should be extended to check all the fields like done in other tests
+	buf := []byte{
+		12,                                             // relay
+		1,                                              // hop count
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // linkAddr
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // peerAddr
+		// relay msg
+		0, 9, // opt relay msg
+		0, 66, // opt len
+		// relay fwd
+		12,                                             // relay
+		0,                                              // hop count
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // linkAddr
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // peerAddr
+		// opt interface ID
+		0, 18, // interface id
+		0, 6, // opt len
+		0xba, 0xbe, 0xb1, 0xb0, 0xbe, 0xbe, // opt value
+		// relay msg
+		0, 9, // relay msg
+		0, 18, // msg len
+		// dhcpv6 msg
+		1,                // solicit
+		0xaa, 0xbb, 0xcc, // transaction ID
+		// client ID
+		0, 1, // opt client id
+		0, 10, // opt len
+		0, 3, // duid type
+		0, 1, // hw type
+		5, 6, 7, 8, 9, 10, // duid value
+	}
+	_, err := FromBytes(buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
