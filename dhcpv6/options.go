@@ -56,8 +56,8 @@ func ParseOption(dataStart []byte) (Option, error) {
 	code := OptionCode(binary.BigEndian.Uint16(dataStart[:2]))
 	length := int(binary.BigEndian.Uint16(dataStart[2:4]))
 	if len(dataStart) < length+4 {
-		return nil, fmt.Errorf("Invalid option length. Declared %v, actual %v",
-			length, len(dataStart)-4,
+		return nil, fmt.Errorf("Invalid option length for option %v. Declared %v, actual %v",
+			code, length, len(dataStart)-4,
 		)
 	}
 	var (
