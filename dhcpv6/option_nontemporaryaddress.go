@@ -81,6 +81,6 @@ func ParseOptIANA(data []byte) (*OptIANA, error) {
 	copy(opt.iaId[:], data[:4])
 	opt.t1 = binary.BigEndian.Uint32(data[4:8])
 	opt.t2 = binary.BigEndian.Uint32(data[8:12])
-	copy(opt.options, data[12:])
+	opt.options = append(data[12:])
 	return &opt, nil
 }
