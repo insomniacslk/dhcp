@@ -90,6 +90,8 @@ func ParseOption(dataStart []byte) (Option, error) {
 		opt, err = ParseOptStatusCode(optData)
 	case OPTION_RELAY_MSG:
 		opt, err = ParseOptRelayMsg(optData)
+	case OPTION_REMOTE_ID:
+		opt, err = ParseOptRemoteId(optData)
 	default:
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
 	}
