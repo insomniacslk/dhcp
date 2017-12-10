@@ -31,21 +31,27 @@ type Duid struct {
 }
 
 func (d *Duid) Length() int {
-	if d.Type == DUID_LLT || d.Type == DUID_LL {
+	if d.Type == DUID_LLT {
 		return 8 + len(d.LinkLayerAddr)
-	}
-	if d.Type == DUID_EN {
+	} else if d.Type == DUID_LL {
+		return 4 + len(d.LinkLayerAddr)
+	} else if d.Type == DUID_EN {
 		return 6 + len(d.EnterpriseIdentifier)
 	}
 	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
 
 func (d *Duid) ToBytes() []byte {
-	if d.Type == DUID_LLT || d.Type == DUID_LL {
+	if d.Type == DUID_LLT {
 		buf := make([]byte, 8)
 		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
 		binary.BigEndian.PutUint16(buf[2:4], uint16(d.HwType))
 		binary.BigEndian.PutUint32(buf[4:8], d.Time)
+		return append(buf, d.LinkLayerAddr...)
+	} else if d.Type == DUID_LL {
+		buf := make([]byte, 4)
+		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
+		binary.BigEndian.PutUint16(buf[2:4], uint16(d.HwType))
 		return append(buf, d.LinkLayerAddr...)
 	} else if d.Type == DUID_EN {
 		buf := make([]byte, 6)
@@ -83,13 +89,19 @@ func DuidFromBytes(data []byte) (*Duid, error) {
 	}
 	d := Duid{}
 	d.Type = DuidType(binary.BigEndian.Uint16(data[0:2]))
-	if d.Type == DUID_LLT || d.Type == DUID_LL {
+	if d.Type == DUID_LLT {
 		if len(data) < 8 {
-			return nil, fmt.Errorf("Invalid DUID-LL/LLT: shorter than 8 bytes")
+			return nil, fmt.Errorf("Invalid DUID-LLT: shorter than 8 bytes")
 		}
 		d.HwType = iana.HwTypeType(binary.BigEndian.Uint16(data[2:4]))
 		d.Time = binary.BigEndian.Uint32(data[4:8])
 		d.LinkLayerAddr = data[8:]
+	} else if d.Type == DUID_LL {
+		if len(data) < 4 {
+			return nil, fmt.Errorf("Invalid DUID-LL: shorter than 4 bytes")
+		}
+		d.HwType = iana.HwTypeType(binary.BigEndian.Uint16(data[2:4]))
+		d.LinkLayerAddr = data[4:]
 	} else if d.Type == DUID_EN {
 		if len(data) < 6 {
 			return nil, fmt.Errorf("Invalid DUID-EN: shorter than 6 bytes")
