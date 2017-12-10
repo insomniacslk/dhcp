@@ -190,3 +190,15 @@ func (d *DHCPv6Message) Length() int {
 func (d *DHCPv6Message) Options() []Option {
 	return d.options
 }
+
+func (d *DHCPv6Message) GetOption(code OptionCode) []Option {
+	return getOptions(d.options, code, false)
+}
+
+func (d *DHCPv6Message) GetOneOption(code OptionCode) Option {
+	return getOption(d.options, code)
+}
+
+func (d *DHCPv6Message) IsRelay() bool {
+	return false
+}

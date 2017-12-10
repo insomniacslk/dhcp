@@ -11,6 +11,9 @@ type DHCPv6 interface {
 	String() string
 	Summary() string
 	Length() int
+	IsRelay() bool
+	GetOption(code OptionCode) []Option
+	GetOneOption(code OptionCode) Option
 }
 
 func FromBytes(data []byte) (DHCPv6, error) {
@@ -77,4 +80,25 @@ func NewMessage() (*DHCPv6Message, error) {
 		transactionID: *tid,
 	}
 	return &d, nil
+}
+
+func getOptions(options []Option, code OptionCode, onlyFirst bool) []Option {
+	var ret []Option
+	for _, opt := range options {
+		if opt.Code() == code {
+			ret = append(ret, opt)
+			if onlyFirst {
+				break
+			}
+		}
+	}
+	return ret
+}
+
+func getOption(options []Option, code OptionCode) Option {
+	opts := getOptions(options, code, true)
+	if opts == nil {
+		return nil
+	}
+	return opts[0]
 }

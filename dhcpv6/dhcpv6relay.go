@@ -72,3 +72,14 @@ func (r *DHCPv6Relay) Length() int {
 func (r *DHCPv6Relay) Options() []Option {
 	return r.options
 }
+func (r *DHCPv6Relay) GetOption(code OptionCode) []Option {
+	return getOptions(r.options, code, false)
+}
+
+func (r *DHCPv6Relay) GetOneOption(code OptionCode) Option {
+	return getOption(r.options, code)
+}
+
+func (r *DHCPv6Relay) IsRelay() bool {
+	return true
+}
