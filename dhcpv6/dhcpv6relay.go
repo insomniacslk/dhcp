@@ -68,3 +68,7 @@ func (r *DHCPv6Relay) Length() int {
 	}
 	return mLen
 }
+
+func (r *DHCPv6Relay) Options() []Option {
+	return r.options
+}

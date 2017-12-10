@@ -132,10 +132,6 @@ func (d *DHCPv6Message) SetTransactionID(tid uint32) {
 	d.transactionID = ttid
 }
 
-func (d *DHCPv6Message) Options() []Option {
-	return d.options
-}
-
 func (d *DHCPv6Message) SetOptions(options []Option) {
 	d.options = options
 }
@@ -189,4 +185,8 @@ func (d *DHCPv6Message) Length() int {
 		mLen += opt.Length() + 4 // +4 for opt code and opt len
 	}
 	return mLen
+}
+
+func (d *DHCPv6Message) Options() []Option {
+	return d.options
 }

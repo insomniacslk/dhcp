@@ -7,6 +7,7 @@ import (
 type DHCPv6 interface {
 	Type() MessageType
 	ToBytes() []byte
+	Options() []Option
 	String() string
 	Summary() string
 	Length() int
