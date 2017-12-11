@@ -83,3 +83,24 @@ func (r *DHCPv6Relay) GetOneOption(code OptionCode) Option {
 func (r *DHCPv6Relay) IsRelay() bool {
 	return true
 }
+
+// Recurse into a relay message and extract and return the inner DHCPv6Message.
+// Return nil if none found (e.g. not a relay message).
+func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
+	var p DHCPv6
+	p = d
+	for {
+		if !p.IsRelay() {
+			return p, nil
+		}
+		opt := p.GetOneOption(OPTION_RELAY_MSG)
+		if opt == nil {
+			return nil, fmt.Errorf("No OptRelayMsg found")
+		}
+		relayOpt := opt.(*OptRelayMsg)
+		if relayOpt.RelayMessage() == nil {
+			return nil, fmt.Errorf("Relay message cannot be nil")
+		}
+		p = relayOpt.RelayMessage()
+	}
+}
