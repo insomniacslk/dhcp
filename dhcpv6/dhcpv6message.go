@@ -152,6 +152,7 @@ func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
 		},
 	}
 	req.AddOption(&nii)
+	// add OptClientArchType
 	cat := OptClientArchType{}
 	cat.SetArchType(EFI_BC)
 	req.AddOption(&cat)
