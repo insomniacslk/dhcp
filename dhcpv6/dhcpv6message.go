@@ -152,15 +152,8 @@ func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
 		},
 	}
 	req.AddOption(&nii)
-	// add OPTION_CLIENT_ARCH_TYPE
-	// TODO implement OptionClientArchType
-	cat := OptionGeneric{
-		OptionCode: OPTION_CLIENT_ARCH_TYPE,
-		OptionData: []byte{
-			0, // Intel - see rfc4578
-			7, // EFI BC
-		},
-	}
+	cat := OptClientArchType{}
+	cat.SetArchType(EFI_BC)
 	req.AddOption(&cat)
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
