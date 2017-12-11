@@ -10,6 +10,7 @@ import (
 
 type ArchType uint16
 
+// see rfc4578
 const (
 	INTEL_X86PC ArchType = iota
 	NEC_PC98
