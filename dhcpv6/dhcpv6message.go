@@ -100,6 +100,77 @@ func NewSolicitForInterface(ifname string) (*DHCPv6Message, error) {
 	return d, nil
 }
 
+func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
+	if advertise == nil {
+		return nil, fmt.Errorf("ADVERTISE cannot be nil")
+	}
+	if advertise.Type() != ADVERTISE {
+		return nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
+	}
+	adv, ok := advertise.(*DHCPv6Message)
+	if !ok {
+		return nil, fmt.Errorf("The passed ADVERTISE must be of DHCPv6Message type")
+	}
+	// build REQUEST from ADVERTISE
+	req := DHCPv6Message{}
+	req.SetMessage(REQUEST)
+	req.SetTransactionID(adv.TransactionID())
+	// add Client ID
+	cid := adv.GetOneOption(OPTION_CLIENTID)
+	if cid == nil {
+		return nil, fmt.Errorf("Client ID cannot be nil in ADVERTISE when building REQUEST")
+	}
+	req.AddOption(cid)
+	// add Server ID
+	sid := adv.GetOneOption(OPTION_SERVERID)
+	if sid == nil {
+		return nil, fmt.Errorf("Server ID cannot be nil in ADVERTISE when building REQUEST")
+	}
+	req.AddOption(sid)
+	// add Elapsed Time
+	req.AddOption(&OptElapsedTime{})
+	// add IA_NA
+	iaNa := adv.GetOneOption(OPTION_IA_NA)
+	if iaNa == nil {
+		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
+	}
+	req.AddOption(iaNa)
+	// add OptRequestedOption
+	oro := OptRequestedOption{}
+	oro.SetRequestedOptions([]OptionCode{
+		OPT_BOOTFILE_URL,
+		OPT_BOOTFILE_PARAM,
+	})
+	req.AddOption(&oro)
+	// add OPTION_NII
+	// TODO implement OptionNetworkInterfaceIdentifier
+	nii := OptionGeneric{
+		OptionCode: OPTION_NII,
+		OptionData: []byte{
+			1,    // UNDI - Universal Network Device Interface
+			3, 2, // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc4578
+		},
+	}
+	req.AddOption(&nii)
+	// add OPTION_CLIENT_ARCH_TYPE
+	// TODO implement OptionClientArchType
+	cat := OptionGeneric{
+		OptionCode: OPTION_CLIENT_ARCH_TYPE,
+		OptionData: []byte{
+			0, // Intel - see rfc4578
+			7, // EFI BC
+		},
+	}
+	req.AddOption(&cat)
+	// add OPTION_VENDOR_CLASS, only if present in the original request
+	// TODO implement OptionVendorClass
+	vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
+	if vClass != nil {
+		req.AddOption(vClass)
+	}
+	return &req, nil
+}
+
 func (d *DHCPv6Message) Type() MessageType {
 	return d.messageType
 }

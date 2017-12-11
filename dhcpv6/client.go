@@ -141,74 +141,11 @@ func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, DHCPv6, error) 
 // the request, a reply if not nil, and an error if any
 func (c *Client) Request(ifname string, advertise, request DHCPv6) (DHCPv6, DHCPv6, error) {
 	if request == nil {
-		if advertise == nil {
-			return nil, nil, fmt.Errorf("ADVERTISE and REQUEST cannot be both nil")
+		var err error
+		request, err = NewRequestFromAdvertise(advertise)
+		if err != nil {
+			return nil, nil, err
 		}
-		if advertise.Type() != ADVERTISE {
-			return nil, nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
-		}
-		adv, ok := advertise.(*DHCPv6Message)
-		if !ok {
-			return nil, nil, fmt.Errorf("The passed ADVERTISE must be of DHCPv6Message type")
-		}
-		// build REQUEST from ADVERTISE
-		req := DHCPv6Message{}
-		req.SetMessage(REQUEST)
-		req.SetTransactionID(adv.TransactionID())
-		// add Client ID
-		cid := adv.GetOneOption(OPTION_CLIENTID)
-		if cid == nil {
-			return nil, nil, fmt.Errorf("Client ID cannot be nil in ADVERTISE when building REQUEST")
-		}
-		req.AddOption(cid)
-		// add Server ID
-		sid := adv.GetOneOption(OPTION_SERVERID)
-		if sid == nil {
-			return nil, nil, fmt.Errorf("Server ID cannot be nil in ADVERTISE when building REQUEST")
-		}
-		req.AddOption(sid)
-		// add Elapsed Time
-		req.AddOption(&OptElapsedTime{})
-		// add IA_NA
-		iaNa := adv.GetOneOption(OPTION_IA_NA)
-		if iaNa == nil {
-			return nil, nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
-		}
-		req.AddOption(iaNa)
-		// add OptRequestedOption
-		oro := OptRequestedOption{}
-		oro.SetRequestedOptions([]OptionCode{
-			OPT_BOOTFILE_URL,
-			OPT_BOOTFILE_PARAM,
-		})
-		req.AddOption(&oro)
-		// add OPTION_NII
-		// TODO implement OptionNetworkInterfaceIdentifier
-		nii := OptionGeneric{
-			OptionCode: OPTION_NII,
-			OptionData: []byte{
-				1,    // UNDI - Universal Network Device Interface
-				3, 2, // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc4578
-			},
-		}
-		req.AddOption(&nii)
-		// add OPTION_CLIENT_ARCH_TYPE
-		// TODO implement OptionClientArchType
-		cat := OptionGeneric{
-			OptionCode: OPTION_CLIENT_ARCH_TYPE,
-			OptionData: []byte{
-				0, // Intel - see rfc4578
-				7, // EFI BC
-			},
-		}
-		req.AddOption(&cat)
-		// add OPTION_VENDOR_CLASS, only if present in the original request
-		// TODO implement OptionVendorClass
-		vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
-		if vClass != nil {
-			req.AddOption(vClass)
-		}
-		request = &req
 	}
 	reply, err := c.sendReceive(ifname, request)
 	return request, reply, err
