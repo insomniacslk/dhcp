@@ -48,7 +48,8 @@ func (op *OptClientArchType) Code() OptionCode {
 func (op *OptClientArchType) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_CLIENT_ARCH_TYPE))
-	binary.BigEndian.PutUint16(buf[2:4], 2)
+	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
+	binary.BigEndian.PutUint16(buf[4:6], uint16(op.archType))
 	return buf
 }
 

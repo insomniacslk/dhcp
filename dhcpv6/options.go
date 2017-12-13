@@ -96,6 +96,8 @@ func ParseOption(dataStart []byte) (Option, error) {
 		opt, err = ParseOptInterfaceId(optData)
 	case OPTION_CLIENT_ARCH_TYPE:
 		opt, err = ParseOptClientArchType(optData)
+	case OPTION_NII:
+		opt, err = ParseOptNetworkInterfaceId(optData)
 	default:
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
 	}

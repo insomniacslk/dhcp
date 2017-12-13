@@ -143,14 +143,10 @@ func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
 	})
 	req.AddOption(&oro)
 	// add OPTION_NII
-	// TODO implement OptionNetworkInterfaceIdentifier
-	nii := OptionGeneric{
-		OptionCode: OPTION_NII,
-		OptionData: []byte{
-			1,    // UNDI - Universal Network Device Interface
-			3, 2, // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc4578
-		},
-	}
+	nii := OptNetworkInterfaceId{}
+	nii.SetType(1)
+	nii.SetMajor(3) // UNDI - Universal Network Device Interface
+	nii.SetMinor(2) // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc457
 	req.AddOption(&nii)
 	// add OptClientArchType
 	cat := OptClientArchType{}
