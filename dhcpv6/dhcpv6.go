@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"fmt"
+	"net"
 )
 
 type DHCPv6 interface {
@@ -14,6 +15,8 @@ type DHCPv6 interface {
 	IsRelay() bool
 	GetOption(code OptionCode) []Option
 	GetOneOption(code OptionCode) Option
+	SetOptions(options []Option)
+	AddOption(Option)
 }
 
 func FromBytes(data []byte) (DHCPv6, error) {
@@ -101,4 +104,45 @@ func getOption(options []Option, code OptionCode) Option {
 		return nil
 	}
 	return opts[0]
+}
+
+// Decapsulate extracts the content of a relay message. It does not recurse if
+// there are nested relay messages. Returns the original packet if is not not a
+// relay message
+func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
+	if !l.IsRelay() {
+		return l, nil
+	}
+	opt := l.GetOneOption(OPTION_RELAY_MSG)
+	if opt == nil {
+		return nil, fmt.Errorf("No OptRelayMsg found")
+	}
+	relayOpt := opt.(*OptRelayMsg)
+	if relayOpt.RelayMessage() == nil {
+		return nil, fmt.Errorf("Relay message cannot be nil")
+	}
+	return relayOpt.RelayMessage(), nil
+}
+
+// Encapsulate creates a DHCPv6Relay message containing the passed DHCPv6 object.
+// struct as payload. The passed message type must be  either RELAY_FORW or
+// RELAY_REPL
+func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (DHCPv6, error) {
+	if mType != RELAY_FORW && mType != RELAY_REPL {
+		return nil, fmt.Errorf("Message type must be either RELAY_FORW or RELAY_REPL")
+	}
+	outer := DHCPv6Relay{
+		messageType: RELAY_FORW,
+		linkAddr:    linkAddr,
+		peerAddr:    peerAddr,
+	}
+	if d.IsRelay() {
+		relay := d.(*DHCPv6Relay)
+		outer.hopCount = relay.hopCount + 1
+	} else {
+		outer.hopCount = 0
+	}
+	orm := OptRelayMsg{relayMessage: d}
+	outer.AddOption(&orm)
+	return &outer, nil
 }

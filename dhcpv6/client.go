@@ -17,7 +17,6 @@ var AllDHCPRelayAgentsAndServers = net.ParseIP("ff02::1:2")
 var AllDHCPServers = net.ParseIP("ff05::1:3")
 
 type Client struct {
-	Dialer       *net.Dialer
 	ReadTimeout  *time.Duration
 	WriteTimeout *time.Duration
 	LocalAddr    net.Addr

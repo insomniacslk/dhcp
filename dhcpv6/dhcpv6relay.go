@@ -80,26 +80,16 @@ func (r *DHCPv6Relay) GetOneOption(code OptionCode) Option {
 	return getOption(r.options, code)
 }
 
-func (r *DHCPv6Relay) IsRelay() bool {
-	return true
+func (r *DHCPv6Relay) SetOptions(options []Option) {
+	r.options = options
 }
 
-// Decapsulate extracts the content of a relay message. It does not recurse if
-// there are nested relay messages. Returns the original packet if is not not a
-// relay message
-func (d *DHCPv6Relay) Decapsulate(l DHCPv6) (DHCPv6, error) {
-	if !l.IsRelay() {
-		return l, nil
-	}
-	opt := l.GetOneOption(OPTION_RELAY_MSG)
-	if opt == nil {
-		return nil, fmt.Errorf("No OptRelayMsg found")
-	}
-	relayOpt := opt.(*OptRelayMsg)
-	if relayOpt.RelayMessage() == nil {
-		return nil, fmt.Errorf("Relay message cannot be nil")
-	}
-	return relayOpt.RelayMessage(), nil
+func (r *DHCPv6Relay) AddOption(option Option) {
+	r.options = append(r.options, option)
+}
+
+func (r *DHCPv6Relay) IsRelay() bool {
+	return true
 }
 
 // Recurse into a relay message and extract and return the inner DHCPv6Message.
@@ -114,7 +104,7 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 		if !p.IsRelay() {
 			return p, nil
 		}
-		p, err = d.Decapsulate(p)
+		p, err = DecapsulateRelay(p)
 		if err != nil {
 			return nil, err
 		}
