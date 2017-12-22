@@ -19,7 +19,7 @@ func (op *OptBootFileURL) Code() OptionCode {
 func (op *OptBootFileURL) ToBytes() []byte {
 	buf := make([]byte, 4)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPT_BOOTFILE_URL))
-	binary.BigEndian.PutUint16(buf[2:4], 2)
+	binary.BigEndian.PutUint16(buf[2:4], uint16(len(op.bootFileUrl)))
 	buf = append(buf, op.bootFileUrl...)
 	return buf
 }
