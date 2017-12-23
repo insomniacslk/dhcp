@@ -61,6 +61,38 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	return ret
 }
 
+func (r *DHCPv6Relay) MessageType() MessageType {
+	return r.messageType
+}
+
+func (r *DHCPv6Relay) SetMessageType(messageType MessageType) {
+	r.messageType = messageType
+}
+
+func (r *DHCPv6Relay) HopCount() uint8 {
+	return r.hopCount
+}
+
+func (r *DHCPv6Relay) SetHopCount(hopCount uint8) {
+	r.hopCount = hopCount
+}
+
+func (r *DHCPv6Relay) LinkAddr() net.IP {
+	return r.linkAddr
+}
+
+func (r *DHCPv6Relay) SetLinkAddr(linkAddr net.IP) {
+	r.linkAddr = linkAddr
+}
+
+func (r *DHCPv6Relay) PeerAddr() net.IP {
+	return r.peerAddr
+}
+
+func (r *DHCPv6Relay) SetPeerAddr(peerAddr net.IP) {
+	r.peerAddr = peerAddr
+}
+
 func (r *DHCPv6Relay) Length() int {
 	mLen := RelayHeaderSize
 	for _, opt := range r.options {
