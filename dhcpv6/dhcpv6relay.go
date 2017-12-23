@@ -66,6 +66,7 @@ func (r *DHCPv6Relay) MessageType() MessageType {
 }
 
 func (r *DHCPv6Relay) SetMessageType(messageType MessageType) {
+	// not enforcing if message type is not a RELAY_FORW or a RELAY_REPL message
 	r.messageType = messageType
 }
 
