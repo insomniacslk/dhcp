@@ -63,3 +63,44 @@ func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 		t.Fatalf("Invalid options. Expected %v, got %v", oneOpt, opts)
 	}
 }
+
+func TestDHCPv6RelayToBytes(t *testing.T) {
+	expected := []byte{
+		12,                                             // RELAY_FORW
+		1,                                              // hop count
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // link addr
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // peer addr
+		// option relay message
+		0, 9, // relay msg
+		0, 10, // option length
+		// inner dhcp solicit
+		1,                // SOLICIT
+		0xaa, 0xbb, 0xcc, // transaction ID
+		// inner option - elapsed time
+		0, 8, // elapsed time
+		0, 2, // length
+		0, 0,
+	}
+	r := DHCPv6Relay{
+		messageType: RELAY_FORW,
+		hopCount:    1,
+		linkAddr:    net.IPv6loopback,
+		peerAddr:    net.IPv6loopback,
+	}
+	opt := OptRelayMsg{
+		relayMessage: &DHCPv6Message{
+			messageType:   SOLICIT,
+			transactionID: 0xaabbcc,
+			options: []Option{
+				&OptElapsedTime{
+					elapsedTime: 0,
+				},
+			},
+		},
+	}
+	r.AddOption(&opt)
+	relayBytes := r.ToBytes()
+	if !bytes.Equal(expected, relayBytes) {
+		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, relayBytes)
+	}
+}

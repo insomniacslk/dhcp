@@ -4,6 +4,7 @@ package dhcpv6
 // https://www.ietf.org/rfc/rfc3315.txt
 
 import (
+	"encoding/binary"
 	"fmt"
 )
 
@@ -16,7 +17,11 @@ func (op *OptRelayMsg) Code() OptionCode {
 }
 
 func (op *OptRelayMsg) ToBytes() []byte {
-	return op.relayMessage.ToBytes()
+	buf := make([]byte, 4)
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_RELAY_MSG))
+	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
+	buf = append(buf, op.relayMessage.ToBytes()...)
+	return buf
 }
 
 func (op *OptRelayMsg) RelayMessage() DHCPv6 {
