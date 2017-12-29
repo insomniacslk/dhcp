@@ -36,6 +36,10 @@ func (op *OptRequestedOption) SetRequestedOptions(opts []OptionCode) {
 	op.requestedOptions = opts
 }
 
+func (op *OptRequestedOption) AddRequestedOption(opt OptionCode) {
+	op.requestedOptions = append(op.requestedOptions, opt)
+}
+
 func (op *OptRequestedOption) Length() int {
 	return len(op.requestedOptions) * 2
 }

@@ -1,5 +1,6 @@
 package dhcpv6
 
+// FIXME: rename all the options to have a consistent name, e.g. OPT_<NAME>
 const (
 	_ OptionCode = iota // skip 0
 	OPTION_CLIENTID
