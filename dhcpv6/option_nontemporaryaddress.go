@@ -12,7 +12,7 @@ type OptIANA struct {
 	iaId    [4]byte
 	t1      uint32
 	t2      uint32
-	options []byte
+	options []Option
 }
 
 func (op *OptIANA) Code() OptionCode {
@@ -26,7 +26,9 @@ func (op *OptIANA) ToBytes() []byte {
 	copy(buf[4:8], op.iaId[:])
 	binary.BigEndian.PutUint32(buf[8:12], op.t1)
 	binary.BigEndian.PutUint32(buf[12:16], op.t2)
-	buf = append(buf, op.options...)
+	for _, opt := range op.options {
+		buf = append(buf, opt.ToBytes()...)
+	}
 	return buf
 }
 
@@ -54,16 +56,20 @@ func (op *OptIANA) SetT2(t2 uint32) {
 	op.t2 = t2
 }
 
-func (op *OptIANA) Options() []byte {
+func (op *OptIANA) Options() []Option {
 	return op.options
 }
 
-func (op *OptIANA) SetOptions(options []byte) {
+func (op *OptIANA) SetOptions(options []Option) {
 	op.options = options
 }
 
 func (op *OptIANA) Length() int {
-	return 12 + len(op.options)
+	l := 12
+	for _, opt := range op.options {
+		l += 4 + opt.Length()
+	}
+	return l
 }
 
 func (op *OptIANA) String() string {
@@ -81,6 +87,12 @@ func ParseOptIANA(data []byte) (*OptIANA, error) {
 	copy(opt.iaId[:], data[:4])
 	opt.t1 = binary.BigEndian.Uint32(data[4:8])
 	opt.t2 = binary.BigEndian.Uint32(data[8:12])
-	opt.options = append(data[12:])
+	var err error
+	if len(data[12:]) > 0 {
+		opt.options, err = OptionsFromBytes(data[12:])
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &opt, nil
 }
