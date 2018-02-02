@@ -11,9 +11,14 @@ import (
 	"strings"
 )
 
+// HeaderSize is the DHCPv4 header size in bytes.
 const HeaderSize = 236
+
+// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
 const MaxMessageSize = 576
 
+// DHCPv4 represents a DHCPv4 packet header and options. See the New* functions
+// to build DHCPv4 packets.
 type DHCPv4 struct {
 	opcode         OpcodeType
 	hwType         iana.HwTypeType
@@ -32,7 +37,8 @@ type DHCPv4 struct {
 	options        []Option
 }
 
-// Generate a random 32-bits number suitable as TransactionID
+// GenerateTransactionID generates a random 32-bits number suitable for use as
+// TransactionID
 func GenerateTransactionID() (*uint32, error) {
 	b := make([]byte, 4)
 	n, err := rand.Read(b)
@@ -486,6 +492,8 @@ func (d *DHCPv4) Summary() string {
 	return ret
 }
 
+// ValidateOptions runs sanity checks on the DHCPv4 packet and prints a number
+// of warnings if something is incorrect.
 func (d *DHCPv4) ValidateOptions() {
 	// TODO find duplicate options
 	foundOptionEnd := false
@@ -508,8 +516,8 @@ func (d *DHCPv4) ValidateOptions() {
 	}
 }
 
-// Convert a DHCPv4 structure into its binary representation, suitable for being
-// sent over the network
+// ToBytes encodes a DHCPv4 structure into a sequence of bytes in its wire
+// format.
 func (d *DHCPv4) ToBytes() []byte {
 	// This won't check if the End option is present, you've been warned
 	var ret []byte
