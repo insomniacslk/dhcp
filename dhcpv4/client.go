@@ -55,15 +55,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 
 	// Discovery
 	if d == nil {
-		d, err = NewDiscovery()
-		if err != nil {
-			return conversation, err
-		}
-		iface, err := net.InterfaceByName(ifname)
-		if err != nil {
-			return conversation, err
-		}
-		d.SetClientHwAddr(iface.HardwareAddr)
+		d, err = NewDiscoveryForInterface(ifname)
 	}
 	conversation[0] = *d
 

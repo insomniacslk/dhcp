@@ -81,14 +81,20 @@ func New() (*DHCPv4, error) {
 
 // Will build a new DHCPv4 Discovery message, with a default Ethernet HW type
 // and a null hardware address. The caller needs to fill the remaining fields up
-func NewDiscovery() (*DHCPv4, error) {
+func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d, err := New()
+	if err != nil {
+		return nil, err
+	}
+	// get hw addr
+	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
 	}
 	d.SetOpcode(OpcodeBootRequest)
 	d.SetHwType(iana.HwTypeEthernet)
-	d.SetHwAddrLen(6)
+	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
+	d.SetClientHwAddr(iface.HardwareAddr)
 	d.SetBroadcast()
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
