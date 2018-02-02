@@ -3,14 +3,17 @@ package dhcpv4
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
 // http://www.networksorcery.com/enp/protocol/bootp/options.htm
 
+// OpcodeType represents a DHCPv4 opcode.
 type OpcodeType uint8
 
+// constants that represent valid values for OpcodeType
 const (
 	_ OpcodeType = iota // skip 0
 	OpcodeBootRequest
 	OpcodeBootReply
 )
 
+// OpcodeToString maps an OpcodeType to its mnemonic name
 var OpcodeToString = map[OpcodeType]string{
 	OpcodeBootRequest: "BootRequest",
 	OpcodeBootReply:   "BootReply",
@@ -180,6 +183,7 @@ const (
 	OptionEnd = 255
 )
 
+// OptionCodeToString maps an OptionCode to its mnemonic name
 var OptionCodeToString = map[OptionCode]string{
 	OptionPad:                                        "Pad",
 	OptionSubnetMask:                                 "Subnet Mask",
