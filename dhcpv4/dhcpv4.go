@@ -375,14 +375,19 @@ func (d *DHCPv4) SetClientHwAddr(clientHwAddr []byte) {
 	}
 }
 
+// ServerHostName returns the server host name as a sequence of bytes.
 func (d *DHCPv4) ServerHostName() [64]byte {
 	return d.serverHostName
 }
 
+// ServerHostNameToString returns the server host name as a string, after
+// trimming the null bytes at the end.
 func (d *DHCPv4) ServerHostNameToString() string {
 	return strings.TrimRight(string(d.serverHostName[:]), "\x00")
 }
 
+// SetServerHostName replaces the server host name, from a sequence of bytes,
+// truncating it to the maximum length of 64.
 func (d *DHCPv4) SetServerHostName(serverHostName []byte) {
 	if len(serverHostName) > 64 {
 		serverHostName = serverHostName[:64]
@@ -397,14 +402,19 @@ func (d *DHCPv4) SetServerHostName(serverHostName []byte) {
 	d.serverHostName = newServerHostName
 }
 
+// BootFileName returns the boot file name as a sequence of bytes.
 func (d *DHCPv4) BootFileName() [128]byte {
 	return d.bootFileName
 }
 
+// BootFileNameToString returns the boot file name as a string, after trimming
+// the null bytes at the end.
 func (d *DHCPv4) BootFileNameToString() string {
 	return strings.TrimRight(string(d.bootFileName[:]), "\x00")
 }
 
+// SetBootFileName replaces the boot file name, from a sequence of bytes,
+// truncating it to the maximum length oh 128.
 func (d *DHCPv4) SetBootFileName(bootFileName []byte) {
 	if len(bootFileName) > 128 {
 		bootFileName = bootFileName[:128]
@@ -419,10 +429,13 @@ func (d *DHCPv4) SetBootFileName(bootFileName []byte) {
 	d.bootFileName = newBootFileName
 }
 
+// Options returns the DHCPv4 options defined for the packet.
 func (d *DHCPv4) Options() []Option {
 	return d.options
 }
 
+// StrippedOptions works like Options, but it does not return anything after the
+// End option.
 func (d *DHCPv4) StrippedOptions() []Option {
 	// differently from Options() this function strips away anything coming
 	// after the End option (normally just Pad options).
@@ -436,10 +449,12 @@ func (d *DHCPv4) StrippedOptions() []Option {
 	return strippedOptions
 }
 
+// SetOptions replaces the current options with the provided ones.
 func (d *DHCPv4) SetOptions(options []Option) {
 	d.options = options
 }
 
+// AddOption appends an option to the existing ones.
 func (d *DHCPv4) AddOption(option Option) {
 	d.options = append(d.options, option)
 }
@@ -449,6 +464,7 @@ func (d *DHCPv4) String() string {
 		d.OpcodeToString(), d.HwTypeToString(), d.ClientHwAddr())
 }
 
+// Summary prints detailed information about the packet.
 func (d *DHCPv4) Summary() string {
 	ret := fmt.Sprintf(
 		"DHCPv4\n"+
