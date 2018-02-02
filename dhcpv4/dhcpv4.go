@@ -327,7 +327,7 @@ func (d *DHCPv4) ClientHwAddr() [16]byte {
 func (d *DHCPv4) ClientHwAddrToString() string {
 	var ret []string
 	for _, b := range d.clientHwAddr[:d.hwAddrLen] {
-		ret = append(ret, fmt.Sprintf("%02x:", b))
+		ret = append(ret, fmt.Sprintf("%02x", b))
 	}
 	return strings.Join(ret, ":")
 }
