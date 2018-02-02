@@ -46,8 +46,8 @@ func GenerateTransactionID() (*uint32, error) {
 	return &tid, nil
 }
 
-// Create a new DHCPv4 structure and fill it up with default values. It won't be
-// a valid DHCPv4 message so you will need to adjust its fields.
+// New creates a new DHCPv4 structure and fill it up with default values. It
+// won't be a valid DHCPv4 message so you will need to adjust its fields.
 // See also NewDiscovery, NewOffer, NewRequest, NewAcknowledge, NewInform and
 // NewRelease .
 func New() (*DHCPv4, error) {
@@ -79,8 +79,9 @@ func New() (*DHCPv4, error) {
 	return &d, nil
 }
 
-// Will build a new DHCPv4 Discovery message, with a default Ethernet HW type
-// and a null hardware address. The caller needs to fill the remaining fields up
+// NewDiscoveryForInterface builds a new DHCPv4 Discovery message, with a default
+// Ethernet HW type and the hardware address obtained from the specified
+// interface.
 func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
@@ -109,7 +110,7 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	return d, nil
 }
 
-// Build a DHCPv4 request from an offer
+// RequestFromOffer builds a DHCPv4 request from an offer.
 func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
@@ -155,9 +156,11 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	return d, nil
 }
 
+// FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an
+// error if the packet is not valid.
 func FromBytes(data []byte) (*DHCPv4, error) {
 	if len(data) < HeaderSize {
-		return nil, errors.New(fmt.Sprintf("Invalid DHCPv4 header: shorter than %v bytes", HeaderSize))
+		return nil, fmt.Errorf("Invalid DHCPv4 header: shorter than %v bytes", HeaderSize)
 	}
 	d := DHCPv4{
 		opcode:        OpcodeType(data[0]),
@@ -183,10 +186,12 @@ func FromBytes(data []byte) (*DHCPv4, error) {
 	return &d, nil
 }
 
+// Opcode returns the OpcodeType for the packet,
 func (d *DHCPv4) Opcode() OpcodeType {
 	return d.opcode
 }
 
+// OpcodeToString returns the mnemonic name for the packet's opcode.
 func (d *DHCPv4) OpcodeToString() string {
 	opcode := OpcodeToString[d.opcode]
 	if opcode == "" {
@@ -195,6 +200,8 @@ func (d *DHCPv4) OpcodeToString() string {
 	return opcode
 }
 
+// SetOpcode sets a new opcode for the packet. It prints a warning if the opcode
+// is unknown, but does not generate an error.
 func (d *DHCPv4) SetOpcode(opcode OpcodeType) {
 	if OpcodeToString[opcode] == "" {
 		log.Printf("Warning: unknown DHCPv4 opcode: %v", opcode)
@@ -202,10 +209,13 @@ func (d *DHCPv4) SetOpcode(opcode OpcodeType) {
 	d.opcode = opcode
 }
 
+// HwType returns the hardware type as defined by IANA.
 func (d *DHCPv4) HwType() iana.HwTypeType {
 	return d.hwType
 }
 
+// HwTypeToString returns the mnemonic name for the hardware type, e.g.
+// "Ethernet". If the type is unknown, it returns "Unknown".
 func (d *DHCPv4) HwTypeToString() string {
 	hwtype, ok := iana.HwTypeToString[d.hwType]
 	if !ok {
@@ -214,6 +224,7 @@ func (d *DHCPv4) HwTypeToString() string {
 	return hwtype
 }
 
+// SetHwType returns the hardware type as defined by IANA.
 func (d *DHCPv4) SetHwType(hwType iana.HwTypeType) {
 	if _, ok := iana.HwTypeToString[hwType]; !ok {
 		log.Printf("Warning: Invalid DHCPv4 hwtype: %v", hwType)
@@ -221,10 +232,14 @@ func (d *DHCPv4) SetHwType(hwType iana.HwTypeType) {
 	d.hwType = hwType
 }
 
+// HwAddrLen returns the hardware address length. E.g. for Ethernet it would
+// return 6.
 func (d *DHCPv4) HwAddrLen() uint8 {
 	return d.hwAddrLen
 }
 
+// SetHwAddrLen sets the hardware address length, limiting it to the maximum
+// size 16 that the standard allows.
 func (d *DHCPv4) SetHwAddrLen(hwAddrLen uint8) {
 	if hwAddrLen > 16 {
 		log.Printf("Warning: invalid HwAddrLen: %v > 16, using 16 instead", hwAddrLen)
@@ -233,18 +248,22 @@ func (d *DHCPv4) SetHwAddrLen(hwAddrLen uint8) {
 	d.hwAddrLen = hwAddrLen
 }
 
+// HopCount returns the hop count field.
 func (d *DHCPv4) HopCount() uint8 {
 	return d.hopCount
 }
 
+// SetHopCount sets the hop count value.
 func (d *DHCPv4) SetHopCount(hopCount uint8) {
 	d.hopCount = hopCount
 }
 
+// TransactionID returns the transaction ID as 32 bit unsigned integer.
 func (d *DHCPv4) TransactionID() uint32 {
 	return d.transactionID
 }
 
+// SetTransactionID sets the value for the transaction ID.
 func (d *DHCPv4) SetTransactionID(transactionID uint32) {
 	d.transactionID = transactionID
 }
