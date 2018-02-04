@@ -1,62 +1,22 @@
+// +build darwin
+
 package dhcpv4
 
 import (
-	"encoding/binary"
+	"fmt"
 	"net"
 	"syscall"
-	"time"
-
-	"golang.org/x/net/ipv4"
 )
 
-const (
-	maxUDPReceivedPacketSize = 8192 // arbitrary size. Theoretically could be up to 65kb
-)
-
-type Client struct {
-	Network string
-	Dialer  *net.Dialer
-	Timeout time.Duration
-}
-
-func makeRawBroadcastPacket(payload []byte) ([]byte, error) {
-	udp := make([]byte, 8)
-	binary.BigEndian.PutUint16(udp[:2], ClientPort)
-	binary.BigEndian.PutUint16(udp[2:4], ServerPort)
-	binary.BigEndian.PutUint16(udp[4:6], uint16(8+len(payload)))
-	binary.BigEndian.PutUint16(udp[6:8], 0) // try to offload the checksum
-
-	h := ipv4.Header{
-		Version:  4,
-		Len:      20,
-		TotalLen: 20 + len(udp) + len(payload),
-		TTL:      64,
-		Protocol: 17, // UDP
-		Dst:      net.IPv4bcast,
-		Src:      net.IPv4zero,
-	}
-	ret, err := h.Marshal()
-	if err != nil {
-		return nil, err
-	}
-	ret = append(ret, udp...)
-	ret = append(ret, payload...)
-	return ret, nil
-}
-
-// Run a full DORA transaction: Discovery, Offer, Request, Acknowledge, over
-// UDP. Does not retry in case of failures.
-// Returns a list of DHCPv4 structures representing the exchange. It can contain
-// up to four elements, ordered as Discovery, Offer, Request and Acknowledge.
-// In case of errors, an error is returned, and the list of DHCPv4 objects will
-// be shorted than 4, containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
+// BSDPExchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
+// Ack). Returns a list of DHCPv4 structures representing the exchange.
+func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	conversation := make([]DHCPv4, 1)
 	var err error
 
-	// Discovery
+	// INFORM[LIST]
 	if d == nil {
-		d, err = NewDiscoveryForInterface(ifname)
+		d, err = NewInformListForInterface(ifname, ClientPort)
 	}
 	conversation[0] = *d
 
@@ -91,7 +51,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 		return conversation, err
 	}
 
-	// Offer
+	// ACK 1
 	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: ClientPort})
 	if err != nil {
 		return conversation, err
@@ -101,16 +61,26 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	buf := make([]byte, maxUDPReceivedPacketSize)
 	oobdata := []byte{} // ignoring oob data
 	n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
-	offer, err := FromBytes(buf[:n])
+	ack1, err := FromBytes(buf[:n])
 	if err != nil {
 		return conversation, err
 	}
 	// TODO match the packet content
 	// TODO check that the peer address matches the declared server IP and port
-	conversation = append(conversation, *offer)
+	conversation = append(conversation, *ack1)
 
-	// Request
-	request, err := RequestFromOffer(*offer)
+	// Parse boot images sent back by server
+	bootImages, err := ParseBootImageListFromAck(*ack1)
+	fmt.Println(bootImages)
+	if err != nil {
+		return conversation, err
+	}
+	if len(bootImages) == 0 {
+		return conversation, fmt.Errorf("Got no BootImages from server")
+	}
+
+	// INFORM[SELECT]
+	request, err := InformSelectForAck(*ack1, ClientPort, bootImages[0])
 	if err != nil {
 		return conversation, err
 	}
@@ -124,7 +94,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 		return conversation, err
 	}
 
-	// Acknowledge
+	// ACK 2
 	buf = make([]byte, maxUDPReceivedPacketSize)
 	n, _, _, _, err = conn.ReadMsgUDP(buf, oobdata)
 	acknowledge, err := FromBytes(buf[:n])

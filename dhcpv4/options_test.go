@@ -56,19 +56,19 @@ func TestOptionsFromBytes(t *testing.T) {
 		255,     // end
 		0, 0, 0, //padding
 	}
-	opts, err := OptionsFromBytes(options)
+	opts, err := OptionsFromBytesWithMagicCookie(options)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// each padding byte counts as an option. Magic Cookie doesn't add up
 	if len(opts) != 5 {
-		t.Fatal("Invalid options length. Expected 5, got %v", len(opts))
+		t.Fatalf("Invalid options length. Expected 5, got %v", len(opts))
 	}
 	if opts[0].Code != OptionNameServer {
-		t.Fatal("Invalid option code. Expected %v, got %v", OptionNameServer, opts[0].Code)
+		t.Fatalf("Invalid option code. Expected %v, got %v", OptionNameServer, opts[0].Code)
 	}
 	if !bytes.Equal(opts[0].Data, options[6:10]) {
-		t.Fatal("Invalid option data. Expected %v, got %v", options[6:10], opts[0].Data)
+		t.Fatalf("Invalid option data. Expected %v, got %v", options[6:10], opts[0].Data)
 	}
 	if opts[1].Code != OptionEnd {
 		t.Fatalf("Invalid option code. Expected %v, got %v", OptionEnd, opts[1].Code)
@@ -80,7 +80,7 @@ func TestOptionsFromBytes(t *testing.T) {
 
 func TestOptionsFromBytesZeroLength(t *testing.T) {
 	options := []byte{}
-	_, err := OptionsFromBytes(options)
+	_, err := OptionsFromBytesWithMagicCookie(options)
 	if err == nil {
 		t.Fatal("Expected an error, got none")
 	}
@@ -88,36 +88,36 @@ func TestOptionsFromBytesZeroLength(t *testing.T) {
 
 func TestOptionsFromBytesBadMagicCookie(t *testing.T) {
 	options := []byte{1, 2, 3, 4}
-	_, err := OptionsFromBytes(options)
+	_, err := OptionsFromBytesWithMagicCookie(options)
 	if err == nil {
 		t.Fatal("Expected an error, got none")
 	}
 }
 
-func TestOptionsToBytes(t *testing.T) {
+func TestOptionsToBytesWithMagicCookie(t *testing.T) {
 	originalOptions := []byte{
 		99, 130, 83, 99, // Magic Cookie
 		5, 4, 192, 168, 1, 1, // DNS
 		255,     // end
 		0, 0, 0, //padding
 	}
-	options, err := OptionsFromBytes(originalOptions)
+	options, err := OptionsFromBytesWithMagicCookie(originalOptions)
 	if err != nil {
 		t.Fatal(err)
 	}
-	finalOptions := OptionsToBytes(options)
+	finalOptions := OptionsToBytesWithMagicCookie(options)
 	if !bytes.Equal(originalOptions, finalOptions) {
 		t.Fatalf("Invalid options. Expected %v, got %v", originalOptions, finalOptions)
 	}
 }
 
-func TestOptionsToBytesEmpty(t *testing.T) {
+func TestOptionsToBytesWithMagicCookieEmpty(t *testing.T) {
 	originalOptions := []byte{99, 130, 83, 99}
-	options, err := OptionsFromBytes(originalOptions)
+	options, err := OptionsFromBytesWithMagicCookie(originalOptions)
 	if err != nil {
 		t.Fatal(err)
 	}
-	finalOptions := OptionsToBytes(options)
+	finalOptions := OptionsToBytesWithMagicCookie(options)
 	if !bytes.Equal(originalOptions, finalOptions) {
 		t.Fatalf("Invalid options. Expected %v, got %v", originalOptions, finalOptions)
 	}

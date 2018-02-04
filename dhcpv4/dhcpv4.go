@@ -5,10 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/insomniacslk/dhcp/iana"
 	"log"
 	"net"
 	"strings"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // HeaderSize is the DHCPv4 header size in bytes.
@@ -35,6 +36,33 @@ type DHCPv4 struct {
 	serverHostName [64]byte
 	bootFileName   [128]byte
 	options        []Option
+}
+
+// interfaceV4Addr obtains the currently-configured IPv4 address for iface.
+func interfaceV4Addr(iface *net.Interface) (net.IP, error) {
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	for _, addr := range addrs {
+		var ip net.IP
+		switch v := addr.(type) {
+		case *net.IPAddr:
+			ip = v.IP
+		case *net.IPNet:
+			ip = v.IP
+		}
+
+		if ip == nil || ip.IsLoopback() {
+			continue
+		}
+		ip = ip.To4()
+		if ip == nil {
+			continue
+		}
+		return ip, nil
+	}
+	return nil, errors.New("Could not get local IPv4 address")
 }
 
 // GenerateTransactionID generates a random 32-bits number suitable for use as
@@ -77,7 +105,7 @@ func New() (*DHCPv4, error) {
 	copy(d.clientHwAddr[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	copy(d.serverHostName[:], []byte{})
 	copy(d.bootFileName[:], []byte{})
-	options, err := OptionsFromBytes(MagicCookie)
+	options, err := OptionsFromBytesWithMagicCookie(MagicCookie)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +133,7 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d.SetBroadcast()
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
-		Data: []byte{1},
+		Data: []byte{MessageTypeDiscover},
 	})
 	d.AddOption(Option{
 		Code: OptionParameterRequestList,
@@ -113,6 +141,46 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	})
 	// the End option has to be added explicitly
 	d.AddOption(Option{Code: OptionEnd})
+	return d, nil
+}
+
+// NewInformForInterface builds a new DHCPv4 Informational message with default
+// Ethernet HW type and the hardware address obtained from the specified
+// interface. It does NOT put a DHCP End option at the end.
+func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) {
+	d, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	// get hw addr
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	d.SetOpcode(OpcodeBootRequest)
+	d.SetHwType(iana.HwTypeEthernet)
+	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
+	d.SetClientHwAddr(iface.HardwareAddr)
+
+	if needsBroadcast {
+		d.SetBroadcast()
+	} else {
+		d.SetUnicast()
+	}
+
+	// Set Client IP as iface's currently-configured IP.
+	localIP, err := interfaceV4Addr(iface)
+	if err != nil {
+		return nil, err
+	}
+	d.SetClientIPAddr(localIP)
+
+	d.AddOption(Option{
+		Code: OptionDHCPMessageType,
+		Data: []byte{MessageTypeInform},
+	})
+
 	return d, nil
 }
 
@@ -147,7 +215,7 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d.SetServerIPAddr(serverIP)
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
-		Data: []byte{3},
+		Data: []byte{MessageTypeRequest},
 	})
 	d.AddOption(Option{
 		Code: OptionRequestedIPAddress,
@@ -184,7 +252,7 @@ func FromBytes(data []byte) (*DHCPv4, error) {
 	copy(d.clientHwAddr[:], data[28:44])
 	copy(d.serverHostName[:], data[44:108])
 	copy(d.bootFileName[:], data[108:236])
-	options, err := OptionsFromBytes(data[236:])
+	options, err := OptionsFromBytesWithMagicCookie(data[236:])
 	if err != nil {
 		return nil, err
 	}
@@ -558,6 +626,6 @@ func (d *DHCPv4) ToBytes() []byte {
 	ret = append(ret, d.serverHostName[:64]...)
 	ret = append(ret, d.bootFileName[:128]...)
 	d.ValidateOptions() // print warnings about broken options, if any
-	ret = append(ret, OptionsToBytes(d.options)...)
+	ret = append(ret, OptionsToBytesWithMagicCookie(d.options)...)
 	return ret
 }

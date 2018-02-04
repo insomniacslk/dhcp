@@ -2,9 +2,10 @@ package dhcpv4
 
 import (
 	"bytes"
-	"github.com/insomniacslk/dhcp/iana"
 	"net"
 	"testing"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // NOTE: if one of the following Assert* fails where expected and got values are
@@ -13,6 +14,29 @@ import (
 func AssertEqual(t *testing.T, a, b interface{}, what string) {
 	if a != b {
 		t.Fatalf("Invalid %s. %v != %v", what, a, b)
+	}
+}
+
+func AssertNotNil(t *testing.T, a interface{}, what string) {
+	if a == nil {
+		t.Fatalf("Expected %s to not be nil. %v", what, a)
+	}
+}
+
+func AssertNil(t *testing.T, a interface{}, what string) {
+	if a != nil {
+		t.Fatalf("Expected %s to be nil. %v", what, a)
+	}
+}
+
+func AssertEqualSlice(t *testing.T, a, b []interface{}, what string) {
+	if len(a) != len(b) {
+		t.Fatalf("Invalid %s. %v != %v", what, a, b)
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			t.Fatalf("Invalid %s. %v != %v at index %d", what, a, b, i)
+		}
 	}
 }
 
