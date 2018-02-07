@@ -75,7 +75,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	if err != nil {
 		return conversation, err
 	}
-	err = syscall.BindToDevice(fd, ifname)
+	err = BindToInterface(fd, ifname)
 	if err != nil {
 		return conversation, err
 	}
