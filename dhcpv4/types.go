@@ -374,4 +374,7 @@ var BSDPOptionCodeToString = map[OptionCode]string{
 	BSDPOptionBootImageList:                 "BSDP Boot Image List",
 	BSDPOptionNetboot1_0Firmware:            "BSDP Netboot 1.0 Firmware",
 	BSDPOptionBootImageAttributesFilterList: "BSDP Boot Image Attributes Filter List",
+	BSDPOptionShadowMountPath:               "BSDP Shadow Mount Path",
+	BSDPOptionShadowFilePath:                "BSDP Shadow File Path",
+	BSDPOptionMachineName:                   "BSDP Machine Name",
 }

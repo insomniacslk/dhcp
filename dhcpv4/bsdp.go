@@ -25,9 +25,12 @@ const (
 	BSDPOptionBootImageList
 	BSDPOptionNetboot1_0Firmware
 	BSDPOptionBootImageAttributesFilterList
+	BSDPOptionShadowMountPath OptionCode = 128
+	BSDPOptionShadowFilePath  OptionCode = 129
+	BSDPOptionMachineName     OptionCode = 130
 )
 
-// Versions (seen so far)
+// Versions
 var (
 	BSDPVersion1_0 = []byte{1, 0}
 	BSDPVersion1_1 = []byte{1, 1}
@@ -280,7 +283,7 @@ func InformSelectForAck(ack DHCPv4, replyPort uint16, selectedImage BootImage) (
 		},
 		Option{
 			Code: BSDPOptionSelectedBootImageID,
-			Data: append([]byte{4}, selectedImage.ID.toBytes()...),
+			Data: selectedImage.ID.toBytes(),
 		},
 	}
 
@@ -315,6 +318,24 @@ func InformSelectForAck(ack DHCPv4, replyPort uint16, selectedImage BootImage) (
 		})
 	}
 
+	vendorClassID, err := makeVendorClassIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	d.AddOption(Option{
+		Code: OptionClassIdentifier,
+		Data: []byte(vendorClassID),
+	})
+	d.AddOption(Option{
+		Code: OptionParameterRequestList,
+		Data: []byte{
+			OptionSubnetMask,
+			OptionRouter,
+			OptionBootfileName,
+			OptionVendorSpecificInformation,
+			OptionClassIdentifier,
+		},
+	})
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
 		Data: []byte{MessageTypeInform},
