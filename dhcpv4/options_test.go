@@ -146,3 +146,21 @@ func TestOptionsToStringDHCPMessageType(t *testing.T) {
 		t.Fatalf("Invalid string representation: %v", stropt)
 	}
 }
+
+func TestBSDPOptionToString(t *testing.T) {
+	// Parse message type
+	option := Option{
+		Code: BSDPOptionMessageType,
+		Data: []byte{BSDPMessageTypeList},
+	}
+	stropt := option.BSDPString()
+	AssertEqual(t, stropt, "BSDP Message Type -> [1]", "BSDP string representation")
+
+	// Parse failure
+	option = Option{
+		Code: OptionCode(12), // invalid BSDP Opcode
+		Data: []byte{1, 2, 3},
+	}
+	stropt = option.BSDPString()
+	AssertEqual(t, stropt, "Unknown -> [1 2 3]", "BSDP string representation")
+}

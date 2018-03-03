@@ -359,3 +359,19 @@ var OptionCodeToString = map[OptionCode]string{
 
 	OptionEnd: "End",
 }
+
+// BSDPOptionCodeToString maps BSDP OptionCodes to human-readable strings
+// describing what they are.
+var BSDPOptionCodeToString = map[OptionCode]string{
+	BSDPOptionMessageType:                   "BSDP Message Type",
+	BSDPOptionVersion:                       "BSDP Version",
+	BSDPOptionServerIdentifier:              "BSDP Server Identifier",
+	BSDPOptionServerPriority:                "BSDP Server Priority",
+	BSDPOptionReplyPort:                     "BSDP Reply Port",
+	BSDPOptionBootImageListPath:             "", // Not used
+	BSDPOptionDefaultBootImageID:            "BSDP Default Boot Image ID",
+	BSDPOptionSelectedBootImageID:           "BSDP Selected Boot Image ID",
+	BSDPOptionBootImageList:                 "BSDP Boot Image List",
+	BSDPOptionNetboot1_0Firmware:            "BSDP Netboot 1.0 Firmware",
+	BSDPOptionBootImageAttributesFilterList: "BSDP Boot Image Attributes Filter List",
+}

@@ -568,6 +568,18 @@ func (d *DHCPv4) Summary() string {
 	)
 	ret += "  options=\n"
 	for _, opt := range d.options {
+		// Parse and display sub-options
+		if opt.Code == OptionVendorSpecificInformation {
+			ret += fmt.Sprintf("    %v ->\n", OptionCodeToString[OptionVendorSpecificInformation])
+			subopts, err := OptionsFromBytes(opt.Data)
+			if err == nil {
+				for _, subopt := range subopts {
+					ret += fmt.Sprintf("      %v\n", subopt.BSDPString())
+				}
+				continue
+			}
+			// fall-through to normal display if the above fails
+		}
 		ret += fmt.Sprintf("    %v\n", opt.String())
 		if opt.Code == OptionEnd {
 			break

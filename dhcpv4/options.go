@@ -110,6 +110,16 @@ func (o *Option) String() string {
 	return fmt.Sprintf("%v -> %v", code, o.Data)
 }
 
+// BSDPString converts a BSDP-specific option embedded in
+// vendor-specific information to a human-readable string.
+func (o *Option) BSDPString() string {
+	code, ok := BSDPOptionCodeToString[o.Code]
+	if !ok {
+		code = "Unknown"
+	}
+	return fmt.Sprintf("%v -> %v", code, o.Data)
+}
+
 func (o *Option) ToBytes() []byte {
 	// Convert a single option to its wire-format representation
 	ret := []byte{byte(o.Code)}
