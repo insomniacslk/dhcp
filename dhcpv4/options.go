@@ -10,6 +10,7 @@ type OptionCode byte
 
 var MagicCookie = []byte{99, 130, 83, 99}
 
+// TODO: implement Option as an interface similar to dhcpv6.
 type Option struct {
 	Code OptionCode
 	Data []byte
@@ -38,27 +39,27 @@ func ParseOption(dataStart []byte) (*Option, error) {
 	}
 }
 
-// OptionsFromBytesWithMagicCookie parses a sequence of bytes until the end and
-// builds a list of options from it. The sequence must contain the Magic Cookie.
-// Returns an error if any invalid option or length is found.
-func OptionsFromBytesWithMagicCookie(data []byte) ([]Option, error) {
+// OptionsFromBytes parses a sequence of bytes until the end and builds a list
+// of options from it. The sequence must contain the Magic Cookie. Returns an
+// error if any invalid option or length is found.
+func OptionsFromBytes(data []byte) ([]Option, error) {
 	if len(data) < len(MagicCookie) {
 		return nil, errors.New("Invalid options: shorter than 4 bytes")
 	}
 	if !bytes.Equal(data[:len(MagicCookie)], MagicCookie) {
 		return nil, fmt.Errorf("Invalid Magic Cookie: %v", data[:len(MagicCookie)])
 	}
-	opts, err := OptionsFromBytes(data[len(MagicCookie):])
+	opts, err := OptionsFromBytesWithoutMagicCookie(data[len(MagicCookie):])
 	if err != nil {
 		return nil, err
 	}
 	return opts, nil
 }
 
-// OptionsFromBytes parses a sequence of bytes until the end and builds a list
-// of options from it. The sequence should not contain the DHCP magic cookie.
-// Returns an error if any invalid option or length is found.
-func OptionsFromBytes(data []byte) ([]Option, error) {
+// OptionsFromBytesWithoutMagicCookie parses a sequence of bytes until the end
+// and builds a list of options from it. The sequence should not contain the
+// DHCP magic cookie. Returns an error if any invalid option or length is found.
+func OptionsFromBytesWithoutMagicCookie(data []byte) ([]Option, error) {
 	options := make([]Option, 0, 10)
 	idx := 0
 	for {
@@ -86,15 +87,15 @@ func OptionsFromBytes(data []byte) ([]Option, error) {
 	return options, nil
 }
 
-// OptionsToBytesWithMagicCookie converts a list of options to a wire-format
-// representation with the DHCP magic cookie prepended.
-func OptionsToBytesWithMagicCookie(options []Option) []byte {
-	ret := MagicCookie
-	return append(ret, OptionsToBytes(options)...)
+// OptionsToBytes converts a list of options to a wire-format representation
+// with the DHCP magic cookie prepended.
+func OptionsToBytes(options []Option) []byte {
+	return append(MagicCookie, OptionsToBytesWithoutMagicCookie(options)...)
 }
 
-// OptionsToBytes converts a list of options to a wire-format representation.
-func OptionsToBytes(options []Option) []byte {
+// OptionsToBytesWithoutMagicCookie converts a list of options to a wire-format
+// representation.
+func OptionsToBytesWithoutMagicCookie(options []Option) []byte {
 	ret := []byte{}
 	for _, opt := range options {
 		ret = append(ret, opt.ToBytes()...)
@@ -104,16 +105,6 @@ func OptionsToBytes(options []Option) []byte {
 
 func (o *Option) String() string {
 	code, ok := OptionCodeToString[o.Code]
-	if !ok {
-		code = "Unknown"
-	}
-	return fmt.Sprintf("%v -> %v", code, o.Data)
-}
-
-// BSDPString converts a BSDP-specific option embedded in
-// vendor-specific information to a human-readable string.
-func (o *Option) BSDPString() string {
-	code, ok := BSDPOptionCodeToString[o.Code]
 	if !ok {
 		code = "Unknown"
 	}

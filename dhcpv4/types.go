@@ -3,9 +3,12 @@ package dhcpv4
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
 // http://www.networksorcery.com/enp/protocol/bootp/options.htm
 
+// MessageType represents the possible DHCP message types - DISCOVER, OFFER, etc
+type MessageType byte
+
 // DHCP message types
 const (
-	MessageTypeDiscover byte = iota + 1
+	MessageTypeDiscover MessageType = iota + 1
 	MessageTypeOffer
 	MessageTypeRequest
 	MessageTypeDecline
@@ -358,23 +361,4 @@ var OptionCodeToString = map[OptionCode]string{
 	// Options 224-254 are reserved for private use
 
 	OptionEnd: "End",
-}
-
-// BSDPOptionCodeToString maps BSDP OptionCodes to human-readable strings
-// describing what they are.
-var BSDPOptionCodeToString = map[OptionCode]string{
-	BSDPOptionMessageType:                   "BSDP Message Type",
-	BSDPOptionVersion:                       "BSDP Version",
-	BSDPOptionServerIdentifier:              "BSDP Server Identifier",
-	BSDPOptionServerPriority:                "BSDP Server Priority",
-	BSDPOptionReplyPort:                     "BSDP Reply Port",
-	BSDPOptionBootImageListPath:             "", // Not used
-	BSDPOptionDefaultBootImageID:            "BSDP Default Boot Image ID",
-	BSDPOptionSelectedBootImageID:           "BSDP Selected Boot Image ID",
-	BSDPOptionBootImageList:                 "BSDP Boot Image List",
-	BSDPOptionNetboot1_0Firmware:            "BSDP Netboot 1.0 Firmware",
-	BSDPOptionBootImageAttributesFilterList: "BSDP Boot Image Attributes Filter List",
-	BSDPOptionShadowMountPath:               "BSDP Shadow Mount Path",
-	BSDPOptionShadowFilePath:                "BSDP Shadow File Path",
-	BSDPOptionMachineName:                   "BSDP Machine Name",
 }

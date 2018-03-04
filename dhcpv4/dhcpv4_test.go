@@ -17,29 +17,6 @@ func AssertEqual(t *testing.T, a, b interface{}, what string) {
 	}
 }
 
-func AssertNotNil(t *testing.T, a interface{}, what string) {
-	if a == nil {
-		t.Fatalf("Expected %s to not be nil. %v", what, a)
-	}
-}
-
-func AssertNil(t *testing.T, a interface{}, what string) {
-	if a != nil {
-		t.Fatalf("Expected %s to be nil. %v", what, a)
-	}
-}
-
-func AssertEqualSlice(t *testing.T, a, b []interface{}, what string) {
-	if len(a) != len(b) {
-		t.Fatalf("Invalid %s. %v != %v", what, a, b)
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			t.Fatalf("Invalid %s. %v != %v at index %d", what, a, b, i)
-		}
-	}
-}
-
 func AssertEqualBytes(t *testing.T, a, b []byte, what string) {
 	if !bytes.Equal(a, b) {
 		t.Fatalf("Invalid %s. %v != %v", what, a, b)

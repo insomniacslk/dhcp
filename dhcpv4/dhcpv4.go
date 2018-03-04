@@ -38,11 +38,13 @@ type DHCPv4 struct {
 	options        []Option
 }
 
-// interfaceV4Addr obtains the currently-configured IPv4 address for iface.
-func interfaceV4Addr(iface *net.Interface) (net.IP, error) {
+// IPv4AddrsForInterface obtains the currently-configured, non-loopback IPv4
+// addresses for iface.
+func IPv4AddrsForInterface(iface *net.Interface) ([]net.IP, error) {
 	addrs, err := iface.Addrs()
+	var v4addrs []net.IP
 	if err != nil {
-		return nil, err
+		return v4addrs, err
 	}
 	for _, addr := range addrs {
 		var ip net.IP
@@ -60,9 +62,9 @@ func interfaceV4Addr(iface *net.Interface) (net.IP, error) {
 		if ip == nil {
 			continue
 		}
-		return ip, nil
+		v4addrs = append(v4addrs, ip)
 	}
-	return nil, errors.New("Could not get local IPv4 address")
+	return v4addrs, nil
 }
 
 // GenerateTransactionID generates a random 32-bits number suitable for use as
@@ -105,7 +107,7 @@ func New() (*DHCPv4, error) {
 	copy(d.clientHwAddr[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	copy(d.serverHostName[:], []byte{})
 	copy(d.bootFileName[:], []byte{})
-	options, err := OptionsFromBytesWithMagicCookie(MagicCookie)
+	options, err := OptionsFromBytes(MagicCookie)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d.SetBroadcast()
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
-		Data: []byte{MessageTypeDiscover},
+		Data: []byte{byte(MessageTypeDiscover)},
 	})
 	d.AddOption(Option{
 		Code: OptionParameterRequestList,
@@ -170,15 +172,15 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	}
 
 	// Set Client IP as iface's currently-configured IP.
-	localIP, err := interfaceV4Addr(iface)
-	if err != nil {
-		return nil, err
+	localIPs, err := IPv4AddrsForInterface(iface)
+	if err != nil || len(localIPs) == 0 {
+		return nil, fmt.Errorf("could not get local IPs for iface %s", ifname)
 	}
-	d.SetClientIPAddr(localIP)
+	d.SetClientIPAddr(localIPs[0])
 
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
-		Data: []byte{MessageTypeInform},
+		Data: []byte{byte(MessageTypeInform)},
 	})
 
 	return d, nil
@@ -215,7 +217,7 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d.SetServerIPAddr(serverIP)
 	d.AddOption(Option{
 		Code: OptionDHCPMessageType,
-		Data: []byte{MessageTypeRequest},
+		Data: []byte{byte(MessageTypeRequest)},
 	})
 	d.AddOption(Option{
 		Code: OptionRequestedIPAddress,
@@ -252,7 +254,7 @@ func FromBytes(data []byte) (*DHCPv4, error) {
 	copy(d.clientHwAddr[:], data[28:44])
 	copy(d.serverHostName[:], data[44:108])
 	copy(d.bootFileName[:], data[108:236])
-	options, err := OptionsFromBytesWithMagicCookie(data[236:])
+	options, err := OptionsFromBytes(data[236:])
 	if err != nil {
 		return nil, err
 	}
@@ -568,18 +570,6 @@ func (d *DHCPv4) Summary() string {
 	)
 	ret += "  options=\n"
 	for _, opt := range d.options {
-		// Parse and display sub-options
-		if opt.Code == OptionVendorSpecificInformation {
-			ret += fmt.Sprintf("    %v ->\n", OptionCodeToString[OptionVendorSpecificInformation])
-			subopts, err := OptionsFromBytes(opt.Data)
-			if err == nil {
-				for _, subopt := range subopts {
-					ret += fmt.Sprintf("      %v\n", subopt.BSDPString())
-				}
-				continue
-			}
-			// fall-through to normal display if the above fails
-		}
 		ret += fmt.Sprintf("    %v\n", opt.String())
 		if opt.Code == OptionEnd {
 			break
@@ -638,6 +628,6 @@ func (d *DHCPv4) ToBytes() []byte {
 	ret = append(ret, d.serverHostName[:64]...)
 	ret = append(ret, d.bootFileName[:128]...)
 	d.ValidateOptions() // print warnings about broken options, if any
-	ret = append(ret, OptionsToBytesWithMagicCookie(d.options)...)
+	ret = append(ret, OptionsToBytes(d.options)...)
 	return ret
 }

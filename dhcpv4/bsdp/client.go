@@ -1,25 +1,32 @@
-// +build darwin
-
-package dhcpv4
+package bsdp
 
 import (
 	"fmt"
 	"net"
 	"syscall"
+
+	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
-// BSDPExchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
+// Client is a BSDP-specific client suitable for performing BSDP exchanges.
+type Client dhcpv4.Client
+
+// Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
-	conversation := make([]DHCPv4, 1)
+func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DHCPv4, error) {
+	conversation := make([]dhcpv4.DHCPv4, 1)
 	var err error
 
 	// INFORM[LIST]
-	if d == nil {
-		d, err = NewInformListForInterface(ifname, ClientPort)
+	if informList == nil {
+		informList, err = NewInformListForInterface(ifname, dhcpv4.ClientPort)
+		if err != nil {
+			return conversation, err
+		}
 	}
-	conversation[0] = *d
+	conversation[0] = *informList
 
+	// TODO: deduplicate with code in dhcpv4/client.go
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
 	if err != nil {
 		return conversation, err
@@ -36,13 +43,15 @@ func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	if err != nil {
 		return conversation, err
 	}
-	err = BindToInterface(fd, ifname)
+	err = dhcpv4.BindToInterface(fd, ifname)
 	if err != nil {
 		return conversation, err
 	}
 
-	daddr := syscall.SockaddrInet4{Port: ClientPort, Addr: [4]byte{255, 255, 255, 255}}
-	packet, err := makeRawBroadcastPacket(d.ToBytes())
+	bcast := [4]byte{}
+	copy(bcast[:], net.IPv4bcast)
+	daddr := syscall.SockaddrInet4{Port: dhcpv4.ClientPort, Addr: bcast}
+	packet, err := dhcpv4.MakeRawBroadcastPacket(informList.ToBytes())
 	if err != nil {
 		return conversation, err
 	}
@@ -52,16 +61,16 @@ func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 
 	// ACK 1
-	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: ClientPort})
+	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: dhcpv4.ClientPort})
 	if err != nil {
 		return conversation, err
 	}
 	defer conn.Close()
 
-	buf := make([]byte, maxUDPReceivedPacketSize)
+	buf := make([]byte, dhcpv4.MaxUDPReceivedPacketSize)
 	oobdata := []byte{} // ignoring oob data
 	n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
-	ack1, err := FromBytes(buf[:n])
+	ack1, err := dhcpv4.FromBytes(buf[:n])
 	if err != nil {
 		return conversation, err
 	}
@@ -71,7 +80,6 @@ func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 
 	// Parse boot images sent back by server
 	bootImages, err := ParseBootImageListFromAck(*ack1)
-	fmt.Println(bootImages)
 	if err != nil {
 		return conversation, err
 	}
@@ -80,12 +88,12 @@ func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 
 	// INFORM[SELECT]
-	request, err := InformSelectForAck(*ack1, ClientPort, bootImages[0])
+	informSelect, err := InformSelectForAck(*ack1, dhcpv4.ClientPort, bootImages[0])
 	if err != nil {
 		return conversation, err
 	}
-	conversation = append(conversation, *request)
-	packet, err = makeRawBroadcastPacket(request.ToBytes())
+	conversation = append(conversation, *informSelect)
+	packet, err = dhcpv4.MakeRawBroadcastPacket(informSelect.ToBytes())
 	if err != nil {
 		return conversation, err
 	}
@@ -95,15 +103,15 @@ func (c *Client) BSDPExchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 
 	// ACK 2
-	buf = make([]byte, maxUDPReceivedPacketSize)
+	buf = make([]byte, dhcpv4.MaxUDPReceivedPacketSize)
 	n, _, _, _, err = conn.ReadMsgUDP(buf, oobdata)
-	acknowledge, err := FromBytes(buf[:n])
+	ack2, err := dhcpv4.FromBytes(buf[:n])
 	if err != nil {
 		return conversation, err
 	}
 	// TODO match the packet content
 	// TODO check that the peer address matches the declared server IP and port
-	conversation = append(conversation, *acknowledge)
+	conversation = append(conversation, *ack2)
 
 	return conversation, nil
 }

@@ -56,19 +56,19 @@ func TestOptionsFromBytes(t *testing.T) {
 		255,     // end
 		0, 0, 0, //padding
 	}
-	opts, err := OptionsFromBytesWithMagicCookie(options)
+	opts, err := OptionsFromBytes(options)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// each padding byte counts as an option. Magic Cookie doesn't add up
 	if len(opts) != 5 {
-		t.Fatalf("Invalid options length. Expected 5, got %v", len(opts))
+		t.Fatal("Invalid options length. Expected 5, got %v", len(opts))
 	}
 	if opts[0].Code != OptionNameServer {
-		t.Fatalf("Invalid option code. Expected %v, got %v", OptionNameServer, opts[0].Code)
+		t.Fatal("Invalid option code. Expected %v, got %v", OptionNameServer, opts[0].Code)
 	}
 	if !bytes.Equal(opts[0].Data, options[6:10]) {
-		t.Fatalf("Invalid option data. Expected %v, got %v", options[6:10], opts[0].Data)
+		t.Fatal("Invalid option data. Expected %v, got %v", options[6:10], opts[0].Data)
 	}
 	if opts[1].Code != OptionEnd {
 		t.Fatalf("Invalid option code. Expected %v, got %v", OptionEnd, opts[1].Code)
@@ -80,7 +80,7 @@ func TestOptionsFromBytes(t *testing.T) {
 
 func TestOptionsFromBytesZeroLength(t *testing.T) {
 	options := []byte{}
-	_, err := OptionsFromBytesWithMagicCookie(options)
+	_, err := OptionsFromBytes(options)
 	if err == nil {
 		t.Fatal("Expected an error, got none")
 	}
@@ -88,36 +88,36 @@ func TestOptionsFromBytesZeroLength(t *testing.T) {
 
 func TestOptionsFromBytesBadMagicCookie(t *testing.T) {
 	options := []byte{1, 2, 3, 4}
-	_, err := OptionsFromBytesWithMagicCookie(options)
+	_, err := OptionsFromBytes(options)
 	if err == nil {
 		t.Fatal("Expected an error, got none")
 	}
 }
 
-func TestOptionsToBytesWithMagicCookie(t *testing.T) {
+func TestOptionsToBytes(t *testing.T) {
 	originalOptions := []byte{
 		99, 130, 83, 99, // Magic Cookie
 		5, 4, 192, 168, 1, 1, // DNS
 		255,     // end
 		0, 0, 0, //padding
 	}
-	options, err := OptionsFromBytesWithMagicCookie(originalOptions)
+	options, err := OptionsFromBytes(originalOptions)
 	if err != nil {
 		t.Fatal(err)
 	}
-	finalOptions := OptionsToBytesWithMagicCookie(options)
+	finalOptions := OptionsToBytes(options)
 	if !bytes.Equal(originalOptions, finalOptions) {
 		t.Fatalf("Invalid options. Expected %v, got %v", originalOptions, finalOptions)
 	}
 }
 
-func TestOptionsToBytesWithMagicCookieEmpty(t *testing.T) {
+func TestOptionsToBytesEmpty(t *testing.T) {
 	originalOptions := []byte{99, 130, 83, 99}
-	options, err := OptionsFromBytesWithMagicCookie(originalOptions)
+	options, err := OptionsFromBytes(originalOptions)
 	if err != nil {
 		t.Fatal(err)
 	}
-	finalOptions := OptionsToBytesWithMagicCookie(options)
+	finalOptions := OptionsToBytes(options)
 	if !bytes.Equal(originalOptions, finalOptions) {
 		t.Fatalf("Invalid options. Expected %v, got %v", originalOptions, finalOptions)
 	}
@@ -145,22 +145,4 @@ func TestOptionsToStringDHCPMessageType(t *testing.T) {
 	if stropt != "DHCP Message Type -> [5]" {
 		t.Fatalf("Invalid string representation: %v", stropt)
 	}
-}
-
-func TestBSDPOptionToString(t *testing.T) {
-	// Parse message type
-	option := Option{
-		Code: BSDPOptionMessageType,
-		Data: []byte{BSDPMessageTypeList},
-	}
-	stropt := option.BSDPString()
-	AssertEqual(t, stropt, "BSDP Message Type -> [1]", "BSDP string representation")
-
-	// Parse failure
-	option = Option{
-		Code: OptionCode(12), // invalid BSDP Opcode
-		Data: []byte{1, 2, 3},
-	}
-	stropt = option.BSDPString()
-	AssertEqual(t, stropt, "Unknown -> [1 2 3]", "BSDP string representation")
 }
