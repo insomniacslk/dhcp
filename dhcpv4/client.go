@@ -2,14 +2,15 @@ package dhcpv4
 
 import (
 	"encoding/binary"
-	"golang.org/x/net/ipv4"
 	"net"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/ipv4"
 )
 
 const (
-	maxUDPReceivedPacketSize = 8192 // arbitrary size. Theoretically could be up to 65kb
+	MaxUDPReceivedPacketSize = 8192 // arbitrary size. Theoretically could be up to 65kb
 )
 
 type Client struct {
@@ -18,7 +19,7 @@ type Client struct {
 	Timeout time.Duration
 }
 
-func makeRawBroadcastPacket(payload []byte) ([]byte, error) {
+func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	udp := make([]byte, 8)
 	binary.BigEndian.PutUint16(udp[:2], ClientPort)
 	binary.BigEndian.PutUint16(udp[2:4], ServerPort)
@@ -81,7 +82,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 
 	daddr := syscall.SockaddrInet4{Port: ClientPort, Addr: [4]byte{255, 255, 255, 255}}
-	packet, err := makeRawBroadcastPacket(d.ToBytes())
+	packet, err := MakeRawBroadcastPacket(d.ToBytes())
 	if err != nil {
 		return conversation, err
 	}
@@ -97,7 +98,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 	defer conn.Close()
 
-	buf := make([]byte, maxUDPReceivedPacketSize)
+	buf := make([]byte, MaxUDPReceivedPacketSize)
 	oobdata := []byte{} // ignoring oob data
 	n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
 	offer, err := FromBytes(buf[:n])
@@ -114,7 +115,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 		return conversation, err
 	}
 	conversation = append(conversation, *request)
-	packet, err = makeRawBroadcastPacket(request.ToBytes())
+	packet, err = MakeRawBroadcastPacket(request.ToBytes())
 	if err != nil {
 		return conversation, err
 	}
@@ -124,7 +125,7 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 	}
 
 	// Acknowledge
-	buf = make([]byte, maxUDPReceivedPacketSize)
+	buf = make([]byte, MaxUDPReceivedPacketSize)
 	n, _, _, _, err = conn.ReadMsgUDP(buf, oobdata)
 	acknowledge, err := FromBytes(buf[:n])
 	if err != nil {

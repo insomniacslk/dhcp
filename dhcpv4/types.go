@@ -3,6 +3,21 @@ package dhcpv4
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
 // http://www.networksorcery.com/enp/protocol/bootp/options.htm
 
+// MessageType represents the possible DHCP message types - DISCOVER, OFFER, etc
+type MessageType byte
+
+// DHCP message types
+const (
+	MessageTypeDiscover MessageType = iota + 1
+	MessageTypeOffer
+	MessageTypeRequest
+	MessageTypeDecline
+	MessageTypeAck
+	MessageTypeNak
+	MessageTypeRelease
+	MessageTypeInform
+)
+
 // OpcodeType represents a DHCPv4 opcode.
 type OpcodeType uint8
 

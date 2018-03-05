@@ -2,9 +2,10 @@ package dhcpv4
 
 import (
 	"bytes"
-	"github.com/insomniacslk/dhcp/iana"
 	"net"
 	"testing"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // NOTE: if one of the following Assert* fails where expected and got values are
