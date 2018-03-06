@@ -12,16 +12,16 @@ type ArchType uint16
 
 // see rfc4578
 const (
-	INTEL_X86PC ArchType = iota
-	NEC_PC98
-	EFI_ITANIUM
-	DEC_ALPHA
-	ARC_X86
-	INTEL_LEAN_CLIENT
-	EFI_IA32
-	EFI_BC
-	EFI_XSCALE
-	EFI_X86_64
+	INTEL_X86PC       ArchType = 0
+	NEC_PC98          ArchType = 1
+	EFI_ITANIUM       ArchType = 2
+	DEC_ALPHA         ArchType = 3
+	ARC_X86           ArchType = 4
+	INTEL_LEAN_CLIENT ArchType = 5
+	EFI_IA32          ArchType = 6
+	EFI_BC            ArchType = 7
+	EFI_XSCALE        ArchType = 8
+	EFI_X86_64        ArchType = 9
 )
 
 var ArchTypeToStringMap = map[ArchType]string{

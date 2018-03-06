@@ -4,20 +4,20 @@ import "github.com/insomniacslk/dhcp/dhcpv4"
 
 // Options (occur as sub-options of DHCP option 43).
 const (
-	OptionMessageType dhcpv4.OptionCode = iota + 1
-	OptionVersion
-	OptionServerIdentifier
-	OptionServerPriority
-	OptionReplyPort
-	OptionBootImageListPath // Not used
-	OptionDefaultBootImageID
-	OptionSelectedBootImageID
-	OptionBootImageList
-	OptionNetboot1_0Firmware
-	OptionBootImageAttributesFilterList
-	OptionShadowMountPath dhcpv4.OptionCode = 128
-	OptionShadowFilePath  dhcpv4.OptionCode = 129
-	OptionMachineName     dhcpv4.OptionCode = 130
+	OptionMessageType                   dhcpv4.OptionCode = 1
+	OptionVersion                       dhcpv4.OptionCode = 2
+	OptionServerIdentifier              dhcpv4.OptionCode = 3
+	OptionServerPriority                dhcpv4.OptionCode = 4
+	OptionReplyPort                     dhcpv4.OptionCode = 5
+	OptionBootImageListPath             dhcpv4.OptionCode = 6 // Not used
+	OptionDefaultBootImageID            dhcpv4.OptionCode = 7
+	OptionSelectedBootImageID           dhcpv4.OptionCode = 8
+	OptionBootImageList                 dhcpv4.OptionCode = 9
+	OptionNetboot1_0Firmware            dhcpv4.OptionCode = 10
+	OptionBootImageAttributesFilterList dhcpv4.OptionCode = 11
+	OptionShadowMountPath               dhcpv4.OptionCode = 128
+	OptionShadowFilePath                dhcpv4.OptionCode = 129
+	OptionMachineName                   dhcpv4.OptionCode = 130
 )
 
 // Versions
