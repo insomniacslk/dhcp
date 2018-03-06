@@ -11,7 +11,6 @@ const (
 	OPTION_PREFERENCE                           OptionCode = 7
 	OPTION_ELAPSED_TIME                         OptionCode = 8
 	OPTION_RELAY_MSG                            OptionCode = 9
-	_                                                      // skip 10
 	OPTION_AUTH                                 OptionCode = 11
 	OPTION_UNICAST                              OptionCode = 12
 	OPTION_STATUS_CODE                          OptionCode = 13
@@ -36,7 +35,6 @@ const (
 	INFORMATION_REFRESH_TIME                    OptionCode = 32
 	BCMCS_CONTROLLER_DOMAIN_NAME_LIST           OptionCode = 33
 	BCMCS_CONTROLLER_IPV6_ADDRESS_LIST          OptionCode = 34
-	_                                                      // skip 35
 	OPTION_GEOCONF_CIVIC                        OptionCode = 36
 	OPTION_REMOTE_ID                            OptionCode = 37
 	RELAY_AGENT_SUBSCRIBER_ID                   OptionCode = 38
