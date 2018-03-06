@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 /*
@@ -18,12 +18,12 @@ func TestBootImageIDToBytes(t *testing.T) {
 	}
 	actual := b.ToBytes()
 	expected := []byte{0x81, 0, 0x10, 0}
-	assert.Equal(t, actual, expected, "serialized BootImageID should be equal")
+	require.Equal(t, expected, actual)
 
 	b.IsInstall = false
 	actual = b.ToBytes()
 	expected = []byte{0x01, 0, 0x10, 0}
-	assert.Equal(t, actual, expected, "serialized BootImageID should be equal")
+	require.Equal(t, expected, actual)
 }
 
 func TestBootImageIDFromBytes(t *testing.T) {
@@ -33,8 +33,8 @@ func TestBootImageIDFromBytes(t *testing.T) {
 		Index:     0x1000,
 	}
 	newBootImage, err := BootImageIDFromBytes(b.ToBytes())
-	assert.Nil(t, err, "error from BootImageIDFromBytes")
-	assert.Equal(t, b, *newBootImage, "deserialized BootImage should be equal")
+	require.NoError(t, err)
+	require.Equal(t, b, *newBootImage)
 
 	b = BootImageID{
 		IsInstall: true,
@@ -42,15 +42,15 @@ func TestBootImageIDFromBytes(t *testing.T) {
 		Index:     0x1011,
 	}
 	newBootImage, err = BootImageIDFromBytes(b.ToBytes())
-	assert.Nil(t, err, "error from BootImageIDFromBytes")
-	assert.Equal(t, b, *newBootImage, "deserialized BootImage should be equal")
+	require.NoError(t, err)
+	require.Equal(t, b, *newBootImage)
 }
 
 func TestBootImageIDFromBytesFail(t *testing.T) {
 	serialized := []byte{0x81, 0, 0x10} // intentionally left short
 	deserialized, err := BootImageIDFromBytes(serialized)
-	assert.Nil(t, deserialized, "BootImageIDFromBytes should return nil on failed deserialization")
-	assert.NotNil(t, err, "BootImageIDFromBytes should return err on failed deserialization")
+	require.Nil(t, deserialized)
+	require.Error(t, err)
 }
 
 /*
@@ -71,7 +71,7 @@ func TestBootImageToBytes(t *testing.T) {
 		98, 115, 100, 112, 45, 49, // byte-encoding of Name
 	}
 	actual := b.ToBytes()
-	assert.Equal(t, actual, expected, "serialized BootImage should be equal")
+	require.Equal(t, expected, actual)
 
 	b = BootImage{
 		ID: BootImageID{
@@ -87,7 +87,7 @@ func TestBootImageToBytes(t *testing.T) {
 		98, 115, 100, 112, 45, 50, 49, // byte-encoding of Name
 	}
 	actual = b.ToBytes()
-	assert.Equal(t, actual, expected, "serialized BootImage should be equal")
+	require.Equal(t, expected, actual)
 }
 
 func TestBootImageFromBytes(t *testing.T) {
@@ -97,7 +97,7 @@ func TestBootImageFromBytes(t *testing.T) {
 		98, 115, 100, 112, 45, 50, 49, // byte-encoding of Name
 	}
 	b, err := BootImageFromBytes(input)
-	assert.Nil(t, err, "error while marshalling BootImage")
+	require.NoError(t, err)
 	expectedBootImage := BootImage{
 		ID: BootImageID{
 			IsInstall: false,
@@ -106,15 +106,15 @@ func TestBootImageFromBytes(t *testing.T) {
 		},
 		Name: "bsdp-21",
 	}
-	assert.Equal(t, *b, expectedBootImage, "invalid marshalling of BootImage")
+	require.Equal(t, expectedBootImage, *b)
 }
 
 func TestBootImageFromBytesOnlyBootImageID(t *testing.T) {
 	// Only a BootImageID, nothing else.
 	input := []byte{0x1, 0, 0x10, 0x10}
 	b, err := BootImageFromBytes(input)
-	assert.Nil(t, b, "short bytestream should return nil BootImageID")
-	assert.NotNil(t, err, "short bytestream should return error")
+	require.Nil(t, b)
+	require.Error(t, err)
 }
 
 func TestBootImageFromBytesShortBootImage(t *testing.T) {
@@ -124,8 +124,8 @@ func TestBootImageFromBytesShortBootImage(t *testing.T) {
 		98, 115, 100, 112, 45, 50, // Name bytes (intentionally off-by-one)
 	}
 	b, err := BootImageFromBytes(input)
-	assert.Nil(t, b, "short bytestream should return nil BootImageID")
-	assert.NotNil(t, err, "short bytestream should return error")
+	require.Nil(t, b)
+	require.Error(t, err)
 }
 
 func TestParseBootImageSingleBootImage(t *testing.T) {
@@ -135,16 +135,16 @@ func TestParseBootImageSingleBootImage(t *testing.T) {
 		98, 115, 100, 112, 45, 50, 49, // byte-encoding of Name
 	}
 	bs, err := ParseBootImagesFromOption(input)
-	assert.Nil(t, err, "parsing single boot image should not return error")
-	assert.Equal(t, len(bs), 1, "parsing single boot image should return 1")
+	require.NoError(t, err)
+	require.Equal(t, len(bs), 1, "parsing single boot image should return 1")
 	b := bs[0]
-	expectedBootImage := BootImageID{
+	expectedBootImageID := BootImageID{
 		IsInstall: false,
 		ImageType: BootImageTypeMacOSX,
 		Index:     0x1010,
 	}
-	assert.Equal(t, b.ID, expectedBootImage, "parsed BootImageIDs should be equal")
-	assert.Equal(t, b.Name, "bsdp-21", "BootImage name should be equal")
+	require.Equal(t, expectedBootImageID, b.ID)
+	require.Equal(t, b.Name, "bsdp-21")
 }
 
 func TestParseBootImageMultipleBootImage(t *testing.T) {
@@ -160,8 +160,8 @@ func TestParseBootImageMultipleBootImage(t *testing.T) {
 		98, 115, 100, 112, 45, 50, 50, 50, // byte-encoding of Name
 	}
 	bs, err := ParseBootImagesFromOption(input)
-	assert.Nil(t, err, "parsing multiple BootImages should not return error")
-	assert.Equal(t, len(bs), 2, "parsing 2 BootImages should return 2")
+	require.NoError(t, err)
+	require.Equal(t, len(bs), 2, "parsing 2 BootImages should return 2")
 	b1 := bs[0]
 	b2 := bs[1]
 	expectedID1 := BootImageID{
@@ -174,18 +174,18 @@ func TestParseBootImageMultipleBootImage(t *testing.T) {
 		ImageType: BootImageTypeMacOSXServer,
 		Index:     0x1122,
 	}
-	assert.Equal(t, b1.ID, expectedID1, "first BootImageID should be equal")
-	assert.Equal(t, b2.ID, expectedID2, "second BootImageID should be equal")
-	assert.Equal(t, b1.Name, "bsdp-21", "first BootImage name should be equal")
-	assert.Equal(t, b2.Name, "bsdp-222", "second BootImage name should be equal")
+	require.Equal(t, expectedID1, b1.ID, "first BootImageID should be equal")
+	require.Equal(t, expectedID2, b2.ID, "second BootImageID should be equal")
+	require.Equal(t, "bsdp-21", b1.Name, "first BootImage name should be equal")
+	require.Equal(t, "bsdp-222", b2.Name, "second BootImage name should be equal")
 }
 
 func TestParseBootImageFail(t *testing.T) {
 	_, err := ParseBootImagesFromOption([]byte{})
-	assert.NotNil(t, err, "parseBootImages with empty arg")
+	require.Error(t, err, "parseBootImages with empty arg")
 
 	_, err = ParseBootImagesFromOption([]byte{1, 2, 3})
-	assert.NotNil(t, err, "parseBootImages with short arg")
+	require.Error(t, err, "parseBootImages with short arg")
 
 	_, err = ParseBootImagesFromOption([]byte{
 		// boot image 1
@@ -198,14 +198,14 @@ func TestParseBootImageFail(t *testing.T) {
 		8,                                 // len(Name)
 		98, 115, 100, 112, 45, 50, 50, 50, // byte-encoding of Name
 	})
-	assert.NotNil(t, err, "parseBootImages with short arg")
+	require.Error(t, err, "parseBootImages with short arg")
 }
 
 /*
  * ParseVendorOptionsFromOptions
  */
 func TestParseVendorOptions(t *testing.T) {
-	vendorOpts := []dhcpv4.Option{
+	expectedOpts := []dhcpv4.Option{
 		dhcpv4.Option{
 			Code: OptionMessageType,
 			Data: []byte{byte(MessageTypeList)},
@@ -226,15 +226,15 @@ func TestParseVendorOptions(t *testing.T) {
 		},
 		dhcpv4.Option{
 			Code: dhcpv4.OptionVendorSpecificInformation,
-			Data: dhcpv4.OptionsToBytesWithoutMagicCookie(vendorOpts),
+			Data: dhcpv4.OptionsToBytesWithoutMagicCookie(expectedOpts),
 		},
 	}
 	opts := ParseVendorOptionsFromOptions(recvOpts)
-	assert.Equal(t, opts, vendorOpts, "Parsed vendorOpts should be the same")
+	require.Equal(t, expectedOpts, opts, "Parsed vendorOpts should be the same")
 }
 
 func TestParseVendorOptionsFromOptionsNotPresent(t *testing.T) {
-	recvOpts := []dhcpv4.Option{
+	expectedOpts := []dhcpv4.Option{
 		dhcpv4.Option{
 			Code: dhcpv4.OptionDHCPMessageType,
 			Data: []byte{byte(dhcpv4.MessageTypeAck)},
@@ -244,13 +244,13 @@ func TestParseVendorOptionsFromOptionsNotPresent(t *testing.T) {
 			Data: []byte{0xff, 0xff, 0xff, 0xff},
 		},
 	}
-	opts := ParseVendorOptionsFromOptions(recvOpts)
-	assert.Empty(t, opts, "vendor opts should be empty if not present in input")
+	opts := ParseVendorOptionsFromOptions(expectedOpts)
+	require.Empty(t, opts, "empty vendor opts if not present in DHCP opts")
 }
 
 func TestParseVendorOptionsFromOptionsEmpty(t *testing.T) {
-	options := ParseVendorOptionsFromOptions([]dhcpv4.Option{})
-	assert.Empty(t, options, "vendor opts should be empty if given an empty input")
+	opts := ParseVendorOptionsFromOptions([]dhcpv4.Option{})
+	require.Empty(t, opts, "vendor opts should be empty if given an empty input")
 }
 
 func TestParseVendorOptionsFromOptionsFail(t *testing.T) {
@@ -264,14 +264,14 @@ func TestParseVendorOptionsFromOptionsFail(t *testing.T) {
 		},
 	}
 	vendorOpts := ParseVendorOptionsFromOptions(opts)
-	assert.Empty(t, vendorOpts, "vendor opts should be empty on parse error")
+	require.Empty(t, vendorOpts, "vendor opts should be empty on parse error")
 }
 
 /*
  * ParseBootImageListFromAck
  */
 func TestParseBootImageListFromAck(t *testing.T) {
-	bootImages := []BootImage{
+	expectedBootImages := []BootImage{
 		BootImage{
 			ID: BootImageID{
 				IsInstall: true,
@@ -290,7 +290,7 @@ func TestParseBootImageListFromAck(t *testing.T) {
 		},
 	}
 	var bootImageBytes []byte
-	for _, image := range bootImages {
+	for _, image := range expectedBootImages {
 		bootImageBytes = append(bootImageBytes, image.ToBytes()...)
 	}
 	ack, _ := dhcpv4.New()
@@ -305,9 +305,8 @@ func TestParseBootImageListFromAck(t *testing.T) {
 	})
 
 	images, err := ParseBootImageListFromAck(*ack)
-	assert.Nil(t, err, "error from ParseBootImageListFromAck")
-	assert.NotNil(t, images, "parsed boot images from ack")
-	assert.Equal(t, images, bootImages, "should get same BootImages")
+	require.NoError(t, err)
+	require.Equal(t, expectedBootImages, images, "should get same BootImages")
 }
 
 func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
@@ -317,8 +316,8 @@ func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
 		Data: []byte{byte(dhcpv4.MessageTypeAck)},
 	})
 	images, err := ParseBootImageListFromAck(*ack)
-	assert.Nil(t, err, "no vendor extensions should not return error")
-	assert.Empty(t, images, "should not get images from ACK without Vendor extensions")
+	require.NoError(t, err, "no vendor extensions should not return error")
+	require.Empty(t, images, "should not get images from ACK without Vendor extensions")
 }
 
 func TestParseBootImageListFromAckFail(t *testing.T) {
@@ -348,15 +347,15 @@ func TestParseBootImageListFromAckFail(t *testing.T) {
 	})
 
 	images, err := ParseBootImageListFromAck(*ack)
-	assert.Nil(t, images, "should get nil on parse error")
-	assert.NotNil(t, err, "should get error on parse error")
+	require.Nil(t, images, "should get nil on parse error")
+	require.Error(t, err, "should get error on parse error")
 }
 
 /*
  * Private funcs
  */
 func TestNeedsReplyPort(t *testing.T) {
-	assert.True(t, needsReplyPort(123), "")
-	assert.False(t, needsReplyPort(0), "")
-	assert.False(t, needsReplyPort(dhcpv4.ClientPort), "")
+	require.True(t, needsReplyPort(123))
+	require.False(t, needsReplyPort(0))
+	require.False(t, needsReplyPort(dhcpv4.ClientPort))
 }

@@ -1,31 +1,16 @@
 package dhcpv4
 
 import (
-	"bytes"
 	"net"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/stretchr/testify/require"
 )
 
-// NOTE: if one of the following Assert* fails where expected and got values are
-// the same, you probably have to cast one of them to match the other one's
-// type, e.g. comparing int and byte, even the same value, will fail.
-func AssertEqual(t *testing.T, a, b interface{}, what string) {
-	if a != b {
-		t.Fatalf("Invalid %s. %v != %v", what, a, b)
-	}
-}
-
-func AssertEqualBytes(t *testing.T, a, b []byte, what string) {
-	if !bytes.Equal(a, b) {
-		t.Fatalf("Invalid %s. %v != %v", what, a, b)
-	}
-}
-
-func AssertEqualIPAddr(t *testing.T, a, b net.IP, what string) {
+func RequireEqualIPAddr(t *testing.T, a, b net.IP, msg ...interface{}) {
 	if !net.IP.Equal(a, b) {
-		t.Fatalf("Invalid %s. %v != %v", what, a, b)
+		t.Fatalf("Invalid %s. %v != %v", msg, a, b)
 	}
 }
 
@@ -60,26 +45,23 @@ func TestFromBytes(t *testing.T) {
 	data = append(data, []byte{99, 130, 83, 99}...)
 
 	d, err := FromBytes(data)
-	if err != nil {
-		t.Fatal(err)
-	}
-	AssertEqual(t, d.Opcode(), OpcodeBootRequest, "opcode")
-	AssertEqual(t, d.HwType(), iana.HwTypeEthernet, "hardware type")
-	AssertEqual(t, d.HwAddrLen(), byte(6), "hardware address length")
-	AssertEqual(t, d.HopCount(), byte(3), "hop count")
-	AssertEqual(t, d.TransactionID(), uint32(0xaabbccdd), "transaction ID")
-	AssertEqual(t, d.NumSeconds(), uint16(3), "number of seconds")
-	AssertEqual(t, d.Flags(), uint16(1), "flags")
-	AssertEqualIPAddr(t, d.ClientIPAddr(), net.IPv4zero, "client IP address")
-	AssertEqualIPAddr(t, d.YourIPAddr(), net.IPv4zero, "your IP address")
-	AssertEqualIPAddr(t, d.ServerIPAddr(), net.IPv4zero, "server IP address")
-	AssertEqualIPAddr(t, d.GatewayIPAddr(), net.IPv4zero, "gateway IP address")
-	hwaddr := d.ClientHwAddr()
-	AssertEqualBytes(t, hwaddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, "flags")
+	require.NoError(t, err)
+	require.Equal(t, d.Opcode(), OpcodeBootRequest)
+	require.Equal(t, d.HwType(), iana.HwTypeEthernet)
+	require.Equal(t, d.HwAddrLen(), byte(6))
+	require.Equal(t, d.HopCount(), byte(3))
+	require.Equal(t, d.TransactionID(), uint32(0xaabbccdd))
+	require.Equal(t, d.NumSeconds(), uint16(3))
+	require.Equal(t, d.Flags(), uint16(1))
+	RequireEqualIPAddr(t, d.ClientIPAddr(), net.IPv4zero)
+	RequireEqualIPAddr(t, d.YourIPAddr(), net.IPv4zero)
+	RequireEqualIPAddr(t, d.GatewayIPAddr(), net.IPv4zero)
+	clientHwAddr := d.ClientHwAddr()
+	require.Equal(t, clientHwAddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	hostname := d.ServerHostName()
-	AssertEqualBytes(t, hostname[:], expectedHostname, "server host name")
-	bootfilename := d.BootFileName()
-	AssertEqualBytes(t, bootfilename[:], expectedBootfilename, "boot file name")
+	require.Equal(t, hostname[:], expectedHostname)
+	bootfileName := d.BootFileName()
+	require.Equal(t, bootfileName[:], expectedBootfilename)
 	// no need to check Magic Cookie as it is already validated in FromBytes
 	// above
 }
@@ -87,17 +69,13 @@ func TestFromBytes(t *testing.T) {
 func TestFromBytesZeroLength(t *testing.T) {
 	data := []byte{}
 	_, err := FromBytes(data)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestFromBytesShortLength(t *testing.T) {
 	data := []byte{1, 1, 6, 0}
 	_, err := FromBytes(data)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestFromBytesInvalidOptions(t *testing.T) {
@@ -126,9 +104,7 @@ func TestFromBytesInvalidOptions(t *testing.T) {
 	// invalid magic cookie, forcing option parsing to fail
 	data = append(data, []byte{99, 130, 83, 98}...)
 	_, err := FromBytes(data)
-	if err == nil {
-		t.Fatal("Expected error, got nil")
-	}
+	require.Error(t, err)
 }
 
 func TestSettersAndGetters(t *testing.T) {
@@ -161,91 +137,89 @@ func TestSettersAndGetters(t *testing.T) {
 	// magic cookie, then no options
 	data = append(data, []byte{99, 130, 83, 99}...)
 	d, err := FromBytes(data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	// getter/setter for Opcode
-	AssertEqual(t, d.Opcode(), OpcodeBootRequest, "opcode")
+	require.Equal(t, OpcodeBootRequest, d.Opcode())
 	d.SetOpcode(OpcodeBootReply)
-	AssertEqual(t, d.Opcode(), OpcodeBootReply, "opcode")
+	require.Equal(t, OpcodeBootReply, d.Opcode())
 
 	// getter/setter for HwType
-	AssertEqual(t, d.HwType(), iana.HwTypeEthernet, "hardware type")
+	require.Equal(t, iana.HwTypeEthernet, d.HwType())
 	d.SetHwType(iana.HwTypeARCNET)
-	AssertEqual(t, d.HwType(), iana.HwTypeARCNET, "hardware type")
+	require.Equal(t, iana.HwTypeARCNET, d.HwType())
 
 	// getter/setter for HwAddrLen
-	AssertEqual(t, d.HwAddrLen(), uint8(6), "hardware address length")
+	require.Equal(t, uint8(6), d.HwAddrLen())
 	d.SetHwAddrLen(12)
-	AssertEqual(t, d.HwAddrLen(), uint8(12), "hardware address length")
+	require.Equal(t, uint8(12), d.HwAddrLen())
 
 	// getter/setter for HopCount
-	AssertEqual(t, d.HopCount(), uint8(3), "hop count")
+	require.Equal(t, uint8(3), d.HopCount())
 	d.SetHopCount(1)
-	AssertEqual(t, d.HopCount(), uint8(1), "hop count")
+	require.Equal(t, uint8(1), d.HopCount())
 
 	// getter/setter for TransactionID
-	AssertEqual(t, d.TransactionID(), uint32(0xaabbccdd), "transaction ID")
+	require.Equal(t, uint32(0xaabbccdd), d.TransactionID())
 	d.SetTransactionID(0xeeff0011)
-	AssertEqual(t, d.TransactionID(), uint32(0xeeff0011), "transaction ID")
+	require.Equal(t, uint32(0xeeff0011), d.TransactionID())
 
 	// getter/setter for TransactionID
-	AssertEqual(t, d.NumSeconds(), uint16(3), "number of seconds")
+	require.Equal(t, uint16(3), d.NumSeconds())
 	d.SetNumSeconds(15)
-	AssertEqual(t, d.NumSeconds(), uint16(15), "number of seconds")
+	require.Equal(t, uint16(15), d.NumSeconds())
 
 	// getter/setter for Flags
-	AssertEqual(t, d.Flags(), uint16(1), "flags")
+	require.Equal(t, uint16(1), d.Flags())
 	d.SetFlags(0)
-	AssertEqual(t, d.Flags(), uint16(0), "flags")
+	require.Equal(t, uint16(0), d.Flags())
 
 	// getter/setter for ClientIPAddr
-	AssertEqualIPAddr(t, d.ClientIPAddr(), net.IPv4(1, 2, 3, 4), "client IP address")
+	RequireEqualIPAddr(t, net.IPv4(1, 2, 3, 4), d.ClientIPAddr())
 	d.SetClientIPAddr(net.IPv4(4, 3, 2, 1))
-	AssertEqualIPAddr(t, d.ClientIPAddr(), net.IPv4(4, 3, 2, 1), "client IP address")
+	RequireEqualIPAddr(t, net.IPv4(4, 3, 2, 1), d.ClientIPAddr())
 
 	// getter/setter for YourIPAddr
-	AssertEqualIPAddr(t, d.YourIPAddr(), net.IPv4(5, 6, 7, 8), "your IP address")
+	RequireEqualIPAddr(t, net.IPv4(5, 6, 7, 8), d.YourIPAddr())
 	d.SetYourIPAddr(net.IPv4(8, 7, 6, 5))
-	AssertEqualIPAddr(t, d.YourIPAddr(), net.IPv4(8, 7, 6, 5), "your IP address")
+	RequireEqualIPAddr(t, net.IPv4(8, 7, 6, 5), d.YourIPAddr())
 
 	// getter/setter for ServerIPAddr
-	AssertEqualIPAddr(t, d.ServerIPAddr(), net.IPv4(9, 10, 11, 12), "server IP address")
+	RequireEqualIPAddr(t, net.IPv4(9, 10, 11, 12), d.ServerIPAddr())
 	d.SetServerIPAddr(net.IPv4(12, 11, 10, 9))
-	AssertEqualIPAddr(t, d.ServerIPAddr(), net.IPv4(12, 11, 10, 9), "server IP address")
+	RequireEqualIPAddr(t, net.IPv4(12, 11, 10, 9), d.ServerIPAddr())
 
 	// getter/setter for GatewayIPAddr
-	AssertEqualIPAddr(t, d.GatewayIPAddr(), net.IPv4(13, 14, 15, 16), "gateway IP address")
+	RequireEqualIPAddr(t, net.IPv4(13, 14, 15, 16), d.GatewayIPAddr())
 	d.SetGatewayIPAddr(net.IPv4(16, 15, 14, 13))
-	AssertEqualIPAddr(t, d.GatewayIPAddr(), net.IPv4(16, 15, 14, 13), "gateway IP address")
+	RequireEqualIPAddr(t, net.IPv4(16, 15, 14, 13), d.GatewayIPAddr())
 
 	// getter/setter for ClientHwAddr
 	hwaddr := d.ClientHwAddr()
-	AssertEqualBytes(t, hwaddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, "client hardware address")
+	require.Equal(t, []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, hwaddr[:])
 	d.SetFlags(0)
 
 	// getter/setter for ServerHostName
 	serverhostname := d.ServerHostName()
-	AssertEqualBytes(t, serverhostname[:], expectedHostname, "server host name")
+	require.Equal(t, expectedHostname, serverhostname[:])
 	newHostname := []byte{'t', 'e', 's', 't'}
 	for i := 0; i < 60; i++ {
 		newHostname = append(newHostname, 0)
 	}
 	d.SetServerHostName(newHostname)
 	serverhostname = d.ServerHostName()
-	AssertEqualBytes(t, serverhostname[:], newHostname, "server host name")
+	require.Equal(t, newHostname, serverhostname[:])
 
 	// getter/setter for BootFileName
 	bootfilename := d.BootFileName()
-	AssertEqualBytes(t, bootfilename[:], expectedBootfilename, "boot file name")
+	require.Equal(t, expectedBootfilename, bootfilename[:])
 	newBootfilename := []byte{'t', 'e', 's', 't'}
 	for i := 0; i < 124; i++ {
 		newBootfilename = append(newBootfilename, 0)
 	}
 	d.SetBootFileName(newBootfilename)
 	bootfilename = d.BootFileName()
-	AssertEqualBytes(t, bootfilename[:], newBootfilename, "boot file name")
+	require.Equal(t, newBootfilename, bootfilename[:])
 }
 
 func TestToStringMethods(t *testing.T) {
@@ -255,38 +229,38 @@ func TestToStringMethods(t *testing.T) {
 	}
 	// OpcodeToString
 	d.SetOpcode(OpcodeBootRequest)
-	AssertEqual(t, d.OpcodeToString(), "BootRequest", "OpcodeToString")
+	require.Equal(t, "BootRequest", d.OpcodeToString())
 	d.SetOpcode(OpcodeBootReply)
-	AssertEqual(t, d.OpcodeToString(), "BootReply", "OpcodeToString")
+	require.Equal(t, "BootReply", d.OpcodeToString())
 	d.SetOpcode(OpcodeType(0))
-	AssertEqual(t, d.OpcodeToString(), "Invalid", "OpcodeToString")
+	require.Equal(t, "Invalid", d.OpcodeToString())
 
 	// HwTypeToString
 	d.SetHwType(iana.HwTypeEthernet)
-	AssertEqual(t, d.HwTypeToString(), "Ethernet", "HwTypeToString")
+	require.Equal(t, "Ethernet", d.HwTypeToString())
 	d.SetHwType(iana.HwTypeARCNET)
-	AssertEqual(t, d.HwTypeToString(), "ARCNET", "HwTypeToString")
+	require.Equal(t, "ARCNET", d.HwTypeToString())
 
 	// FlagsToString
 	d.SetUnicast()
-	AssertEqual(t, d.FlagsToString(), "Unicast", "FlagsToString")
+	require.Equal(t, "Unicast", d.FlagsToString())
 	d.SetBroadcast()
-	AssertEqual(t, d.FlagsToString(), "Broadcast", "FlagsToString")
+	require.Equal(t, "Broadcast", d.FlagsToString())
 	d.SetFlags(0xffff)
-	AssertEqual(t, d.FlagsToString(), "Broadcast (reserved bits not zeroed)", "FlagsToString")
+	require.Equal(t, "Broadcast (reserved bits not zeroed)", d.FlagsToString())
 
 	// ClientHwAddrToString
 	d.SetHwAddrLen(6)
 	d.SetClientHwAddr([]byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
-	AssertEqual(t, d.ClientHwAddrToString(), "aa:bb:cc:dd:ee:ff", "ClientHwAddrToString")
+	require.Equal(t, "aa:bb:cc:dd:ee:ff", d.ClientHwAddrToString())
 
 	// ServerHostNameToString
 	d.SetServerHostName([]byte("my.host.local"))
-	AssertEqual(t, d.ServerHostNameToString(), "my.host.local", "ServerHostNameToString")
+	require.Equal(t, "my.host.local", d.ServerHostNameToString())
 
 	// BootFileNameToString
 	d.SetBootFileName([]byte("/my/boot/file"))
-	AssertEqual(t, d.BootFileNameToString(), "/my/boot/file", "BootFileNameToString")
+	require.Equal(t, "/my/boot/file", d.BootFileNameToString())
 }
 
 func TestToBytes(t *testing.T) {
@@ -318,14 +292,12 @@ func TestToBytes(t *testing.T) {
 	expected = append(expected, MagicCookie...)
 
 	d, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	// fix TransactionID to match the expected one, since it's randomly
 	// generated in New()
 	d.SetTransactionID(0x11223344)
 	got := d.ToBytes()
-	AssertEqualBytes(t, expected, got, "ToBytes")
+	require.Equal(t, expected, got)
 }
 
 // TODO
