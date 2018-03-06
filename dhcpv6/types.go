@@ -5,24 +5,23 @@ package dhcpv6
 type MessageType uint8
 
 const (
-	_ MessageType = iota // skip 0
-	SOLICIT
-	ADVERTISE
-	REQUEST
-	CONFIRM
-	RENEW
-	REBIND
-	REPLY
-	RELEASE
-	DECLINE
-	RECONFIGURE
-	INFORMATION_REQUEST
-	RELAY_FORW
-	RELAY_REPL
-	LEASEQUERY
-	LEASEQUERY_REPLY
-	LEASEQUERY_DONE
-	LEASEQUERY_DATA
+	SOLICIT             MessageType = 1
+	ADVERTISE           MessageType = 2
+	REQUEST             MessageType = 3
+	CONFIRM             MessageType = 4
+	RENEW               MessageType = 5
+	REBIND              MessageType = 6
+	REPLY               MessageType = 7
+	RELEASE             MessageType = 8
+	DECLINE             MessageType = 9
+	RECONFIGURE         MessageType = 10
+	INFORMATION_REQUEST MessageType = 11
+	RELAY_FORW          MessageType = 12
+	RELAY_REPL          MessageType = 13
+	LEASEQUERY          MessageType = 14
+	LEASEQUERY_REPLY    MessageType = 15
+	LEASEQUERY_DONE     MessageType = 16
+	LEASEQUERY_DATA     MessageType = 17
 )
 
 func MessageTypeToString(t MessageType) string {

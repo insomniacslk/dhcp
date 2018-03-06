@@ -5,10 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/insomniacslk/dhcp/iana"
 	"log"
 	"net"
 	"strings"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // HeaderSize is the DHCPv4 header size in bytes.
@@ -109,7 +110,12 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	})
 	d.AddOption(Option{
 		Code: OptionParameterRequestList,
-		Data: []byte{OptionSubnetMask, OptionRouter, OptionDomainName, OptionDomainNameServer},
+		Data: []byte{
+			byte(OptionSubnetMask),
+			byte(OptionRouter),
+			byte(OptionDomainName),
+			byte(OptionDomainNameServer),
+		},
 	})
 	// the End option has to be added explicitly
 	d.AddOption(Option{Code: OptionEnd})
