@@ -10,12 +10,12 @@ import (
 
 // see rfc4578
 const (
-	NII_LANDESK_NOPXE = iota
-	NII_PXE_GEN_I
-	NII_PXE_GEN_II
-	NII_UNDI_NOEFI
-	NII_UNDI_EFI_GEN_I
-	NII_UNDI_EFI_GEN_II
+	NII_LANDESK_NOPXE   = 0
+	NII_PXE_GEN_I       = 1
+	NII_PXE_GEN_II      = 2
+	NII_UNDI_NOEFI      = 3
+	NII_UNDI_EFI_GEN_I  = 4
+	NII_UNDI_EFI_GEN_II = 5
 )
 
 var NIIToStringMap = map[uint8]string{

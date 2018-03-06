@@ -3,16 +3,16 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+
 	"github.com/insomniacslk/dhcp/iana"
 )
 
 type DuidType uint16
 
 const (
-	_ DuidType = iota
-	DUID_LLT
-	DUID_EN
-	DUID_LL
+	DUID_LLT DuidType = 1
+	DUID_EN  DuidType = 2
+	DUID_LL  DuidType = 3
 )
 
 var DuidTypeToString = map[DuidType]string{
