@@ -1,3 +1,5 @@
+// +build darwin
+
 package bsdp
 
 import "github.com/insomniacslk/dhcp/dhcpv4"
