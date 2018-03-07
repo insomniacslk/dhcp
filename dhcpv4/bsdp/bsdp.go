@@ -217,8 +217,8 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 	d.AddOption(dhcpv4.Option{
 		Code: dhcpv4.OptionParameterRequestList,
 		Data: []byte{
-			dhcpv4.OptionVendorSpecificInformation,
-			dhcpv4.OptionClassIdentifier,
+			byte(dhcpv4.OptionVendorSpecificInformation),
+			byte(dhcpv4.OptionClassIdentifier),
 		},
 	})
 
@@ -316,11 +316,11 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	d.AddOption(dhcpv4.Option{
 		Code: dhcpv4.OptionParameterRequestList,
 		Data: []byte{
-			dhcpv4.OptionSubnetMask,
-			dhcpv4.OptionRouter,
-			dhcpv4.OptionBootfileName,
-			dhcpv4.OptionVendorSpecificInformation,
-			dhcpv4.OptionClassIdentifier,
+			byte(dhcpv4.OptionSubnetMask),
+			byte(dhcpv4.OptionRouter),
+			byte(dhcpv4.OptionBootfileName),
+			byte(dhcpv4.OptionVendorSpecificInformation),
+			byte(dhcpv4.OptionClassIdentifier),
 		},
 	})
 	d.AddOption(dhcpv4.Option{

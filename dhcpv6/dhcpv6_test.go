@@ -1,118 +1,66 @@
 package dhcpv6
 
 import (
-	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestBytesToTransactionID(t *testing.T) {
 	// only the first three bytes should be used
 	tid, err := BytesToTransactionID([]byte{0x11, 0x22, 0x33, 0xaa})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tid == nil {
-		t.Fatal("Invalid Transaction ID. Should not be nil")
-	}
-	if *tid != 0x112233 {
-		t.Fatalf("Invalid Transaction ID. Expected 0x%x, got 0x%x", 0x112233, *tid)
-	}
+	require.NoError(t, err)
+	require.Equal(t, uint32(0x112233), *tid)
 }
 
 func TestBytesToTransactionIDShortData(t *testing.T) {
 	// short sequence, less than three bytes
 	tid, err := BytesToTransactionID([]byte{0x11, 0x22})
-	if err == nil {
-		t.Fatal("Expected non-nil error, got nil instead")
-	}
-	if tid != nil {
-		t.Errorf("Expected nil Transaction ID, got %v instead", *tid)
-	}
+	require.Error(t, err)
+	require.Nil(t, tid)
 }
 
 func TestGenerateTransactionID(t *testing.T) {
 	tid, err := GenerateTransactionID()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if tid == nil {
-		t.Fatal("Expected non-nil Transaction ID, got nil instead")
-	}
-	if *tid > 0xffffff {
-		// TODO this should be better tested by mocking the random generator
-		t.Fatalf("Invalid Transaction ID: should be smaller than 0xffffff. Got 0x%x instead", *tid)
-	}
+	require.NoError(t, err)
+	require.NotNil(t, *tid)
+	require.True(t, *tid <= 0xffffff, "transaction ID should be smaller than 0xffffff")
 }
 
 func TestNewMessage(t *testing.T) {
 	d, err := NewMessage()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if d == nil {
-		t.Fatal("Expected non-nil DHCPv6, got nil instead")
-	}
-	if d.messageType != SOLICIT {
-		t.Fatalf("Invalid message type. Expected %v, got %v", SOLICIT, d.messageType)
-	}
-	if d.transactionID == 0 {
-		t.Fatal("Invalid Transaction ID, expected non-zero, got zero")
-	}
-	if len(d.options) != 0 {
-		t.Fatalf("Invalid options: expected none, got %v", len(d.options))
-	}
+	require.NoError(t, err)
+	require.NotNil(t, d)
+	require.Equal(t, SOLICIT, d.messageType)
+	require.NotEqual(t, 0, d.transactionID)
+	require.Empty(t, d.options)
 }
 
 func TestSettersAndGetters(t *testing.T) {
 	d := DHCPv6Message{}
 	// Message
 	d.SetMessage(SOLICIT)
-	msg := d.Type()
-	if msg != SOLICIT {
-		t.Fatalf("Invalid message type. Expected %v, got %v", SOLICIT, msg)
-	}
+	require.Equal(t, SOLICIT, d.Type())
 	d.SetMessage(ADVERTISE)
-	msg = d.Type()
-	if msg != ADVERTISE {
-		t.Fatalf("Invalid message type. Expected %v, got %v", ADVERTISE, msg)
-	}
+	require.Equal(t, ADVERTISE, d.Type())
+
 	// TransactionID
 	d.SetTransactionID(12345)
-	tid := d.TransactionID()
-	if tid != 12345 {
-		t.Fatalf("Invalid Transaction ID. Expected %v, got %v", 12345, tid)
-	}
+	require.Equal(t, uint32(12345), d.TransactionID())
+
 	// Options
-	opts := d.Options()
-	if len(opts) != 0 {
-		t.Fatalf("Invalid Options. Expected empty array, got %v", opts)
-	}
-	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
-	d.SetOptions([]Option{&opt})
-	opts = d.Options()
-	if len(opts) != 1 {
-		t.Fatalf("Invalid Options. Expected one-element array, got %v", len(opts))
-	}
-	if _, ok := opts[0].(*OptionGeneric); !ok {
-		t.Fatalf("Invalid Options. Expected one OptionGeneric, got %v", opts[0])
-	}
+	require.Empty(t, d.Options())
+	expectedOptions := []Option{&OptionGeneric{OptionCode: 0, OptionData: []byte{}}}
+	d.SetOptions(expectedOptions)
+	require.Equal(t, expectedOptions, d.Options())
 }
 
 func TestAddOption(t *testing.T) {
 	d := DHCPv6Message{}
-	opts := d.Options()
-	if len(opts) != 0 {
-		t.Fatalf("Invalid Options. Expected empty array, got %v", opts)
-	}
+	require.Empty(t, d.Options())
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
-	opts = d.Options()
-	if len(opts) != 1 {
-		t.Fatalf("Invalid Options. Expected one-element array, got %v", len(opts))
-	}
-	if _, ok := opts[0].(*OptionGeneric); !ok {
-		t.Fatalf("Invalid Options. Expected one OptionGeneric, got %v", opts[0])
-	}
+	require.Equal(t, []Option{&opt}, d.Options())
 }
 
 func TestToBytes(t *testing.T) {
@@ -121,23 +69,17 @@ func TestToBytes(t *testing.T) {
 	d.SetTransactionID(0xabcdef)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
-	toBytes := d.ToBytes()
+	bytes := d.ToBytes()
 	expected := []byte{01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00}
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
-	}
+	require.Equal(t, expected, bytes)
 }
 
 func TestFromAndToBytes(t *testing.T) {
 	expected := []byte{01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00}
 	d, err := FromBytes(expected)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	toBytes := d.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
-	}
+	require.Equal(t, expected, toBytes)
 }
 
 // TODO test NewSolicit
