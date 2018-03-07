@@ -9,6 +9,4 @@ go:
   - tip
 
 script:
-  - ./.travis.gofmt.sh
-  - ./.travis.govet.sh
   - go test -v -race $(go list ./...)
