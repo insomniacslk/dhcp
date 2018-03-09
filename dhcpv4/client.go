@@ -13,6 +13,7 @@ const (
 	MaxUDPReceivedPacketSize = 8192 // arbitrary size. Theoretically could be up to 65kb
 )
 
+// just triggering the golint complainer..
 type Client struct {
 	Network string
 	Dialer  *net.Dialer
