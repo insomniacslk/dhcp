@@ -81,23 +81,23 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 func MakeBroadcastSocket(ifname string) (int, error) {
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
 	if err != nil {
-		return -1, err
+		return fd, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 	if err != nil {
-		return -1, err
+		return fd, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_HDRINCL, 1)
 	if err != nil {
-		return -1, err
+		return fd, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
 	if err != nil {
-		return -1, err
+		return fd, err
 	}
 	err = BindToInterface(fd, ifname)
 	if err != nil {
-		return -1, err
+		return fd, err
 	}
 	return fd, nil
 }
@@ -108,15 +108,9 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func Exchange(client *Client, ifname string, discover *DHCPv4) ([]DHCPv4, error) {
+func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 	conversation := make([]DHCPv4, 1)
 	var err error
-	if discover == nil {
-		discover, err = NewDiscoveryForInterface(ifname)
-		if err != nil {
-			return conversation, err
-		}
-	}
 
 	// Get our file descriptor for the broadcast socket.
 	fd, err := MakeBroadcastSocket(ifname)
@@ -125,10 +119,16 @@ func Exchange(client *Client, ifname string, discover *DHCPv4) ([]DHCPv4, error)
 	}
 
 	// Discover
+	if discover == nil {
+		discover, err = NewDiscoveryForInterface(ifname)
+		if err != nil {
+			return conversation, err
+		}
+	}
 	conversation[0] = *discover
 
 	// Offer
-	offer, err := SendReceive(client, fd, discover)
+	offer, err := BroadcastSendReceive(fd, discover, c.ReadTimeout, c.WriteTimeout)
 	if err != nil {
 		return conversation, err
 	}
@@ -142,7 +142,7 @@ func Exchange(client *Client, ifname string, discover *DHCPv4) ([]DHCPv4, error)
 	conversation = append(conversation, *request)
 
 	// Ack
-	ack, err := SendReceive(client, fd, discover)
+	ack, err := BroadcastSendReceive(fd, discover, c.ReadTimeout, c.WriteTimeout)
 	if err != nil {
 		return conversation, err
 	}
@@ -150,10 +150,9 @@ func Exchange(client *Client, ifname string, discover *DHCPv4) ([]DHCPv4, error)
 	return conversation, nil
 }
 
-// SendReceive broadcasts packet (with some write timeout) and waits for a
+// BroadcastSendReceive broadcasts packet (with some write timeout) and waits for a
 // response up to some read timeout value.
-func SendReceive(client *Client, fd int, packet *DHCPv4) (*DHCPv4, error) {
-	// Build up our packet bytes.
+func BroadcastSendReceive(fd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration) (*DHCPv4, error) {
 	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
 	if err != nil {
 		return nil, err
@@ -170,23 +169,23 @@ func SendReceive(client *Client, fd int, packet *DHCPv4) (*DHCPv4, error) {
 		if err != nil {
 			return nil, err
 		}
-	case <-time.After(client.WriteTimeout):
-		return nil, errors.New("timed out while communicating with server")
+	case <-time.After(writeTimeout):
+		return nil, errors.New("timed out while sending broadcast")
 	}
 
-	// Open up a connection to listen.
 	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort})
+	if err != nil {
+		return nil, err
+	}
 	defer conn.Close()
-	conn.SetReadDeadline(time.Now().Add(client.ReadTimeout))
+	conn.SetReadDeadline(time.Now().Add(readTimeout))
 
-	// Wait for a response from the server.
 	buf := make([]byte, MaxUDPReceivedPacketSize)
 	n, _, _, _, err := conn.ReadMsgUDP(buf, []byte{})
 	if err != nil {
 		return nil, err
 	}
 
-	// Serialize to a DHCPv4 packet.
 	response, err := FromBytes(buf[:n])
 	if err != nil {
 		return nil, err

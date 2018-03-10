@@ -8,9 +8,23 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
+// Client represents a BSDP client that can perform BSDP exchanges via the
+// broadcast address.
+type Client dhcpv4.Client
+
+// NewClient constructs a new client with default read and write timeouts from
+// dhcpv4.Client.
+func NewClient() *Client {
+	c := dhcpv4.NewClient()
+	return &Client{
+		ReadTimeout:  c.ReadTimeout,
+		WriteTimeout: c.WriteTimeout,
+	}
+}
+
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func Exchange(client *dhcpv4.Client, ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DHCPv4, error) {
+func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DHCPv4, error) {
 	conversation := make([]dhcpv4.DHCPv4, 1)
 	var err error
 
@@ -30,7 +44,7 @@ func Exchange(client *dhcpv4.Client, ifname string, informList *dhcpv4.DHCPv4) (
 	conversation[0] = *informList
 
 	// ACK[LIST]
-	ackForList, err := dhcpv4.SendReceive(client, fd, informList)
+	ackForList, err := dhcpv4.BroadcastSendReceive(fd, informList, c.ReadTimeout, c.WriteTimeout)
 	if err != nil {
 		return conversation, err
 	}
@@ -53,7 +67,7 @@ func Exchange(client *dhcpv4.Client, ifname string, informList *dhcpv4.DHCPv4) (
 	conversation = append(conversation, *informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := dhcpv4.SendReceive(client, fd, informSelect)
+	ackForSelect, err := dhcpv4.BroadcastSendReceive(fd, informSelect, c.ReadTimeout, c.WriteTimeout)
 	if err != nil {
 		return conversation, err
 	}
