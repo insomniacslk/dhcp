@@ -2,6 +2,7 @@ package dhcpv4
 
 import (
 	"encoding/binary"
+	"errors"
 	"net"
 	"syscall"
 	"time"
@@ -9,16 +10,47 @@ import (
 	"golang.org/x/net/ipv4"
 )
 
+// MaxUDPReceivedPacketSize is the (arbitrary) maximum UDP packet size supported
+// by this library. Theoretically could be up to 65kb.
 const (
-	MaxUDPReceivedPacketSize = 8192 // arbitrary size. Theoretically could be up to 65kb
+	MaxUDPReceivedPacketSize = 8192
 )
 
+var (
+	// BroadcastAddressBytes are the bytes representing net.IPv4bcast.
+	BroadcastAddressBytes = [4]byte{
+		net.IPv4bcast[0],
+		net.IPv4bcast[1],
+		net.IPv4bcast[2],
+		net.IPv4bcast[3],
+	}
+
+	// DefaultReadTimeout is the time to wait after listening in which the
+	// exchange is considered failed.
+	DefaultReadTimeout = 3 * time.Second
+
+	// DefaultWriteTimeout is the time to wait after sending in which the
+	// exchange is considered failed.
+	DefaultWriteTimeout = 3 * time.Second
+)
+
+// Client is the object that actually performs the DHCP exchange. It currently
+// only has read and write timeout values.
 type Client struct {
-	Network string
-	Dialer  *net.Dialer
-	Timeout time.Duration
+	ReadTimeout, WriteTimeout time.Duration
 }
 
+// NewClient generates a new client to perform a DHCP exchange with, setting the
+// read and write timeout fields to defaults.
+func NewClient() *Client {
+	return &Client{
+		ReadTimeout:  DefaultReadTimeout,
+		WriteTimeout: DefaultWriteTimeout,
+	}
+}
+
+// MakeRawBroadcastPacket converts payload (a serialized DHCPv4 packet) into a
+// raw packet suitable for UDP broadcast.
 func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	udp := make([]byte, 8)
 	binary.BigEndian.PutUint16(udp[:2], ClientPort)
@@ -44,69 +76,62 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	return ret, nil
 }
 
-// Run a full DORA transaction: Discovery, Offer, Request, Acknowledge, over
-// UDP. Does not retry in case of failures.
-// Returns a list of DHCPv4 structures representing the exchange. It can contain
-// up to four elements, ordered as Discovery, Offer, Request and Acknowledge.
-// In case of errors, an error is returned, and the list of DHCPv4 objects will
-// be shorted than 4, containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
-	conversation := make([]DHCPv4, 1)
-	var err error
-
-	// Discovery
-	if d == nil {
-		d, err = NewDiscoveryForInterface(ifname)
-	}
-	conversation[0] = *d
-
+// MakeBroadcastSocket creates a socket that can be passed to syscall.Sendto
+// that will send packets out to the broadcast address.
+func MakeBroadcastSocket(ifname string) (int, error) {
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
 	if err != nil {
-		return conversation, err
+		return -1, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
 	if err != nil {
-		return conversation, err
+		return -1, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_HDRINCL, 1)
 	if err != nil {
-		return conversation, err
+		return -1, err
 	}
 	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
 	if err != nil {
-		return conversation, err
+		return -1, err
 	}
 	err = BindToInterface(fd, ifname)
 	if err != nil {
+		return -1, err
+	}
+	return fd, nil
+}
+
+// Exchange runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
+// over UDP. Does not retry in case of failures. Returns a list of DHCPv4
+// structures representing the exchange. It can contain up to four elements,
+// ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
+// error is returned, and the list of DHCPv4 objects will be shorted than 4,
+// containing all the sent and received DHCPv4 messages.
+func Exchange(client *Client, ifname string, discover *DHCPv4) ([]DHCPv4, error) {
+	conversation := make([]DHCPv4, 1)
+	var err error
+	if discover == nil {
+		discover, err = NewDiscoveryForInterface(ifname)
+		if err != nil {
+			return conversation, err
+		}
+	}
+
+	// Get our file descriptor for the broadcast socket.
+	fd, err := MakeBroadcastSocket(ifname)
+	if err != nil {
 		return conversation, err
 	}
 
-	daddr := syscall.SockaddrInet4{Port: ClientPort, Addr: [4]byte{255, 255, 255, 255}}
-	packet, err := MakeRawBroadcastPacket(d.ToBytes())
-	if err != nil {
-		return conversation, err
-	}
-	err = syscall.Sendto(fd, packet, 0, &daddr)
-	if err != nil {
-		return conversation, err
-	}
+	// Discover
+	conversation[0] = *discover
 
 	// Offer
-	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4(0, 0, 0, 0), Port: ClientPort})
+	offer, err := SendReceive(client, fd, discover)
 	if err != nil {
 		return conversation, err
 	}
-	defer conn.Close()
-
-	buf := make([]byte, MaxUDPReceivedPacketSize)
-	oobdata := []byte{} // ignoring oob data
-	n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
-	offer, err := FromBytes(buf[:n])
-	if err != nil {
-		return conversation, err
-	}
-	// TODO match the packet content
-	// TODO check that the peer address matches the declared server IP and port
 	conversation = append(conversation, *offer)
 
 	// Request
@@ -115,25 +140,56 @@ func (c *Client) Exchange(ifname string, d *DHCPv4) ([]DHCPv4, error) {
 		return conversation, err
 	}
 	conversation = append(conversation, *request)
-	packet, err = MakeRawBroadcastPacket(request.ToBytes())
-	if err != nil {
-		return conversation, err
-	}
-	err = syscall.Sendto(fd, packet, 0, &daddr)
-	if err != nil {
-		return conversation, err
-	}
 
-	// Acknowledge
-	buf = make([]byte, MaxUDPReceivedPacketSize)
-	n, _, _, _, err = conn.ReadMsgUDP(buf, oobdata)
-	acknowledge, err := FromBytes(buf[:n])
+	// Ack
+	ack, err := SendReceive(client, fd, discover)
 	if err != nil {
 		return conversation, err
 	}
-	// TODO match the packet content
-	// TODO check that the peer address matches the declared server IP and port
-	conversation = append(conversation, *acknowledge)
-
+	conversation = append(conversation, *ack)
 	return conversation, nil
+}
+
+// SendReceive broadcasts packet (with some write timeout) and waits for a
+// response up to some read timeout value.
+func SendReceive(client *Client, fd int, packet *DHCPv4) (*DHCPv4, error) {
+	// Build up our packet bytes.
+	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a goroutine to perform the blocking send, and time it out after
+	// a certain amount of time.
+	remoteAddr := syscall.SockaddrInet4{Port: ClientPort, Addr: BroadcastAddressBytes}
+	sendErrChan := make(chan error, 1)
+	go func() { sendErrChan <- syscall.Sendto(fd, packetBytes, 0, &remoteAddr) }()
+
+	select {
+	case err = <-sendErrChan:
+		if err != nil {
+			return nil, err
+		}
+	case <-time.After(client.WriteTimeout):
+		return nil, errors.New("timed out while communicating with server")
+	}
+
+	// Open up a connection to listen.
+	conn, err := net.ListenUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort})
+	defer conn.Close()
+	conn.SetReadDeadline(time.Now().Add(client.ReadTimeout))
+
+	// Wait for a response from the server.
+	buf := make([]byte, MaxUDPReceivedPacketSize)
+	n, _, _, _, err := conn.ReadMsgUDP(buf, []byte{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Serialize to a DHCPv4 packet.
+	response, err := FromBytes(buf[:n])
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
 }
