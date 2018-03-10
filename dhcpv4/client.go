@@ -17,14 +17,6 @@ const (
 )
 
 var (
-	// BroadcastAddressBytes are the bytes representing net.IPv4bcast.
-	BroadcastAddressBytes = [4]byte{
-		net.IPv4bcast[0],
-		net.IPv4bcast[1],
-		net.IPv4bcast[2],
-		net.IPv4bcast[3],
-	}
-
 	// DefaultReadTimeout is the time to wait after listening in which the
 	// exchange is considered failed.
 	DefaultReadTimeout = 3 * time.Second
@@ -160,7 +152,9 @@ func BroadcastSendReceive(fd int, packet *DHCPv4, readTimeout, writeTimeout time
 
 	// Create a goroutine to perform the blocking send, and time it out after
 	// a certain amount of time.
-	remoteAddr := syscall.SockaddrInet4{Port: ClientPort, Addr: BroadcastAddressBytes}
+	var destination [4]byte
+	copy(destination[:], net.IPv4bcast.To4())
+	remoteAddr := syscall.SockaddrInet4{Port: ClientPort, Addr: destination}
 	sendErrChan := make(chan error, 1)
 	go func() { sendErrChan <- syscall.Sendto(fd, packetBytes, 0, &remoteAddr) }()
 
