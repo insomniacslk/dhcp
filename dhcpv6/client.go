@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Client constants
 const (
 	DefaultWriteTimeout       = 3 * time.Second // time to wait for write calls
 	DefaultReadTimeout        = 3 * time.Second // time to wait for read calls
@@ -13,17 +14,30 @@ const (
 	maxUDPReceivedPacketSize  = 8192            // arbitrary size. Theoretically could be up to 65kb
 )
 
-var AllDHCPRelayAgentsAndServers = net.ParseIP("ff02::1:2")
-var AllDHCPServers = net.ParseIP("ff05::1:3")
+// Broadcast destination IP addresses as defined by RFC 3315
+var (
+	AllDHCPRelayAgentsAndServers = net.ParseIP("ff02::1:2")
+	AllDHCPServers               = net.ParseIP("ff05::1:3")
+)
 
+// Client implements a DHCPv6 client
 type Client struct {
-	ReadTimeout  *time.Duration
-	WriteTimeout *time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
 	LocalAddr    net.Addr
 	RemoteAddr   net.Addr
 }
 
-// Make a stateful DHCPv6 request
+// NewClient returns a Client with default settings
+func NewClient() *Client {
+	return &Client{
+		ReadTimeout:  DefaultReadTimeout,
+		WriteTimeout: DefaultWriteTimeout,
+	}
+}
+
+// Exchange executes a 4-way DHCPv6 request (SOLICIT, ADVERTISE, REQUEST,
+// REPLY). If the SOLICIT packet is nil, defaults are used.
 func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
 	conversation := make([]DHCPv6, 0)
 	var err error
@@ -84,33 +98,17 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6) (DHCPv6, error) {
 	}
 	defer conn.Close()
 
-	// set WriteTimeout to DefaultWriteTimeout if no other timeout is specified
-	var wtimeout time.Duration
-	if c.WriteTimeout == nil {
-		wtimeout = DefaultWriteTimeout
-	} else {
-		wtimeout = *c.WriteTimeout
-	}
-	conn.SetWriteDeadline(time.Now().Add(wtimeout))
-
 	// send the packet out
+	conn.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
 	_, err = conn.WriteTo(packet.ToBytes(), &raddr)
 	if err != nil {
 		return nil, err
 	}
 
-	// set ReadTimeout to DefaultReadTimeout if no other timeout is specified
-	var rtimeout time.Duration
-	if c.ReadTimeout == nil {
-		rtimeout = DefaultReadTimeout
-	} else {
-		rtimeout = *c.ReadTimeout
-	}
-	conn.SetReadDeadline(time.Now().Add(rtimeout))
-
 	// wait for an ADVERTISE response
 	buf := make([]byte, maxUDPReceivedPacketSize)
 	oobdata := []byte{} // ignoring oob data
+	conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
 	if err != nil {
 		return nil, err
@@ -122,8 +120,8 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6) (DHCPv6, error) {
 	return adv, nil
 }
 
-// send a SOLICIT, return the solicit, an ADVERTISE (if not nil), and an error if
-// any
+// Solicit sends a SOLICIT, return the solicit, an ADVERTISE (if not nil), and
+// an error if any
 func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, DHCPv6, error) {
 	var err error
 	if solicit == nil {
@@ -136,8 +134,8 @@ func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, DHCPv6, error) 
 	return solicit, advertise, err
 }
 
-// send a REQUEST built from an ADVERTISE if no REQUEST is specified, return a
-// the request, a reply if not nil, and an error if any
+// Request sends a REQUEST built from an ADVERTISE if no REQUEST is specified.
+// It returns the request, a reply if not nil, and an error if any
 func (c *Client) Request(ifname string, advertise, request DHCPv6) (DHCPv6, DHCPv6, error) {
 	if request == nil {
 		var err error
