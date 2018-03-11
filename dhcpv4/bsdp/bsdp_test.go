@@ -208,27 +208,31 @@ func TestParseBootImageFail(t *testing.T) {
  */
 func TestParseVendorOptions(t *testing.T) {
 	expectedOpts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: OptionMessageType,
-			Data: []byte{byte(MessageTypeList)},
+		&dhcpv4.OptionGeneric{
+			OptionCode: OptionMessageType,
+			Data:       []byte{byte(MessageTypeList)},
 		},
-		dhcpv4.Option{
-			Code: OptionVersion,
-			Data: Version1_0,
+		&dhcpv4.OptionGeneric{
+			OptionCode: OptionVersion,
+			Data:       Version1_0,
 		},
 	}
+	var expectedOptsBytes []byte
+	for _, opt := range expectedOpts {
+		expectedOptsBytes = append(expectedOptsBytes, opt.ToBytes()...)
+	}
 	recvOpts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: dhcpv4.OptionDHCPMessageType,
-			Data: []byte{byte(dhcpv4.MessageTypeAck)},
+		&dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionDHCPMessageType,
+			Data:       []byte{byte(dhcpv4.MessageTypeAck)},
 		},
-		dhcpv4.Option{
-			Code: dhcpv4.OptionBroadcastAddress,
-			Data: []byte{0xff, 0xff, 0xff, 0xff},
+		&dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionBroadcastAddress,
+			Data:       []byte{0xff, 0xff, 0xff, 0xff},
 		},
-		dhcpv4.Option{
-			Code: dhcpv4.OptionVendorSpecificInformation,
-			Data: dhcpv4.OptionsToBytesWithoutMagicCookie(expectedOpts),
+		&dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionVendorSpecificInformation,
+			Data:       expectedOptsBytes,
 		},
 	}
 	opts := ParseVendorOptionsFromOptions(recvOpts)
@@ -237,13 +241,13 @@ func TestParseVendorOptions(t *testing.T) {
 
 func TestParseVendorOptionsFromOptionsNotPresent(t *testing.T) {
 	expectedOpts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: dhcpv4.OptionDHCPMessageType,
-			Data: []byte{byte(dhcpv4.MessageTypeAck)},
+		dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionDHCPMessageType,
+			Data:       []byte{byte(dhcpv4.MessageTypeAck)},
 		},
-		dhcpv4.Option{
-			Code: dhcpv4.OptionBroadcastAddress,
-			Data: []byte{0xff, 0xff, 0xff, 0xff},
+		dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionBroadcastAddress,
+			Data:       []byte{0xff, 0xff, 0xff, 0xff},
 		},
 	}
 	opts := ParseVendorOptionsFromOptions(expectedOpts)
@@ -257,8 +261,8 @@ func TestParseVendorOptionsFromOptionsEmpty(t *testing.T) {
 
 func TestParseVendorOptionsFromOptionsFail(t *testing.T) {
 	opts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: dhcpv4.OptionVendorSpecificInformation,
+		&dhcpv4.OptionGeneric{
+			OptionCode: dhcpv4.OptionVendorSpecificInformation,
 			Data: []byte{
 				0x1, 0x1, 0x1, // Option 1: LIST
 				0x2, 0x2, 0x01, // Option 2: Version (intentionally left short)
@@ -296,14 +300,13 @@ func TestParseBootImageListFromAck(t *testing.T) {
 		bootImageBytes = append(bootImageBytes, image.ToBytes()...)
 	}
 	ack, _ := dhcpv4.New()
-	ack.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionVendorSpecificInformation,
-		Data: dhcpv4.OptionsToBytesWithoutMagicCookie([]dhcpv4.Option{
-			dhcpv4.Option{
-				Code: OptionBootImageList,
-				Data: bootImageBytes,
-			},
-		}),
+	bootImageListOpt := dhcpv4.OptionGeneric{
+		OptionCode: OptionBootImageList,
+		Data:       bootImageBytes,
+	}
+	ack.AddOption(&dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionVendorSpecificInformation,
+		Data:       bootImageListOpt.ToBytes(),
 	})
 
 	images, err := ParseBootImageListFromAck(*ack)
@@ -313,9 +316,9 @@ func TestParseBootImageListFromAck(t *testing.T) {
 
 func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
 	ack, _ := dhcpv4.New()
-	ack.AddOption(dhcpv4.Option{
-		Code: OptionMessageType,
-		Data: []byte{byte(dhcpv4.MessageTypeAck)},
+	ack.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: OptionMessageType,
+		Data:       []byte{byte(dhcpv4.MessageTypeAck)},
 	})
 	images, err := ParseBootImageListFromAck(*ack)
 	require.NoError(t, err, "no vendor extensions should not return error")
@@ -324,29 +327,27 @@ func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
 
 func TestParseBootImageListFromAckFail(t *testing.T) {
 	ack, _ := dhcpv4.New()
-	ack.AddOption(dhcpv4.Option{
-		Code: OptionMessageType,
-		Data: []byte{byte(dhcpv4.MessageTypeAck)},
+	ack.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: OptionMessageType,
+		Data:       []byte{byte(dhcpv4.MessageTypeAck)},
 	})
-	ack.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionVendorSpecificInformation,
-		Data: dhcpv4.OptionsToBytesWithoutMagicCookie([]dhcpv4.Option{
-			dhcpv4.Option{
-				Code: OptionBootImageList,
-				Data: []byte{
-					// boot image 1
-					0x1, 0, 0x10, 0x10, // boot image ID
-					7,                         // len(Name)
-					98, 115, 100, 112, 45, 49, // byte-encoding of Name (intentionally short)
+	ack.AddOption(&dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionVendorSpecificInformation,
+		Data: []byte{
+			9,  // OptionBootImageList
+			24, // length
+			// boot image 1
+			0x1, 0, 0x10, 0x10, // boot image ID
+			7,                         // len(Name)
+			98, 115, 100, 112, 45, 49, // byte-encoding of Name (intentionally short)
 
-					// boot image 2
-					0x82, 0, 0x11, 0x22, // boot image ID
-					8,                                 // len(Name)
-					98, 115, 100, 112, 45, 50, 50, 50, // byte-encoding of Name
-				},
-			},
-		}),
-	})
+			// boot image 2
+			0x82, 0, 0x11, 0x22, // boot image ID
+			8,                                 // len(Name)
+			98, 115, 100, 112, 45, 50, 50, 50, // byte-encoding of Name
+		},
+	},
+	)
 
 	images, err := ParseBootImageListFromAck(*ack)
 	require.Nil(t, images, "should get nil on parse error")

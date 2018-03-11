@@ -8,14 +8,14 @@ type MessageType byte
 
 // DHCP message types
 const (
-	MessageTypeDiscover MessageType = iota + 1
-	MessageTypeOffer
-	MessageTypeRequest
-	MessageTypeDecline
-	MessageTypeAck
-	MessageTypeNak
-	MessageTypeRelease
-	MessageTypeInform
+	MessageTypeDiscover MessageType = 1
+	MessageTypeOffer    MessageType = 2
+	MessageTypeRequest  MessageType = 3
+	MessageTypeDecline  MessageType = 4
+	MessageTypeAck      MessageType = 5
+	MessageTypeNak      MessageType = 6
+	MessageTypeRelease  MessageType = 7
+	MessageTypeInform   MessageType = 8
 )
 
 // OpcodeType represents a DHCPv4 opcode.

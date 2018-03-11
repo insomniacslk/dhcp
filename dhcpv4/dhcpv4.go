@@ -133,12 +133,12 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
 	d.SetClientHwAddr(iface.HardwareAddr)
 	d.SetBroadcast()
-	d.AddOption(Option{
-		Code: OptionDHCPMessageType,
-		Data: []byte{byte(MessageTypeDiscover)},
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionDHCPMessageType,
+		Data:       []byte{byte(MessageTypeDiscover)},
 	})
-	d.AddOption(Option{
-		Code: OptionParameterRequestList,
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionParameterRequestList,
 		Data: []byte{
 			byte(OptionSubnetMask),
 			byte(OptionRouter),
@@ -147,7 +147,7 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 		},
 	})
 	// the End option has to be added explicitly
-	d.AddOption(Option{Code: OptionEnd})
+	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return d, nil
 }
 
@@ -183,9 +183,9 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	}
 	d.SetClientIPAddr(localIPs[0])
 
-	d.AddOption(Option{
-		Code: OptionDHCPMessageType,
-		Data: []byte{byte(MessageTypeInform)},
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionDHCPMessageType,
+		Data:       []byte{byte(MessageTypeInform)},
 	})
 
 	return d, nil
@@ -211,29 +211,29 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	// find server IP address
 	var serverIP []byte
 	for _, opt := range offer.options {
-		if opt.Code == OptionServerIdentifier {
+		if opt.Code() == OptionServerIdentifier {
 			serverIP = make([]byte, 4)
-			copy(serverIP, opt.Data)
+			copy(serverIP, opt.(*OptionGeneric).Data)
 		}
 	}
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
 	d.SetServerIPAddr(serverIP)
-	d.AddOption(Option{
-		Code: OptionDHCPMessageType,
-		Data: []byte{byte(MessageTypeRequest)},
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionDHCPMessageType,
+		Data:       []byte{byte(MessageTypeRequest)},
 	})
-	d.AddOption(Option{
-		Code: OptionRequestedIPAddress,
-		Data: offer.YourIPAddr(),
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionRequestedIPAddress,
+		Data:       offer.YourIPAddr(),
 	})
-	d.AddOption(Option{
-		Code: OptionServerIdentifier,
-		Data: serverIP,
+	d.AddOption(&OptionGeneric{
+		OptionCode: OptionServerIdentifier,
+		Data:       serverIP,
 	})
 	// the End option has to be added explicitly
-	d.AddOption(Option{Code: OptionEnd})
+	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return d, nil
 }
 
@@ -349,22 +349,27 @@ func (d *DHCPv4) SetTransactionID(transactionID uint32) {
 	d.transactionID = transactionID
 }
 
+// NumSeconds returns the number of seconds.
 func (d *DHCPv4) NumSeconds() uint16 {
 	return d.numSeconds
 }
 
+// SetNumSeconds sets the seconds field.
 func (d *DHCPv4) SetNumSeconds(numSeconds uint16) {
 	d.numSeconds = numSeconds
 }
 
+// Flags returns the DHCP flags portion of the packet.
 func (d *DHCPv4) Flags() uint16 {
 	return d.flags
 }
 
+// SetFlags sets the flags field in the packet.
 func (d *DHCPv4) SetFlags(flags uint16) {
 	d.flags = flags
 }
 
+// FlagsToString returns a human-readable representation of the flags field.
 func (d *DHCPv4) FlagsToString() string {
 	flags := ""
 	if d.IsBroadcast() {
@@ -378,54 +383,67 @@ func (d *DHCPv4) FlagsToString() string {
 	return flags
 }
 
+// IsBroadcast indicates whether the packet is a broadcast packet.
 func (d *DHCPv4) IsBroadcast() bool {
 	return d.flags&0x8000 == 0x8000
 }
 
+// SetBroadcast sets the packet to be a broadcast packet.
 func (d *DHCPv4) SetBroadcast() {
 	d.flags |= 0x8000
 }
 
+// IsUnicast indicates whether the packet is a unicast packet.
 func (d *DHCPv4) IsUnicast() bool {
 	return d.flags&0x8000 == 0
 }
 
+// SetUnicast sets the packet to be a unicast packet.
 func (d *DHCPv4) SetUnicast() {
 	d.flags &= ^uint16(0x8000)
 }
 
+// ClientIPAddr returns the client IP address.
 func (d *DHCPv4) ClientIPAddr() net.IP {
 	return d.clientIPAddr
 }
 
+// SetClientIPAddr sets the client IP address.
 func (d *DHCPv4) SetClientIPAddr(clientIPAddr net.IP) {
 	d.clientIPAddr = clientIPAddr
 }
 
+// YourIPAddr returns the "your IP address" field.
 func (d *DHCPv4) YourIPAddr() net.IP {
 	return d.yourIPAddr
 }
 
+// SetYourIPAddr sets the "your IP address" field.
 func (d *DHCPv4) SetYourIPAddr(yourIPAddr net.IP) {
 	d.yourIPAddr = yourIPAddr
 }
 
+// ServerIPAddr returns the server IP address.
 func (d *DHCPv4) ServerIPAddr() net.IP {
 	return d.serverIPAddr
 }
 
+// SetServerIPAddr sets the server IP address.
 func (d *DHCPv4) SetServerIPAddr(serverIPAddr net.IP) {
 	d.serverIPAddr = serverIPAddr
 }
 
+// GatewayIPAddr returns the gateway IP address.
 func (d *DHCPv4) GatewayIPAddr() net.IP {
 	return d.gatewayIPAddr
 }
 
+// SetGatewayIPAddr sets the gateway IP address.
 func (d *DHCPv4) SetGatewayIPAddr(gatewayIPAddr net.IP) {
 	d.gatewayIPAddr = gatewayIPAddr
 }
 
+// ClientHwAddr returns the client hardware (MAC) address.
 func (d *DHCPv4) ClientHwAddr() [16]byte {
 	return d.clientHwAddr
 }
@@ -438,6 +456,7 @@ func (d *DHCPv4) ClientHwAddrToString() string {
 	return strings.Join(ret, ":")
 }
 
+// SetClientHwAddr sets the client hardware address.
 func (d *DHCPv4) SetClientHwAddr(clientHwAddr []byte) {
 	if len(clientHwAddr) > 16 {
 		log.Printf("Warning: too long HW Address (%d bytes), truncating to 16 bytes", len(clientHwAddr))
@@ -517,7 +536,7 @@ func (d *DHCPv4) StrippedOptions() []Option {
 	strippedOptions := []Option{}
 	for _, opt := range d.options {
 		strippedOptions = append(strippedOptions, opt)
-		if opt.Code == OptionEnd {
+		if opt.Code() == OptionEnd {
 			break
 		}
 	}
@@ -576,7 +595,7 @@ func (d *DHCPv4) Summary() string {
 	ret += "  options=\n"
 	for _, opt := range d.options {
 		ret += fmt.Sprintf("    %v\n", opt.String())
-		if opt.Code == OptionEnd {
+		if opt.Code() == OptionEnd {
 			break
 		}
 	}
@@ -590,15 +609,15 @@ func (d *DHCPv4) ValidateOptions() {
 	foundOptionEnd := false
 	for _, opt := range d.options {
 		if foundOptionEnd {
-			if opt.Code == OptionEnd {
+			if opt.Code() == OptionEnd {
 				log.Print("Warning: found duplicate End option")
 			}
-			if opt.Code != OptionEnd && opt.Code != OptionPad {
-				name := OptionCodeToString[opt.Code]
-				log.Printf("Warning: found option %v (%v) after End option", opt.Code, name)
+			if opt.Code() != OptionEnd && opt.Code() != OptionPad {
+				name := OptionCodeToString[opt.Code()]
+				log.Printf("Warning: found option %v (%v) after End option", opt.Code(), name)
 			}
 		}
-		if opt.Code == OptionEnd {
+		if opt.Code() == OptionEnd {
 			foundOptionEnd = true
 		}
 	}
@@ -632,7 +651,11 @@ func (d *DHCPv4) ToBytes() []byte {
 	ret = append(ret, d.clientHwAddr[:16]...)
 	ret = append(ret, d.serverHostName[:64]...)
 	ret = append(ret, d.bootFileName[:128]...)
+
 	d.ValidateOptions() // print warnings about broken options, if any
-	ret = append(ret, OptionsToBytes(d.options)...)
+	ret = append(ret, MagicCookie...)
+	for _, opt := range d.options {
+		ret = append(ret, opt.ToBytes()...)
+	}
 	return ret
 }
