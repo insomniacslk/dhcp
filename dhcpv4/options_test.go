@@ -9,17 +9,12 @@ import (
 func TestParseOption(t *testing.T) {
 	option := []byte{5, 4, 192, 168, 1, 254} // DNS option
 	opt, err := ParseOption(option)
-	require.NoError(t, err, "should not get error from parsing option")
-	require.Equal(t, OptionNameServer, opt.Code, "opt should have the same opcode")
-	require.Equal(t, option[2:], opt.Data, "opt should have the same data")
-}
-
-func TestParseOptionPad(t *testing.T) {
-	option := []byte{0}
-	opt, err := ParseOption(option)
-	require.NoError(t, err, "should not get error from parsing option")
-	require.Equal(t, OptionPad, opt.Code, "should get pad option code")
-	require.Empty(t, opt.Data, "should get empty data with pad option")
+	require.NoError(t, err)
+	generic := opt.(*OptionGeneric)
+	require.Equal(t, OptionNameServer, generic.Code())
+	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
+	require.Equal(t, 4, generic.Length())
+	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
@@ -43,16 +38,12 @@ func TestOptionsFromBytes(t *testing.T) {
 	}
 	opts, err := OptionsFromBytes(options)
 	require.NoError(t, err)
-	require.Equal(t, []Option{
-		Option{
-			Code: OptionNameServer,
-			Data: []byte{192, 168, 1, 1},
-		},
-		Option{Code: OptionEnd, Data: []byte{}},
-		Option{Code: OptionPad, Data: []byte{}},
-		Option{Code: OptionPad, Data: []byte{}},
-		Option{Code: OptionPad, Data: []byte{}},
-	}, opts)
+	require.Equal(t, 5, len(opts))
+	require.Equal(t, opts[0].(*OptionGeneric), &OptionGeneric{OptionCode: OptionNameServer, Data: []byte{192, 168, 1, 1}})
+	require.Equal(t, opts[1].(*OptionGeneric), &OptionGeneric{OptionCode: OptionEnd})
+	require.Equal(t, opts[2].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
+	require.Equal(t, opts[3].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
+	require.Equal(t, opts[4].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
 }
 
 func TestOptionsFromBytesZeroLength(t *testing.T) {
@@ -67,39 +58,11 @@ func TestOptionsFromBytesBadMagicCookie(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestOptionsToBytes(t *testing.T) {
-	originalOptions := []byte{
+func TestOptionsFromBytesShortOption(t *testing.T) {
+	options := []byte{
 		99, 130, 83, 99, // Magic Cookie
-		5, 4, 192, 168, 1, 1, // DNS
-		255,     // end
-		0, 0, 0, //padding
+		5, 4, 192, 168, // DNS
 	}
-	options, err := OptionsFromBytes(originalOptions)
-	require.NoError(t, err)
-	finalOptions := OptionsToBytes(options)
-	require.Equal(t, originalOptions, finalOptions)
-}
-
-func TestOptionsToBytesEmpty(t *testing.T) {
-	originalOptions := []byte{99, 130, 83, 99}
-	options, err := OptionsFromBytes(originalOptions)
-	require.NoError(t, err)
-	finalOptions := OptionsToBytes(options)
-	require.Equal(t, originalOptions, finalOptions)
-}
-
-func TestOptionsToStringPad(t *testing.T) {
-	option := []byte{0}
-	opt, err := ParseOption(option)
-	require.NoError(t, err)
-	stropt := opt.String()
-	require.Equal(t, "Pad -> []", stropt)
-}
-
-func TestOptionsToStringDHCPMessageType(t *testing.T) {
-	option := []byte{53, 1, 5}
-	opt, err := ParseOption(option)
-	require.NoError(t, err)
-	stropt := opt.String()
-	require.Equal(t, "DHCP Message Type -> [5]", stropt)
+	_, err := OptionsFromBytes(options)
+	require.Error(t, err)
 }

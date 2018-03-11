@@ -263,7 +263,7 @@ func TestToStringMethods(t *testing.T) {
 	require.Equal(t, "/my/boot/file", d.BootFileNameToString())
 }
 
-func TestToBytes(t *testing.T) {
+func TestNewToBytes(t *testing.T) {
 	// the following bytes match what dhcpv4.New would create. Keep them in
 	// sync!
 	expected := []byte{

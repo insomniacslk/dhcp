@@ -137,8 +137,8 @@ func ParseVendorOptionsFromOptions(options []dhcpv4.Option) []dhcpv4.Option {
 		err        error
 	)
 	for _, opt := range options {
-		if opt.Code == dhcpv4.OptionVendorSpecificInformation {
-			vendorOpts, err = dhcpv4.OptionsFromBytesWithoutMagicCookie(opt.Data)
+		if opt.Code() == dhcpv4.OptionVendorSpecificInformation {
+			vendorOpts, err = dhcpv4.OptionsFromBytesWithoutMagicCookie(opt.(*dhcpv4.OptionGeneric).Data)
 			if err != nil {
 				log.Println("Warning: could not parse vendor options in DHCP options")
 				return []dhcpv4.Option{}
@@ -154,8 +154,8 @@ func ParseVendorOptionsFromOptions(options []dhcpv4.Option) []dhcpv4.Option {
 func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	var bootImages []BootImage
 	for _, opt := range ParseVendorOptionsFromOptions(ack.Options()) {
-		if opt.Code == OptionBootImageList {
-			images, err := ParseBootImagesFromOption(opt.Data)
+		if opt.Code() == OptionBootImageList {
+			images, err := ParseBootImagesFromOption(opt.(*dhcpv4.OptionGeneric).Data)
 			if err != nil {
 				return nil, err
 			}
@@ -191,31 +191,35 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 
 	// These are vendor-specific options used to pass along BSDP information.
 	vendorOpts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: OptionMessageType,
-			Data: []byte{byte(MessageTypeList)},
+		dhcpv4.OptionGeneric{
+			OptionCode: OptionMessageType,
+			Data:       []byte{byte(MessageTypeList)},
 		},
-		dhcpv4.Option{
-			Code: OptionVersion,
-			Data: Version1_1,
+		dhcpv4.OptionGeneric{
+			OptionCode: OptionVersion,
+			Data:       Version1_1,
 		},
 	}
 
 	if needsReplyPort(replyPort) {
 		vendorOpts = append(vendorOpts,
-			dhcpv4.Option{
-				Code: OptionReplyPort,
-				Data: serializeReplyPort(replyPort),
+			dhcpv4.OptionGeneric{
+				OptionCode: OptionReplyPort,
+				Data:       serializeReplyPort(replyPort),
 			},
 		)
 	}
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionVendorSpecificInformation,
-		Data: dhcpv4.OptionsToBytesWithoutMagicCookie(vendorOpts),
+	var vendorOptsBytes []byte
+	for _, opt := range vendorOpts {
+		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
+	}
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionVendorSpecificInformation,
+		Data:       vendorOptsBytes,
 	})
 
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionParameterRequestList,
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionParameterRequestList,
 		Data: []byte{
 			byte(dhcpv4.OptionVendorSpecificInformation),
 			byte(dhcpv4.OptionClassIdentifier),
@@ -224,21 +228,21 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 
 	u16 := make([]byte, 2)
 	binary.BigEndian.PutUint16(u16, MaxDHCPMessageSize)
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionMaximumDHCPMessageSize,
-		Data: u16,
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionMaximumDHCPMessageSize,
+		Data:       u16,
 	})
 
 	vendorClassID, err := makeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionClassIdentifier,
-		Data: []byte(vendorClassID),
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionClassIdentifier,
+		Data:       []byte(vendorClassID),
 	})
 
-	d.AddOption(dhcpv4.Option{Code: dhcpv4.OptionEnd})
+	d.AddOption(dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
 
@@ -267,17 +271,17 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 
 	// Data for OptionSelectedBootImageID
 	vendorOpts := []dhcpv4.Option{
-		dhcpv4.Option{
-			Code: OptionMessageType,
-			Data: []byte{byte(MessageTypeSelect)},
+		dhcpv4.OptionGeneric{
+			OptionCode: OptionMessageType,
+			Data:       []byte{byte(MessageTypeSelect)},
 		},
-		dhcpv4.Option{
-			Code: OptionVersion,
-			Data: Version1_1,
+		dhcpv4.OptionGeneric{
+			OptionCode: OptionVersion,
+			Data:       Version1_1,
 		},
-		dhcpv4.Option{
-			Code: OptionSelectedBootImageID,
-			Data: selectedImage.ID.ToBytes(),
+		dhcpv4.OptionGeneric{
+			OptionCode: OptionSelectedBootImageID,
+			Data:       selectedImage.ID.ToBytes(),
 		},
 	}
 
@@ -285,23 +289,23 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	var serverIP net.IP
 	// TODO replace this loop with `ack.GetOneOption(OptionBootImageList)`
 	for _, opt := range ack.Options() {
-		if opt.Code == dhcpv4.OptionServerIdentifier {
-			serverIP = net.IP(opt.Data)
+		if opt.Code() == dhcpv4.OptionServerIdentifier {
+			serverIP = net.IP(opt.(*dhcpv4.OptionGeneric).Data)
 		}
 	}
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
 	}
-	vendorOpts = append(vendorOpts, dhcpv4.Option{
-		Code: OptionServerIdentifier,
-		Data: serverIP,
+	vendorOpts = append(vendorOpts, dhcpv4.OptionGeneric{
+		OptionCode: OptionServerIdentifier,
+		Data:       serverIP,
 	})
 
 	// Validate replyPort if requested.
 	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts, dhcpv4.Option{
-			Code: OptionReplyPort,
-			Data: serializeReplyPort(replyPort),
+		vendorOpts = append(vendorOpts, dhcpv4.OptionGeneric{
+			OptionCode: OptionReplyPort,
+			Data:       serializeReplyPort(replyPort),
 		})
 	}
 
@@ -309,12 +313,12 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionClassIdentifier,
-		Data: []byte(vendorClassID),
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionClassIdentifier,
+		Data:       []byte(vendorClassID),
 	})
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionParameterRequestList,
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionParameterRequestList,
 		Data: []byte{
 			byte(dhcpv4.OptionSubnetMask),
 			byte(dhcpv4.OptionRouter),
@@ -323,14 +327,18 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			byte(dhcpv4.OptionClassIdentifier),
 		},
 	})
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionDHCPMessageType,
-		Data: []byte{byte(dhcpv4.MessageTypeInform)},
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionDHCPMessageType,
+		Data:       []byte{byte(dhcpv4.MessageTypeInform)},
 	})
-	d.AddOption(dhcpv4.Option{
-		Code: dhcpv4.OptionVendorSpecificInformation,
-		Data: dhcpv4.OptionsToBytesWithoutMagicCookie(vendorOpts),
+	var vendorOptsBytes []byte
+	for _, opt := range vendorOpts {
+		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
+	}
+	d.AddOption(dhcpv4.OptionGeneric{
+		OptionCode: dhcpv4.OptionVendorSpecificInformation,
+		Data:       vendorOptsBytes,
 	})
-	d.AddOption(dhcpv4.Option{Code: dhcpv4.OptionEnd})
+	d.AddOption(dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
