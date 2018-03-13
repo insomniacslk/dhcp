@@ -133,10 +133,7 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
 	d.SetClientHwAddr(iface.HardwareAddr)
 	d.SetBroadcast()
-	d.AddOption(&OptionGeneric{
-		OptionCode: OptionDHCPMessageType,
-		Data:       []byte{byte(MessageTypeDiscover)},
-	})
+	d.AddOption(NewOptMessageType(MessageTypeDiscover))
 	d.AddOption(&OptionGeneric{
 		OptionCode: OptionParameterRequestList,
 		Data: []byte{
@@ -183,10 +180,7 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	}
 	d.SetClientIPAddr(localIPs[0])
 
-	d.AddOption(&OptionGeneric{
-		OptionCode: OptionDHCPMessageType,
-		Data:       []byte{byte(MessageTypeInform)},
-	})
+	d.AddOption(NewOptMessageType(MessageTypeDiscover))
 
 	return d, nil
 }
@@ -220,10 +214,7 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
 	d.SetServerIPAddr(serverIP)
-	d.AddOption(&OptionGeneric{
-		OptionCode: OptionDHCPMessageType,
-		Data:       []byte{byte(MessageTypeRequest)},
-	})
+	d.AddOption(NewOptMessageType(MessageTypeRequest))
 	d.AddOption(&OptionGeneric{
 		OptionCode: OptionRequestedIPAddress,
 		Data:       offer.YourIPAddr(),

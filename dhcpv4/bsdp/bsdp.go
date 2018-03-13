@@ -327,10 +327,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			byte(dhcpv4.OptionClassIdentifier),
 		},
 	})
-	d.AddOption(dhcpv4.OptionGeneric{
-		OptionCode: dhcpv4.OptionDHCPMessageType,
-		Data:       []byte{byte(dhcpv4.MessageTypeInform)},
-	})
+	d.AddOption(dhcpv4.NewOptMessageType(dhcpv4.MessageTypeInform))
 	var vendorOptsBytes []byte
 	for _, opt := range vendorOpts {
 		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
