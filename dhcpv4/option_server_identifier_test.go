@@ -7,38 +7,38 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptServerIdentifierInterfaceMethods(t *testing.T) {
+func TestOptRequestedIPAddressInterfaceMethods(t *testing.T) {
 	ip := net.IP{192, 168, 0, 1}
-	o := OptServerIdentifier{ServerID: ip}
+	o := OptRequestedIPAddress{RequestedAddr: ip}
 
-	require.Equal(t, OptionServerIdentifier, o.Code(), "Code")
+	require.Equal(t, OptionRequestedIPAddress, o.Code(), "Code")
 
-	expectedBytes := []byte{54, 4, 192, 168, 0, 1}
+	expectedBytes := []byte{50, 4, 192, 168, 0, 1}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
 	require.Equal(t, 4, o.Length(), "Length")
 
-	require.Equal(t, "Server Identifier -> 192.168.0.1", o.String(), "String")
+	require.Equal(t, "Requested IP Address -> 192.168.0.1", o.String(), "String")
 }
 
-func TestParseOptServerIdentifier(t *testing.T) {
+func TestParseOptRequestedIPAddress(t *testing.T) {
 	var (
-		o   *OptServerIdentifier
+		o   *OptRequestedIPAddress
 		err error
 	)
-	o, err = ParseOptServerIdentifier([]byte{})
+	o, err = ParseOptRequestedIPAddress([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptServerIdentifier([]byte{54, 4, 192})
+	o, err = ParseOptRequestedIPAddress([]byte{50, 4, 192})
 	require.Error(t, err, "short byte stream")
 
-	o, err = ParseOptServerIdentifier([]byte{54, 3, 192, 168, 0, 1})
+	o, err = ParseOptRequestedIPAddress([]byte{50, 3, 192, 168, 0, 1})
 	require.Error(t, err, "wrong IP length")
 
-	o, err = ParseOptServerIdentifier([]byte{53, 4, 192, 168, 1})
+	o, err = ParseOptRequestedIPAddress([]byte{53, 4, 192, 168, 1})
 	require.Error(t, err, "wrong option code")
 
-	o, err = ParseOptServerIdentifier([]byte{54, 4, 192, 168, 0, 1})
+	o, err = ParseOptRequestedIPAddress([]byte{50, 4, 192, 168, 0, 1})
 	require.NoError(t, err)
-	require.Equal(t, net.IP{192, 168, 0, 1}, o.ServerID)
+	require.Equal(t, net.IP{192, 168, 0, 1}, o.RequestedAddr)
 }

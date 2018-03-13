@@ -214,10 +214,7 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	}
 	d.SetServerIPAddr(serverIP)
 	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
-	d.AddOption(&OptionGeneric{
-		OptionCode: OptionRequestedIPAddress,
-		Data:       offer.YourIPAddr(),
-	})
+	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr()})
 	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
 	// the End option has to be added explicitly
 	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
