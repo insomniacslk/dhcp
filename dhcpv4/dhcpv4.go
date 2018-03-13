@@ -134,15 +134,12 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d.SetClientHwAddr(iface.HardwareAddr)
 	d.SetBroadcast()
 	d.AddOption(NewOptMessageType(MessageTypeDiscover))
-	d.AddOption(&OptionGeneric{
-		OptionCode: OptionParameterRequestList,
-		Data: []byte{
-			byte(OptionSubnetMask),
-			byte(OptionRouter),
-			byte(OptionDomainName),
-			byte(OptionDomainNameServer),
-		},
-	})
+	d.AddOption(NewOptParameterRequestList(
+		OptionSubnetMask,
+		OptionRouter,
+		OptionDomainName,
+		OptionDomainNameServer,
+	))
 	// the End option has to be added explicitly
 	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return d, nil
