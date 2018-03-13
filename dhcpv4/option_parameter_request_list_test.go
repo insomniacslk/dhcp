@@ -8,9 +8,8 @@ import (
 
 func TestOptParameterRequestListInterfaceMethods(t *testing.T) {
 	requestedOpts := []OptionCode{OptionBootfileName, OptionNameServer}
-	o := NewOptParameterRequestList(requestedOpts...)
+	o := &OptParameterRequestList{RequestedOpts: requestedOpts}
 	require.Equal(t, OptionParameterRequestList, o.Code(), "Code")
-	require.Equal(t, requestedOpts, o.RequestList(), "RequestList")
 
 	expectedBytes := []byte{55, 2, 67, 5}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
@@ -36,5 +35,5 @@ func TestParseOptParameterRequestList(t *testing.T) {
 	o, err = ParseOptParameterRequestList([]byte{55, 2, 67, 5})
 	require.NoError(t, err)
 	expectedOpts := []OptionCode{OptionBootfileName, OptionNameServer}
-	require.Equal(t, expectedOpts, o.RequestList())
+	require.Equal(t, expectedOpts, o.RequestedOpts)
 }

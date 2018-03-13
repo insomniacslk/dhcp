@@ -7,12 +7,7 @@ import (
 
 // OptMessageType represents the DHCP message type option.
 type OptMessageType struct {
-	messageType MessageType
-}
-
-// NewOptMessageType constructs a new OptMessageType.
-func NewOptMessageType(messageType MessageType) *OptMessageType {
-	return &OptMessageType{messageType: messageType}
+	MessageType MessageType
 }
 
 // ParseOptMessageType constructs an OptMessageType struct from a sequence of
@@ -31,12 +26,7 @@ func ParseOptMessageType(data []byte) (*OptMessageType, error) {
 		return nil, fmt.Errorf("expected length 1, got %v instead", length)
 	}
 	messageType := MessageType(data[2])
-	return NewOptMessageType(messageType), nil
-}
-
-// MessageType returns the DHCP message type stored in this option.
-func (o *OptMessageType) MessageType() MessageType {
-	return o.messageType
+	return &OptMessageType{MessageType: messageType}, nil
 }
 
 // Code returns the option code.
@@ -46,13 +36,13 @@ func (o *OptMessageType) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptMessageType) ToBytes() []byte {
-	return []byte{byte(o.Code()), byte(o.Length()), byte(o.messageType)}
+	return []byte{byte(o.Code()), byte(o.Length()), byte(o.MessageType)}
 }
 
 // String returns a human-readable string for this option.
 func (o *OptMessageType) String() string {
 	var s string
-	switch o.messageType {
+	switch o.MessageType {
 	case MessageTypeDiscover:
 		s = "DISCOVER"
 	case MessageTypeOffer:

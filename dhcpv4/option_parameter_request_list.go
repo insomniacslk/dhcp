@@ -7,12 +7,7 @@ import (
 
 // OptParameterRequestList represents the parameter request list option.
 type OptParameterRequestList struct {
-	requestedOpts []OptionCode
-}
-
-// NewOptParameterRequestList constructs a new request list option.
-func NewOptParameterRequestList(requestList ...OptionCode) *OptParameterRequestList {
-	return &OptParameterRequestList{requestedOpts: requestList}
+	RequestedOpts []OptionCode
 }
 
 // ParseOptParameterRequestList returns a new OptParameterRequestList from a
@@ -34,12 +29,7 @@ func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error)
 	for _, opt := range data[2 : length+2] {
 		requestedOpts = append(requestedOpts, OptionCode(opt))
 	}
-	return NewOptParameterRequestList(requestedOpts...), nil
-}
-
-// RequestList returns the list of requested options.
-func (o *OptParameterRequestList) RequestList() []OptionCode {
-	return o.requestedOpts
+	return &OptParameterRequestList{RequestedOpts: requestedOpts}, nil
 }
 
 // Code returns the option code.
@@ -50,7 +40,7 @@ func (o *OptParameterRequestList) Code() OptionCode {
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptParameterRequestList) ToBytes() []byte {
 	ret := []byte{byte(o.Code()), byte(o.Length())}
-	for _, req := range o.RequestList() {
+	for _, req := range o.RequestedOpts {
 		ret = append(ret, byte(req))
 	}
 	return ret
@@ -58,11 +48,11 @@ func (o *OptParameterRequestList) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptParameterRequestList) String() string {
-	return fmt.Sprintf("Parameter Request List -> %v", o.RequestList())
+	return fmt.Sprintf("Parameter Request List -> %v", o.RequestedOpts)
 }
 
 // Length returns the length of the data portion (excluding option code and byte
 // for length, if any).
 func (o *OptParameterRequestList) Length() int {
-	return len(o.RequestList())
+	return len(o.RequestedOpts)
 }

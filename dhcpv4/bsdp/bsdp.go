@@ -218,10 +218,12 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 		Data:       vendorOptsBytes,
 	})
 
-	d.AddOption(dhcpv4.NewOptParameterRequestList(
-		dhcpv4.OptionVendorSpecificInformation,
-		dhcpv4.OptionClassIdentifier,
-	))
+	d.AddOption(&dhcpv4.OptParameterRequestList{
+		RequestedOpts: []dhcpv4.OptionCode{
+			dhcpv4.OptionVendorSpecificInformation,
+			dhcpv4.OptionClassIdentifier,
+		},
+	})
 
 	u16 := make([]byte, 2)
 	binary.BigEndian.PutUint16(u16, MaxDHCPMessageSize)
@@ -293,10 +295,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
 	}
-	vendorOpts = append(vendorOpts, dhcpv4.OptionGeneric{
-		OptionCode: OptionServerIdentifier,
-		Data:       serverIP,
-	})
+	vendorOpts = append(vendorOpts, &dhcpv4.OptServerIdentifier{ServerID: serverIP})
 
 	// Validate replyPort if requested.
 	if needsReplyPort(replyPort) {
@@ -314,14 +313,16 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 		OptionCode: dhcpv4.OptionClassIdentifier,
 		Data:       []byte(vendorClassID),
 	})
-	d.AddOption(dhcpv4.NewOptParameterRequestList(
-		dhcpv4.OptionSubnetMask,
-		dhcpv4.OptionRouter,
-		dhcpv4.OptionBootfileName,
-		dhcpv4.OptionVendorSpecificInformation,
-		dhcpv4.OptionClassIdentifier,
-	))
-	d.AddOption(dhcpv4.NewOptMessageType(dhcpv4.MessageTypeInform))
+	d.AddOption(&dhcpv4.OptParameterRequestList{
+		RequestedOpts: []dhcpv4.OptionCode{
+			dhcpv4.OptionSubnetMask,
+			dhcpv4.OptionRouter,
+			dhcpv4.OptionBootfileName,
+			dhcpv4.OptionVendorSpecificInformation,
+			dhcpv4.OptionClassIdentifier,
+		},
+	})
+	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
 	var vendorOptsBytes []byte
 	for _, opt := range vendorOpts {
 		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
