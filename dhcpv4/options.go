@@ -48,6 +48,10 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptRequestedIPAddress(data)
 	case OptionServerIdentifier:
 		opt, err = ParseOptServerIdentifier(data)
+	case OptionMaximumDHCPMessageSize:
+		opt, err = ParseOptMaximumDHCPMessageSize(data)
+	case OptionClassIdentifier:
+		opt, err = ParseOptClassIdentifier(data)
 	default:
 		opt, err = ParseOptionGeneric(data)
 	}

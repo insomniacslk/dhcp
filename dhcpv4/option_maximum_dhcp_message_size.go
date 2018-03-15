@@ -2,7 +2,6 @@ package dhcpv4
 
 import (
 	"encoding/binary"
-	"errors"
 	"fmt"
 )
 
@@ -19,7 +18,7 @@ type OptMaximumDHCPMessageSize struct {
 func ParseOptMaximumDHCPMessageSize(data []byte) (*OptMaximumDHCPMessageSize, error) {
 	// Should at least have code, length, and message type.
 	if len(data) < 4 {
-		return nil, errors.New("too short of byte stream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionMaximumDHCPMessageSize {

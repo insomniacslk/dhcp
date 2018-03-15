@@ -48,6 +48,22 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, OptionServerIdentifier, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option max message size
+	option = []byte{57, 2, 1, 2}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionMaximumDHCPMessageSize, opt.Code(), "Code")
+	require.Equal(t, 2, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option class identifier
+	option = []byte{60, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionClassIdentifier, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
