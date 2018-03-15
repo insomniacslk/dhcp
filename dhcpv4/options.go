@@ -27,23 +27,26 @@ func ParseOption(data []byte) (Option, error) {
 	if len(data) == 0 {
 		return nil, errors.New("invalid zero-length DHCPv4 option")
 	}
-	code := OptionCode(data[0])
 	var (
-		length     int
-		optionData []byte
+		opt Option
+		err error
 	)
-	if code != OptionPad && code != OptionEnd {
-		length = int(data[1])
-		if len(data) < length+2 {
-			return nil, fmt.Errorf("invalid data length: declared %v, actual %v", length, len(data))
-		}
-		optionData = data[2 : length+2]
-	}
-
-	switch code {
+	switch OptionCode(data[0]) {
+	case OptionDHCPMessageType:
+		opt, err = ParseOptMessageType(data)
+	case OptionParameterRequestList:
+		opt, err = ParseOptParameterRequestList(data)
+	case OptionRequestedIPAddress:
+		opt, err = ParseOptRequestedIPAddress(data)
+	case OptionServerIdentifier:
+		opt, err = ParseOptServerIdentifier(data)
 	default:
-		return &OptionGeneric{OptionCode: code, Data: optionData}, nil
+		opt, err = ParseOptionGeneric(data)
 	}
+	if err != nil {
+		return nil, err
+	}
+	return opt, nil
 }
 
 // OptionsFromBytes parses a sequence of bytes until the end and builds a list

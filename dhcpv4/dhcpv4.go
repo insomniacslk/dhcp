@@ -205,8 +205,7 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	var serverIP []byte
 	for _, opt := range offer.options {
 		if opt.Code() == OptionServerIdentifier {
-			serverIP = make([]byte, 4)
-			copy(serverIP, opt.(*OptionGeneric).Data)
+			serverIP = opt.(*OptServerIdentifier).ServerID
 		}
 	}
 	if serverIP == nil {
@@ -432,6 +431,7 @@ func (d *DHCPv4) ClientHwAddr() [16]byte {
 	return d.clientHwAddr
 }
 
+// ClientHwAddrToString converts the hardware address field to a string.
 func (d *DHCPv4) ClientHwAddrToString() string {
 	var ret []string
 	for _, b := range d.clientHwAddr[:d.hwAddrLen] {

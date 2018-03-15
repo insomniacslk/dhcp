@@ -213,7 +213,7 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 	for _, opt := range vendorOpts {
 		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
 	}
-	d.AddOption(dhcpv4.OptionGeneric{
+	d.AddOption(&dhcpv4.OptionGeneric{
 		OptionCode: dhcpv4.OptionVendorSpecificInformation,
 		Data:       vendorOptsBytes,
 	})
@@ -224,24 +224,14 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
-
-	u16 := make([]byte, 2)
-	binary.BigEndian.PutUint16(u16, MaxDHCPMessageSize)
-	d.AddOption(dhcpv4.OptionGeneric{
-		OptionCode: dhcpv4.OptionMaximumDHCPMessageSize,
-		Data:       u16,
-	})
+	d.AddOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize})
 
 	vendorClassID, err := makeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(dhcpv4.OptionGeneric{
-		OptionCode: dhcpv4.OptionClassIdentifier,
-		Data:       []byte(vendorClassID),
-	})
-
-	d.AddOption(dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
+	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
 
@@ -309,10 +299,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(dhcpv4.OptionGeneric{
-		OptionCode: dhcpv4.OptionClassIdentifier,
-		Data:       []byte(vendorClassID),
-	})
+	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
 	d.AddOption(&dhcpv4.OptParameterRequestList{
 		RequestedOpts: []dhcpv4.OptionCode{
 			dhcpv4.OptionSubnetMask,
@@ -327,10 +314,10 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	for _, opt := range vendorOpts {
 		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)
 	}
-	d.AddOption(dhcpv4.OptionGeneric{
+	d.AddOption(&dhcpv4.OptionGeneric{
 		OptionCode: dhcpv4.OptionVendorSpecificInformation,
 		Data:       vendorOptsBytes,
 	})
-	d.AddOption(dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
