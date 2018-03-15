@@ -1,9 +1,11 @@
 package dhcpv4
 
 import (
-	"errors"
 	"fmt"
 )
+
+// This option implements the Class Identifier option
+// https://tools.ietf.org/html/rfc2132
 
 // OptClassIdentifier represents the DHCP message type option.
 type OptClassIdentifier struct {
@@ -15,7 +17,7 @@ type OptClassIdentifier struct {
 func ParseOptClassIdentifier(data []byte) (*OptClassIdentifier, error) {
 	// Should at least have code and length
 	if len(data) < 2 {
-		return nil, errors.New("too short of byte stream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionClassIdentifier {
@@ -23,7 +25,7 @@ func ParseOptClassIdentifier(data []byte) (*OptClassIdentifier, error) {
 	}
 	length := int(data[1])
 	if len(data) < 2+length {
-		return nil, fmt.Errorf("short bytestream: expected %v bytes, got %v", 2+length, len(data))
+		return nil, ErrShortByteStream
 	}
 	return &OptClassIdentifier{Identifier: string(data[2 : 2+length])}, nil
 }

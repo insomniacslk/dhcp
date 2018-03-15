@@ -6,6 +6,9 @@ import (
 	"fmt"
 )
 
+// This option implements the Maximum DHCP Message size option
+// https://tools.ietf.org/html/rfc2132
+
 // OptMaximumDHCPMessageSize represents the DHCP message type option.
 type OptMaximumDHCPMessageSize struct {
 	Size uint16

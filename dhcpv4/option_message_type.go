@@ -1,9 +1,11 @@
 package dhcpv4
 
 import (
-	"errors"
 	"fmt"
 )
+
+// This option implements the message type option
+// https://tools.ietf.org/html/rfc2132
 
 // OptMessageType represents the DHCP message type option.
 type OptMessageType struct {
@@ -15,7 +17,7 @@ type OptMessageType struct {
 func ParseOptMessageType(data []byte) (*OptMessageType, error) {
 	// Should at least have code, length, and message type.
 	if len(data) < 3 {
-		return nil, errors.New("too short of byte stream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionDHCPMessageType {
@@ -23,7 +25,7 @@ func ParseOptMessageType(data []byte) (*OptMessageType, error) {
 	}
 	length := int(data[1])
 	if length != 1 {
-		return nil, fmt.Errorf("expected length 1, got %v instead", length)
+		return nil, ErrShortByteStream
 	}
 	messageType := MessageType(data[2])
 	return &OptMessageType{MessageType: messageType}, nil
@@ -41,25 +43,8 @@ func (o *OptMessageType) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptMessageType) String() string {
-	var s string
-	switch o.MessageType {
-	case MessageTypeDiscover:
-		s = "DISCOVER"
-	case MessageTypeOffer:
-		s = "OFFER"
-	case MessageTypeRequest:
-		s = "REQUEST"
-	case MessageTypeDecline:
-		s = "DECLINE"
-	case MessageTypeAck:
-		s = "ACK"
-	case MessageTypeNak:
-		s = "NAK"
-	case MessageTypeRelease:
-		s = "RELEASE"
-	case MessageTypeInform:
-		s = "INFORM"
-	default:
+	s, ok := MessageTypeToString[o.MessageType]
+	if !ok {
 		s = "UNKNOWN"
 	}
 	return fmt.Sprintf("DHCP Message Type -> %s", s)

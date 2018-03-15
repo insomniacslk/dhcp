@@ -42,23 +42,11 @@ func TestParseOptMessageType(t *testing.T) {
 }
 
 func TestOptMessageTypeString(t *testing.T) {
-	var o OptMessageType
-	o = OptMessageType{MessageType: MessageTypeDiscover}
+	// known
+	o := OptMessageType{MessageType: MessageTypeDiscover}
 	require.Equal(t, "DHCP Message Type -> DISCOVER", o.String())
-	o = OptMessageType{MessageType: MessageTypeOffer}
-	require.Equal(t, "DHCP Message Type -> OFFER", o.String())
-	o = OptMessageType{MessageType: MessageTypeRequest}
-	require.Equal(t, "DHCP Message Type -> REQUEST", o.String())
-	o = OptMessageType{MessageType: MessageTypeDecline}
-	require.Equal(t, "DHCP Message Type -> DECLINE", o.String())
-	o = OptMessageType{MessageType: MessageTypeAck}
-	require.Equal(t, "DHCP Message Type -> ACK", o.String())
-	o = OptMessageType{MessageType: MessageTypeNak}
-	require.Equal(t, "DHCP Message Type -> NAK", o.String())
-	o = OptMessageType{MessageType: MessageTypeRelease}
-	require.Equal(t, "DHCP Message Type -> RELEASE", o.String())
-	o = OptMessageType{MessageType: MessageTypeInform}
-	require.Equal(t, "DHCP Message Type -> INFORM", o.String())
+
+	// unknown
 	o = OptMessageType{MessageType: 99}
 	require.Equal(t, "DHCP Message Type -> UNKNOWN", o.String())
 }

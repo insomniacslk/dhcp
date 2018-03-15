@@ -1,10 +1,12 @@
 package dhcpv4
 
 import (
-	"errors"
 	"fmt"
 	"net"
 )
+
+// This option implements the server identifier option
+// https://tools.ietf.org/html/rfc2132
 
 // OptServerIdentifier represents an option encapsulating the server identifier.
 type OptServerIdentifier struct {
@@ -15,7 +17,7 @@ type OptServerIdentifier struct {
 // stream, or error if any.
 func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
 	if len(data) < 2 {
-		return nil, errors.New("too short of bytestream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionServerIdentifier {
@@ -26,7 +28,7 @@ func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
 		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
 	}
 	if len(data) < 6 {
-		return nil, errors.New("too short of bytestream")
+		return nil, ErrShortByteStream
 	}
 	return &OptServerIdentifier{ServerID: net.IP(data[2 : 2+length])}, nil
 }

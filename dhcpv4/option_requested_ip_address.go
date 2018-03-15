@@ -1,10 +1,12 @@
 package dhcpv4
 
 import (
-	"errors"
 	"fmt"
 	"net"
 )
+
+// This option implements the requested IP address option
+// https://tools.ietf.org/html/rfc2132
 
 // OptRequestedIPAddress represents an option encapsulating the server
 // identifier.
@@ -16,7 +18,7 @@ type OptRequestedIPAddress struct {
 // stream, or error if any.
 func ParseOptRequestedIPAddress(data []byte) (*OptRequestedIPAddress, error) {
 	if len(data) < 2 {
-		return nil, errors.New("too short of bytestream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionRequestedIPAddress {
@@ -27,7 +29,7 @@ func ParseOptRequestedIPAddress(data []byte) (*OptRequestedIPAddress, error) {
 		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
 	}
 	if len(data) < 6 {
-		return nil, errors.New("too short of bytestream")
+		return nil, ErrShortByteStream
 	}
 	return &OptRequestedIPAddress{RequestedAddr: net.IP(data[2 : 2+length])}, nil
 }

@@ -6,6 +6,14 @@ import (
 	"fmt"
 )
 
+// ErrShortByteStream is an error that is thrown any time a short byte stream is
+// detected during option parsing.
+var ErrShortByteStream = errors.New("short byte stream")
+
+// ErrZeroLengthByteStream is an error that is thrown any time a zero-length
+// byte stream is encountered.
+var ErrZeroLengthByteStream = errors.New("zero-length byte stream")
+
 // MagicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
 var MagicCookie = []byte{99, 130, 83, 99}

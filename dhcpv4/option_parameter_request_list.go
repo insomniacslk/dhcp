@@ -1,9 +1,11 @@
 package dhcpv4
 
 import (
-	"errors"
 	"fmt"
 )
+
+// This option implements the parameter request list option
+// https://tools.ietf.org/html/rfc2132
 
 // OptParameterRequestList represents the parameter request list option.
 type OptParameterRequestList struct {
@@ -15,7 +17,7 @@ type OptParameterRequestList struct {
 func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error) {
 	// Should at least have code + length byte.
 	if len(data) < 2 {
-		return nil, errors.New("too short of bytestream")
+		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
 	if code != OptionParameterRequestList {
@@ -23,7 +25,7 @@ func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error)
 	}
 	length := int(data[1])
 	if len(data) < length+2 {
-		return nil, errors.New("not enough bytes for number of requested options")
+		return nil, ErrShortByteStream
 	}
 	var requestedOpts []OptionCode
 	for _, opt := range data[2 : length+2] {
