@@ -52,6 +52,8 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptMaximumDHCPMessageSize(data)
 	case OptionClassIdentifier:
 		opt, err = ParseOptClassIdentifier(data)
+	case OptionDomainName:
+		opt, err = ParseOptDomainName(data)
 	default:
 		opt, err = ParseOptionGeneric(data)
 	}

@@ -5,8 +5,10 @@ import (
 	"fmt"
 )
 
+// OptionCode is a single byte representing the code for a given Option.
 type OptionCode uint16
 
+// Option is an interface that all DHCPv6 options adhere to.
 type Option interface {
 	Code() OptionCode
 	ToBytes() []byte

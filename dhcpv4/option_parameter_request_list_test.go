@@ -14,7 +14,7 @@ func TestOptParameterRequestListInterfaceMethods(t *testing.T) {
 	expectedBytes := []byte{55, 2, 67, 5}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
-	expectedString := "Parameter Request List -> [67 5]"
+	expectedString := "Parameter Request List -> [Bootfile Name, Name Server]"
 	require.Equal(t, expectedString, o.String(), "String")
 }
 

@@ -2,6 +2,7 @@ package dhcpv4
 
 import (
 	"fmt"
+	"strings"
 )
 
 // This option implements the parameter request list option
@@ -50,7 +51,15 @@ func (o *OptParameterRequestList) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptParameterRequestList) String() string {
-	return fmt.Sprintf("Parameter Request List -> %v", o.RequestedOpts)
+	var optNames []string
+	for _, ro := range o.RequestedOpts {
+		if name, ok := OptionCodeToString[ro]; ok {
+			optNames = append(optNames, name)
+		} else {
+			optNames = append(optNames, fmt.Sprintf("Unknown (%v)", ro))
+		}
+	}
+	return fmt.Sprintf("Parameter Request List -> [%v]", strings.Join(optNames, ", "))
 }
 
 // Length returns the length of the data portion (excluding option code and byte
