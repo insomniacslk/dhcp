@@ -6,6 +6,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestParseOptionGeneric(t *testing.T) {
+	// Empty bytestream produces error
+	_, err := ParseOptionGeneric([]byte{})
+	require.Error(t, err, "error from empty bytestream")
+}
+
 func TestOptionGenericCode(t *testing.T) {
 	o := OptionGeneric{
 		OptionCode: OptionDHCPMessageType,

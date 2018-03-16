@@ -18,6 +18,18 @@ const (
 	MessageTypeInform   MessageType = 8
 )
 
+// MessageTypeToString maps DHCP message types to human-readable strings.
+var MessageTypeToString = map[MessageType]string{
+	MessageTypeDiscover: "DISCOVER",
+	MessageTypeOffer:    "OFFER",
+	MessageTypeRequest:  "REQUEST",
+	MessageTypeDecline:  "DECLINE",
+	MessageTypeAck:      "ACK",
+	MessageTypeNak:      "NAK",
+	MessageTypeRelease:  "RELEASE",
+	MessageTypeInform:   "INFORM",
+}
+
 // OpcodeType represents a DHCPv4 opcode.
 type OpcodeType uint8
 

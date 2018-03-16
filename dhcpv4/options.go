@@ -6,6 +6,14 @@ import (
 	"fmt"
 )
 
+// ErrShortByteStream is an error that is thrown any time a short byte stream is
+// detected during option parsing.
+var ErrShortByteStream = errors.New("short byte stream")
+
+// ErrZeroLengthByteStream is an error that is thrown any time a zero-length
+// byte stream is encountered.
+var ErrZeroLengthByteStream = errors.New("zero-length byte stream")
+
 // MagicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
 var MagicCookie = []byte{99, 130, 83, 99}
@@ -27,23 +35,30 @@ func ParseOption(data []byte) (Option, error) {
 	if len(data) == 0 {
 		return nil, errors.New("invalid zero-length DHCPv4 option")
 	}
-	code := OptionCode(data[0])
 	var (
-		length     int
-		optionData []byte
+		opt Option
+		err error
 	)
-	if code != OptionPad && code != OptionEnd {
-		length = int(data[1])
-		if len(data) < length+2 {
-			return nil, fmt.Errorf("invalid data length: declared %v, actual %v", length, len(data))
-		}
-		optionData = data[2 : length+2]
-	}
-
-	switch code {
+	switch OptionCode(data[0]) {
+	case OptionDHCPMessageType:
+		opt, err = ParseOptMessageType(data)
+	case OptionParameterRequestList:
+		opt, err = ParseOptParameterRequestList(data)
+	case OptionRequestedIPAddress:
+		opt, err = ParseOptRequestedIPAddress(data)
+	case OptionServerIdentifier:
+		opt, err = ParseOptServerIdentifier(data)
+	case OptionMaximumDHCPMessageSize:
+		opt, err = ParseOptMaximumDHCPMessageSize(data)
+	case OptionClassIdentifier:
+		opt, err = ParseOptClassIdentifier(data)
 	default:
-		return &OptionGeneric{OptionCode: code, Data: optionData}, nil
+		opt, err = ParseOptionGeneric(data)
 	}
+	if err != nil {
+		return nil, err
+	}
+	return opt, nil
 }
 
 // OptionsFromBytes parses a sequence of bytes until the end and builds a list

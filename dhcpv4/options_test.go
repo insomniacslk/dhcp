@@ -7,6 +7,7 @@ import (
 )
 
 func TestParseOption(t *testing.T) {
+	// Generic
 	option := []byte{5, 4, 192, 168, 1, 254} // DNS option
 	opt, err := ParseOption(option)
 	require.NoError(t, err)
@@ -15,6 +16,54 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
 	require.Equal(t, 4, generic.Length())
 	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
+
+	// Message type
+	option = []byte{53, 1, 1}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionDHCPMessageType, opt.Code(), "Code")
+	require.Equal(t, 1, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Parameter request list
+	option = []byte{55, 3, 5, 53, 61}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
+	require.Equal(t, 3, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Requested IP address
+	option = []byte{50, 4, 1, 2, 3, 4}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRequestedIPAddress, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option server ID
+	option = []byte{54, 4, 1, 2, 3, 4}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionServerIdentifier, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option max message size
+	option = []byte{57, 2, 1, 2}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionMaximumDHCPMessageSize, opt.Code(), "Code")
+	require.Equal(t, 2, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option class identifier
+	option = []byte{60, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionClassIdentifier, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
