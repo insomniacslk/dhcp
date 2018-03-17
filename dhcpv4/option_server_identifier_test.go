@@ -13,7 +13,7 @@ func TestOptRequestedIPAddressInterfaceMethods(t *testing.T) {
 
 	require.Equal(t, OptionRequestedIPAddress, o.Code(), "Code")
 
-	expectedBytes := []byte{50, 4, 192, 168, 0, 1}
+	expectedBytes := []byte{byte(OptionRequestedIPAddress), 4, 192, 168, 0, 1}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
 	require.Equal(t, 4, o.Length(), "Length")
@@ -29,16 +29,16 @@ func TestParseOptRequestedIPAddress(t *testing.T) {
 	o, err = ParseOptRequestedIPAddress([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptRequestedIPAddress([]byte{50, 4, 192})
+	o, err = ParseOptRequestedIPAddress([]byte{byte(OptionRequestedIPAddress), 4, 192})
 	require.Error(t, err, "short byte stream")
 
-	o, err = ParseOptRequestedIPAddress([]byte{50, 3, 192, 168, 0, 1})
+	o, err = ParseOptRequestedIPAddress([]byte{byte(OptionRequestedIPAddress), 3, 192, 168, 0, 1})
 	require.Error(t, err, "wrong IP length")
 
 	o, err = ParseOptRequestedIPAddress([]byte{53, 4, 192, 168, 1})
 	require.Error(t, err, "wrong option code")
 
-	o, err = ParseOptRequestedIPAddress([]byte{50, 4, 192, 168, 0, 1})
+	o, err = ParseOptRequestedIPAddress([]byte{byte(OptionRequestedIPAddress), 4, 192, 168, 0, 1})
 	require.NoError(t, err)
 	require.Equal(t, net.IP{192, 168, 0, 1}, o.RequestedAddr)
 }
