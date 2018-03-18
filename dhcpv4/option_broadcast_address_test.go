@@ -9,7 +9,7 @@ import (
 
 func TestOptBroadcastAddressInterfaceMethods(t *testing.T) {
 	ip := net.IP{192, 168, 0, 1}
-	o := OptBroadcastAddress{BroadcastAddress: ip}
+	o := OptBroadcastAddress{OptGenericIP{IP: ip}}
 
 	require.Equal(t, OptionBroadcastAddress, o.Code(), "Code")
 
@@ -40,5 +40,5 @@ func TestParseOptBroadcastAddress(t *testing.T) {
 
 	o, err = ParseOptBroadcastAddress([]byte{byte(OptionBroadcastAddress), 4, 192, 168, 0, 1})
 	require.NoError(t, err)
-	require.Equal(t, net.IP{192, 168, 0, 1}, o.BroadcastAddress)
+	require.Equal(t, net.IP{192, 168, 0, 1}, o.IP)
 }
