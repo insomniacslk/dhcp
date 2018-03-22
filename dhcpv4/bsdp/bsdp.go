@@ -7,7 +7,6 @@ package bsdp
 // http://opensource.apple.com/source/bootp/bootp-198.1/Documentation/BSDP.doc
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
@@ -22,70 +21,6 @@ import (
 // client can support larger message sizes, and modern NetBoot servers will
 // prefer this BSDP-specific option over the DHCP standard option.
 const MaxDHCPMessageSize = 1500
-
-// BootImageID describes a boot image ID - whether it's an install image and
-// what kind of boot image (e.g. OS 9, macOS, hardware diagnostics)
-type BootImageID struct {
-	IsInstall bool
-	ImageType BootImageType
-	Index     uint16
-}
-
-// ToBytes serializes a BootImageID to network-order bytes.
-func (b BootImageID) ToBytes() []byte {
-	bytes := make([]byte, 4)
-	if b.IsInstall {
-		bytes[0] |= 0x80
-	}
-	bytes[0] |= byte(b.ImageType)
-	binary.BigEndian.PutUint16(bytes[2:], b.Index)
-	return bytes
-}
-
-// BootImageIDFromBytes deserializes a collection of 4 bytes to a BootImageID.
-func BootImageIDFromBytes(bytes []byte) (*BootImageID, error) {
-	if len(bytes) < 4 {
-		return nil, fmt.Errorf("not enough bytes to serialize BootImageID")
-	}
-	return &BootImageID{
-		IsInstall: bytes[0]&0x80 != 0,
-		ImageType: BootImageType(bytes[0] & 0x7f),
-		Index:     binary.BigEndian.Uint16(bytes[2:]),
-	}, nil
-}
-
-// BootImage describes a boot image - contains the boot image ID and the name.
-type BootImage struct {
-	ID   BootImageID
-	Name string
-}
-
-// ToBytes converts a BootImage to a slice of bytes.
-func (b *BootImage) ToBytes() []byte {
-	bytes := b.ID.ToBytes()
-	bytes = append(bytes, byte(len(b.Name)))
-	bytes = append(bytes, []byte(b.Name)...)
-	return bytes
-}
-
-// BootImageFromBytes returns a deserialized BootImage struct from bytes.
-func BootImageFromBytes(bytes []byte) (*BootImage, error) {
-	// Should at least contain 4 bytes of BootImageID + byte for length of
-	// boot image name.
-	if len(bytes) < 5 {
-		return nil, fmt.Errorf("not enough bytes to serialize BootImage")
-	}
-	imageID, err := BootImageIDFromBytes(bytes[:4])
-	if err != nil {
-		return nil, err
-	}
-	nameLength := int(bytes[4])
-	if 5+nameLength > len(bytes) {
-		return nil, fmt.Errorf("not enough bytes for BootImage")
-	}
-	name := string(bytes[5 : 5+nameLength])
-	return &BootImage{ID: *imageID, Name: name}, nil
-}
 
 // makeVendorClassIdentifier calls the sysctl syscall on macOS to get the
 // platform model.
@@ -170,12 +105,6 @@ func needsReplyPort(replyPort uint16) bool {
 	return replyPort != 0 && replyPort != dhcpv4.ClientPort
 }
 
-func serializeReplyPort(replyPort uint16) []byte {
-	bytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(bytes, replyPort)
-	return bytes
-}
-
 // NewInformListForInterface creates a new INFORM packet for interface ifname
 // with configuration options specified by config.
 func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
@@ -191,23 +120,12 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 
 	// These are vendor-specific options used to pass along BSDP information.
 	vendorOpts := []dhcpv4.Option{
-		dhcpv4.OptionGeneric{
-			OptionCode: OptionMessageType,
-			Data:       []byte{byte(MessageTypeList)},
-		},
-		dhcpv4.OptionGeneric{
-			OptionCode: OptionVersion,
-			Data:       Version1_1,
-		},
+		&OptMessageType{MessageTypeList},
+		&OptVersion{Version1_1},
 	}
 
 	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts,
-			dhcpv4.OptionGeneric{
-				OptionCode: OptionReplyPort,
-				Data:       serializeReplyPort(replyPort),
-			},
-		)
+		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
 	var vendorOptsBytes []byte
 	for _, opt := range vendorOpts {
@@ -230,7 +148,7 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
+	d.AddOption(&dhcpv4.OptClassIdentifier{vendorClassID})
 	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
@@ -260,18 +178,9 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 
 	// Data for OptionSelectedBootImageID
 	vendorOpts := []dhcpv4.Option{
-		dhcpv4.OptionGeneric{
-			OptionCode: OptionMessageType,
-			Data:       []byte{byte(MessageTypeSelect)},
-		},
-		dhcpv4.OptionGeneric{
-			OptionCode: OptionVersion,
-			Data:       Version1_1,
-		},
-		dhcpv4.OptionGeneric{
-			OptionCode: OptionSelectedBootImageID,
-			Data:       selectedImage.ID.ToBytes(),
-		},
+		&OptMessageType{MessageTypeSelect},
+		&OptVersion{Version1_1},
+		&OptSelectedBootImageID{selectedImage.ID},
 	}
 
 	// Find server IP address
@@ -289,19 +198,16 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 
 	// Validate replyPort if requested.
 	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts, dhcpv4.OptionGeneric{
-			OptionCode: OptionReplyPort,
-			Data:       serializeReplyPort(replyPort),
-		})
+		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
 
 	vendorClassID, err := makeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
+	d.AddOption(&dhcpv4.OptClassIdentifier{vendorClassID})
 	d.AddOption(&dhcpv4.OptParameterRequestList{
-		RequestedOpts: []dhcpv4.OptionCode{
+		[]dhcpv4.OptionCode{
 			dhcpv4.OptionSubnetMask,
 			dhcpv4.OptionRouter,
 			dhcpv4.OptionBootfileName,
@@ -309,7 +215,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
-	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
+	d.AddOption(&dhcpv4.OptMessageType{dhcpv4.MessageTypeInform})
 	var vendorOptsBytes []byte
 	for _, opt := range vendorOpts {
 		vendorOptsBytes = append(vendorOptsBytes, opt.ToBytes()...)

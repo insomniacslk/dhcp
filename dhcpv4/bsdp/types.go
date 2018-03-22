@@ -22,34 +22,6 @@ const (
 	OptionMachineName                   dhcpv4.OptionCode = 130
 )
 
-// Versions
-var (
-	Version1_0 = []byte{1, 0}
-	Version1_1 = []byte{1, 1}
-)
-
-// MessageType represents the different BSDP message types.
-type MessageType byte
-
-// BSDP Message types - e.g. LIST, SELECT, FAILED
-const (
-	MessageTypeList MessageType = iota + 1
-	MessageTypeSelect
-	MessageTypeFailed
-)
-
-// BootImageType represents the different BSDP boot image types.
-type BootImageType byte
-
-// Different types of BootImages - e.g. for different flavors of macOS.
-const (
-	BootImageTypeMacOS9 BootImageType = iota
-	BootImageTypeMacOSX
-	BootImageTypeMacOSXServer
-	BootImageTypeHardwareDiagnostics
-	// 0x4 - 0x7f are reserved for future use.
-)
-
 // OptionCodeToString maps BSDP OptionCodes to human-readable strings
 // describing what they are.
 var OptionCodeToString = map[dhcpv4.OptionCode]string{
