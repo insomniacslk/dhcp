@@ -8,9 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-/*
- * BootImageID
- */
 func TestBootImageIDToBytes(t *testing.T) {
 	b := BootImageID{
 		IsInstall: true,
@@ -52,6 +49,11 @@ func TestBootImageIDFromBytesFail(t *testing.T) {
 	deserialized, err := BootImageIDFromBytes(serialized)
 	require.Nil(t, deserialized)
 	require.Error(t, err)
+}
+
+func TestBootImageIDString(t *testing.T) {
+	b := BootImageID{IsInstall: false, ImageType: BootImageTypeMacOSX, Index: 1001}
+	require.Equal(t, "[1001] uninstallable macOS image", b.String())
 }
 
 /*
@@ -127,4 +129,16 @@ func TestBootImageFromBytesShortBootImage(t *testing.T) {
 	b, err := BootImageFromBytes(input)
 	require.Nil(t, b)
 	require.Error(t, err)
+}
+
+func TestBootImageString(t *testing.T) {
+	b := BootImage{
+		ID: BootImageID{
+			IsInstall: false,
+			ImageType: BootImageTypeMacOSX,
+			Index:     0x1010,
+		},
+		Name: "bsdp-21",
+	}
+	require.Equal(t, "bsdp-21 [4112] uninstallable macOS image", b.String())
 }
