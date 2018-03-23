@@ -25,18 +25,18 @@ const (
 // OptionCodeToString maps BSDP OptionCodes to human-readable strings
 // describing what they are.
 var OptionCodeToString = map[dhcpv4.OptionCode]string{
-	OptionMessageType:                   "Message Type",
-	OptionVersion:                       "Version",
-	OptionServerIdentifier:              "Server Identifier",
-	OptionServerPriority:                "Server Priority",
-	OptionReplyPort:                     "Reply Port",
+	OptionMessageType:                   "BSDP Message Type",
+	OptionVersion:                       "BSDP Version",
+	OptionServerIdentifier:              "BSDP Server Identifier",
+	OptionServerPriority:                "BSDP Server Priority",
+	OptionReplyPort:                     "BSDP Reply Port",
 	OptionBootImageListPath:             "", // Not used
-	OptionDefaultBootImageID:            "Default Boot Image ID",
-	OptionSelectedBootImageID:           "Selected Boot Image ID",
-	OptionBootImageList:                 "Boot Image List",
-	OptionNetboot1_0Firmware:            "Netboot 1.0 Firmware",
-	OptionBootImageAttributesFilterList: "Boot Image Attributes Filter List",
-	OptionShadowMountPath:               "Shadow Mount Path",
-	OptionShadowFilePath:                "Shadow File Path",
-	OptionMachineName:                   "Machine Name",
+	OptionDefaultBootImageID:            "BSDP Default Boot Image ID",
+	OptionSelectedBootImageID:           "BSDP Selected Boot Image ID",
+	OptionBootImageList:                 "BSDP Boot Image List",
+	OptionNetboot1_0Firmware:            "BSDP Netboot 1.0 Firmware",
+	OptionBootImageAttributesFilterList: "BSDP Boot Image Attributes Filter List",
+	OptionShadowMountPath:               "BSDP Shadow Mount Path",
+	OptionShadowFilePath:                "BSDP Shadow File Path",
+	OptionMachineName:                   "BSDP Machine Name",
 }

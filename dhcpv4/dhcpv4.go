@@ -179,8 +179,7 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	}
 	d.SetClientIPAddr(localIPs[0])
 
-	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
-
+	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
 	return d, nil
 }
 
@@ -578,7 +577,12 @@ func (d *DHCPv4) Summary() string {
 	)
 	ret += "  options=\n"
 	for _, opt := range d.options {
-		ret += fmt.Sprintf("    %v\n", opt.String())
+		optString := opt.String()
+		// If this option has sub structures, offset them accordingly.
+		if strings.Contains(optString, "\n") {
+			optString = strings.Replace(optString, "\n  ", "\n      ", -1)
+		}
+		ret += fmt.Sprintf("    %v\n", optString)
 		if opt.Code() == OptionEnd {
 			break
 		}

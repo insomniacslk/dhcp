@@ -35,13 +35,20 @@ func makeVendorClassIdentifier() (string, error) {
 // ParseBootImageListFromAck parses the list of boot images presented in the
 // ACK[LIST] packet and returns them as a list of BootImages.
 func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
-	var bootImages []BootImage
-	o := ack.GetOption(dhcpv4.OptionVendorSpecificInformation)
-	vendorOpt := o.(*OptVendorSpecificInformation)
-	for _, o := range vendorOpt.GetOptions(OptionBootImageList) {
-		bootImages = append(bootImages, o.(*OptBootImageList).BootImages...)
+	var images []BootImage
+	for _, opt := range ack.Options() {
+		if opt.Code() == dhcpv4.OptionVendorSpecificInformation {
+			vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes())
+			if err != nil {
+				return nil, err
+			}
+			bootImageOpts := vendorOpt.GetOptions(OptionBootImageList)
+			for _, opt := range bootImageOpts {
+				images = append(images, opt.(*OptBootImageList).Images...)
+			}
+		}
 	}
-	return bootImages, nil
+	return images, nil
 }
 
 func needsReplyPort(replyPort uint16) bool {
@@ -97,7 +104,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	}
 
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
-		return nil, errors.New("replyPort must be a privilegded port")
+		return nil, errors.New("replyPort must be a privileged port")
 	}
 	d.SetOpcode(dhcpv4.OpcodeBootRequest)
 	d.SetHwType(ack.HwType())
@@ -123,13 +130,13 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	// TODO replace this loop with `ack.GetOneOption(OptionBootImageList)`
 	for _, opt := range ack.Options() {
 		if opt.Code() == dhcpv4.OptionServerIdentifier {
-			serverIP = net.IP(opt.(*dhcpv4.OptionGeneric).Data)
+			serverIP = opt.(*dhcpv4.OptServerIdentifier).ServerID
 		}
 	}
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
 	}
-	vendorOpts = append(vendorOpts, &dhcpv4.OptServerIdentifier{serverIP})
+	vendorOpts = append(vendorOpts, &OptServerIdentifier{serverIP})
 
 	// Validate replyPort if requested.
 	if needsReplyPort(replyPort) {

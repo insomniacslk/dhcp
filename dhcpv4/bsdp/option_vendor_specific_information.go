@@ -5,6 +5,7 @@ package bsdp
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
@@ -26,16 +27,26 @@ func parseOption(data []byte) (dhcpv4.Option, error) {
 		err error
 	)
 	switch dhcpv4.OptionCode(data[0]) {
+	case OptionBootImageList:
+		opt, err = ParseOptBootImageList(data)
+	case OptionDefaultBootImageID:
+		opt, err = ParseOptDefaultBootImageID(data)
+	case OptionMachineName:
+		opt, err = ParseOptMachineName(data)
 	case OptionMessageType:
 		opt, err = ParseOptMessageType(data)
-	case OptionVersion:
-		opt, err = ParseOptVersion(data)
 	case OptionReplyPort:
 		opt, err = ParseOptReplyPort(data)
 	case OptionSelectedBootImageID:
 		opt, err = ParseOptSelectedBootImageID(data)
+	case OptionServerIdentifier:
+		opt, err = ParseOptServerIdentifier(data)
+	case OptionServerPriority:
+		opt, err = ParseOptServerPriority(data)
+	case OptionVersion:
+		opt, err = ParseOptVersion(data)
 	default:
-		opt, err = dhcpv4.ParseOptionGeneric(data)
+		opt, err = ParseOptGeneric(data)
 	}
 	if err != nil {
 		return nil, err
@@ -60,7 +71,7 @@ func ParseOptVendorSpecificInformation(data []byte) (*OptVendorSpecificInformati
 	}
 
 	options := make([]dhcpv4.Option, 0, 10)
-	idx := 0
+	idx := 2
 	for {
 		if idx == len(data) {
 			break
@@ -100,9 +111,14 @@ func (o *OptVendorSpecificInformation) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptVendorSpecificInformation) String() string {
-	s := "Vendor Specific Information ->\n"
+	s := "Vendor Specific Information ->"
 	for _, opt := range o.Options {
-		s += "  " + opt.String() + "\n"
+		optString := opt.String()
+		// If this option has sub-structures, offset them accordingly.
+		if strings.Contains(optString, "\n") {
+			optString = strings.Replace(optString, "\n  ", "\n    ", -1)
+		}
+		s += "\n  " + optString
 	}
 	return s
 }
@@ -121,7 +137,7 @@ func (o *OptVendorSpecificInformation) Length() int {
 func (o *OptVendorSpecificInformation) GetOptions(code dhcpv4.OptionCode) []dhcpv4.Option {
 	var opts []dhcpv4.Option
 	for _, opt := range o.Options {
-		if o.Code() == code {
+		if opt.Code() == code {
 			opts = append(opts, opt)
 		}
 	}
