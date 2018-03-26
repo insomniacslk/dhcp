@@ -8,5 +8,15 @@ go:
   - "1.10"
   - tip
 
+os:
+  - linux
+  - osx
+
+addons:
+  apt:
+    packages:
+      - libpcap-dev
+
 script:
   - go test -v -race $(go list ./...)
+  - cd examples/packetparser && go build && ./packetparser -h
