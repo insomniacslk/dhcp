@@ -22,6 +22,20 @@ func NewClient() *Client {
 	}
 }
 
+func castVendorOpt(ack *dhcpv4.DHCPv4) {
+	opts := ack.Options()
+	for i := 0; i < len(opts); i++ {
+		if opts[i].Code() == dhcpv4.OptionVendorSpecificInformation {
+			vendorOpt, err := ParseOptVendorSpecificInformation(opts[i].ToBytes())
+			// Oh well, we tried
+			if err != nil {
+				return
+			}
+			opts[i] = vendorOpt
+		}
+	}
+}
+
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
 func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DHCPv4, error) {
@@ -48,6 +62,9 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	if err != nil {
 		return conversation, err
 	}
+
+	// Rewrite vendor-specific option for pretty printing.
+	castVendorOpt(ackForList)
 	conversation = append(conversation, *ackForList)
 
 	// Parse boot images sent back by server
@@ -68,6 +85,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 
 	// ACK[SELECT]
 	ackForSelect, err := dhcpv4.BroadcastSendReceive(fd, informSelect, c.ReadTimeout, c.WriteTimeout)
+	castVendorOpt(ackForSelect)
 	if err != nil {
 		return conversation, err
 	}
