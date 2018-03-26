@@ -26,6 +26,7 @@ var count = flag.Int("c", 0, "Stop after <count> packets (default: 0)")
 var unpack = flag.Bool("unpack", false, "Unpack inner DHCPv6 messages when parsing relay messages")
 var to = flag.String("to", "", "Destination to send packets to. If empty, will use [ff02::1:2]:547")
 
+// Clientv4 runs a DHCPv4 client and prints out a summary of the results.
 func Clientv4() {
 	client := dhcpv4.NewClient()
 	conv, err := client.Exchange(*iface, nil)
@@ -39,6 +40,7 @@ func Clientv4() {
 	}
 }
 
+// Clientv6 runs a DHCPv6 client and prints out a summary of the results.
 func Clientv6() {
 	var (
 		laddr, raddr net.UDPAddr

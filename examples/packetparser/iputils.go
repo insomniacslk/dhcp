@@ -3,11 +3,14 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"github.com/milosgajdos83/tenus"
 	"net"
 	"time"
+
+	"github.com/milosgajdos83/tenus"
 )
 
+// GetLinkLocalAddr returns the link-local address and the network for a given
+// network interface, or an error if any.
 func GetLinkLocalAddr(ifname string) (*net.IP, *net.IPNet, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
@@ -34,8 +37,9 @@ func GetLinkLocalAddr(ifname string) (*net.IP, *net.IPNet, error) {
 	return linkLocalAddr, &linkLocalNet, nil
 }
 
-// Wait for an interface to be up. Will return an error if it is not up before
-// the timeout expires. The status is synchronously polled every 100msec
+// WaitForInterfaceStatusUp waits until a network interface is UP and ready to
+// be used. If the interface is not ready within the given timeout, an error is
+// returned.
 func WaitForInterfaceStatusUp(ifname string, timeout time.Duration) error {
 	// FIXME should use netlink events rather than polling like this
 	ifaces, err := net.Interfaces()
@@ -56,6 +60,8 @@ func WaitForInterfaceStatusUp(ifname string, timeout time.Duration) error {
 	}
 }
 
+// ConfigureLinkLocalAddress brings up an interface and configures its
+// link-local address.
 func ConfigureLinkLocalAddress(ifname string) (*net.IP, error) {
 	// Configure the link-local address for the given interface, via Linux's
 	// netlink, and bring the interface up
