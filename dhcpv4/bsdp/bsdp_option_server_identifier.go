@@ -26,7 +26,7 @@ func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
 	}
 	length := int(data[1])
 	if length != 4 {
-		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
+		return nil, fmt.Errorf("unexpected length: expected 4, got %v", length)
 	}
 	if len(data) < 6 {
 		return nil, dhcpv4.ErrShortByteStream

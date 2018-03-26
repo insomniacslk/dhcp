@@ -29,7 +29,7 @@ func ParseOptServerPriority(data []byte) (*OptServerPriority, error) {
 	}
 	length := int(data[1])
 	if length != 2 {
-		return nil, fmt.Errorf("unexepcted length: expected 2, got %v", length)
+		return nil, fmt.Errorf("unexpected length: expected 2, got %v", length)
 	}
 	return &OptServerPriority{Priority: int(binary.BigEndian.Uint16(data[2:4]))}, nil
 }
