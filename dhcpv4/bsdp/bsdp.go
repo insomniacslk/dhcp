@@ -1,16 +1,9 @@
-// +build darwin
-
 package bsdp
-
-// Implements Apple's netboot protocol BSDP (Boot Service Discovery Protocol).
-// Canonical implementation is defined here:
-// http://opensource.apple.com/source/bootp/bootp-198.1/Documentation/BSDP.doc
 
 import (
 	"errors"
 	"fmt"
 	"net"
-	"syscall"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
@@ -20,17 +13,6 @@ import (
 // client can support larger message sizes, and modern NetBoot servers will
 // prefer this BSDP-specific option over the DHCP standard option.
 const MaxDHCPMessageSize = 1500
-
-// makeVendorClassIdentifier calls the sysctl syscall on macOS to get the
-// platform model.
-func makeVendorClassIdentifier() (string, error) {
-	// Fetch hardware model for class ID.
-	hwModel, err := syscall.Sysctl("hw.model")
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("AAPLBSDPC/i386/%s", hwModel), nil
-}
 
 // ParseBootImageListFromAck parses the list of boot images presented in the
 // ACK[LIST] packet and returns them as a list of BootImages.
@@ -79,18 +61,18 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
 
 	d.AddOption(&dhcpv4.OptParameterRequestList{
-		[]dhcpv4.OptionCode{
+		RequestedOpts: []dhcpv4.OptionCode{
 			dhcpv4.OptionVendorSpecificInformation,
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
 	d.AddOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize})
 
-	vendorClassID, err := makeVendorClassIdentifier()
+	vendorClassID, err := MakeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{vendorClassID})
+	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
 	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
@@ -143,13 +125,13 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
 
-	vendorClassID, err := makeVendorClassIdentifier()
+	vendorClassID, err := MakeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{vendorClassID})
+	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
 	d.AddOption(&dhcpv4.OptParameterRequestList{
-		[]dhcpv4.OptionCode{
+		RequestedOpts: []dhcpv4.OptionCode{
 			dhcpv4.OptionSubnetMask,
 			dhcpv4.OptionRouter,
 			dhcpv4.OptionBootfileName,
@@ -157,7 +139,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
-	d.AddOption(&dhcpv4.OptMessageType{dhcpv4.MessageTypeInform})
+	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
 	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
 	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
