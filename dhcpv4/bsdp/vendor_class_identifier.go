@@ -2,8 +2,8 @@
 
 package bsdp
 
-// MakeVendorClassIdentifier calls the sysctl syscall on macOS to get the
-// platform model.
+// MakeVendorClassIdentifier returns a static vendor class identifier for BSDP
+// use on non-darwin hosts.
 func MakeVendorClassIdentifier() (string, error) {
 	return DefaultMacOSVendorClassIdentifier, nil
 }
