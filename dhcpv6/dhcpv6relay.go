@@ -52,8 +52,8 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	ret := make([]byte, RelayHeaderSize)
 	ret[0] = byte(r.messageType)
 	ret[1] = byte(r.hopCount)
-	copy(ret[2:18], r.peerAddr)
-	copy(ret[18:34], r.linkAddr)
+	copy(ret[2:18], r.linkAddr)
+	copy(ret[18:34], r.peerAddr)
 	for _, opt := range r.options {
 		ret = append(ret, opt.ToBytes()...)
 	}

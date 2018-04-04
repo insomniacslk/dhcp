@@ -66,10 +66,10 @@ func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 
 func TestDHCPv6RelayToBytes(t *testing.T) {
 	expected := []byte{
-		12,                                             // RELAY_FORW
-		1,                                              // hop count
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // link addr
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // peer addr
+		12,                                                      // RELAY_FORW
+		1,                                                       // hop count
+		0xff, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01, // link addr
+		0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, // peer addr
 		// option relay message
 		0, 9, // relay msg
 		0, 10, // option length
@@ -84,8 +84,8 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 	r := DHCPv6Relay{
 		messageType: RELAY_FORW,
 		hopCount:    1,
-		linkAddr:    net.IPv6loopback,
-		peerAddr:    net.IPv6loopback,
+		linkAddr:    net.IPv6interfacelocalallnodes,
+		peerAddr:    net.IPv6linklocalallrouters,
 	}
 	opt := OptRelayMsg{
 		relayMessage: &DHCPv6Message{
