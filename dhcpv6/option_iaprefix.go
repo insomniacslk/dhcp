@@ -22,7 +22,7 @@ func (op *OptIAPrefix) Code() OptionCode {
 }
 
 func (op *OptIAPrefix) ToBytes() []byte {
-	buf := make([]byte, 25)
+	buf := make([]byte, 12)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IAPREFIX))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint32(buf[4:8], op.preferredLifetime)
@@ -91,8 +91,8 @@ func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
 	}
 	opt.preferredLifetime = binary.BigEndian.Uint32(data[:4])
 	opt.validLifetime = binary.BigEndian.Uint32(data[4:8])
-	opt.prefixLength = data[9]
-	copy(opt.ipv6Prefix[:], data[9:17])
-	copy(opt.options, data[17:])
+	opt.prefixLength = data[8]
+	copy(opt.ipv6Prefix[:], data[9:25])
+	copy(opt.options, data[25:])
 	return &opt, nil
 }
