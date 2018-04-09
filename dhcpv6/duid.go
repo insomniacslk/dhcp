@@ -9,6 +9,7 @@ import (
 
 type DuidType uint16
 
+// DUID types
 const (
 	DUID_LLT  DuidType = 1
 	DUID_EN   DuidType = 2
