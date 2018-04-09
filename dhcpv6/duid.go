@@ -10,15 +10,17 @@ import (
 type DuidType uint16
 
 const (
-	DUID_LLT DuidType = 1
-	DUID_EN  DuidType = 2
-	DUID_LL  DuidType = 3
+	DUID_LLT  DuidType = 1
+	DUID_EN   DuidType = 2
+	DUID_LL   DuidType = 3
+	DUID_UUID DuidType = 4
 )
 
 var DuidTypeToString = map[DuidType]string{
-	DUID_LL:  "DUID-LL",
-	DUID_LLT: "DUID-LLT",
-	DUID_EN:  "DUID-EN",
+	DUID_LL:   "DUID-LL",
+	DUID_LLT:  "DUID-LLT",
+	DUID_EN:   "DUID-EN",
+	DUID_UUID: "DUID-UUID",
 }
 
 type Duid struct {
@@ -28,6 +30,7 @@ type Duid struct {
 	LinkLayerAddr        []byte
 	EnterpriseNumber     uint32 // for DUID-EN. Ignored otherwise
 	EnterpriseIdentifier []byte // for DUID-EN. Ignored otherwise
+	Uuid                 [16]byte // for DUID-UUID. Ignored otherwise
 }
 
 func (d *Duid) Length() int {
@@ -37,6 +40,8 @@ func (d *Duid) Length() int {
 		return 4 + len(d.LinkLayerAddr)
 	} else if d.Type == DUID_EN {
 		return 6 + len(d.EnterpriseIdentifier)
+	} else if d.Type == DUID_UUID {
+		return 18
 	}
 	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
@@ -58,6 +63,10 @@ func (d *Duid) ToBytes() []byte {
 		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
 		binary.BigEndian.PutUint32(buf[2:6], d.EnterpriseNumber)
 		return append(buf, d.EnterpriseIdentifier...)
+	} else if d.Type == DUID_UUID {
+		buf := make([]byte, 2)
+		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
+		return append(buf, d.Uuid[:]...)
 	}
 	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
@@ -108,6 +117,11 @@ func DuidFromBytes(data []byte) (*Duid, error) {
 		}
 		d.EnterpriseNumber = binary.BigEndian.Uint32(data[2:6])
 		d.EnterpriseIdentifier = data[6:]
+	} else if d.Type == DUID_UUID {
+		if len(data) < 18 {
+			return nil, fmt.Errorf("Invalid DUID-UUID: shorter than 18 bytes")
+		}
+		copy(d.Uuid[:], data[2:18])
 	}
 	return &d, nil
 }
