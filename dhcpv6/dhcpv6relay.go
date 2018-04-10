@@ -146,14 +146,14 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 
 // GetInnerPeerAddr returns the peer address in the inner most relay info
 // header, this is typically the IP address of the client making the request.
-func (d *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
+func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
 	var (
 		p   DHCPv6
 		err error
 	)
-	p = d
-	hops := d.HopCount()
-	addr := d.PeerAddr()
+	p = r
+	hops := r.HopCount()
+	addr := r.PeerAddr()
 	for i := 0; i < int(hops); i++ {
 		p, err = DecapsulateRelay(p)
 		if err != nil {
