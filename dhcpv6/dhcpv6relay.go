@@ -154,7 +154,7 @@ func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
 	p = r
 	hops := r.HopCount()
 	addr := r.PeerAddr()
-	for i := 0; i < int(hops); i++ {
+	for i := uint8(0); i < hops; i++ {
 		p, err = DecapsulateRelay(p)
 		if err != nil {
 			return nil, err
