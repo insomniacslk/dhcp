@@ -37,7 +37,7 @@ func (op *OptBootFileURL) Length() int {
 }
 
 func (op *OptBootFileURL) String() string {
-	return fmt.Sprintf("OptBootFileURL{BootFileUrl=%v}", op.bootFileUrl)
+	return fmt.Sprintf("OptBootFileURL{BootFileUrl=%s}", op.bootFileUrl)
 }
 
 // build an OptBootFileURL structure from a sequence of bytes.
