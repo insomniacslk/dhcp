@@ -39,7 +39,7 @@ func (op *OptUserClass) SetUserClass(userClass []byte) {
 
 // Length returns the option length
 func (op *OptUserClass) Length() int {
-	return len(op.userClass)
+	return 2 + len(op.userClass)
 }
 
 func (op *OptUserClass) String() string {
