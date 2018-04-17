@@ -4,10 +4,11 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/insomniacslk/dhcp/iana"
 	"log"
 	"net"
 	"time"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 const MessageHeaderSize = 4
@@ -199,6 +200,16 @@ func (d *DHCPv6Message) SetOptions(options []Option) {
 
 func (d *DHCPv6Message) AddOption(option Option) {
 	d.options = append(d.options, option)
+}
+
+func (d *DHCPv6Message) UpdateOption(option Option) {
+	for idx, opt := range d.options {
+		if opt.Code() == option.Code() {
+			d.options[idx] = option
+			// don't look further
+			break
+		}
+	}
 }
 
 func (d *DHCPv6Message) String() string {
