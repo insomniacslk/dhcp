@@ -51,7 +51,7 @@ func (op *OptStatusCode) SetStatusMessage(message []byte) {
 
 // Length returns the option length
 func (op *OptStatusCode) Length() int {
-	return 2 + len(op.statusMessage)
+	return 2 + 2 + len(op.statusMessage)
 }
 
 func (op *OptStatusCode) String() string {
