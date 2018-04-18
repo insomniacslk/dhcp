@@ -111,7 +111,7 @@ func ParseOption(dataStart []byte) (Option, error) {
 		return nil, err
 	}
 	if length != opt.Length() {
-		return nil, fmt.Errorf("Error: declared length is different from actual length for option %v: %v != %v",
+		return nil, fmt.Errorf("Error: declared length is different from actual length for option %d: %d != %d",
 			code, opt.Length(), length)
 	}
 	return opt, nil
