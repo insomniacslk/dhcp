@@ -95,6 +95,8 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
+// MakeListeningSocket creates a listening socket on 0.0.0.0 for the DHCP client
+// port and returns it.
 func MakeListeningSocket(ifname string) (int, error) {
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
 	if err != nil {
