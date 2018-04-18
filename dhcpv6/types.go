@@ -5,6 +5,8 @@ package dhcpv6
 type MessageType uint8
 
 const (
+	// MSGTYPE_NONE is used internally and is not part of the RFC
+	MSGTYPE_NONE        MessageType = 0
 	SOLICIT             MessageType = 1
 	ADVERTISE           MessageType = 2
 	REQUEST             MessageType = 3
