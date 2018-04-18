@@ -44,17 +44,21 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
 
 	// Solicit
 	solicit, advertise, err := c.Solicit(ifname, solicit)
+	if solicit != nil {
+		conversation = append(conversation, solicit)
+	}
 	if err != nil {
 		return conversation, err
 	}
-	conversation = append(conversation, solicit)
 	conversation = append(conversation, advertise)
 
 	request, reply, err := c.Request(ifname, advertise, nil)
+	if request != nil {
+		conversation = append(conversation, request)
+	}
 	if err != nil {
 		return conversation, err
 	}
-	conversation = append(conversation, request)
 	conversation = append(conversation, reply)
 	return conversation, nil
 }
