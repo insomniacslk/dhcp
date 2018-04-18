@@ -121,7 +121,14 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	buf := make([]byte, maxUDPReceivedPacketSize)
 	oobdata := []byte{} // ignoring oob data
 	conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
-	var adv DHCPv6
+	var (
+		adv       DHCPv6
+		isMessage bool
+	)
+	msg, ok := packet.(*DHCPv6Message)
+	if ok {
+		isMessage = true
+	}
 	for {
 		n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
 		if err != nil {
@@ -130,6 +137,15 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		adv, err = FromBytes(buf[:n])
 		if err != nil {
 			return nil, err
+		}
+		if recvMsg, ok := adv.(*DHCPv6Message); ok && isMessage {
+			// if a regular message, check the transaction ID first
+			// XXX should this unpack relay messages and check the XID of the
+			// inner packet too?
+			if msg.TransactionID() != recvMsg.TransactionID() {
+				// different XID, we don't want this packet for sure
+				continue
+			}
 		}
 		if expectedType == MSGTYPE_NONE {
 			// just take whatever arrived
