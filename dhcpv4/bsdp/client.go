@@ -41,7 +41,11 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	var err error
 
 	// Get our file descriptor for the broadcast socket.
-	fd, err := dhcpv4.MakeBroadcastSocket(ifname)
+	sendFd, err := dhcpv4.MakeBroadcastSocket(ifname)
+	if err != nil {
+		return conversation, err
+	}
+	recvFd, err := dhcpv4.MakeListeningSocket(ifname)
 	if err != nil {
 		return conversation, err
 	}
@@ -56,7 +60,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	conversation[0] = *informList
 
 	// ACK[LIST]
-	ackForList, err := dhcpv4.BroadcastSendReceive(fd, informList, c.ReadTimeout, c.WriteTimeout)
+	ackForList, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informList, c.ReadTimeout, c.WriteTimeout)
 	if err != nil {
 		return conversation, err
 	}
@@ -82,7 +86,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	conversation = append(conversation, *informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := dhcpv4.BroadcastSendReceive(fd, informSelect, c.ReadTimeout, c.WriteTimeout)
+	ackForSelect, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informSelect, c.ReadTimeout, c.WriteTimeout)
 	castVendorOpt(ackForSelect)
 	if err != nil {
 		return conversation, err
