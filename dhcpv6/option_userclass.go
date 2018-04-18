@@ -23,6 +23,8 @@ func (op *OptUserClass) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_USER_CLASS))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
+	// user-class-data has an internal data length field too..
+	binary.BigEndian.PutUint16(buf[4:6], uint16(len(op.userClass)))
 	buf = append(buf, op.userClass...)
 	return buf
 }
