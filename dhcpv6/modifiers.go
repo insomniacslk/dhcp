@@ -4,6 +4,7 @@ import (
 	"log"
 )
 
+// WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
 func WithNetboot(d DHCPv6) DHCPv6 {
 	msg, ok := d.(*DHCPv6Message)
 	if !ok {
@@ -23,6 +24,7 @@ func WithNetboot(d DHCPv6) DHCPv6 {
 	return d
 }
 
+// WithUserClass adds a user class option to the packet
 func WithUserClass(uc string) Modifier {
 	return func(d DHCPv6) DHCPv6 {
 		ouc := OptUserClass{UserClass: []byte("FbLoL")}
@@ -31,6 +33,7 @@ func WithUserClass(uc string) Modifier {
 	}
 }
 
+// WithArchType adds an arch type option to the packet
 func WithArchType(at ArchType) Modifier {
 	return func(d DHCPv6) DHCPv6 {
 		ao := OptClientArchType{ArchType: at}
