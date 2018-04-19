@@ -19,6 +19,10 @@ type DHCPv6 interface {
 	AddOption(Option)
 }
 
+// Modifier defines the signature for functions that can modify DHCPv6
+// structures. This is used to simplify packet manipulation
+type Modifier func(d DHCPv6) DHCPv6
+
 func FromBytes(data []byte) (DHCPv6, error) {
 	var (
 		isRelay     = false
@@ -73,7 +77,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	}
 }
 
-func NewMessage() (*DHCPv6Message, error) {
+func NewMessage() (DHCPv6, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err

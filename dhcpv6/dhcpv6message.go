@@ -57,21 +57,21 @@ func GenerateTransactionID() (*uint32, error) {
 	return tid, nil
 }
 
-// Return a time integer suitable for DUID-LLT, i.e. the current time counted in
-// seconds since January 1st, 2000, midnight UTC, modulo 2^32
+// GetTime returns a time integer suitable for DUID-LLT, i.e. the current time counted
+// in seconds since January 1st, 2000, midnight UTC, modulo 2^32
 func GetTime() uint32 {
 	now := time.Since(time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC))
 	return uint32((now.Nanoseconds() / 1000000000) % 0xffffffff)
 }
 
-// Create a new SOLICIT message with DUID-LLT, using the given network
-// interface's hardware address and current time
-func NewSolicitForInterface(ifname string) (*DHCPv6Message, error) {
+// NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
+// given network interface's hardware address and current time
+func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error) {
 	d, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
-	d.SetMessage(SOLICIT)
+	d.(*DHCPv6Message).SetMessage(SOLICIT)
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
@@ -98,10 +98,17 @@ func NewSolicitForInterface(ifname string) (*DHCPv6Message, error) {
 	iaNa.SetT1(0xe10)
 	iaNa.SetT2(0x1518)
 	d.AddOption(&iaNa)
+
+	// apply modifiers
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
 	return d, nil
 }
 
-func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
+// NewRequestFromAdvertise creates a new REQUEST packet based on an ADVERTISE
+// packet options.
+func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
 	if advertise == nil {
 		return nil, fmt.Errorf("ADVERTISE cannot be nil")
 	}
@@ -139,23 +146,23 @@ func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
 	// add OptRequestedOption
 	oro := OptRequestedOption{}
 	oro.SetRequestedOptions([]OptionCode{
-		OPT_BOOTFILE_URL,
-		OPT_BOOTFILE_PARAM,
+		DNS_RECURSIVE_NAME_SERVER,
+		DOMAIN_SEARCH_LIST,
 	})
 	req.AddOption(&oro)
-	// add OPTION_NII
-	nii := OptNetworkInterfaceId{}
-	nii.SetType(1)
-	nii.SetMajor(3) // UNDI - Universal Network Device Interface
-	nii.SetMinor(2) // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc457
-	req.AddOption(&nii)
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
 	vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
 	if vClass != nil {
 		req.AddOption(vClass)
 	}
-	return &req, nil
+
+	// apply modifiers
+	d := DHCPv6(&req)
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
+	return d, nil
 }
 
 func (d *DHCPv6Message) Type() MessageType {
