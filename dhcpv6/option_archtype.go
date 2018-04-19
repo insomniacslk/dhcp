@@ -38,7 +38,7 @@ var ArchTypeToStringMap = map[ArchType]string{
 }
 
 type OptClientArchType struct {
-	archType ArchType
+	ArchType ArchType
 }
 
 func (op *OptClientArchType) Code() OptionCode {
@@ -49,16 +49,8 @@ func (op *OptClientArchType) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_CLIENT_ARCH_TYPE))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	binary.BigEndian.PutUint16(buf[4:6], uint16(op.archType))
+	binary.BigEndian.PutUint16(buf[4:6], uint16(op.ArchType))
 	return buf
-}
-
-func (op *OptClientArchType) ArchType() ArchType {
-	return op.archType
-}
-
-func (op *OptClientArchType) SetArchType(archType ArchType) {
-	op.archType = archType
 }
 
 func (op *OptClientArchType) Length() int {
@@ -66,7 +58,7 @@ func (op *OptClientArchType) Length() int {
 }
 
 func (op *OptClientArchType) String() string {
-	name, ok := ArchTypeToStringMap[op.archType]
+	name, ok := ArchTypeToStringMap[op.ArchType]
 	if !ok {
 		name = "Unknown"
 	}
@@ -80,6 +72,6 @@ func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 	if len(data) != 2 {
 		return nil, fmt.Errorf("Invalid arch type data length. Expected 2 bytes, got %v", len(data))
 	}
-	opt.archType = ArchType(binary.BigEndian.Uint16(data))
+	opt.ArchType = ArchType(binary.BigEndian.Uint16(data))
 	return &opt, nil
 }

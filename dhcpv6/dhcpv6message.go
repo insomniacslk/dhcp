@@ -149,10 +149,6 @@ func NewRequestFromAdvertise(advertise DHCPv6) (DHCPv6, error) {
 	nii.SetMajor(3) // UNDI - Universal Network Device Interface
 	nii.SetMinor(2) // UNDI rev. 3.2 - second generation EFI runtime driver support, see rfc457
 	req.AddOption(&nii)
-	// add OptClientArchType
-	cat := OptClientArchType{}
-	cat.SetArchType(EFI_BC)
-	req.AddOption(&cat)
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
 	vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
