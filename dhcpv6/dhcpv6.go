@@ -19,6 +19,10 @@ type DHCPv6 interface {
 	AddOption(Option)
 }
 
+// Modifier defines the signature for functions that can modify DHCPv6
+// structures. This is used to simplify packet manipulation
+type Modifier func(d DHCPv6) DHCPv6
+
 func FromBytes(data []byte) (DHCPv6, error) {
 	var (
 		isRelay     = false
@@ -73,7 +77,8 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	}
 }
 
-func NewMessage() (*DHCPv6Message, error) {
+// NewMessage creates a new DHCPv6 message with default options
+func NewMessage() (DHCPv6, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
@@ -106,9 +111,9 @@ func getOption(options []Option, code OptionCode) Option {
 	return opts[0]
 }
 
-// Decapsulate extracts the content of a relay message. It does not recurse if
-// there are nested relay messages. Returns the original packet if is not not a
-// relay message
+// DecapsulateRelay extracts the content of a relay message. It does not recurse
+// if there are nested relay messages. Returns the original packet if is not not
+// a relay message
 func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	if !l.IsRelay() {
 		return l, nil
@@ -124,8 +129,8 @@ func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	return relayOpt.RelayMessage(), nil
 }
 
-// Encapsulate creates a DHCPv6Relay message containing the passed DHCPv6 object.
-// struct as payload. The passed message type must be  either RELAY_FORW or
+// EncapsulateRelay creates a DHCPv6Relay message containing the passed DHCPv6
+// message as payload. The passed message type must be  either RELAY_FORW or
 // RELAY_REPL
 func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (DHCPv6, error) {
 	if mType != RELAY_FORW && mType != RELAY_REPL {

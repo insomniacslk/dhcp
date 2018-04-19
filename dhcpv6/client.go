@@ -37,8 +37,10 @@ func NewClient() *Client {
 }
 
 // Exchange executes a 4-way DHCPv6 request (SOLICIT, ADVERTISE, REQUEST,
-// REPLY). If the SOLICIT packet is nil, defaults are used.
-func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
+// REPLY). If the SOLICIT packet is nil, defaults are used. The modifiers will
+// be applied to the Request packet. A common use is to make sure that the
+// Request packet has the right options, see modifiers.go
+func (c *Client) Exchange(ifname string, solicit DHCPv6, modifiers ...Modifier) ([]DHCPv6, error) {
 	conversation := make([]DHCPv6, 0)
 	var err error
 
@@ -55,6 +57,9 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6) ([]DHCPv6, error) {
 	request, reply, err := c.Request(ifname, advertise, nil)
 	if request != nil {
 		conversation = append(conversation, request)
+	}
+	for _, mod := range modifiers {
+		request = mod(request)
 	}
 	if err != nil {
 		return conversation, err
@@ -121,26 +126,28 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		return nil, err
 	}
 
-	// wait for an ADVERTISE response
-	buf := make([]byte, maxUDPReceivedPacketSize)
+	// wait for a reply
 	oobdata := []byte{} // ignoring oob data
 	conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	var (
 		adv       DHCPv6
 		isMessage bool
 	)
+	defer conn.Close()
 	msg, ok := packet.(*DHCPv6Message)
 	if ok {
 		isMessage = true
 	}
 	for {
+		buf := make([]byte, maxUDPReceivedPacketSize)
 		n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
 		if err != nil {
 			return nil, err
 		}
 		adv, err = FromBytes(buf[:n])
 		if err != nil {
-			return nil, err
+			// skip non-DHCP packets
+			continue
 		}
 		if recvMsg, ok := adv.(*DHCPv6Message); ok && isMessage {
 			// if a regular message, check the transaction ID first

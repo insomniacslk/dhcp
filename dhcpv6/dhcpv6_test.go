@@ -31,9 +31,9 @@ func TestNewMessage(t *testing.T) {
 	d, err := NewMessage()
 	require.NoError(t, err)
 	require.NotNil(t, d)
-	require.Equal(t, SOLICIT, d.messageType)
-	require.NotEqual(t, 0, d.transactionID)
-	require.Empty(t, d.options)
+	require.Equal(t, SOLICIT, d.Type())
+	require.NotEqual(t, 0, d.(*DHCPv6Message).transactionID)
+	require.Empty(t, d.(*DHCPv6Message).options)
 }
 
 func TestSettersAndGetters(t *testing.T) {
