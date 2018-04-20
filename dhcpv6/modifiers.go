@@ -25,9 +25,9 @@ func WithNetboot(d DHCPv6) DHCPv6 {
 }
 
 // WithUserClass adds a user class option to the packet
-func WithUserClass(uc string) Modifier {
+func WithUserClass(uc []byte) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		ouc := OptUserClass{UserClass: []byte("FbLoL")}
+		ouc := OptUserClass{UserClass: uc}
 		d.AddOption(&ouc)
 		return d
 	}
