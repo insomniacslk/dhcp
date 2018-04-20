@@ -25,8 +25,10 @@ func (op *OptUserClass) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_USER_CLASS))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
+	u16 := make([]byte, 2)
 	for _, uc := range op.UserClasses {
-		binary.BigEndian.PutUint16(buf[4:6], uint16(len(uc)))
+		binary.BigEndian.PutUint16(u16, uint16(len(uc)))
+		buf = append(buf, u16...)
 		buf = append(buf, uc...)
 	}
 	return buf
@@ -61,10 +63,11 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 			return nil, errors.New("ParseOptUserClass: short data: missing length field")
 		}
 		ucLen := int(binary.BigEndian.Uint16(data[2:]))
-        if len(data) < ucLen +2 {
-			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", ucLen +2)
-        }
+		if len(data) < ucLen+2 {
+			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", ucLen+2)
+		}
 		opt.UserClasses = append(opt.UserClasses, data[2:ucLen])
+		data = data[2+ucLen:]
 	}
 	return &opt, nil
 }
