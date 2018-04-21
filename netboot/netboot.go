@@ -44,6 +44,8 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 	return conversation, nil
 }
 
+// ConversationToNetconf extracts network configuration and boot file URL from a
+// DHCPv6 4-way conversation and returns them, or an error if any.
 func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, error) {
 	var reply dhcpv6.DHCPv6
 	for _, m := range conversation {

@@ -27,7 +27,7 @@ type NetConf struct {
 	DNSSearchList []string
 }
 
-// GetNetConfFromPacket extracts network configuration information from a DHCPv6
+// GetNetConfFromPacketv6 extracts network configuration information from a DHCPv6
 // Reply packet and returns a populated NetConf structure
 func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	opt := d.GetOneOption(dhcpv6.OPTION_IA_NA)
