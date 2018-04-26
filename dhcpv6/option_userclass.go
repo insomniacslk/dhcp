@@ -62,11 +62,11 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		if len(data) < 2 {
 			return nil, errors.New("ParseOptUserClass: short data: missing length field")
 		}
-		ucLen := int(binary.BigEndian.Uint16(data[2:]))
+		ucLen := int(binary.BigEndian.Uint16(data[:2]))
 		if len(data) < ucLen+2 {
 			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", ucLen+2)
 		}
-		opt.UserClasses = append(opt.UserClasses, data[2:ucLen])
+		opt.UserClasses = append(opt.UserClasses, data[2:ucLen+2])
 		data = data[2+ucLen:]
 	}
 	return &opt, nil
