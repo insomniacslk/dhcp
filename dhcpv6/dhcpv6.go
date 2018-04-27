@@ -137,7 +137,7 @@ func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (D
 		return nil, fmt.Errorf("Message type must be either RELAY_FORW or RELAY_REPL")
 	}
 	outer := DHCPv6Relay{
-		messageType: RELAY_FORW,
+		messageType: mType,
 		linkAddr:    linkAddr,
 		peerAddr:    peerAddr,
 	}
