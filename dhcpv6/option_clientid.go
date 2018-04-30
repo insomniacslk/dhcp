@@ -9,7 +9,7 @@ import (
 )
 
 type OptClientId struct {
-	cid Duid
+	Cid Duid
 }
 
 func (op *OptClientId) Code() OptionCode {
@@ -20,24 +20,24 @@ func (op *OptClientId) ToBytes() []byte {
 	buf := make([]byte, 4)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_CLIENTID))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	buf = append(buf, op.cid.ToBytes()...)
+	buf = append(buf, op.Cid.ToBytes()...)
 	return buf
 }
 
 func (op *OptClientId) ClientID() Duid {
-	return op.cid
+	return op.Cid
 }
 
 func (op *OptClientId) SetClientID(cid Duid) {
-	op.cid = cid
+	op.Cid = cid
 }
 
 func (op *OptClientId) Length() int {
-	return op.cid.Length()
+	return op.Cid.Length()
 }
 
 func (op *OptClientId) String() string {
-	return fmt.Sprintf("OptClientId{cid=%v}", op.cid.String())
+	return fmt.Sprintf("OptClientId{cid=%v}", op.Cid.String())
 }
 
 // build an OptClientId structure from a sequence of bytes.
@@ -52,6 +52,6 @@ func ParseOptClientId(data []byte) (*OptClientId, error) {
 	if err != nil {
 		return nil, err
 	}
-	opt.cid = *cid
+	opt.Cid = *cid
 	return &opt, nil
 }
