@@ -106,6 +106,37 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 	return d, nil
 }
 
+// NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
+func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
+	if solicit == nil {
+		return nil, fmt.Errorf("SOLICIT cannot be nil")
+	}
+	if solicit.Type() != SOLICIT {
+		return nil, fmt.Errorf("The passed SOLICIT must have SOLICIT type set")
+	}
+	sol, ok := solicit.(*DHCPv6Message)
+	if !ok {
+		return nil, fmt.Errorf("The passed SOLICIT must be of DHCPv6Message type")
+	}
+	// build ADVERTISE from SOLICIT
+	adv := DHCPv6Message{}
+	adv.SetMessage(ADVERTISE)
+	adv.SetTransactionID(adv.TransactionID())
+	// add Client ID
+	cid := sol.GetOneOption(OPTION_CLIENTID)
+	if cid == nil {
+		return nil, fmt.Errorf("Client ID cannot be nil in SOLICIT when building ADVERTISE")
+	}
+	adv.AddOption(cid)
+
+	// apply modifiers
+	d := DHCPv6(&adv)
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
+	return d, nil
+}
+
 // NewRequestFromAdvertise creates a new REQUEST packet based on an ADVERTISE
 // packet options.
 func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
