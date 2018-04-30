@@ -121,7 +121,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	// build ADVERTISE from SOLICIT
 	adv := DHCPv6Message{}
 	adv.SetMessage(ADVERTISE)
-	adv.SetTransactionID(adv.TransactionID())
+	adv.SetTransactionID(sol.TransactionID())
 	// add Client ID
 	cid := sol.GetOneOption(OPTION_CLIENTID)
 	if cid == nil {
