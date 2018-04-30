@@ -98,6 +98,22 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 	a, err := NewAdvertiseFromSolicit(&s, withServerID)
 	require.NoError(t, err)
 	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
+	require.Equal(t, a.Type(), ADVERTISE)
+}
+
+func TestNewReplyFromRequest(t *testing.T) {
+	req := DHCPv6Message{}
+	req.SetMessage(REQUEST)
+	req.SetTransactionID(0xabcdef)
+	cid := OptClientId{}
+	req.AddOption(&cid)
+	sid := OptServerId{}
+	req.AddOption(&sid)
+
+	rep, err := NewReplyFromRequest(&req)
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), req.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
 }
 
 // TODO test NewSolicit
