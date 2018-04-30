@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -109,14 +110,14 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
 func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
 	if solicit == nil {
-		return nil, fmt.Errorf("SOLICIT cannot be nil")
+		return nil, errors.New("SOLICIT cannot be nil")
 	}
 	if solicit.Type() != SOLICIT {
 		return nil, fmt.Errorf("The passed SOLICIT must have SOLICIT type set")
 	}
 	sol, ok := solicit.(*DHCPv6Message)
 	if !ok {
-		return nil, fmt.Errorf("The passed SOLICIT must be of DHCPv6Message type")
+		return nil, errors.New("The passed SOLICIT must be of DHCPv6Message type")
 	}
 	// build ADVERTISE from SOLICIT
 	adv := DHCPv6Message{}
@@ -125,7 +126,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	// add Client ID
 	cid := sol.GetOneOption(OPTION_CLIENTID)
 	if cid == nil {
-		return nil, fmt.Errorf("Client ID cannot be nil in SOLICIT when building ADVERTISE")
+		return nil, errors.New("Client ID cannot be nil in SOLICIT when building ADVERTISE")
 	}
 	adv.AddOption(cid)
 
