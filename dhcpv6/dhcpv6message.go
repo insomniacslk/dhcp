@@ -113,7 +113,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 		return nil, errors.New("SOLICIT cannot be nil")
 	}
 	if solicit.Type() != SOLICIT {
-		return nil, fmt.Errorf("The passed SOLICIT must have SOLICIT type set")
+		return nil, errors.New("The passed SOLICIT must have SOLICIT type set")
 	}
 	sol, ok := solicit.(*DHCPv6Message)
 	if !ok {
