@@ -82,5 +82,23 @@ func TestFromAndToBytes(t *testing.T) {
 	require.Equal(t, expected, toBytes)
 }
 
+func withServerID(d DHCPv6) DHCPv6 {
+	sid := OptServerId{}
+	d.AddOption(&sid)
+	return d
+}
+
+func TestNewAdvertiseFromSolicit(t *testing.T) {
+	s := DHCPv6Message{}
+	s.SetMessage(SOLICIT)
+	s.SetTransactionID(0xabcdef)
+	cid := OptClientId{}
+	s.AddOption(&cid)
+
+	a, err := NewAdvertiseFromSolicit(&s, withServerID)
+	require.NoError(t, err)
+	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
+}
+
 // TODO test NewSolicit
 //      test String and Summary
