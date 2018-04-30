@@ -197,6 +197,43 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	return d, nil
 }
 
+// NewReplyFromRequest creates a new REPLY packet based on a REQUEST packet.
+func NewReplyFromRequest(request DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
+	if request == nil {
+		return nil, errors.New("REQUEST cannot be nil")
+	}
+	if request.Type() != REQUEST {
+		return nil, errors.New("The passed REQUEST must have REQUEST type set")
+	}
+	req, ok := request.(*DHCPv6Message)
+	if !ok {
+		return nil, errors.New("The passed REQUEST must be of DHCPv6Message type")
+	}
+	// build REPLY from REQUEST
+	rep := DHCPv6Message{}
+	rep.SetMessage(REPLY)
+	rep.SetTransactionID(req.TransactionID())
+	// add Client ID
+	cid := req.GetOneOption(OPTION_CLIENTID)
+	if cid == nil {
+		return nil, errors.New("Client ID cannot be nil in REQUEST when building REPLY")
+	}
+	rep.AddOption(cid)
+	// add Server ID
+	sid := req.GetOneOption(OPTION_SERVERID)
+	if sid == nil {
+		return nil, errors.New("Server ID cannot be nil in REQUEST when building REPLY")
+	}
+	rep.AddOption(sid)
+
+	// apply modifiers
+	d := DHCPv6(&rep)
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
+	return d, nil
+}
+
 func (d *DHCPv6Message) Type() MessageType {
 	return d.messageType
 }
