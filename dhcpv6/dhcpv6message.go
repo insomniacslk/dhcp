@@ -77,13 +77,14 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 	if err != nil {
 		return nil, err
 	}
-	cid := OptClientId{}
-	cid.SetClientID(Duid{
-		Type:          DUID_LLT,
-		HwType:        iana.HwTypeEthernet,
-		Time:          GetTime(),
-		LinkLayerAddr: iface.HardwareAddr,
-	})
+	cid := OptClientId{
+		Cid: Duid{
+			Type:          DUID_LLT,
+			HwType:        iana.HwTypeEthernet,
+			Time:          GetTime(),
+			LinkLayerAddr: iface.HardwareAddr,
+		},
+	}
 
 	d.AddOption(&cid)
 	oro := OptRequestedOption{}
