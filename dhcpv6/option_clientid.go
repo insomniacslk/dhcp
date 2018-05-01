@@ -24,14 +24,6 @@ func (op *OptClientId) ToBytes() []byte {
 	return buf
 }
 
-func (op *OptClientId) ClientID() Duid {
-	return op.Cid
-}
-
-func (op *OptClientId) SetClientID(cid Duid) {
-	op.Cid = cid
-}
-
 func (op *OptClientId) Length() int {
 	return op.Cid.Length()
 }
