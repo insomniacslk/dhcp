@@ -121,6 +121,16 @@ func (r *DHCPv6Relay) AddOption(option Option) {
 	r.options = append(r.options, option)
 }
 
+func (d *DHCPv6Relay) UpdateOption(option Option) {
+	for idx, opt := range d.options {
+		if opt.Code() == option.Code() {
+			d.options[idx] = option
+			// don't look further
+			break
+		}
+	}
+}
+
 func (r *DHCPv6Relay) IsRelay() bool {
 	return true
 }

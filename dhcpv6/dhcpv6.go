@@ -17,6 +17,7 @@ type DHCPv6 interface {
 	GetOneOption(code OptionCode) Option
 	SetOptions(options []Option)
 	AddOption(Option)
+	UpdateOption(Option)
 }
 
 // Modifier defines the signature for functions that can modify DHCPv6
