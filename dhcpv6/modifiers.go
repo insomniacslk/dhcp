@@ -4,6 +4,24 @@ import (
 	"log"
 )
 
+// WithClientID adds a client ID option to a DHCPv6 packet
+func WithClientID(duid Duid) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		cid := OptClientId{Cid: duid}
+		d.UpdateOption(&cid)
+		return d
+	}
+}
+
+// WithServerID adds a client ID option to a DHCPv6 packet
+func WithServerID(duid Duid) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		sid := OptServerId{Sid: duid}
+		d.UpdateOption(&sid)
+		return d
+	}
+}
+
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
 func WithNetboot(d DHCPv6) DHCPv6 {
 	msg, ok := d.(*DHCPv6Message)
@@ -26,7 +44,7 @@ func WithNetboot(d DHCPv6) DHCPv6 {
 
 // WithUserClass adds a user class option to the packet
 func WithUserClass(uc []byte) Modifier {
-    // TODO let the user specify multiple user classes
+	// TODO let the user specify multiple user classes
 	return func(d DHCPv6) DHCPv6 {
 		ouc := OptUserClass{UserClasses: [][]byte{uc}}
 		d.AddOption(&ouc)
