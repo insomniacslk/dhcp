@@ -127,9 +127,11 @@ func (r *DHCPv6Relay) UpdateOption(option Option) {
 		if opt.Code() == option.Code() {
 			r.options[idx] = option
 			// don't look further
-			break
+			return
 		}
 	}
+	// if not found, add it
+	r.AddOption(option)
 }
 
 func (r *DHCPv6Relay) IsRelay() bool {

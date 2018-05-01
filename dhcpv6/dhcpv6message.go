@@ -280,9 +280,11 @@ func (d *DHCPv6Message) UpdateOption(option Option) {
 		if opt.Code() == option.Code() {
 			d.options[idx] = option
 			// don't look further
-			break
+			return
 		}
 	}
+	// if not found, add it
+	d.AddOption(option)
 }
 
 func (d *DHCPv6Message) String() string {
