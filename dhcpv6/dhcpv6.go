@@ -79,16 +79,21 @@ func FromBytes(data []byte) (DHCPv6, error) {
 }
 
 // NewMessage creates a new DHCPv6 message with default options
-func NewMessage() (DHCPv6, error) {
+func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
 	}
-	d := DHCPv6Message{
+	msg := DHCPv6Message{
 		messageType:   SOLICIT,
 		transactionID: *tid,
 	}
-	return &d, nil
+	// apply modifiers
+	d := DHCPv6(&msg)
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
+	return d, nil
 }
 
 func getOptions(options []Option, code OptionCode, onlyFirst bool) []Option {
