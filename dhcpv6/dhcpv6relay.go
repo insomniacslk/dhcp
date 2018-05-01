@@ -123,9 +123,9 @@ func (r *DHCPv6Relay) AddOption(option Option) {
 
 // UpdateOption replaces the first option of the same type as the specified one.
 func (r *DHCPv6Relay) UpdateOption(option Option) {
-	for idx, opt := range d.options {
+	for idx, opt := range r.options {
 		if opt.Code() == option.Code() {
-			d.options[idx] = option
+			r.options[idx] = option
 			// don't look further
 			break
 		}
