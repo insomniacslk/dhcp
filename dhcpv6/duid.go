@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+	"net"
 
 	"github.com/insomniacslk/dhcp/iana"
 )
@@ -28,7 +29,7 @@ type Duid struct {
 	Type                 DuidType
 	HwType               iana.HwTypeType // for DUID-LLT and DUID-LL. Ignored otherwise. RFC 826
 	Time                 uint32          // for DUID-LLT. Ignored otherwise
-	LinkLayerAddr        []byte
+	LinkLayerAddr        net.HardwareAddr
 	EnterpriseNumber     uint32 // for DUID-EN. Ignored otherwise
 	EnterpriseIdentifier []byte // for DUID-EN. Ignored otherwise
 	Uuid                 []byte // for DUID-UUID. Ignored otherwise
