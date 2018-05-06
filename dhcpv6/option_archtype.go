@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+//ArchType encodes an architecture type in an uint16
 type ArchType uint16
 
 // see rfc4578
@@ -24,6 +25,7 @@ const (
 	EFI_X86_64        ArchType = 9
 )
 
+// ArchTypeToStringMap maps an ArchType to a mnemonic name
 var ArchTypeToStringMap = map[ArchType]string{
 	INTEL_X86PC:       "Intel x86PC",
 	NEC_PC98:          "NEC/PC98",
@@ -37,6 +39,7 @@ var ArchTypeToStringMap = map[ArchType]string{
 	EFI_X86_64:        "EFI x86-64",
 }
 
+// OptClientArchType represents an option CLIENT_ARCH_TYPE
 type OptClientArchType struct {
 	ArchType ArchType
 }
@@ -65,8 +68,9 @@ func (op *OptClientArchType) String() string {
 	return fmt.Sprintf("OptClientArchType{archtype=%v}", name)
 }
 
-// build an OptClientArchType structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
+// ParseOptClientArchType builds an OptClientArchType structure from
+// a sequence of bytes The input data does not include option code and
+// length bytes.
 func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 	opt := OptClientArchType{}
 	if len(data) != 2 {
