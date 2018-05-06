@@ -8,6 +8,7 @@ import (
 	"fmt"
 )
 
+// OptServerId represents a Client ID option
 type OptServerId struct {
 	Sid Duid
 }
@@ -32,7 +33,7 @@ func (op *OptServerId) String() string {
 	return fmt.Sprintf("OptServerId{sid=%v}", op.Sid.String())
 }
 
-// build an OptServerId structure from a sequence of bytes.
+// ParseOptServerId builds an OptServerId structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptServerId(data []byte) (*OptServerId, error) {
 	if len(data) < 2 {
