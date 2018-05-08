@@ -6,12 +6,14 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // OptStatusCode represents a DHCPv6 Status Code option
 type OptStatusCode struct {
-	statusCode    uint16
-	statusMessage []byte
+	StatusCode    iana.StatusCode
+	StatusMessage []byte
 }
 
 // Code returns the option code
@@ -24,38 +26,20 @@ func (op *OptStatusCode) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_STATUS_CODE))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	binary.BigEndian.PutUint16(buf[4:6], op.statusCode)
-	buf = append(buf, op.statusMessage...)
+	binary.BigEndian.PutUint16(buf[4:6], uint16(op.StatusCode))
+	buf = append(buf, op.StatusMessage...)
 	return buf
-}
-
-// StatusCode returns the status code
-func (op *OptStatusCode) StatusCode() uint16 {
-	return op.statusCode
-}
-
-// SetStatusCode sets the status code
-func (op *OptStatusCode) SetStatusCode(code uint16) {
-	op.statusCode = code
-}
-
-// StatusMessage returns the status message
-func (op *OptStatusCode) StatusMessage() []byte {
-	return op.statusMessage
-}
-
-// SetStatusMessage sets the status message
-func (op *OptStatusCode) SetStatusMessage(message []byte) {
-	op.statusMessage = message
 }
 
 // Length returns the option length
 func (op *OptStatusCode) Length() int {
-	return 2 + len(op.statusMessage)
+	return 2 + len(op.StatusMessage)
 }
 
 func (op *OptStatusCode) String() string {
-	return fmt.Sprintf("OptStatusCode{code=%v, message=%v}", op.statusCode, string(op.statusMessage))
+	return fmt.Sprintf("OptStatusCode{code=%s (%d), message=%v}",
+		iana.StatusCodeToString(op.StatusCode), op.StatusCode,
+		string(op.StatusMessage))
 }
 
 // ParseOptStatusCode builds an OptStatusCode structure from a sequence of
@@ -65,7 +49,7 @@ func ParseOptStatusCode(data []byte) (*OptStatusCode, error) {
 		return nil, fmt.Errorf("Invalid OptStatusCode data: length is shorter than 2")
 	}
 	opt := OptStatusCode{}
-	opt.statusCode = binary.BigEndian.Uint16(data[0:2])
-	opt.statusMessage = append(opt.statusMessage, data[2:]...)
+	opt.StatusCode = iana.StatusCode(binary.BigEndian.Uint16(data[0:2]))
+	opt.StatusMessage = append(opt.StatusMessage, data[2:]...)
 	return &opt, nil
 }
