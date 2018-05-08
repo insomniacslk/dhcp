@@ -17,3 +17,18 @@ func TestParseOptStatusCode(t *testing.T) {
 	require.Equal(t, opt.StatusCode, iana.StatusUseMulticast)
 	require.Equal(t, opt.StatusMessage, []byte("use multicast"))
 }
+
+func TestOptStatusCodeToBytes(t *testing.T) {
+	expected := []byte{
+		0, 13, // OPTION_STATUS_CODE
+		0, 9, // length
+		0, 0, // StatusSuccess
+		's', 'u', 'c', 'c', 'e', 's', 's',
+	}
+	opt := OptStatusCode{
+		iana.StatusSuccess,
+		[]byte("success"),
+	}
+	actual := opt.ToBytes()
+	require.Equal(t, expected, actual)
+}
