@@ -300,6 +300,28 @@ func TestNewToBytes(t *testing.T) {
 	require.Equal(t, expected, got)
 }
 
+func TestGetOption(t *testing.T) {
+	d, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
+	bootFileOpt1 := &OptionGeneric{OptionCode: OptionBootfileName, Data: []byte("boot.img")}
+	bootFileOpt2 := &OptionGeneric{OptionCode: OptionBootfileName, Data: []byte("boot2.img")}
+	d.AddOption(hostnameOpt)
+	d.AddOption(bootFileOpt1)
+	d.AddOption(bootFileOpt2)
+
+	require.Equal(t, d.GetOption(OptionHostName), []Option{hostnameOpt})
+	require.Equal(t, d.GetOption(OptionBootfileName), []Option{bootFileOpt1, bootFileOpt2})
+	require.Equal(t, d.GetOption(OptionRouter), []Option{})
+
+	require.Equal(t, d.GetOneOption(OptionHostName), hostnameOpt)
+	require.Equal(t, d.GetOneOption(OptionBootfileName), bootFileOpt1)
+	require.Equal(t, d.GetOneOption(OptionRouter), nil)
+}
+
 // TODO
 //      test broadcast/unicast flags
 //      test Options setter/getter

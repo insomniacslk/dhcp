@@ -511,6 +511,31 @@ func (d *DHCPv4) Options() []Option {
 	return d.options
 }
 
+// GetOption will attempt to get all options that match a DHCPv4 option
+// from its OptionCode.  If the option was not found it will return an
+// empty list.
+func (d *DHCPv4) GetOption(code OptionCode) []Option {
+	opts := []Option{}
+	for _, opt := range d.Options() {
+		if opt.Code() == code {
+			opts = append(opts, opt)
+		}
+	}
+	return opts
+}
+
+// GetOneOption will attempt to get an  option that match a Option code.
+// If there are multiple options with the same OptionCode it will only return
+// the first one found.  If no matching option is found nil will be returned.
+func (d *DHCPv4) GetOneOption(code OptionCode) Option {
+	for _, opt := range d.Options() {
+		if opt.Code() == code {
+			return opt
+		}
+	}
+	return nil
+}
+
 // StrippedOptions works like Options, but it does not return anything after the
 // End option.
 func (d *DHCPv4) StrippedOptions() []Option {
