@@ -31,5 +31,5 @@ func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
 	expected = append(expected, []byte(ns1)...)
 	expected = append(expected, []byte(ns2)...)
 	opt := OptDNSRecursiveNameServer{NameServers: nameservers}
-	require.Equal(t, opt.NameServers, nameservers)
+	require.Equal(t, opt.ToBytes(), expected)
 }
