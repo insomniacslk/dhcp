@@ -61,7 +61,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	}
 	odnsserv := opt.(*dhcpv6.OptDNSRecursiveNameServer)
 	// TODO should this be copied?
-	netconf.DNSServers = odnsserv.NameServers()
+	netconf.DNSServers = odnsserv.NameServers
 
 	opt = d.GetOneOption(dhcpv6.DOMAIN_SEARCH_LIST)
 	if opt == nil {
