@@ -8,8 +8,9 @@ import (
 	"fmt"
 )
 
+// OptDomainSearchList list implements a DOMAIN_SEARCH_LIST option
 type OptDomainSearchList struct {
-	domainSearchList []string
+	DomainSearchList []string
 }
 
 func (op *OptDomainSearchList) Code() OptionCode {
@@ -20,28 +21,20 @@ func (op *OptDomainSearchList) ToBytes() []byte {
 	buf := make([]byte, 4)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(DOMAIN_SEARCH_LIST))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	buf = append(buf, LabelsToBytes(op.domainSearchList)...)
+	buf = append(buf, LabelsToBytes(op.DomainSearchList)...)
 	return buf
-}
-
-func (op *OptDomainSearchList) DomainSearchList() []string {
-	return op.domainSearchList
-}
-
-func (op *OptDomainSearchList) SetDomainSearchList(dsList []string) {
-	op.domainSearchList = dsList
 }
 
 func (op *OptDomainSearchList) Length() int {
 	var length int
-	for _, label := range op.domainSearchList {
+	for _, label := range op.DomainSearchList {
 		length += len(label) + 2 // add the first and the last length bytes
 	}
 	return length
 }
 
 func (op *OptDomainSearchList) String() string {
-	return fmt.Sprintf("OptDomainSearchList{searchlist=%v}", op.domainSearchList)
+	return fmt.Sprintf("OptDomainSearchList{searchlist=%v}", op.DomainSearchList)
 }
 
 // build an OptDomainSearchList structure from a sequence of bytes.
@@ -49,7 +42,7 @@ func (op *OptDomainSearchList) String() string {
 func ParseOptDomainSearchList(data []byte) (*OptDomainSearchList, error) {
 	opt := OptDomainSearchList{}
 	var err error
-	opt.domainSearchList, err = LabelsFromBytes(data)
+	opt.DomainSearchList, err = LabelsFromBytes(data)
 	if err != nil {
 		return nil, err
 	}
