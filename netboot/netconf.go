@@ -69,7 +69,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	}
 	odomains := opt.(*dhcpv6.OptDomainSearchList)
 	// TODO should this be copied?
-	netconf.DNSSearchList = odomains.DomainSearchList()
+	netconf.DNSSearchList = odomains.DomainSearchList
 
 	return &netconf, nil
 }
