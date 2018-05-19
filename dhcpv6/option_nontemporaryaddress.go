@@ -9,10 +9,10 @@ import (
 )
 
 type OptIANA struct {
-	iaId    [4]byte
-	t1      uint32
-	t2      uint32
-	options []Option
+	IaId    [4]byte
+	T1      uint32
+	T2      uint32
+	Options []Option
 }
 
 func (op *OptIANA) Code() OptionCode {
@@ -23,50 +23,18 @@ func (op *OptIANA) ToBytes() []byte {
 	buf := make([]byte, 16)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IA_NA))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	copy(buf[4:8], op.iaId[:])
-	binary.BigEndian.PutUint32(buf[8:12], op.t1)
-	binary.BigEndian.PutUint32(buf[12:16], op.t2)
-	for _, opt := range op.options {
+	copy(buf[4:8], op.IaId[:])
+	binary.BigEndian.PutUint32(buf[8:12], op.T1)
+	binary.BigEndian.PutUint32(buf[12:16], op.T2)
+	for _, opt := range op.Options {
 		buf = append(buf, opt.ToBytes()...)
 	}
 	return buf
 }
 
-func (op *OptIANA) IAID() []byte {
-	return op.iaId[:]
-}
-
-func (op *OptIANA) SetIAID(iaId [4]byte) {
-	op.iaId = iaId
-}
-
-func (op *OptIANA) T1() uint32 {
-	return op.t1
-}
-
-func (op *OptIANA) SetT1(t1 uint32) {
-	op.t1 = t1
-}
-
-func (op *OptIANA) T2() uint32 {
-	return op.t2
-}
-
-func (op *OptIANA) SetT2(t2 uint32) {
-	op.t2 = t2
-}
-
-func (op *OptIANA) Options() []Option {
-	return op.options
-}
-
-func (op *OptIANA) SetOptions(options []Option) {
-	op.options = options
-}
-
 func (op *OptIANA) Length() int {
 	l := 12
-	for _, opt := range op.options {
+	for _, opt := range op.Options {
 		l += 4 + opt.Length()
 	}
 	return l
@@ -74,7 +42,7 @@ func (op *OptIANA) Length() int {
 
 func (op *OptIANA) String() string {
 	return fmt.Sprintf("OptIANA{IAID=%v, t1=%v, t2=%v, options=%v}",
-		op.iaId, op.t1, op.t2, op.options)
+		op.IaId, op.T1, op.T2, op.Options)
 }
 
 // build an OptIANA structure from a sequence of bytes.
@@ -84,12 +52,12 @@ func ParseOptIANA(data []byte) (*OptIANA, error) {
 	if len(data) < 12 {
 		return nil, fmt.Errorf("Invalid IA for Non-temporary Addresses data length. Expected at least 12 bytes, got %v", len(data))
 	}
-	copy(opt.iaId[:], data[:4])
-	opt.t1 = binary.BigEndian.Uint32(data[4:8])
-	opt.t2 = binary.BigEndian.Uint32(data[8:12])
+	copy(opt.IaId[:], data[:4])
+	opt.T1 = binary.BigEndian.Uint32(data[4:8])
+	opt.T2 = binary.BigEndian.Uint32(data[8:12])
 	var err error
 	if len(data[12:]) > 0 {
-		opt.options, err = OptionsFromBytes(data[12:])
+		opt.Options, err = OptionsFromBytes(data[12:])
 		if err != nil {
 			return nil, err
 		}

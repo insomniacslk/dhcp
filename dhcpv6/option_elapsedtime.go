@@ -9,7 +9,7 @@ import (
 )
 
 type OptElapsedTime struct {
-	elapsedTime uint16
+	ElapsedTime uint16
 }
 
 func (op *OptElapsedTime) Code() OptionCode {
@@ -20,16 +20,8 @@ func (op *OptElapsedTime) ToBytes() []byte {
 	buf := make([]byte, 6)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_ELAPSED_TIME))
 	binary.BigEndian.PutUint16(buf[2:4], 2)
-	binary.BigEndian.PutUint16(buf[4:6], uint16(op.elapsedTime))
+	binary.BigEndian.PutUint16(buf[4:6], uint16(op.ElapsedTime))
 	return buf
-}
-
-func (op *OptElapsedTime) ElapsedTime() uint16 {
-	return op.elapsedTime
-}
-
-func (op *OptElapsedTime) SetElapsedTime(elapsedTime uint16) {
-	op.elapsedTime = elapsedTime
 }
 
 func (op *OptElapsedTime) Length() int {
@@ -37,7 +29,7 @@ func (op *OptElapsedTime) Length() int {
 }
 
 func (op *OptElapsedTime) String() string {
-	return fmt.Sprintf("OptElapsedTime{elapsedtime=%v}", op.elapsedTime)
+	return fmt.Sprintf("OptElapsedTime{elapsedtime=%v}", op.ElapsedTime)
 }
 
 // build an OptElapsedTime structure from a sequence of bytes.
@@ -47,6 +39,6 @@ func ParseOptElapsedTime(data []byte) (*OptElapsedTime, error) {
 	if len(data) != 2 {
 		return nil, fmt.Errorf("Invalid elapsed time data length. Expected 2 bytes, got %v", len(data))
 	}
-	opt.elapsedTime = binary.BigEndian.Uint16(data)
+	opt.ElapsedTime = binary.BigEndian.Uint16(data)
 	return &opt, nil
 }

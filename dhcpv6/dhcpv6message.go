@@ -96,9 +96,9 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 	d.AddOption(&OptElapsedTime{})
 	// FIXME use real values for IA_NA
 	iaNa := OptIANA{}
-	iaNa.SetIAID([4]byte{0xfa, 0xce, 0xb0, 0x0c})
-	iaNa.SetT1(0xe10)
-	iaNa.SetT2(0x1518)
+	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
+	iaNa.T1 = 0xe10
+	iaNa.T2 = 0x1518
 	d.AddOption(&iaNa)
 
 	// apply modifiers

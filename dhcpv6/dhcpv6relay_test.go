@@ -93,7 +93,7 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 			transactionID: 0xaabbcc,
 			options: []Option{
 				&OptElapsedTime{
-					elapsedTime: 0,
+					ElapsedTime: 0,
 				},
 			},
 		},

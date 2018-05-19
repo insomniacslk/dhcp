@@ -112,7 +112,7 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 			reflect.TypeOf(innerOpt),
 		)
 	}
-	if eTime := eto.ElapsedTime(); eTime != 0x1122 {
+	if eTime := eto.ElapsedTime; eTime != 0x1122 {
 		t.Fatalf("Invalid elapsed time. Expected 0x1122, got 0x%04x", eTime)
 	}
 }

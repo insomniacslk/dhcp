@@ -13,7 +13,7 @@ func TestOptElapsedTime(t *testing.T) {
 	if optLen := opt.Length(); optLen != 2 {
 		t.Fatalf("Invalid length. Expected 2, got %v", optLen)
 	}
-	if elapsedTime := opt.ElapsedTime(); elapsedTime != 0xaabb {
+	if elapsedTime := opt.ElapsedTime; elapsedTime != 0xaabb {
 		t.Fatalf("Invalid elapsed time. Expected 0xaabb, got %v", elapsedTime)
 	}
 }
@@ -28,15 +28,15 @@ func TestOptElapsedTimeToBytes(t *testing.T) {
 
 func TestOptElapsedTimeSetGetElapsedTime(t *testing.T) {
 	opt := OptElapsedTime{}
-	opt.SetElapsedTime(10)
-	if elapsedTime := opt.ElapsedTime(); elapsedTime != 10 {
+	opt.ElapsedTime = 10
+	if elapsedTime := opt.ElapsedTime; elapsedTime != 10 {
 		t.Fatalf("Invalid elapsed time. Expected 10, got %v", elapsedTime)
 	}
 }
 
 func TestOptElapsedTimeString(t *testing.T) {
 	opt := OptElapsedTime{}
-	opt.SetElapsedTime(10)
+	opt.ElapsedTime = 10
 	expected := "OptElapsedTime{elapsedtime=10}"
 	if optString := opt.String(); optString != expected {
 		t.Fatalf("Invalid elapsed time string. Expected %v, got %v", expected, optString)
