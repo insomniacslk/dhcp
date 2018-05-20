@@ -47,11 +47,11 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	for _, iaaddr := range iaaddrs {
 		netconf.Addresses = append(netconf.Addresses, AddrConf{
 			IPNet: net.IPNet{
-				IP:   iaaddr.IPv6Addr(),
+				IP:   iaaddr.IPv6Addr,
 				Mask: netmask,
 			},
-			PreferredLifetime: int(iaaddr.PreferredLifetime()),
-			ValidLifetime:     int(iaaddr.ValidLifetime()),
+			PreferredLifetime: int(iaaddr.PreferredLifetime),
+			ValidLifetime:     int(iaaddr.ValidLifetime),
 		})
 	}
 	// get DNS configuration

@@ -48,6 +48,7 @@ func (op *OptIANA) String() string {
 // build an OptIANA structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIANA(data []byte) (*OptIANA, error) {
+	var err error
 	opt := OptIANA{}
 	if len(data) < 12 {
 		return nil, fmt.Errorf("Invalid IA for Non-temporary Addresses data length. Expected at least 12 bytes, got %v", len(data))
@@ -55,12 +56,9 @@ func ParseOptIANA(data []byte) (*OptIANA, error) {
 	copy(opt.IaId[:], data[:4])
 	opt.T1 = binary.BigEndian.Uint32(data[4:8])
 	opt.T2 = binary.BigEndian.Uint32(data[8:12])
-	var err error
-	if len(data[12:]) > 0 {
-		opt.Options, err = OptionsFromBytes(data[12:])
-		if err != nil {
-			return nil, err
-		}
+	opt.Options, err = OptionsFromBytes(data[12:])
+	if err != nil {
+		return nil, err
 	}
 	return &opt, nil
 }
