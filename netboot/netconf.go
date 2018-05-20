@@ -38,7 +38,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	// get IP configuration
 	oiana := opt.(*dhcpv6.OptIANA)
 	iaaddrs := make([]*dhcpv6.OptIAAddress, 0)
-	for _, o := range oiana.Options() {
+	for _, o := range oiana.Options {
 		if o.Code() == dhcpv6.OPTION_IAADDR {
 			iaaddrs = append(iaaddrs, o.(*dhcpv6.OptIAAddress))
 		}
