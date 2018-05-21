@@ -120,11 +120,15 @@ func ParseOption(dataStart []byte) (Option, error) {
 func OptionsFromBytes(data []byte) ([]Option, error) {
 	// Parse a sequence of bytes until the end and build a list of options from
 	// it. Returns an error if any invalid option or length is found.
+	options := make([]Option, 0, 10)
+	if len(data) == 0 {
+		// no options, no party
+		return options, nil
+	}
 	if len(data) < 4 {
 		// cannot be shorter than option code (2 bytes) + length (2 bytes)
 		return nil, fmt.Errorf("Invalid options: shorter than 4 bytes")
 	}
-	options := make([]Option, 0, 10)
 	idx := 0
 	for {
 		if idx == len(data) {

@@ -9,78 +9,62 @@ import (
 	"net"
 )
 
+// OptIAAddress represents an OPTION_IAADDR
 type OptIAAddress struct {
-	ipv6Addr          [16]byte
-	preferredLifetime uint32
-	validLifetime     uint32
-	options           []byte
+	IPv6Addr          net.IP
+	PreferredLifetime uint32
+	ValidLifetime     uint32
+	Options           []Option
 }
 
+// Code returns the option's code
 func (op *OptIAAddress) Code() OptionCode {
 	return OPTION_IAADDR
 }
 
+// ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAAddress) ToBytes() []byte {
 	buf := make([]byte, 28)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IAADDR))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	copy(buf[4:20], op.ipv6Addr[:])
-	binary.BigEndian.PutUint32(buf[20:24], op.preferredLifetime)
-	binary.BigEndian.PutUint32(buf[24:28], op.validLifetime)
-	buf = append(buf, op.options...)
+	copy(buf[4:20], op.IPv6Addr[:])
+	binary.BigEndian.PutUint32(buf[20:24], op.PreferredLifetime)
+	binary.BigEndian.PutUint32(buf[24:28], op.ValidLifetime)
+	for _, opt := range op.Options {
+		buf = append(buf, opt.ToBytes()...)
+	}
 	return buf
 }
 
-func (op *OptIAAddress) IPv6Addr() []byte {
-	return op.ipv6Addr[:]
-}
-
-func (op *OptIAAddress) SetIPv6Addr(addr [16]byte) {
-	op.ipv6Addr = addr
-}
-
-func (op *OptIAAddress) PreferredLifetime() uint32 {
-	return op.preferredLifetime
-}
-
-func (op *OptIAAddress) SetPreferredLifetime(pl uint32) {
-	op.preferredLifetime = pl
-}
-
-func (op *OptIAAddress) ValidLifetime() uint32 {
-	return op.validLifetime
-}
-
-func (op *OptIAAddress) SetValidLifetime(vl uint32) {
-	op.validLifetime = vl
-}
-func (op *OptIAAddress) Options() []byte {
-	return op.options
-}
-
-func (op *OptIAAddress) SetOptions(options []byte) {
-	op.options = options
-}
-
+// Length returns the option length
 func (op *OptIAAddress) Length() int {
-	return 24 + len(op.options)
+	opLen := 24
+	for _, opt := range op.Options {
+		opLen += 4 + opt.Length()
+	}
+	return opLen
 }
 
 func (op *OptIAAddress) String() string {
 	return fmt.Sprintf("OptIAAddress{ipv6addr=%v, preferredlifetime=%v, validlifetime=%v, options=%v}",
-		net.IP(op.ipv6Addr[:]), op.preferredLifetime, op.validLifetime, op.options)
+		net.IP(op.IPv6Addr[:]), op.PreferredLifetime, op.ValidLifetime, op.Options)
 }
 
-// build an OptIAAddress structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
+// ParseOptIAAddress builds an OptIAAddress structure from a sequence
+// of bytes. The input data does not include option code and length
+// bytes.
 func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
+	var err error
 	opt := OptIAAddress{}
 	if len(data) < 24 {
 		return nil, fmt.Errorf("Invalid IA Address data length. Expected at least 24 bytes, got %v", len(data))
 	}
-	copy(opt.ipv6Addr[:], data[:16])
-	opt.preferredLifetime = binary.BigEndian.Uint32(data[16:20])
-	opt.validLifetime = binary.BigEndian.Uint32(data[20:24])
-	copy(opt.options, data[24:])
+	opt.IPv6Addr = net.IP(data[:16])
+	opt.PreferredLifetime = binary.BigEndian.Uint32(data[16:20])
+	opt.ValidLifetime = binary.BigEndian.Uint32(data[20:24])
+	opt.Options, err = OptionsFromBytes(data[24:])
+	if err != nil {
+		return nil, err
+	}
 	return &opt, nil
 }
