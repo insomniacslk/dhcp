@@ -132,4 +132,9 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	m, err := relay.GetInnerMessage()
 	require.NoError(t, err)
 	require.Equal(t, m, a)
+
+	rr, err = NewRelayReplFromRelayForw(nil, a)
+	require.Error(t, err)
+	rr, err = NewRelayReplFromRelayForw(&rf, nil)
+	require.Error(t, err)
 }
