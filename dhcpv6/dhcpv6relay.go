@@ -182,29 +182,27 @@ func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
 	return addr, nil
 }
 
-// NewRelayReplFromRelayForw creates a RELAY_REPLY packet based on a RELAY_FORW
-// packet containing the passed DHCPv6 message as payload.
+// NewRelayReplFromRelayForw creates a RELAY_REPL packet based on a RELAY_FORW
+// packet and replaces the inner message with the passed DHCPv6 message.
 func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	var (
 		err                error
 		linkAddr, peerAddr []net.IP
 		optiids            []Option
 	)
-
 	if relayForw == nil {
 		return nil, errors.New("RELAY_FORW cannot be nil")
 	}
 	if relayForw.Type() != RELAY_FORW {
-		return nil, errors.New("The passed RELAY_FORW must have RELAY_FORW type set")
+		return nil, errors.New("The passed packet is not of type RELAY_FORW")
 	}
+	relay := relayForw.(*DHCPv6Relay)
 	if msg == nil {
 		return nil, errors.New("The passed message cannot be nil")
 	}
 	if msg.IsRelay() {
 		return nil, errors.New("The passed message cannot be a relay")
 	}
-
-	relay := relayForw.(*DHCPv6Relay)
 	for {
 		linkAddr = append(linkAddr, relay.LinkAddr())
 		peerAddr = append(peerAddr, relay.PeerAddr())
@@ -228,6 +226,5 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 			return nil, err
 		}
 	}
-
 	return msg, nil
 }
