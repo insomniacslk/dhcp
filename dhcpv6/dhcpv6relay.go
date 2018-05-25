@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"errors"
 	"fmt"
 	"net"
 )
@@ -179,4 +180,54 @@ func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
 		}
 	}
 	return addr, nil
+}
+
+// NewRelayReplFromRelayForw creates a RELAY_REPLY packet based on a RELAY_FORW
+// packet containing the passed DHCPv6 message as payload.
+func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
+	var (
+		err                error
+		linkAddr, peerAddr []net.IP
+		optiids            []Option
+	)
+
+	if relayForw == nil {
+		return nil, errors.New("RELAY_FORW cannot be nil")
+	}
+	if relayForw.Type() != RELAY_FORW {
+		return nil, errors.New("The passed RELAY_FORW must have RELAY_FORW type set")
+	}
+	if msg == nil {
+		return nil, errors.New("The passed message cannot be nil")
+	}
+	if msg.IsRelay() {
+		return nil, errors.New("The passed message cannot be a relay")
+	}
+
+	relay := relayForw.(*DHCPv6Relay)
+	for {
+		linkAddr = append(linkAddr, relay.LinkAddr())
+		peerAddr = append(peerAddr, relay.PeerAddr())
+		optiids = append(optiids, relay.GetOneOption(OPTION_INTERFACE_ID))
+		decap, err := DecapsulateRelay(relay)
+		if err != nil {
+			return nil, err
+		}
+		if decap.IsRelay() {
+			relay = decap.(*DHCPv6Relay)
+		} else {
+			break
+		}
+	}
+	for i := len(linkAddr) - 1; i >= 0; i-- {
+		msg, err = EncapsulateRelay(msg, RELAY_REPL, linkAddr[i], peerAddr[i])
+		if opt := optiids[i]; opt != nil {
+			msg.AddOption(opt)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return msg, nil
 }
