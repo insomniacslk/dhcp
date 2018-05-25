@@ -11,7 +11,7 @@ func TestParseOptUserClass(t *testing.T) {
 		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	opt, err := ParseOptUserClass(expected)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 1, len(opt.UserClasses))
 	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
 }
@@ -22,7 +22,7 @@ func TestParseOptUserClassMultiple(t *testing.T) {
 		0, 4, 't', 'e', 's', 't',
 	}
 	opt, err := ParseOptUserClass(expected)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, len(opt.UserClasses), 2)
 	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
 	require.Equal(t, []byte("test"), opt.UserClasses[1])
@@ -30,9 +30,8 @@ func TestParseOptUserClassMultiple(t *testing.T) {
 
 func TestParseOptUserClassNone(t *testing.T) {
 	expected := []byte{}
-	opt, err := ParseOptUserClass(expected)
-	require.Nil(t, err)
-	require.Equal(t, 0, len(opt.UserClasses))
+	_, err := ParseOptUserClass(expected)
+	require.Error(t, err)
 }
 
 func TestOptUserClassToBytes(t *testing.T) {
