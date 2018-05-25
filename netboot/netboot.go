@@ -88,6 +88,6 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 		}
 	}
 	obf := opt.(*dhcpv6.OptBootFileURL)
-	bootfile = string(obf.BootFileURL())
+	bootfile = string(obf.BootFileURL)
 	return netconf, bootfile, nil
 }
