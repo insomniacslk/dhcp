@@ -14,7 +14,7 @@ func TestOptBootFileURL(t *testing.T) {
 	if optLen := opt.Length(); optLen != len(expected) {
 		t.Fatalf("Invalid length. Expected %v, got %v", len(expected), optLen)
 	}
-	if url := opt.BootFileURL(); !bytes.Equal(url, expected) {
+	if url := opt.BootFileURL; !bytes.Equal(url, expected) {
 		t.Fatalf("Invalid boot file URL. Expected %v, got %v", expected, url)
 	}
 }
@@ -24,7 +24,7 @@ func TestOptBootFileURLToBytes(t *testing.T) {
 	expected := []byte{00, 59, 00, byte(len(urlString))}
 	expected = append(expected, urlString...)
 	opt := OptBootFileURL{
-		bootFileUrl: urlString,
+		BootFileURL: urlString,
 	}
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, expected) {
