@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDHCPv6Relay(t *testing.T) {
@@ -103,4 +105,36 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 	if !bytes.Equal(expected, relayBytes) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, relayBytes)
 	}
+}
+
+func TestNewRelayRepFromRelayForw(t *testing.T) {
+	rf := DHCPv6Relay{}
+	rf.SetMessageType(RELAY_FORW)
+	rf.SetPeerAddr(net.IPv6linklocalallrouters)
+	rf.SetLinkAddr(net.IPv6interfacelocalallnodes)
+	oro := OptRelayMsg{}
+	s := DHCPv6Message{}
+	s.SetMessage(SOLICIT)
+	cid := OptClientId{}
+	s.AddOption(&cid)
+	oro.SetRelayMessage(&s)
+	rf.AddOption(&oro)
+
+	a, err := NewAdvertiseFromSolicit(&s)
+	require.NoError(t, err)
+	rr, err := NewRelayReplFromRelayForw(&rf, a)
+	require.NoError(t, err)
+	relay := rr.(*DHCPv6Relay)
+	require.Equal(t, rr.Type(), RELAY_REPL)
+	require.Equal(t, relay.HopCount(), rf.HopCount())
+	require.Equal(t, relay.PeerAddr(), rf.PeerAddr())
+	require.Equal(t, relay.LinkAddr(), rf.LinkAddr())
+	m, err := relay.GetInnerMessage()
+	require.NoError(t, err)
+	require.Equal(t, m, a)
+
+	rr, err = NewRelayReplFromRelayForw(nil, a)
+	require.Error(t, err)
+	rr, err = NewRelayReplFromRelayForw(&rf, nil)
+	require.Error(t, err)
 }
