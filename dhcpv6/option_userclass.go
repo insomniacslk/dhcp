@@ -69,5 +69,8 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		opt.UserClasses = append(opt.UserClasses, data[2:ucLen+2])
 		data = data[2+ucLen:]
 	}
+	if len(opt.UserClasses) < 1 {
+		return nil, errors.New("ParseOptUserClass: at least one user class is required")
+	}
 	return &opt, nil
 }
