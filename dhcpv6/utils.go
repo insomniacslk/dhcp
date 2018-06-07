@@ -47,8 +47,6 @@ func IsUsingUEFI(msg DHCPv6) bool {
 			return true
 		}
 	}
-	// our iPXE roms have been built to include the architecture type in the
-	// user_class field. e.g. FBipxeUEFI or FBipxeLegacy
 	if opt := msg.GetOneOption(OPTION_USER_CLASS); opt != nil {
 		optuc := opt.(*OptUserClass)
 		for _, uc := range optuc.UserClasses {
