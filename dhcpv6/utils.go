@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-// isNetboot function takes a DHCPv6 message and returns true if the machine
+// IsNetboot function takes a DHCPv6 message and returns true if the machine
 // is trying to netboot. It checks if "boot file" is one of the requested
 // options, which is useful for SOLICIT/REQUEST packet types, it also checks
 // if the "boot file" option is included in the packet, which is useful for
@@ -23,7 +23,7 @@ func IsNetboot(msg DHCPv6) bool {
 	return false
 }
 
-// isUsingUEFI function takes a DHCPv6 message and returns true if
+// IsUsingUEFI function takes a DHCPv6 message and returns true if
 // the machine trying to netboot is using UEFI of false if it is not.
 func IsUsingUEFI(msg DHCPv6) bool {
 	// RFC 4578 says:
