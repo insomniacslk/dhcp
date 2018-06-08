@@ -43,6 +43,7 @@ func IsUsingUEFI(msg DHCPv6) bool {
 	//               9    EFI x86-64
 	if opt := msg.GetOneOption(OPTION_CLIENT_ARCH_TYPE); opt != nil {
 		optat := opt.(*OptClientArchType)
+		// TODO investigate if other types are appropriate
 		if optat.ArchType == EFI_BC || optat.ArchType == EFI_X86_64 {
 			return true
 		}
