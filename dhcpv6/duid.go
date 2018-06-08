@@ -33,6 +33,7 @@ type Duid struct {
 	EnterpriseNumber     uint32 // for DUID-EN. Ignored otherwise
 	EnterpriseIdentifier []byte // for DUID-EN. Ignored otherwise
 	Uuid                 []byte // for DUID-UUID. Ignored otherwise
+	Opaque               []byte // for unknown DUIDs
 }
 
 func (d *Duid) Length() int {
@@ -44,8 +45,9 @@ func (d *Duid) Length() int {
 		return 6 + len(d.EnterpriseIdentifier)
 	} else if d.Type == DUID_UUID {
 		return 18
+	} else {
+		return 2 + len(d.Opaque)
 	}
-	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
 
 func (d *Duid) ToBytes() []byte {
@@ -69,8 +71,11 @@ func (d *Duid) ToBytes() []byte {
 		buf := make([]byte, 2)
 		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
 		return append(buf, d.Uuid...)
+	} else {
+		buf := make([]byte, 2)
+		binary.BigEndian.PutUint16(buf[0:2], uint16(d.Type))
+		return append(buf, d.Opaque...)
 	}
-	panic(fmt.Sprintf("Unknown DUID type: %v", d.Type))
 }
 
 func (d *Duid) String() string {
@@ -124,6 +129,8 @@ func DuidFromBytes(data []byte) (*Duid, error) {
 			return nil, fmt.Errorf("Invalid DUID-UUID length. Expected 18, got %v", len(data))
 		}
 		d.Uuid = data[2:18]
+	} else {
+		d.Opaque = data[2:]
 	}
 	return &d, nil
 }

@@ -104,3 +104,17 @@ func TestDuidUuidToBytes(t *testing.T) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
 	}
 }
+
+func TestOpaqueDuid(t *testing.T) {
+	duid := []byte("\x00\x0a\x00\x03\x00\x01\x4c\x5e\x0c\x43\xbf\x39")
+	d, err := DuidFromBytes(duid)
+	if err != nil {
+		t.Fatalf("DuidFromBytes: unexpected error: %v", err)
+	}
+	if got, want := d.Length(), len(duid); got != want {
+		t.Errorf("Length: unexpected result: got %d, want %d", got, want)
+	}
+	if got, want := d.ToBytes(), duid; !bytes.Equal(got, want) {
+		t.Fatalf("ToBytes: unexpected result: got %x, want %x", got, want)
+	}
+}
