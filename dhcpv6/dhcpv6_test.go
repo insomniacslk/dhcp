@@ -116,5 +116,35 @@ func TestNewReplyFromRequest(t *testing.T) {
 	require.Equal(t, rep.Type(), REPLY)
 }
 
+func TestNewReplyFromRenew(t *testing.T) {
+	ren := DHCPv6Message{}
+	ren.SetMessage(RENEW)
+	ren.SetTransactionID(0xabcdef)
+	cid := OptClientId{}
+	ren.AddOption(&cid)
+
+	rep, err := NewReplyFromRenew(&ren)
+	require.Error(t, err)
+
+	sid := OptServerId{}
+	ren.AddOption(&sid)
+	rep, err = NewReplyFromRenew(&ren)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), ren.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
+}
+
+func TestNewReplyFromRebind(t *testing.T) {
+	reb := DHCPv6Message{}
+	reb.SetMessage(REBIND)
+	reb.SetTransactionID(0xabcdef)
+	cid := OptClientId{}
+	reb.AddOption(&cid)
+
+	rep, err := NewReplyFromRebind(&reb)
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), reb.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
+}
+
 // TODO test NewSolicit
 //      test String and Summary
