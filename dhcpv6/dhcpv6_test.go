@@ -135,12 +135,16 @@ func TestNewReplyFromRenew(t *testing.T) {
 
 func TestNewReplyFromRebind(t *testing.T) {
 	reb := DHCPv6Message{}
+	reb.SetMessage(REPLY)
+	rep, err := NewReplyFromRebind(&reb)
+	require.Error(t, err)
+
 	reb.SetMessage(REBIND)
 	reb.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
 	reb.AddOption(&cid)
 
-	rep, err := NewReplyFromRebind(&reb)
+	rep, err = NewReplyFromRebind(&reb)
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), reb.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
