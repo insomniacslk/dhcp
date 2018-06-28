@@ -49,6 +49,16 @@ func TestParseOptDomainNameServer(t *testing.T) {
 	require.Error(t, err, "should get error from bad length")
 }
 
+func TestParseOptDomainNameServerNoServers(t *testing.T) {
+	// RFC2132 requires that at least one DNS server IP is specified
+	data := []byte{
+		byte(OptionDomainNameServer),
+		0, // Length
+	}
+	_, err := ParseOptDomainNameServer(data)
+	require.Error(t, err)
+}
+
 func TestOptDomainNameServerString(t *testing.T) {
 	o := OptDomainNameServer{NameServers: []net.IP{net.IPv4(192, 168, 0, 1), net.IPv4(192, 168, 0, 10)}}
 	require.Equal(t, "Domain Name Servers -> 192.168.0.1, 192.168.0.10", o.String())
