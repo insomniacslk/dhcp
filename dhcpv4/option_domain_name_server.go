@@ -8,7 +8,8 @@ import (
 // This option implements the domain name server option
 // https://tools.ietf.org/html/rfc2132
 
-// OptDomainNameServer represents an option encapsulating the server identifier.
+// OptDomainNameServer represents an option encapsulating the domain name
+// servers.
 type OptDomainNameServer struct {
 	NameServers []net.IP
 }
@@ -24,8 +25,8 @@ func ParseOptDomainNameServer(data []byte) (*OptDomainNameServer, error) {
 		return nil, fmt.Errorf("expected code %v, got %v", OptionDomainNameServer, code)
 	}
 	length := int(data[1])
-	if length%4 != 0 {
-		return nil, fmt.Errorf("Invalid length: expected multiple of 4, got %v", length)
+	if length == 0 || length%4 != 0 {
+		return nil, fmt.Errorf("Invalid length: expected multiple of 4 larger than 4, got %v", length)
 	}
 	if len(data) < 2+length {
 		return nil, ErrShortByteStream
