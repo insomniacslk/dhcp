@@ -56,6 +56,8 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptClassIdentifier(data)
 	case OptionDomainName:
 		opt, err = ParseOptDomainName(data)
+	case OptionDomainNameServer:
+		opt, err = ParseOptDomainNameServer(data)
 	case OptionVendorIdentifyingVendorClass:
 		opt, err = ParseOptVIVC(data)
 	default:
