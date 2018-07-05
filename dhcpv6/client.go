@@ -45,21 +45,22 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6, modifiers ...Modifier) 
 	var err error
 
 	// Solicit
-	solicit, advertise, err := c.Solicit(ifname, solicit)
-	if solicit != nil {
-		conversation = append(conversation, solicit)
+	if solicit == nil {
+		solicit, err = NewSolicitForInterface(ifname)
+		if err != nil {
+			return conversation, err
+		}
 	}
+	solicit, advertise, err := c.Solicit(ifname, solicit, modifiers...)
+	conversation = append(conversation, solicit)
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, advertise)
 
-	request, reply, err := c.Request(ifname, advertise, nil)
+	request, reply, err := c.Request(ifname, advertise, nil, modifiers...)
 	if request != nil {
 		conversation = append(conversation, request)
-	}
-	for _, mod := range modifiers {
-		request = mod(request)
 	}
 	if err != nil {
 		return conversation, err
@@ -170,7 +171,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 
 // Solicit sends a SOLICIT, return the solicit, an ADVERTISE (if not nil), and
 // an error if any
-func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, DHCPv6, error) {
+func (c *Client) Solicit(ifname string, solicit DHCPv6, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
 	var err error
 	if solicit == nil {
 		solicit, err = NewSolicitForInterface(ifname)
@@ -178,19 +179,25 @@ func (c *Client) Solicit(ifname string, solicit DHCPv6) (DHCPv6, DHCPv6, error) 
 			return nil, nil, err
 		}
 	}
+	for _, mod := range modifiers {
+		solicit = mod(solicit)
+	}
 	advertise, err := c.sendReceive(ifname, solicit, MSGTYPE_NONE)
 	return solicit, advertise, err
 }
 
 // Request sends a REQUEST built from an ADVERTISE if no REQUEST is specified.
 // It returns the request, a reply if not nil, and an error if any
-func (c *Client) Request(ifname string, advertise, request DHCPv6) (DHCPv6, DHCPv6, error) {
+func (c *Client) Request(ifname string, advertise, request DHCPv6, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
 	if request == nil {
 		var err error
 		request, err = NewRequestFromAdvertise(advertise)
 		if err != nil {
 			return nil, nil, err
 		}
+	}
+	for _, mod := range modifiers {
+		request = mod(request)
 	}
 	reply, err := c.sendReceive(ifname, request, MSGTYPE_NONE)
 	return request, reply, err
