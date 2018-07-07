@@ -118,13 +118,13 @@ func getOption(options []Option, code OptionCode) Option {
 }
 
 func delOption(options []Option, code OptionCode) []Option {
-	for i := 0; i < len(options); i++ {
-			if options[i].Code() == code {
-			options = append(options[:i], options[i+1:]...)
-			i--
+	newOpts := make([]Option, 0, len(options))
+	for _, opt := range options {
+		if opt.Code() != code {
+			newOpts = append(newOpts, opt)
 		}
 	}
-	return options
+	return newOpts
 }
 
 // DecapsulateRelay extracts the content of a relay message. It does not recurse
