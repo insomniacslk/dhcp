@@ -40,27 +40,22 @@ func TestOptIANAParseOptIANAInvalidOptions(t *testing.T) {
 }
 
 func TestOptIANADelOption(t *testing.T) {
-	optiana := OptIANA{}
-	optiaadr := OptIAAddress{}
+	optiana1 := OptIANA{}
+	optiana2 := OptIANA{}
+	optiaaddr := OptIAAddress{}
 	optsc := OptStatusCode{}
 
-	optiana.Options = append(optiana.Options, &optsc)
-	optiana.Options = append(optiana.Options, &optiaadr)
-	optiana.Options = append(optiana.Options, &optiaadr)
+	optiana1.Options = append(optiana1.Options, &optsc)
+	optiana1.Options = append(optiana1.Options, &optiaaddr)
+	optiana1.Options = append(optiana1.Options, &optiaaddr)
+	optiana1.DelOption(OPTION_IAADDR)
+	require.Equal(t, optiana1.Options, []Option{&optsc})
 
-	optiana.DelOption(OPTION_IAADDR)
-	opt := getOption(optiana.Options, OPTION_IAADDR)
-	require.Nil(t, opt)
-	require.Equal(t, len(optiana.Options), 1)
-
-	optiana.Options = append(optiana.Options, &optiaadr)
-	optiana.Options = append(optiana.Options, &optsc)
-	optiana.Options = append(optiana.Options, &optiaadr)
-
-	optiana.DelOption(OPTION_IAADDR)
-	opt = getOption(optiana.Options, OPTION_IAADDR)
-	require.Nil(t, opt)
-	require.Equal(t, optiana.Options, getOptions(optiana.Options, OPTION_STATUS_CODE, false))
+	optiana2.Options = append(optiana2.Options, &optiaaddr)
+	optiana2.Options = append(optiana2.Options, &optsc)
+	optiana2.Options = append(optiana2.Options, &optiaaddr)
+	optiana2.DelOption(OPTION_IAADDR)
+	require.Equal(t, optiana2.Options, []Option{&optsc})
 }
 
 func TestOptIANAToBytes(t *testing.T) {
