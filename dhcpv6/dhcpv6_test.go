@@ -111,6 +111,10 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), req.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
+
+	relay := DHCPv6Relay{}
+	rep, err = NewReplyFromDHCPv6Message(&relay)
+	require.Error(t, err)
 }
 
 // TODO test NewSolicit
