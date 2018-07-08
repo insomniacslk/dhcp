@@ -198,17 +198,13 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	return d, nil
 }
 
-// NewReplyFromMessage creates a new REPLY packet based on a MESSAGE packet.
-func NewReplyFromMessage(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
+// NewReplyFromDHCPv6Message creates a new REPLY packet based on a DHCPv6Message.
+func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
 	if message == nil {
-		return nil, errors.New("MESSAGE cannot be nil")
+		return nil, errors.New("DHCPv6Message cannot be nil")
 	}
 	switch message.Type() {
-		case REQUEST:
-		case CONFIRM:
-		case RENEW:
-		case REBIND:
-		case RELEASE:
+		case REQUEST, CONFIRM, RENEW, REBIND, RELEASE:
 		default:
 			return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}
@@ -233,35 +229,6 @@ func NewReplyFromMessage(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) 
 		d = mod(d)
 	}
 	return d, nil
-}
-
-// NewReplyFromMessageWithServerID creates a new REPLY packet based on a MESSAGE packet.
-func NewReplyFromMessageWithServerID(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if message == nil {
-		return nil, errors.New("MESSAGE cannot be nil")
-	}
-	// get Server ID
-	sid := message.GetOneOption(OPTION_SERVERID)
-	if sid == nil {
-		return nil, errors.New("Server ID cannot be nil when building REPLY")
-	}
-	modifiers = append(modifiers, WithServerID(sid.(*OptServerId).Sid))
-	return NewReplyFromMessage(message, modifiers...)
-}
-
-// NewReplyFromRebind creates a new REPLY packet based on a REBIND packet.
-func NewReplyFromRebind(rebind DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	return NewReplyFromMessage(rebind, modifiers...)
-}
-
-// NewReplyFromRenew creates a new REPLY packet based on a RENEW packet.
-func NewReplyFromRenew(renew DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	return NewReplyFromMessageWithServerID(renew, modifiers...)
-}
-
-// NewReplyFromRequest creates a new REPLY packet based on a REQUEST packet.
-func NewReplyFromRequest(request DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	return NewReplyFromMessageWithServerID(request, modifiers...)
 }
 
 func (d *DHCPv6Message) Type() MessageType {

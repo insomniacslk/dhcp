@@ -82,71 +82,34 @@ func TestFromAndToBytes(t *testing.T) {
 	require.Equal(t, expected, toBytes)
 }
 
-func withServerID(d DHCPv6) DHCPv6 {
-	sid := OptServerId{}
-	d.AddOption(&sid)
-	return d
-}
-
 func TestNewAdvertiseFromSolicit(t *testing.T) {
 	s := DHCPv6Message{}
 	s.SetMessage(SOLICIT)
 	s.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
 	s.AddOption(&cid)
+	duid := Duid{}
 
-	a, err := NewAdvertiseFromSolicit(&s, withServerID)
+	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
 	require.Equal(t, a.Type(), ADVERTISE)
 }
 
-func TestNewReplyFromRequest(t *testing.T) {
+func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	req := DHCPv6Message{}
 	req.SetMessage(REQUEST)
 	req.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
 	req.AddOption(&cid)
 	sid := OptServerId{}
+	duid := Duid{}
+	sid.Sid = duid
 	req.AddOption(&sid)
 
-	rep, err := NewReplyFromRequest(&req)
+	rep, err := NewReplyFromDHCPv6Message(&req, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), req.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
-}
-
-func TestNewReplyFromRenew(t *testing.T) {
-	ren := DHCPv6Message{}
-	ren.SetMessage(RENEW)
-	ren.SetTransactionID(0xabcdef)
-	cid := OptClientId{}
-	ren.AddOption(&cid)
-
-	rep, err := NewReplyFromRenew(&ren)
-	require.Error(t, err)
-
-	sid := OptServerId{}
-	ren.AddOption(&sid)
-	rep, err = NewReplyFromRenew(&ren)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), ren.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
-}
-
-func TestNewReplyFromRebind(t *testing.T) {
-	reb := DHCPv6Message{}
-	reb.SetMessage(REPLY)
-	rep, err := NewReplyFromRebind(&reb)
-	require.Error(t, err)
-
-	reb.SetMessage(REBIND)
-	reb.SetTransactionID(0xabcdef)
-	cid := OptClientId{}
-	reb.AddOption(&cid)
-
-	rep, err = NewReplyFromRebind(&reb)
-	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), reb.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
 }
 
