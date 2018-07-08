@@ -112,24 +112,30 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
 
-	relay := DHCPv6Relay{}
-	rep, err = NewReplyFromDHCPv6Message(&relay)
-	require.Error(t, err)
-
 	msg.SetMessage(RENEW)
-	rep, err = NewReplyFromDHCPv6Message(&msg)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
 
 	msg.SetMessage(REBIND)
-	rep, err = NewReplyFromDHCPv6Message(&msg)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
 
 	msg.SetMessage(RELEASE)
-	rep, err = NewReplyFromDHCPv6Message(&msg)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
 
 	msg.SetMessage(SOLICIT)
 	rep, err = NewReplyFromDHCPv6Message(&msg)
+	require.Error(t, err)
+
+	relay := DHCPv6Relay{}
+	rep, err = NewReplyFromDHCPv6Message(&relay)
 	require.Error(t, err)
 }
 
