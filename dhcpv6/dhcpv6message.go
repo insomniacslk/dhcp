@@ -198,102 +198,32 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	return d, nil
 }
 
-// NewReplyFromRebind creates a new REPLY packet based on a REBIND packet.
-func NewReplyFromRebind(rebind DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if rebind == nil {
-		return nil, errors.New("REBIND cannot be nil")
+// NewReplyFromDHCPv6Message creates a new REPLY packet based on a
+// DHCPv6Message. The function is to be used when generating a reply to
+// REQUEST, CONFIRM, RENEW, REBIND and RELEASE packets.
+func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
+	if message == nil {
+		return nil, errors.New("DHCPv6Message cannot be nil")
 	}
-	if rebind.Type() != REBIND {
-		return nil, errors.New("The passed REBIND must have REBIND type set")
+	switch message.Type() {
+		case REQUEST, CONFIRM, RENEW, REBIND, RELEASE:
+		default:
+			return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}
-	reb, ok := rebind.(*DHCPv6Message)
+	msg, ok := message.(*DHCPv6Message)
 	if !ok {
-		return nil, errors.New("The passed REBIND must be of DHCPv6Message type")
+		return nil, errors.New("The passed MESSAGE must be of DHCPv6Message type")
 	}
-	// build REPLY from REBIND
+	// build REPLY from MESSAGE
 	rep := DHCPv6Message{}
 	rep.SetMessage(REPLY)
-	rep.SetTransactionID(reb.TransactionID())
+	rep.SetTransactionID(msg.TransactionID())
 	// add Client ID
-	cid := reb.GetOneOption(OPTION_CLIENTID)
+	cid := message.GetOneOption(OPTION_CLIENTID)
 	if cid == nil {
-		return nil, errors.New("Client ID cannot be nil in REBIND when building REPLY")
+		return nil, errors.New("Client ID cannot be nil when building REPLY")
 	}
 	rep.AddOption(cid)
-
-	// apply modifiers
-	d := DHCPv6(&rep)
-	for _, mod := range modifiers {
-		d = mod(d)
-	}
-	return d, nil
-}
-
-// NewReplyFromRenew creates a new REPLY packet based on a RENEW packet.
-func NewReplyFromRenew(renew DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if renew == nil {
-		return nil, errors.New("RENEW cannot be nil")
-	}
-	if renew.Type() != RENEW {
-		return nil, errors.New("The passed RENEW must have RENEW type set")
-	}
-	ren, ok := renew.(*DHCPv6Message)
-	if !ok {
-		return nil, errors.New("The passed RENEW must be of DHCPv6Message type")
-	}
-	// build REPLY from RENEW
-	rep := DHCPv6Message{}
-	rep.SetMessage(REPLY)
-	rep.SetTransactionID(ren.TransactionID())
-	// add Client ID
-	cid := ren.GetOneOption(OPTION_CLIENTID)
-	if cid == nil {
-		return nil, errors.New("Client ID cannot be nil in RENEW when building REPLY")
-	}
-	rep.AddOption(cid)
-	// add Server ID
-	sid := ren.GetOneOption(OPTION_SERVERID)
-	if sid == nil {
-		return nil, errors.New("Server ID cannot be nil in RENEW when building REPLY")
-	}
-	rep.AddOption(sid)
-
-	// apply modifiers
-	d := DHCPv6(&rep)
-	for _, mod := range modifiers {
-		d = mod(d)
-	}
-	return d, nil
-}
-
-// NewReplyFromRequest creates a new REPLY packet based on a REQUEST packet.
-func NewReplyFromRequest(request DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if request == nil {
-		return nil, errors.New("REQUEST cannot be nil")
-	}
-	if request.Type() != REQUEST {
-		return nil, errors.New("The passed REQUEST must have REQUEST type set")
-	}
-	req, ok := request.(*DHCPv6Message)
-	if !ok {
-		return nil, errors.New("The passed REQUEST must be of DHCPv6Message type")
-	}
-	// build REPLY from REQUEST
-	rep := DHCPv6Message{}
-	rep.SetMessage(REPLY)
-	rep.SetTransactionID(req.TransactionID())
-	// add Client ID
-	cid := req.GetOneOption(OPTION_CLIENTID)
-	if cid == nil {
-		return nil, errors.New("Client ID cannot be nil in REQUEST when building REPLY")
-	}
-	rep.AddOption(cid)
-	// add Server ID
-	sid := req.GetOneOption(OPTION_SERVERID)
-	if sid == nil {
-		return nil, errors.New("Server ID cannot be nil in REQUEST when building REPLY")
-	}
-	rep.AddOption(sid)
 
 	// apply modifiers
 	d := DHCPv6(&rep)

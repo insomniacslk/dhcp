@@ -82,72 +82,61 @@ func TestFromAndToBytes(t *testing.T) {
 	require.Equal(t, expected, toBytes)
 }
 
-func withServerID(d DHCPv6) DHCPv6 {
-	sid := OptServerId{}
-	d.AddOption(&sid)
-	return d
-}
-
 func TestNewAdvertiseFromSolicit(t *testing.T) {
 	s := DHCPv6Message{}
 	s.SetMessage(SOLICIT)
 	s.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
 	s.AddOption(&cid)
+	duid := Duid{}
 
-	a, err := NewAdvertiseFromSolicit(&s, withServerID)
+	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
 	require.Equal(t, a.Type(), ADVERTISE)
 }
 
-func TestNewReplyFromRequest(t *testing.T) {
-	req := DHCPv6Message{}
-	req.SetMessage(REQUEST)
-	req.SetTransactionID(0xabcdef)
+func TestNewReplyFromDHCPv6Message(t *testing.T) {
+	msg := DHCPv6Message{}
+	msg.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
-	req.AddOption(&cid)
+	msg.AddOption(&cid)
 	sid := OptServerId{}
-	req.AddOption(&sid)
+	duid := Duid{}
+	sid.Sid = duid
+	msg.AddOption(&sid)
 
-	rep, err := NewReplyFromRequest(&req)
+	msg.SetMessage(CONFIRM)
+	rep, err := NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), req.TransactionID())
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), REPLY)
-}
 
-func TestNewReplyFromRenew(t *testing.T) {
-	ren := DHCPv6Message{}
-	ren.SetMessage(RENEW)
-	ren.SetTransactionID(0xabcdef)
-	cid := OptClientId{}
-	ren.AddOption(&cid)
+	msg.SetMessage(RENEW)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
 
-	rep, err := NewReplyFromRenew(&ren)
+	msg.SetMessage(REBIND)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
+
+	msg.SetMessage(RELEASE)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.Type(), REPLY)
+
+	msg.SetMessage(SOLICIT)
+	rep, err = NewReplyFromDHCPv6Message(&msg)
 	require.Error(t, err)
 
-	sid := OptServerId{}
-	ren.AddOption(&sid)
-	rep, err = NewReplyFromRenew(&ren)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), ren.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
-}
-
-func TestNewReplyFromRebind(t *testing.T) {
-	reb := DHCPv6Message{}
-	reb.SetMessage(REPLY)
-	rep, err := NewReplyFromRebind(&reb)
+	relay := DHCPv6Relay{}
+	rep, err = NewReplyFromDHCPv6Message(&relay)
 	require.Error(t, err)
-
-	reb.SetMessage(REBIND)
-	reb.SetTransactionID(0xabcdef)
-	cid := OptClientId{}
-	reb.AddOption(&cid)
-
-	rep, err = NewReplyFromRebind(&reb)
-	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), reb.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
 }
 
 // TODO test NewSolicit
