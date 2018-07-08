@@ -117,6 +117,16 @@ func getOption(options []Option, code OptionCode) Option {
 	return opts[0]
 }
 
+func delOption(options []Option, code OptionCode) []Option {
+	newOpts := make([]Option, 0, len(options))
+	for _, opt := range options {
+		if opt.Code() != code {
+			newOpts = append(newOpts, opt)
+		}
+	}
+	return newOpts
+}
+
 // DecapsulateRelay extracts the content of a relay message. It does not recurse
 // if there are nested relay messages. Returns the original packet if is not not
 // a relay message

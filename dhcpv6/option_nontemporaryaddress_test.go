@@ -39,6 +39,25 @@ func TestOptIANAParseOptIANAInvalidOptions(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestOptIANADelOption(t *testing.T) {
+	optiana1 := OptIANA{}
+	optiana2 := OptIANA{}
+	optiaaddr := OptIAAddress{}
+	optsc := OptStatusCode{}
+
+	optiana1.Options = append(optiana1.Options, &optsc)
+	optiana1.Options = append(optiana1.Options, &optiaaddr)
+	optiana1.Options = append(optiana1.Options, &optiaaddr)
+	optiana1.DelOption(OPTION_IAADDR)
+	require.Equal(t, optiana1.Options, []Option{&optsc})
+
+	optiana2.Options = append(optiana2.Options, &optiaaddr)
+	optiana2.Options = append(optiana2.Options, &optsc)
+	optiana2.Options = append(optiana2.Options, &optiaaddr)
+	optiana2.DelOption(OPTION_IAADDR)
+	require.Equal(t, optiana2.Options, []Option{&optsc})
+}
+
 func TestOptIANAToBytes(t *testing.T) {
 	opt := OptIANA{
 		IaId: [4]byte{1, 2, 3, 4},

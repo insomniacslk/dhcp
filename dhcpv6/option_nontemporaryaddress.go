@@ -45,6 +45,11 @@ func (op *OptIANA) String() string {
 		op.IaId, op.T1, op.T2, op.Options)
 }
 
+// DelOption will remove all the options that match a Option code.
+func (op *OptIANA) DelOption(code OptionCode) {
+	op.Options = delOption(op.Options, code)
+}
+
 // build an OptIANA structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIANA(data []byte) (*OptIANA, error) {
