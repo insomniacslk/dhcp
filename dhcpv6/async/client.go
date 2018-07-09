@@ -45,7 +45,7 @@ func (c *Client) OpenForInterface(ifname string, bufferSize int) error {
 	if err != nil {
 		return err
 	}
-	c.LocalAddr = &net.UDPAddr{IP: *addr, Port: dhcpv6.DefaultClientPort, Zone: ifname}
+	c.LocalAddr = &net.UDPAddr{IP: addr, Port: dhcpv6.DefaultClientPort, Zone: ifname}
 	return c.Open(bufferSize)
 }
 

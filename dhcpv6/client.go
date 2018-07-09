@@ -100,7 +100,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		if err != nil {
 			return nil, err
 		}
-		laddr = net.UDPAddr{IP: *llAddr, Port: DefaultClientPort, Zone: ifname}
+		laddr = net.UDPAddr{IP: llAddr, Port: DefaultClientPort, Zone: ifname}
 	} else {
 		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
 			laddr = *addr
