@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"errors"
 	"strings"
 )
 
@@ -57,4 +58,20 @@ func IsUsingUEFI(msg DHCPv6) bool {
 		}
 	}
 	return false
+}
+
+// GetTransactionID returns a transactionID of a message or its inner message
+// in case of relay
+func GetTransactionID(packet DHCPv6) (uint32, error) {
+	if message, ok := packet.(*DHCPv6Message); ok {
+		return message.TransactionID(), nil
+	}
+	if relay, ok := packet.(*DHCPv6Relay); ok {
+		message, err := relay.GetInnerMessage()
+		if err != nil {
+			return 0, err
+		}
+		return GetTransactionID(message)
+	}
+	return 0, errors.New("Invalid DHCPv6 packet")
 }
