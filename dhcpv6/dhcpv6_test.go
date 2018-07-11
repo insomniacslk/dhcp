@@ -1,8 +1,10 @@
 package dhcpv6
 
 import (
+	"net"
 	"testing"
 
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
@@ -137,6 +139,38 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	relay := DHCPv6Relay{}
 	rep, err = NewReplyFromDHCPv6Message(&relay)
 	require.Error(t, err)
+}
+
+func TestNewSolicitWithCID(t *testing.T) {
+	hwAddr, err := net.ParseMAC("24:0A:9E:9F:EB:2B")
+	require.NoError(t, err)
+
+	duid := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HwTypeEthernet,
+		LinkLayerAddr: hwAddr,
+	}
+
+	s, err := NewSolicitWithCID(duid)
+	require.NoError(t, err)
+
+	require.Equal(t, s.Type(), SOLICIT)
+	// Check CID
+	cidOption := s.GetOneOption(OPTION_CLIENTID)
+	require.NotNil(t, cidOption)
+	cid, ok := cidOption.(*OptClientId)
+	require.True(t, ok)
+	require.Equal(t, cid.Cid, duid)
+
+	// Check ORO
+	oroOption := s.GetOneOption(OPTION_ORO)
+	require.NotNil(t, oroOption)
+	oro, ok := oroOption.(*OptRequestedOption)
+	require.True(t, ok)
+	opts := oro.RequestedOptions()
+	require.Contains(t, opts, DNS_RECURSIVE_NAME_SERVER)
+	require.Contains(t, opts, DOMAIN_SEARCH_LIST)
+	require.Equal(t, len(opts), 2)
 }
 
 // TODO test NewSolicit

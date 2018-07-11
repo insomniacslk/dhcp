@@ -65,47 +65,48 @@ func GetTime() uint32 {
 	return uint32((now.Nanoseconds() / 1000000000) % 0xffffffff)
 }
 
-// NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
-// given network interface's hardware address and current time
-func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error) {
+// NewSolicitWithCID creates a new SOLICIT message with CID.
+func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
 	d, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
 	d.(*DHCPv6Message).SetMessage(SOLICIT)
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return nil, err
-	}
-	cid := OptClientId{
-		Cid: Duid{
-			Type:          DUID_LLT,
-			HwType:        iana.HwTypeEthernet,
-			Time:          GetTime(),
-			LinkLayerAddr: iface.HardwareAddr,
-		},
-	}
-
-	d.AddOption(&cid)
-	oro := OptRequestedOption{}
+	d.AddOption(&OptClientId{Cid: duid})
+	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
 		DNS_RECURSIVE_NAME_SERVER,
 		DOMAIN_SEARCH_LIST,
 	})
-	d.AddOption(&oro)
+	d.AddOption(oro)
 	d.AddOption(&OptElapsedTime{})
 	// FIXME use real values for IA_NA
-	iaNa := OptIANA{}
+	iaNa := &OptIANA{}
 	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
 	iaNa.T1 = 0xe10
 	iaNa.T2 = 0x1518
-	d.AddOption(&iaNa)
-
-	// apply modifiers
+	d.AddOption(iaNa)
+	// Apply modifiers
 	for _, mod := range modifiers {
 		d = mod(d)
 	}
 	return d, nil
+}
+
+// NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
+// given network interface's hardware address and current time
+func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	duid := Duid{
+		Type:          DUID_LLT,
+		HwType:        iana.HwTypeEthernet,
+		Time:          GetTime(),
+		LinkLayerAddr: iface.HardwareAddr,
+	}
+	return NewSolicitWithCID(duid, modifiers...)
 }
 
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
