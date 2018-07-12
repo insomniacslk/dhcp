@@ -158,28 +158,30 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 	}
 }
 
-// GetInnerPeerAddr returns the peer address in the inner most relay info
-// header, this is typically the IP address of the client making the request.
-func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
-	var (
-		p   DHCPv6
-		err error
-	)
-	p = r
-	hops := r.HopCount()
-	addr := r.PeerAddr()
-	for i := uint8(0); i < hops; i++ {
-		p, err = DecapsulateRelay(p)
+// Recurse into a relay message and extract and return the inner DHCPv6Relay.
+// Return nil if none found (e.g. not a relay message).
+func (r *DHCPv6Relay) GetInnerRelay() (DHCPv6, error) {
+	p := r
+	for {
+		d, err := DecapsulateRelay(p)
 		if err != nil {
 			return nil, err
 		}
-		if p.IsRelay() {
-			addr = p.(*DHCPv6Relay).PeerAddr()
-		} else {
-			return nil, fmt.Errorf("Wrong Hop count")
+		if !d.IsRelay() {
+			return p, nil
 		}
+		p = d.(*DHCPv6Relay)
 	}
-	return addr, nil
+}
+
+// GetInnerPeerAddr returns the peer address in the inner most relay info
+// header, this is typically the IP address of the client making the request.
+func (r *DHCPv6Relay) GetInnerPeerAddr() (net.IP, error) {
+	p, err := r.GetInnerRelay()
+	if err != nil {
+		return nil, err
+	}
+	return p.(*DHCPv6Relay).PeerAddr(), nil
 }
 
 // NewRelayReplFromRelayForw creates a RELAY_REPL packet based on a RELAY_FORW
