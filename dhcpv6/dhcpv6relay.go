@@ -199,7 +199,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	}
 	if relay.Type() != RELAY_FORW {
 		return nil, errors.New("The passed packet is not of type RELAY_FORW")
-	}	
+	}
 	if msg == nil {
 		return nil, errors.New("The passed message cannot be nil")
 	}

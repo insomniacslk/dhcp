@@ -49,3 +49,21 @@ func TestIsUsingUEFIUserClassFalse(t *testing.T) {
 	msg.AddOption(&opt)
 	require.False(t, IsUsingUEFI(&msg))
 }
+
+func TestGetTransactionIDMessage(t *testing.T) {
+	message, err := NewMessage()
+	require.NoError(t, err)
+	transactionID, err := GetTransactionID(message)
+	require.NoError(t, err)
+	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+}
+
+func TestGetTransactionIDRelay(t *testing.T) {
+	message, err := NewMessage()
+	require.NoError(t, err)
+	relay, err := EncapsulateRelay(message, RELAY_FORW, nil, nil)
+	require.NoError(t, err)
+	transactionID, err := GetTransactionID(relay)
+	require.NoError(t, err)
+	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+}
