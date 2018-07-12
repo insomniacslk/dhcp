@@ -158,8 +158,8 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 	}
 }
 
-// Recurse into a relay message and extract and return the inner DHCPv6Relay.
-// Return nil if none found (e.g. not a relay message).
+// GetInnerRelay recurses into a relay message and extract and return the inner
+// DHCPv6Relay. Return nil if none found (e.g. not a relay message).
 func (r *DHCPv6Relay) GetInnerRelay() (DHCPv6, error) {
 	p := r
 	for {
