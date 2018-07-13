@@ -45,6 +45,10 @@ func (op *OptIANA) String() string {
 		op.IaId, op.T1, op.T2, op.Options)
 }
 
+func (op *OptIANA) GetOneOption(code OptionCode) Option {
+	return getOption(op.Options, code)
+}
+
 // DelOption will remove all the options that match a Option code.
 func (op *OptIANA) DelOption(code OptionCode) {
 	op.Options = delOption(op.Options, code)
