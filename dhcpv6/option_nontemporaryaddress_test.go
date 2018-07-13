@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,6 +38,16 @@ func TestOptIANAParseOptIANAInvalidOptions(t *testing.T) {
 	}
 	_, err := ParseOptIANA(data)
 	require.Error(t, err)
+}
+
+func TestOptIANAGetOneOption(t *testing.T) {
+	oaddr := &OptIAAddress{
+		IPv6Addr: net.ParseIP("::1"),
+	}
+	opt := OptIANA{
+		Options: []Option{&OptElapsedTime{}, oaddr},
+	}
+	require.Equal(t, oaddr, opt.GetOneOption(OPTION_IAADDR))
 }
 
 func TestOptIANADelOption(t *testing.T) {
