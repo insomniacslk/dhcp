@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -34,6 +35,59 @@ func TestNewMessage(t *testing.T) {
 	require.Equal(t, SOLICIT, d.Type())
 	require.NotEqual(t, 0, d.(*DHCPv6Message).transactionID)
 	require.Empty(t, d.(*DHCPv6Message).options)
+}
+
+func TestDecapsulateRelay(t *testing.T) {
+	m := DHCPv6Message{}
+	r1, err := EncapsulateRelay(&m, RELAY_FORW, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
+	require.NoError(t, err)
+	r2, err := EncapsulateRelay(r1, RELAY_FORW, net.IPv6loopback, net.IPv6linklocalallnodes)
+	require.NoError(t, err)
+	r3, err := EncapsulateRelay(r2, RELAY_FORW, net.IPv6unspecified, net.IPv6linklocalallrouters)
+	require.NoError(t, err)
+
+	first, err := DecapsulateRelay(r3, 0)
+	require.NoError(t, err)
+	relay, ok := first.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(1))
+	require.Equal(t, relay.LinkAddr(), net.IPv6loopback)
+	require.Equal(t, relay.PeerAddr(), net.IPv6linklocalallnodes)
+
+	second, err := DecapsulateRelay(r3, 1)
+	require.NoError(t, err)
+	relay, ok = second.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(0))
+	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+
+	third, err := DecapsulateRelay(r3, 2)
+	require.NoError(t, err)
+	_, ok = third.(*DHCPv6Message)
+	require.True(t, ok)
+
+	_, err = DecapsulateRelay(r3, 3)
+	require.Error(t, err)
+
+	rfirst, err := DecapsulateRelay(r3, -1)
+	require.NoError(t, err)
+	relay, ok = rfirst.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(0))
+	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+
+	rsecond, err := DecapsulateRelay(r3, -2)
+	require.NoError(t, err)
+	relay, ok = rsecond.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(1))
+	require.Equal(t, relay.LinkAddr(), net.IPv6loopback)
+	require.Equal(t, relay.PeerAddr(), net.IPv6linklocalallnodes)
+
+	_, err = DecapsulateRelay(r3, -3)
+	require.Error(t, err)
 }
 
 func TestSettersAndGetters(t *testing.T) {

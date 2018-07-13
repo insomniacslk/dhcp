@@ -107,31 +107,6 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 	}
 }
 
-func TestGetInnerRelay(t *testing.T) {
-	m := DHCPv6Message{}
-	r1, err := EncapsulateRelay(&m, RELAY_FORW, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
-	require.NoError(t, err)
-	r2, err := EncapsulateRelay(r1, RELAY_FORW, net.IPv6loopback, net.IPv6linklocalallnodes)
-	require.NoError(t, err)
-	r3, err := EncapsulateRelay(r2, RELAY_FORW, net.IPv6unspecified, net.IPv6linklocalallrouters)
-	require.NoError(t, err)
-
-	relay3, ok := r3.(*DHCPv6Relay)
-	require.True(t, ok)
-
-	ir, err := relay3.GetInnerRelay()
-	require.NoError(t, err)
-	relay, ok := ir.(*DHCPv6Relay)
-	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(0))
-	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
-	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
-
-	innerPeerAddr, err := relay3.GetInnerPeerAddr()
-	require.NoError(t, err)
-	require.Equal(t, innerPeerAddr, net.IPv6interfacelocalallnodes)
-}
-
 func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rf := DHCPv6Relay{}
 	rf.SetMessageType(RELAY_FORW)

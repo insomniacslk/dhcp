@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"errors"
 	"fmt"
 	"net"
 )
@@ -127,22 +128,34 @@ func delOption(options []Option, code OptionCode) []Option {
 	return newOpts
 }
 
-// DecapsulateRelay extracts the content of a relay message. It does not recurse
-// if there are nested relay messages. Returns the original packet if is not not
-// a relay message
-func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
+// DecapsulateRelay extracts the content of a relay message. It takes an
+// integer as index (e.g. if 0 return the outermost relay, 1 returns the
+// second, etc, and -1 returns the last). Returns the original packet if
+// it is not not a relay message.
+func DecapsulateRelay(l DHCPv6, index int) (DHCPv6, error) {
 	if !l.IsRelay() {
 		return l, nil
 	}
-	opt := l.GetOneOption(OPTION_RELAY_MSG)
-	if opt == nil {
-		return nil, fmt.Errorf("No OptRelayMsg found")
+	relay := l.(*DHCPv6Relay)
+	hops := int(relay.HopCount())
+	if index < 0 {
+		index = hops + index
 	}
-	relayOpt := opt.(*OptRelayMsg)
-	if relayOpt.RelayMessage() == nil {
-		return nil, fmt.Errorf("Relay message cannot be nil")
+	if index < 0 || index > hops {
+		return nil, errors.New("index out of range")
 	}
-	return relayOpt.RelayMessage(), nil
+	for i := 0; i <= index; i++ {
+		opt := l.GetOneOption(OPTION_RELAY_MSG)
+		if opt == nil {
+			return nil, fmt.Errorf("No OptRelayMsg found")
+		}
+		relayOpt := opt.(*OptRelayMsg)
+		l = relayOpt.RelayMessage()
+		if l == nil {
+			return nil, fmt.Errorf("Relay message cannot be nil")
+		}
+	}
+	return l, nil
 }
 
 // EncapsulateRelay creates a DHCPv6Relay message containing the passed DHCPv6
