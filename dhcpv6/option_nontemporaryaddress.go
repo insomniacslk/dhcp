@@ -45,6 +45,8 @@ func (op *OptIANA) String() string {
 		op.IaId, op.T1, op.T2, op.Options)
 }
 
+// GetOneOption will get an option of the give type from the Options field, if
+// it is present. It will return `nil` otherwise
 func (op *OptIANA) GetOneOption(code OptionCode) Option {
 	return getOption(op.Options, code)
 }
