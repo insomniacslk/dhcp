@@ -50,6 +50,16 @@ func TestOptIANAGetOneOption(t *testing.T) {
 	require.Equal(t, oaddr, opt.GetOneOption(OPTION_IAADDR))
 }
 
+func TestOptIANAGetOneOptionMissingOpt(t *testing.T) {
+	oaddr := &OptIAAddress{
+		IPv6Addr: net.ParseIP("::1"),
+	}
+	opt := OptIANA{
+		Options: []Option{&OptElapsedTime{}, oaddr},
+	}
+	require.Equal(t, nil, opt.GetOneOption(DNS_RECURSIVE_NAME_SERVER))
+}
+
 func TestOptIANADelOption(t *testing.T) {
 	optiana1 := OptIANA{}
 	optiana2 := OptIANA{}
