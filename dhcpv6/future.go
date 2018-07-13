@@ -35,7 +35,7 @@ func (r *response) Error() error {
 
 // NewFuture creates a new future, which can be written to
 func NewFuture() chan Response {
-	return make(chan Response)
+	return make(chan Response, 1)
 }
 
 // NewResponse creates a new future response
