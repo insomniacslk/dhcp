@@ -153,7 +153,9 @@ func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
 	if !l.IsRelay() {
 		return l, nil
 	}
-	if index == -1 {
+	if index < -1 {
+		return nil, fmt.Errorf("Invalid index: %d", index)
+	} else if index == -1 {
 		for {
 			d, err := DecapsulateRelay(l)
 			if err != nil {

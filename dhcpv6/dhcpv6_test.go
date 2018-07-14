@@ -74,6 +74,9 @@ func TestDecapsulateRelayIndex(t *testing.T) {
 	require.Equal(t, relay.HopCount(), uint8(0))
 	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
 	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+
+	_, err = DecapsulateRelayIndex(r3, -2)
+	require.Error(t, err)
 }
 
 func TestSettersAndGetters(t *testing.T) {
