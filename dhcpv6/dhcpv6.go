@@ -145,6 +145,38 @@ func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	return relayOpt.RelayMessage(), nil
 }
 
+// DecapsulateRelayIndex extracts the content of a relay message. It takes an
+// integer as index (e.g. if 0 return the outermost relay, 1 returns the
+// second, etc, and -1 returns the last). Returns the original packet if
+// it is not not a relay message.
+func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
+	if !l.IsRelay() {
+		return l, nil
+	}
+	if index < -1 {
+		return nil, fmt.Errorf("Invalid index: %d", index)
+	} else if index == -1 {
+		for {
+			d, err := DecapsulateRelay(l)
+			if err != nil {
+				return nil, err
+			}
+			if !d.IsRelay() {
+				return l, nil
+			}
+			l = d
+		}
+	}
+	for i := 0; i <= index; i++ {
+		d, err := DecapsulateRelay(l)
+		if err != nil {
+			return nil, err
+		}
+		l = d
+	}
+	return l, nil
+}
+
 // EncapsulateRelay creates a DHCPv6Relay message containing the passed DHCPv6
 // message as payload. The passed message type must be  either RELAY_FORW or
 // RELAY_REPL

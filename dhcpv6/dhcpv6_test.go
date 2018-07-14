@@ -38,6 +38,48 @@ func TestNewMessage(t *testing.T) {
 	require.Empty(t, d.(*DHCPv6Message).options)
 }
 
+func TestDecapsulateRelayIndex(t *testing.T) {
+	m := DHCPv6Message{}
+	r1, err := EncapsulateRelay(&m, RELAY_FORW, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
+	require.NoError(t, err)
+	r2, err := EncapsulateRelay(r1, RELAY_FORW, net.IPv6loopback, net.IPv6linklocalallnodes)
+	require.NoError(t, err)
+	r3, err := EncapsulateRelay(r2, RELAY_FORW, net.IPv6unspecified, net.IPv6linklocalallrouters)
+	require.NoError(t, err)
+
+	first, err := DecapsulateRelayIndex(r3, 0)
+	require.NoError(t, err)
+	relay, ok := first.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(1))
+	require.Equal(t, relay.LinkAddr(), net.IPv6loopback)
+	require.Equal(t, relay.PeerAddr(), net.IPv6linklocalallnodes)
+
+	second, err := DecapsulateRelayIndex(r3, 1)
+	require.NoError(t, err)
+	relay, ok = second.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(0))
+	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+
+	third, err := DecapsulateRelayIndex(r3, 2)
+	require.NoError(t, err)
+	_, ok = third.(*DHCPv6Message)
+	require.True(t, ok)
+
+	rfirst, err := DecapsulateRelayIndex(r3, -1)
+	require.NoError(t, err)
+	relay, ok = rfirst.(*DHCPv6Relay)
+	require.True(t, ok)
+	require.Equal(t, relay.HopCount(), uint8(0))
+	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+
+	_, err = DecapsulateRelayIndex(r3, -2)
+	require.Error(t, err)
+}
+
 func TestSettersAndGetters(t *testing.T) {
 	d := DHCPv6Message{}
 	// Message
