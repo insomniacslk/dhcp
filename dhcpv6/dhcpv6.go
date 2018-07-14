@@ -1,7 +1,6 @@
 package dhcpv6
 
 import (
-	"errors"
 	"fmt"
 	"net"
 )
@@ -128,32 +127,50 @@ func delOption(options []Option, code OptionCode) []Option {
 	return newOpts
 }
 
-// DecapsulateRelay extracts the content of a relay message. It takes an
-// integer as index (e.g. if 0 return the outermost relay, 1 returns the
-// second, etc, and -1 returns the last). Returns the original packet if
-// it is not not a relay message.
-func DecapsulateRelay(l DHCPv6, index int) (DHCPv6, error) {
+// DecapsulateRelay extracts the content of a relay message. It does not recurse
+// if there are nested relay messages. Returns the original packet if is not not
+// a relay message
+func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	if !l.IsRelay() {
 		return l, nil
 	}
-	relay := l.(*DHCPv6Relay)
-	hops := int(relay.HopCount())
-	if index < 0 {
-		index = hops + index
+	opt := l.GetOneOption(OPTION_RELAY_MSG)
+	if opt == nil {
+		return nil, fmt.Errorf("No OptRelayMsg found")
 	}
-	if index < 0 || index > hops {
-		return nil, errors.New("index out of range")
+	relayOpt := opt.(*OptRelayMsg)
+	if relayOpt.RelayMessage() == nil {
+		return nil, fmt.Errorf("Relay message cannot be nil")
+	}
+	return relayOpt.RelayMessage(), nil
+}
+
+// DecapsulateRelayIndex extracts the content of a relay message. It takes an
+// integer as index (e.g. if 0 return the outermost relay, 1 returns the
+// second, etc, and -1 returns the last). Returns the original packet if
+// it is not not a relay message.
+func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
+	if !l.IsRelay() {
+		return l, nil
+	}
+	if index == -1 {
+		for {
+			d, err := DecapsulateRelay(l)
+			if err != nil {
+				return nil, err
+			}
+			if !d.IsRelay() {
+				return l, nil
+			}
+			l = d
+		}
 	}
 	for i := 0; i <= index; i++ {
-		opt := l.GetOneOption(OPTION_RELAY_MSG)
-		if opt == nil {
-			return nil, fmt.Errorf("No OptRelayMsg found")
+		d, err := DecapsulateRelay(l)
+		if err != nil {
+			return nil, err
 		}
-		relayOpt := opt.(*OptRelayMsg)
-		l = relayOpt.RelayMessage()
-		if l == nil {
-			return nil, fmt.Errorf("Relay message cannot be nil")
-		}
+		l = d
 	}
 	return l, nil
 }
