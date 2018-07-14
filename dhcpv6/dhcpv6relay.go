@@ -151,7 +151,7 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 		if !p.IsRelay() {
 			return p, nil
 		}
-		p, err = DecapsulateRelay(p, 0)
+		p, err = DecapsulateRelay(p)
 		if err != nil {
 			return nil, err
 		}
@@ -186,7 +186,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 		linkAddr = append(linkAddr, relay.LinkAddr())
 		peerAddr = append(peerAddr, relay.PeerAddr())
 		optiids = append(optiids, relay.GetOneOption(OPTION_INTERFACE_ID))
-		decap, err := DecapsulateRelay(relay, 0)
+		decap, err := DecapsulateRelay(relay)
 		if err != nil {
 			return nil, err
 		}
