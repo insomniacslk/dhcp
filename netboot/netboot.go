@@ -87,7 +87,9 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 			return nil, "", errors.New("no bootfile URL option found in ADVERTISE")
 		}
 	}
-	obf := opt.(*dhcpv6.OptBootFileURL)
-	bootfile = string(obf.BootFileURL)
+	if opt != nil {
+		obf := opt.(*dhcpv6.OptBootFileURL)
+		bootfile = string(obf.BootFileURL)
+	}
 	return netconf, bootfile, nil
 }
