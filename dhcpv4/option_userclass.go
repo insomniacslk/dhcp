@@ -69,7 +69,7 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	for i := 0; i < totalLength; {
 		ucLen := int(data[i])
 		if ucLen == 0 {
-			return nil, errors.New("User Class value has invalid lenght of 0")
+			return nil, errors.New("User Class value has invalid length of 0")
 		}
 		base := i + 1
 		if len(data) < base+ucLen {
