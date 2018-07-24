@@ -90,3 +90,33 @@ func TestParseOptUserClassShorterTotalLength(t *testing.T) {
 	_, err := ParseOptUserClass(expected)
 	require.Error(t, err)
 }
+
+func TestOptUserClassLength(t *testing.T) {
+	expected := []byte{
+		77, 10, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't', 'X',
+	}
+	opt, err := ParseOptUserClass(expected)
+	require.NoError(t, err)
+	require.Equal(t, 10, opt.Length())
+}
+
+func TestParseOptUserClassZeroLength(t *testing.T) {
+	expected := []byte{
+		77, 1, 0, 0,
+	}
+	_, err := ParseOptUserClass(expected)
+	require.Error(t, err)
+}
+
+func TestParseOptUserClassMultipleWithZeroLength(t *testing.T) {
+	expected := []byte{
+		77, 12, 10, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't', 0,
+	}
+	_, err := ParseOptUserClass(expected)
+	require.Error(t, err)
+}
+
+func TestOptUserClassCode(t *testing.T) {
+	opt := OptUserClass{}
+	require.Equal(t, OptionUserClassInformation, opt.Code())
+}

@@ -6,7 +6,10 @@ import (
 	"strings"
 )
 
-// OptUserClass represents a DHCPv4 User Class option
+// This option implements the User Class option
+// https://tools.ietf.org/html/rfc3004
+
+// OptUserClass represents an option encapsulating User Classes.
 type OptUserClass struct {
 	UserClasses [][]byte
 }
@@ -36,7 +39,7 @@ func (op *OptUserClass) Length() int {
 }
 
 func (op *OptUserClass) String() string {
-	ucStrings := make([]string, 0)
+	ucStrings := make([]string, len(op.UserClasses))
 	for _, uc := range op.UserClasses {
 		ucStrings = append(ucStrings, string(uc))
 	}
@@ -65,12 +68,15 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 
 	for i := 0; i < totalLength; {
 		ucLen := int(data[i])
-		opaqueDataIndex := i + ucLen + 1
-		if len(data) < opaqueDataIndex {
-			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", opaqueDataIndex)
+		if ucLen == 0 {
+			return nil, errors.New("User Class value has invalid lenght of 0")
 		}
-		opt.UserClasses = append(opt.UserClasses, data[i+1:opaqueDataIndex])
-		i += opaqueDataIndex
+		base := i + 1
+		if len(data) < base+ucLen {
+			return nil, fmt.Errorf("ParseOptUserClass: short data: %d bytes; want: %d", len(data), base+ucLen)
+		}
+		opt.UserClasses = append(opt.UserClasses, data[i+1:base+ucLen])
+		i += base + ucLen
 	}
 	if len(opt.UserClasses) < 1 {
 		return nil, errors.New("ParseOptUserClass: at least one user class is required")
