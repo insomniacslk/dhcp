@@ -55,21 +55,22 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	if code != OptionUserClassInformation {
 		return nil, fmt.Errorf("expected code %v, got %v", OptionUserClassInformation, code)
 	}
-	data = data[2:]
 
-	for {
-		if len(data) == 0 {
-			break
+	totalLength := int(data[1])
+	data = data[2:]
+	if len(data) < totalLength {
+		return nil, fmt.Errorf("ParseOptUserClass: short data: length is %d but got %d bytes",
+			totalLength, len(data))
+	}
+
+	for i := 0; i < totalLength; {
+		ucLen := int(data[i])
+		opaqueDataIndex := i + ucLen + 1
+		if len(data) < opaqueDataIndex {
+			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", opaqueDataIndex)
 		}
-		if len(data) < 1 {
-			return nil, errors.New("ParseOptUserClass: short data: missing length field")
-		}
-		ucLen := int(data[0])
-		if len(data) < ucLen+1 {
-			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", ucLen+2)
-		}
-		opt.UserClasses = append(opt.UserClasses, data[1:ucLen+1])
-		data = data[1+ucLen:]
+		opt.UserClasses = append(opt.UserClasses, data[i+1:opaqueDataIndex])
+		i += opaqueDataIndex
 	}
 	if len(opt.UserClasses) < 1 {
 		return nil, errors.New("ParseOptUserClass: at least one user class is required")
