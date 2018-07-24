@@ -75,7 +75,7 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		if len(data) < base+ucLen {
 			return nil, fmt.Errorf("ParseOptUserClass: short data: %d bytes; want: %d", len(data), base+ucLen)
 		}
-		opt.UserClasses = append(opt.UserClasses, data[i+1:base+ucLen])
+		opt.UserClasses = append(opt.UserClasses, data[base:base+ucLen])
 		i += base + ucLen
 	}
 	if len(opt.UserClasses) < 1 {
