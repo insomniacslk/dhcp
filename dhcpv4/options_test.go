@@ -64,6 +64,30 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, OptionClassIdentifier, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option TFTP server name
+	option = []byte{66, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionTFTPServerName, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option Bootfile name
+	option = []byte{67, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionBootfileName, opt.Code(), "Code")
+	require.Equal(t, 9, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option user class information
+	option = []byte{77, 5, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionUserClassInformation, opt.Code(), "Code")
+	require.Equal(t, 5, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
