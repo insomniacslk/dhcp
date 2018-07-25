@@ -39,16 +39,16 @@ func ParseOptBootfileName(data []byte) (*OptBootfileName, error) {
 	}
 	code := OptionCode(data[0])
 	if code != OptionBootfileName {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionBootfileName, code)
+		return nil, fmt.Errorf("ParseOptBootfileName: invalid code: %v; want %v", code, OptionBootfileName)
 	}
 	length := int(data[1])
 	if length < 1 {
 		return nil, fmt.Errorf("Bootfile name has invalid length of %d", length)
 	}
-	data = data[2:]
-	if len(data) < length {
+	bootFileNameData := data[2:]
+	if len(bootFileNameData) < length {
 		return nil, fmt.Errorf("ParseOptBootfileName: short data: %d bytes; want %d",
-			len(data), length)
+			len(bootFileNameData), length)
 	}
-	return &OptBootfileName{BootfileName: data[:length]}, nil
+	return &OptBootfileName{BootfileName: bootFileNameData[:length]}, nil
 }
