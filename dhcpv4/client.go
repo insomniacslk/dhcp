@@ -137,10 +137,14 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 	if err != nil {
 		return conversation, err
 	}
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return conversation, err
+	}
 
 	// Discover
 	if discover == nil {
-		discover, err = NewDiscoveryForInterface(ifname)
+		discover, err = NewDiscovery(iface.HardwareAddr)
 		if err != nil {
 			return conversation, err
 		}

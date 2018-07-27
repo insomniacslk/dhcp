@@ -71,6 +71,17 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 	}
 	o, err = ParseOptVendorSpecificInformation(data)
 	require.Error(t, err)
+
+	// Bad option
+	data = []byte{
+		43,      // code
+		7,       // length
+		1, 1, 1, // List option
+		2, 2, 1, // Version option
+		5, 3, 1, 1, 1, // Reply port option
+	}
+	o, err = ParseOptVendorSpecificInformation(data)
+	require.Error(t, err)
 }
 
 func TestOptVendorSpecificInformationString(t *testing.T) {

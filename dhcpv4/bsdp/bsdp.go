@@ -37,10 +37,10 @@ func needsReplyPort(replyPort uint16) bool {
 	return replyPort != 0 && replyPort != dhcpv4.ClientPort
 }
 
-// NewInformListForInterface creates a new INFORM packet for interface ifname
-// with configuration options specified by config.
-func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
-	d, err := dhcpv4.NewInformForInterface(iface /* needsBroadcast = */, false)
+// NewInformList creates a new INFORM packet for interface with hardware address
+// `hwaddr` and IP `localIP`. Packet will be sent out on port `replyPort`.
+func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*dhcpv4.DHCPv4, error) {
+	d, err := dhcpv4.NewInform(hwaddr, localIP)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 }
 
 // InformSelectForAck constructs an INFORM[SELECT] packet given an ACK to the
-// previously-sent INFORM[LIST] with Config config.
+// previously-sent INFORM[LIST].
 func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootImage) (*dhcpv4.DHCPv4, error) {
 	d, err := dhcpv4.New()
 	if err != nil {

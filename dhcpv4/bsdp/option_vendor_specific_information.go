@@ -142,7 +142,7 @@ func (o *OptVendorSpecificInformation) GetOptions(code dhcpv4.OptionCode) []dhcp
 	return opts
 }
 
-// GetOption returns the first suboption that matches the OptionCode code.
+// GetOneOption returns the first suboption that matches the OptionCode code.
 func (o *OptVendorSpecificInformation) GetOneOption(code dhcpv4.OptionCode) dhcpv4.Option {
 	opts := o.GetOptions(code)
 	if len(opts) == 0 {
