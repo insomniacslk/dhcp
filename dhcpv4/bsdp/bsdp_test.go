@@ -40,7 +40,7 @@ func TestParseBootImageListFromAck(t *testing.T) {
 func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
 	ack, _ := dhcpv4.New()
 	images, err := ParseBootImageListFromAck(*ack)
-	require.NoError(t, err)
+	require.Error(t, err)
 	require.Empty(t, images, "no BootImages")
 }
 

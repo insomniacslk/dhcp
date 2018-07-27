@@ -18,17 +18,17 @@ const MaxDHCPMessageSize = 1500
 // ACK[LIST] packet and returns them as a list of BootImages.
 func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	var images []BootImage
-	for _, opt := range ack.Options() {
-		if opt.Code() == dhcpv4.OptionVendorSpecificInformation {
-			vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes())
-			if err != nil {
-				return nil, err
-			}
-			bootImageOpts := vendorOpt.GetOptions(OptionBootImageList)
-			for _, opt := range bootImageOpts {
-				images = append(images, opt.(*OptBootImageList).Images...)
-			}
-		}
+	opt := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
+	if opt == nil {
+		return nil, errors.New("ParseBootImageListFromAck: could not find vendor-specific option")
+	}
+	vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes())
+	if err != nil {
+		return nil, err
+	}
+	bootImageOpts := vendorOpt.GetOptions(OptionBootImageList)
+	for _, opt := range bootImageOpts {
+		images = append(images, opt.(*OptBootImageList).Images...)
 	}
 	return images, nil
 }
@@ -109,11 +109,8 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 
 	// Find server IP address
 	var serverIP net.IP
-	// TODO replace this loop with `ack.GetOneOption(OptionBootImageList)`
-	for _, opt := range ack.Options() {
-		if opt.Code() == dhcpv4.OptionServerIdentifier {
-			serverIP = opt.(*dhcpv4.OptServerIdentifier).ServerID
-		}
+	if opt := ack.GetOneOption(dhcpv4.OptionServerIdentifier); opt != nil {
+		serverIP = opt.(*dhcpv4.OptServerIdentifier).ServerID
 	}
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
