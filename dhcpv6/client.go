@@ -58,6 +58,14 @@ func (c *Client) Exchange(ifname string, solicit DHCPv6, modifiers ...Modifier) 
 	}
 	conversation = append(conversation, advertise)
 
+  // Decapsulate advertise if it's relayed before passing it to Request
+  if advertise.IsRelay() {
+    advertiseRelay := advertise.(*DHCPv6Relay)
+    advertise, err = advertiseRelay.GetInnerMessage()
+    if err != nil {
+      return conversation, err
+    }
+  }
 	request, reply, err := c.Request(ifname, advertise, nil, modifiers...)
 	if request != nil {
 		conversation = append(conversation, request)
