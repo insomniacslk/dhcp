@@ -153,7 +153,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 	require.Equal(t, Version1_0, foundOpts[1].(*OptVersion).Version)
 }
 
-func TestOptVendorSpecificInformationGetOption(t *testing.T) {
+func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	// No option
 	o := &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
@@ -161,7 +161,7 @@ func TestOptVendorSpecificInformationGetOption(t *testing.T) {
 			&OptVersion{Version1_1},
 		},
 	}
-	foundOpt := o.GetOption(OptionBootImageList)
+	foundOpt := o.GetOneOption(OptionBootImageList)
 	require.Nil(t, foundOpt, "should not get options")
 
 	// One option
@@ -171,7 +171,7 @@ func TestOptVendorSpecificInformationGetOption(t *testing.T) {
 			&OptVersion{Version1_1},
 		},
 	}
-	foundOpt = o.GetOption(OptionMessageType)
+	foundOpt = o.GetOneOption(OptionMessageType)
 	require.Equal(t, MessageTypeList, foundOpt.(*OptMessageType).Type)
 
 	// Multiple options
@@ -182,6 +182,6 @@ func TestOptVendorSpecificInformationGetOption(t *testing.T) {
 			&OptVersion{Version1_0},
 		},
 	}
-	foundOpt = o.GetOption(OptionVersion)
+	foundOpt = o.GetOneOption(OptionVersion)
 	require.Equal(t, Version1_1, foundOpt.(*OptVersion).Version)
 }
