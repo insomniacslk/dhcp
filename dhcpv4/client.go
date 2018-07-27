@@ -208,6 +208,10 @@ func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, write
 				errs <- err
 				return
 			}
+			// check that this is a response to our message
+			if response.TransactionID() != packet.TransactionID() {
+				continue
+			}
 			// wait for a response message
 			if response.Opcode() != OpcodeBootReply {
 				continue
