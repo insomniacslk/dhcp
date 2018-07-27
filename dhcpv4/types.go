@@ -8,6 +8,9 @@ type MessageType byte
 
 // DHCP message types
 const (
+	// MessageTypeNone is not a real message type, it is used by certain
+	// functions to signal that no explict message type is requested
+	MessageTypeNone     MessageType = 0
 	MessageTypeDiscover MessageType = 1
 	MessageTypeOffer    MessageType = 2
 	MessageTypeRequest  MessageType = 3

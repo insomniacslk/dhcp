@@ -561,6 +561,16 @@ func (d *DHCPv4) AddOption(option Option) {
 	d.options = append(d.options, option)
 }
 
+// MessageType returns the message type, trying to extract it from the
+// OptMessageType option. It returns nil if the message type cannot be extracted
+func (d *DHCPv4) MessageType() *MessageType {
+	opt := d.GetOneOption(OptionDHCPMessageType)
+	if opt == nil {
+		return nil
+	}
+	return &(opt.(*OptMessageType).MessageType)
+}
+
 func (d *DHCPv4) String() string {
 	return fmt.Sprintf("DHCPv4(opcode=%v hwtype=%v hwaddr=%v)",
 		d.OpcodeToString(), d.HwTypeToString(), d.ClientHwAddr())
