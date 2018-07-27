@@ -60,7 +60,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	conversation[0] = *informList
 
 	// ACK[LIST]
-	ackForList, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informList, c.ReadTimeout, c.WriteTimeout)
+	ackForList, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informList, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -86,7 +86,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	conversation = append(conversation, *informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informSelect, c.ReadTimeout, c.WriteTimeout)
+	ackForSelect, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informSelect, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
 	castVendorOpt(ackForSelect)
 	if err != nil {
 		return conversation, err

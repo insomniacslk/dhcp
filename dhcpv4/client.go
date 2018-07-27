@@ -148,7 +148,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 	conversation[0] = *discover
 
 	// Offer
-	offer, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout)
+	offer, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout, MessageTypeOffer)
 	if err != nil {
 		return conversation, err
 	}
@@ -162,7 +162,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 	conversation = append(conversation, *request)
 
 	// Ack
-	ack, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout)
+	ack, err := BroadcastSendReceive(sfd, rfd, request, c.ReadTimeout, c.WriteTimeout, MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -171,8 +171,9 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 }
 
 // BroadcastSendReceive broadcasts packet (with some write timeout) and waits for a
-// response up to some read timeout value.
-func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration) (*DHCPv4, error) {
+// response up to some read timeout value. If the message type is not
+// MessageTypeNone, it will wait for a specific message type
+func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration, messageType MessageType) (*DHCPv4, error) {
 	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
 	if err != nil {
 		return nil, err
@@ -194,17 +195,36 @@ func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, write
 		defer conn.Close()
 		conn.SetReadDeadline(time.Now().Add(readTimeout))
 
-		buf := make([]byte, MaxUDPReceivedPacketSize)
-		n, _, _, _, err := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
-		if err != nil {
-			errs <- err
-			return
-		}
+		for {
+			buf := make([]byte, MaxUDPReceivedPacketSize)
+			n, _, _, _, err := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
+			if err != nil {
+				errs <- err
+				return
+			}
 
-		response, err = FromBytes(buf[:n])
-		if err != nil {
-			errs <- err
-			return
+			response, err = FromBytes(buf[:n])
+			if err != nil {
+				errs <- err
+				return
+			}
+			// check that this is a response to our message
+			if response.TransactionID() != packet.TransactionID() {
+				continue
+			}
+			// wait for a response message
+			if response.Opcode() != OpcodeBootReply {
+				continue
+			}
+			// if we are not requested to wait for a specific message type,
+			// return what we have
+			if messageType == MessageTypeNone {
+				break
+			}
+			// break if it's a reply of the desired type, continue otherwise
+			if response.MessageType() != nil && *response.MessageType() == messageType {
+				break
+			}
 		}
 		recvErrors <- nil
 	}(recvErrors)

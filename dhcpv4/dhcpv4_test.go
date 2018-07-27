@@ -322,6 +322,30 @@ func TestGetOption(t *testing.T) {
 	require.Equal(t, d.GetOneOption(OptionRouter), nil)
 }
 
+func TestDHCPv4RequestFromOffer(t *testing.T) {
+	offer, err := New()
+	require.NoError(t, err)
+	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+	offer.AddOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
+	req, err := RequestFromOffer(*offer)
+	require.NoError(t, err)
+	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
+	require.Equal(t, MessageTypeRequest, *req.MessageType())
+}
+
+func TestDHCPv4MessageTypeNil(t *testing.T) {
+	m, err := New()
+	require.NoError(t, err)
+	require.Equal(t, (*MessageType)(nil), m.MessageType())
+}
+
+func TestDHCPv4MessageTypeDiscovery(t *testing.T) {
+	m, err := NewDiscoveryForInterface("lo")
+	require.NoError(t, err)
+	require.NotEqual(t, (*MessageType)(nil), m.MessageType())
+	require.Equal(t, MessageTypeDiscover, *m.MessageType())
+}
+
 // TODO
 //      test broadcast/unicast flags
 //      test Options setter/getter
