@@ -217,8 +217,8 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	return d, nil
 }
 
-// NewReply builds a DHCPv4 reply from a request.
-func NewReply(request *DHCPv4) (*DHCPv4, error) {
+// NewReplyFromRequest builds a DHCPv4 reply from a request.
+func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
 	reply, err := New()
 	if err != nil {
 		return nil, err
@@ -572,7 +572,7 @@ func (d *DHCPv4) SetOptions(options []Option) {
 }
 
 // AddOption appends an option to the existing ones.
-// If there is an OptionEnd in the list, it will insert it before that option.
+// If the last option is an OptionEnd, it will be inserted before that.
 func (d *DHCPv4) AddOption(option Option) {
 	if len(d.options) == 0 || d.options[len(d.options)-1].Code() != OptionEnd {
 		d.options = append(d.options, option)

@@ -353,11 +353,11 @@ func TestDHCPv4RequestFromOffer(t *testing.T) {
 	require.Equal(t, MessageTypeRequest, *req.MessageType())
 }
 
-func TestNewReply(t *testing.T) {
+func TestNewReplyFromRequest(t *testing.T) {
 	discover, err := New()
 	require.NoError(t, err)
 	discover.SetGatewayIPAddr(net.IPv4(192, 168, 0, 1))
-	reply, err := NewReply(discover)
+	reply, err := NewReplyFromRequest(discover)
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID(), reply.TransactionID())
 	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
