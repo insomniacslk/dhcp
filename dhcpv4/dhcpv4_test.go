@@ -290,6 +290,8 @@ func TestNewToBytes(t *testing.T) {
 	}
 	// Magic Cookie
 	expected = append(expected, MagicCookie...)
+	// End
+	expected = append(expected, 0xff)
 
 	d, err := New()
 	require.NoError(t, err)
@@ -322,6 +324,24 @@ func TestGetOption(t *testing.T) {
 	require.Equal(t, d.GetOneOption(OptionRouter), nil)
 }
 
+func TestAddOption(t *testing.T) {
+	d, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
+	bootFileOpt1 := &OptionGeneric{OptionCode: OptionBootfileName, Data: []byte("boot.img")}
+	bootFileOpt2 := &OptionGeneric{OptionCode: OptionBootfileName, Data: []byte("boot2.img")}
+	d.AddOption(hostnameOpt)
+	d.AddOption(bootFileOpt1)
+	d.AddOption(bootFileOpt2)
+
+	options := d.Options()
+	require.Equal(t, len(options), 4)
+	require.Equal(t, options[3].Code(), OptionEnd)
+}
+
 func TestDHCPv4RequestFromOffer(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
@@ -331,6 +351,16 @@ func TestDHCPv4RequestFromOffer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
 	require.Equal(t, MessageTypeRequest, *req.MessageType())
+}
+
+func TestNewReply(t *testing.T) {
+	discover, err := New()
+	require.NoError(t, err)
+	discover.SetGatewayIPAddr(net.IPv4(192, 168, 0, 1))
+	reply, err := NewReply(discover)
+	require.NoError(t, err)
+	require.Equal(t, discover.TransactionID(), reply.TransactionID())
+	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {

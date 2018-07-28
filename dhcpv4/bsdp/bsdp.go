@@ -73,7 +73,6 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 		return nil, err
 	}
 	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
-	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
 
@@ -138,6 +137,5 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	})
 	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
 	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
-	d.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return d, nil
 }
