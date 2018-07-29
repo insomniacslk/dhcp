@@ -52,5 +52,5 @@ func (o *OptSubnetMask) String() string {
 // Length returns the length of the data portion (excluding option code an byte
 // length).
 func (o *OptSubnetMask) Length() int {
-	return len(o.SubnetMask)
+	return 4
 }
