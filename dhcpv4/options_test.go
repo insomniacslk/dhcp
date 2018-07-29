@@ -17,6 +17,14 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, generic.Length())
 	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
 
+	// Option subnet mask
+	option = []byte{1, 4, 255, 255, 255, 0}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionSubnetMask, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Message type
 	option = []byte{53, 1, 1}
 	opt, err = ParseOption(option)

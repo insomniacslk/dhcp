@@ -40,6 +40,8 @@ func ParseOption(data []byte) (Option, error) {
 		err error
 	)
 	switch OptionCode(data[0]) {
+	case OptionSubnetMask:
+		opt, err = ParseOptSubnetMask(data)
 	case OptionDHCPMessageType:
 		opt, err = ParseOptMessageType(data)
 	case OptionParameterRequestList:
