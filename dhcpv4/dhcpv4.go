@@ -112,6 +112,8 @@ func New() (*DHCPv4, error) {
 		return nil, err
 	}
 	d.options = options
+	// the End option has to be added explicitly
+	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return &d, nil
 }
 
@@ -142,14 +144,12 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 			OptionDomainNameServer,
 		},
 	})
-	// the End option has to be added explicitly
-	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return d, nil
 }
 
 // NewInformForInterface builds a new DHCPv4 Informational message with default
 // Ethernet HW type and the hardware address obtained from the specified
-// interface. It does NOT put a DHCP End option at the end.
+// interface.
 func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
@@ -214,9 +214,24 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
 	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr()})
 	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
-	// the End option has to be added explicitly
-	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return d, nil
+}
+
+// NewReplyFromRequest builds a DHCPv4 reply from a request.
+func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
+	reply, err := New()
+	if err != nil {
+		return nil, err
+	}
+	reply.SetOpcode(OpcodeBootReply)
+	reply.SetHwType(request.HwType())
+	reply.SetHwAddrLen(request.HwAddrLen())
+	hwaddr := request.ClientHwAddr()
+	reply.SetClientHwAddr(hwaddr[:])
+	reply.SetTransactionID(request.TransactionID())
+	reply.SetFlags(request.Flags())
+	reply.SetGatewayIPAddr(request.GatewayIPAddr())
+	return reply, nil
 }
 
 // FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an
@@ -556,9 +571,17 @@ func (d *DHCPv4) SetOptions(options []Option) {
 	d.options = options
 }
 
-// AddOption appends an option to the existing ones.
+// AddOption appends an option to the existing ones. If the last option is an
+// OptionEnd, it will be inserted before that. It does not deal with End
+// options that appead before the end, like in malformed packets.
 func (d *DHCPv4) AddOption(option Option) {
-	d.options = append(d.options, option)
+	if len(d.options) == 0 || d.options[len(d.options)-1].Code() != OptionEnd {
+		d.options = append(d.options, option)
+	} else {
+		end := d.options[len(d.options)-1]
+		d.options[len(d.options)-1] = option
+		d.options = append(d.options, end)
+	}
 }
 
 // MessageType returns the message type, trying to extract it from the
