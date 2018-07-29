@@ -124,7 +124,7 @@ func New() (*DHCPv4, error) {
 // NewDiscoveryForInterface builds a new DHCPv4 Discovery message, with a default
 // Ethernet HW type and the hardware address obtained from the specified
 // interface.
-func NewDiscoveryForInterface(ifname string, modifiers ...Modifier) (*DHCPv4, error) {
+func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
 		return nil, err
@@ -148,9 +148,6 @@ func NewDiscoveryForInterface(ifname string, modifiers ...Modifier) (*DHCPv4, er
 			OptionDomainNameServer,
 		},
 	})
-	for _, mod := range modifiers {
-		d = mod(d)
-	}
 	return d, nil
 }
 
@@ -228,7 +225,7 @@ func RequestFromOffer(offer DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 }
 
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
-func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
+func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	reply, err := New()
 	if err != nil {
 		return nil, err
@@ -241,6 +238,9 @@ func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
 	reply.SetTransactionID(request.TransactionID())
 	reply.SetFlags(request.Flags())
 	reply.SetGatewayIPAddr(request.GatewayIPAddr())
+	for _, mod := range modifiers {
+		reply = mod(reply)
+	}
 	return reply, nil
 }
 
