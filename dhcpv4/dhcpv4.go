@@ -571,8 +571,9 @@ func (d *DHCPv4) SetOptions(options []Option) {
 	d.options = options
 }
 
-// AddOption appends an option to the existing ones.
-// If the last option is an OptionEnd, it will be inserted before that.
+// AddOption appends an option to the existing ones. If the last option is an
+// OptionEnd, it will be inserted before that. It does not deal with End
+// options that appead before the end, like in malformed packets.
 func (d *DHCPv4) AddOption(option Option) {
 	if len(d.options) == 0 || d.options[len(d.options)-1].Code() != OptionEnd {
 		d.options = append(d.options, option)
