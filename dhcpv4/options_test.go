@@ -25,6 +25,14 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Requested IP address
+	option = []byte{50, 4, 1, 2, 3, 4}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRequestedIPAddress, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Message type
 	option = []byte{53, 1, 1}
 	opt, err = ParseOption(option)
@@ -39,14 +47,6 @@ func TestParseOption(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
 	require.Equal(t, 3, opt.Length(), "Length")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Requested IP address
-	option = []byte{50, 4, 1, 2, 3, 4}
-	opt, err = ParseOption(option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRequestedIPAddress, opt.Code(), "Code")
-	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
 	// Option server ID
