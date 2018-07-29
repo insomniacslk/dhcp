@@ -61,7 +61,7 @@ func TestGetTransactionIDMessage(t *testing.T) {
 func TestGetTransactionIDRelay(t *testing.T) {
 	message, err := NewMessage()
 	require.NoError(t, err)
-	relay, err := EncapsulateRelay(message, RELAY_FORW, nil, nil)
+	relay, err := EncapsulateRelay(message, MessageTypeRelayForward, nil, nil)
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(relay)
 	require.NoError(t, err)

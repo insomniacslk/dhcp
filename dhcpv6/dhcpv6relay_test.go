@@ -12,15 +12,15 @@ func TestDHCPv6Relay(t *testing.T) {
 	ll := net.IP{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb, 0xcc, 0xff, 0xfe, 0xdd, 0xee, 0xff}
 	ma := net.IP{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
 	r := DHCPv6Relay{
-		messageType: RELAY_FORW,
+		messageType: MessageTypeRelayForward,
 		hopCount:    10,
 		linkAddr:    ll,
 		peerAddr:    ma,
 		// options is left empty here for testing purposes, even if it's
 		// mandatory to have at least a relay message option
 	}
-	if mt := r.MessageType(); mt != RELAY_FORW {
-		t.Fatalf("Invalid message type. Expected %v, got %v", RELAY_FORW, mt)
+	if mt := r.MessageType(); mt != MessageTypeRelayForward {
+		t.Fatalf("Invalid message type. Expected %v, got %v", MessageTypeRelayForward, mt)
 	}
 	if hc := r.HopCount(); hc != 10 {
 		t.Fatalf("Invalid hop count. Expected 10, got %v", hc)
@@ -39,9 +39,9 @@ func TestDHCPv6Relay(t *testing.T) {
 func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 	r := DHCPv6Relay{}
 	// set and get message type
-	r.SetMessageType(RELAY_REPL)
-	if mt := r.MessageType(); mt != RELAY_REPL {
-		t.Fatalf("Invalid message type. Expected %v, got %v", RELAY_REPL, mt)
+	r.SetMessageType(MessageTypeRelayReply)
+	if mt := r.MessageType(); mt != MessageTypeRelayReply {
+		t.Fatalf("Invalid message type. Expected %v, got %v", MessageTypeRelayReply, mt)
 	}
 	// set and get hop count
 	r.SetHopCount(5)
@@ -68,7 +68,7 @@ func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 
 func TestDHCPv6RelayToBytes(t *testing.T) {
 	expected := []byte{
-		12,                                                      // RELAY_FORW
+		12,                                                      // MessageTypeRelayForward
 		1,                                                       // hop count
 		0xff, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x01, // link addr
 		0xff, 0x02, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x02, // peer addr
@@ -76,7 +76,7 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 		0, 9, // relay msg
 		0, 10, // option length
 		// inner dhcp solicit
-		1,                // SOLICIT
+		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		// inner option - elapsed time
 		0, 8, // elapsed time
@@ -84,14 +84,14 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 		0, 0,
 	}
 	r := DHCPv6Relay{
-		messageType: RELAY_FORW,
+		messageType: MessageTypeRelayForward,
 		hopCount:    1,
 		linkAddr:    net.IPv6interfacelocalallnodes,
 		peerAddr:    net.IPv6linklocalallrouters,
 	}
 	opt := OptRelayMsg{
 		relayMessage: &DHCPv6Message{
-			messageType:   SOLICIT,
+			messageType:   MessageTypeSolicit,
 			transactionID: 0xaabbcc,
 			options: []Option{
 				&OptElapsedTime{
@@ -109,12 +109,12 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 
 func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rf := DHCPv6Relay{}
-	rf.SetMessageType(RELAY_FORW)
+	rf.SetMessageType(MessageTypeRelayForward)
 	rf.SetPeerAddr(net.IPv6linklocalallrouters)
 	rf.SetLinkAddr(net.IPv6interfacelocalallnodes)
 	oro := OptRelayMsg{}
 	s := DHCPv6Message{}
-	s.SetMessage(SOLICIT)
+	s.SetMessage(MessageTypeSolicit)
 	cid := OptClientId{}
 	s.AddOption(&cid)
 	oro.SetRelayMessage(&s)
@@ -125,7 +125,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rr, err := NewRelayReplFromRelayForw(&rf, a)
 	require.NoError(t, err)
 	relay := rr.(*DHCPv6Relay)
-	require.Equal(t, rr.Type(), RELAY_REPL)
+	require.Equal(t, rr.Type(), MessageTypeRelayReply)
 	require.Equal(t, relay.HopCount(), rf.HopCount())
 	require.Equal(t, relay.PeerAddr(), rf.PeerAddr())
 	require.Equal(t, relay.LinkAddr(), rf.LinkAddr())

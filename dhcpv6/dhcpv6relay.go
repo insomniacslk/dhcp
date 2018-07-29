@@ -173,7 +173,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	if !ok {
 		return nil, errors.New("Not a DHCPv6Relay")
 	}
-	if relay.Type() != RELAY_FORW {
+	if relay.Type() != MessageTypeRelayForward {
 		return nil, errors.New("The passed packet is not of type RELAY_FORW")
 	}
 	if msg == nil {
@@ -197,7 +197,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 		}
 	}
 	for i := len(linkAddr) - 1; i >= 0; i-- {
-		msg, err = EncapsulateRelay(msg, RELAY_REPL, linkAddr[i], peerAddr[i])
+		msg, err = EncapsulateRelay(msg, MessageTypeRelayReply, linkAddr[i], peerAddr[i])
 		if opt := optiids[i]; opt != nil {
 			msg.AddOption(opt)
 		}

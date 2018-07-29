@@ -30,7 +30,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		headerSize  int
 		messageType = MessageType(data[0])
 	)
-	if messageType == RELAY_FORW || messageType == RELAY_REPL {
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
 		isRelay = true
 	}
 	if isRelay {
@@ -85,7 +85,7 @@ func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 		return nil, err
 	}
 	msg := DHCPv6Message{
-		messageType:   SOLICIT,
+		messageType:   MessageTypeSolicit,
 		transactionID: *tid,
 	}
 	// apply modifiers
@@ -181,7 +181,7 @@ func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
 // message as payload. The passed message type must be  either RELAY_FORW or
 // RELAY_REPL
 func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (DHCPv6, error) {
-	if mType != RELAY_FORW && mType != RELAY_REPL {
+	if mType != MessageTypeRelayForward && mType != MessageTypeRelayReply {
 		return nil, fmt.Errorf("Message type must be either RELAY_FORW or RELAY_REPL")
 	}
 	outer := DHCPv6Relay{
