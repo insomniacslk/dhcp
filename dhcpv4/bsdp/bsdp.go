@@ -26,7 +26,7 @@ func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	if err != nil {
 		return nil, err
 	}
-	bootImageOpts := vendorOpt.GetOptions(OptionBootImageList)
+	bootImageOpts := vendorOpt.GetOption(OptionBootImageList)
 	for _, opt := range bootImageOpts {
 		images = append(images, opt.(*OptBootImageList).Images...)
 	}

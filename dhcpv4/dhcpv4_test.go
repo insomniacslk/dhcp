@@ -8,19 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func RequireEqualIPAddr(t *testing.T, a, b net.IP, msg ...interface{}) {
-	if !net.IP.Equal(a, b) {
-		t.Fatalf("Invalid %s. %v != %v", msg, a, b)
-	}
-}
-
-func RequireHasOption(t *testing.T, packet *DHCPv4, opcode OptionCode) {
-	require.NotNil(t, packet, "packet cannot be nil")
-	packetOpt := packet.GetOneOption(opcode)
-	require.NotNil(t, packetOpt, "option not present in packet")
-}
-
-func TestIPv4AddrsForInterface(t *testing.T) {
+func TestGetExternalIPv4Addrs(t *testing.T) {
 	addrs4and6 := []net.Addr{
 		&net.IPAddr{IP: net.IP{1, 2, 3, 4}},
 		&net.IPAddr{IP: net.IP{4, 3, 2, 1}},
@@ -80,9 +68,9 @@ func TestFromBytes(t *testing.T) {
 	require.Equal(t, d.TransactionID(), uint32(0xaabbccdd))
 	require.Equal(t, d.NumSeconds(), uint16(3))
 	require.Equal(t, d.Flags(), uint16(1))
-	RequireEqualIPAddr(t, d.ClientIPAddr(), net.IPv4zero)
-	RequireEqualIPAddr(t, d.YourIPAddr(), net.IPv4zero)
-	RequireEqualIPAddr(t, d.GatewayIPAddr(), net.IPv4zero)
+	require.True(t, d.ClientIPAddr().Equal(net.IPv4zero))
+	require.True(t, d.YourIPAddr().Equal(net.IPv4zero))
+	require.True(t, d.GatewayIPAddr().Equal(net.IPv4zero))
 	clientHwAddr := d.ClientHwAddr()
 	require.Equal(t, clientHwAddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	hostname := d.ServerHostName()
@@ -204,24 +192,24 @@ func TestSettersAndGetters(t *testing.T) {
 	require.Equal(t, uint16(0), d.Flags())
 
 	// getter/setter for ClientIPAddr
-	RequireEqualIPAddr(t, net.IPv4(1, 2, 3, 4), d.ClientIPAddr())
+	require.True(t, d.ClientIPAddr().Equal(net.IPv4(1, 2, 3, 4)))
 	d.SetClientIPAddr(net.IPv4(4, 3, 2, 1))
-	RequireEqualIPAddr(t, net.IPv4(4, 3, 2, 1), d.ClientIPAddr())
+	require.True(t, d.ClientIPAddr().Equal(net.IPv4(4, 3, 2, 1)))
 
 	// getter/setter for YourIPAddr
-	RequireEqualIPAddr(t, net.IPv4(5, 6, 7, 8), d.YourIPAddr())
+	require.True(t, d.YourIPAddr().Equal(net.IPv4(5, 6, 7, 8)))
 	d.SetYourIPAddr(net.IPv4(8, 7, 6, 5))
-	RequireEqualIPAddr(t, net.IPv4(8, 7, 6, 5), d.YourIPAddr())
+	require.True(t, d.YourIPAddr().Equal(net.IPv4(8, 7, 6, 5)))
 
 	// getter/setter for ServerIPAddr
-	RequireEqualIPAddr(t, net.IPv4(9, 10, 11, 12), d.ServerIPAddr())
+	require.True(t, d.ServerIPAddr().Equal(net.IPv4(9, 10, 11, 12)))
 	d.SetServerIPAddr(net.IPv4(12, 11, 10, 9))
-	RequireEqualIPAddr(t, net.IPv4(12, 11, 10, 9), d.ServerIPAddr())
+	require.True(t, d.ServerIPAddr().Equal(net.IPv4(12, 11, 10, 9)))
 
 	// getter/setter for GatewayIPAddr
-	RequireEqualIPAddr(t, net.IPv4(13, 14, 15, 16), d.GatewayIPAddr())
+	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(13, 14, 15, 16)))
 	d.SetGatewayIPAddr(net.IPv4(16, 15, 14, 13))
-	RequireEqualIPAddr(t, net.IPv4(16, 15, 14, 13), d.GatewayIPAddr())
+	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(16, 15, 14, 13)))
 
 	// getter/setter for ClientHwAddr
 	hwaddr := d.ClientHwAddr()
@@ -459,8 +447,8 @@ func TestNewDiscovery(t *testing.T) {
 	require.Equal(t, expectedHwAddr, m.ClientHwAddr())
 	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
 	require.True(t, m.IsBroadcast())
-	RequireHasOption(t, m, OptionParameterRequestList)
-	RequireHasOption(t, m, OptionEnd)
+	require.True(t, HasOption(m, OptionParameterRequestList))
+	require.True(t, HasOption(m, OptionEnd))
 }
 
 func TestNewInform(t *testing.T) {
@@ -477,7 +465,7 @@ func TestNewInform(t *testing.T) {
 	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
 	require.NotNil(t, m.MessageType())
 	require.Equal(t, MessageTypeInform, *m.MessageType())
-	RequireEqualIPAddr(t, localIP, m.ClientIPAddr())
+	require.True(t, m.ClientIPAddr().Equal(localIP))
 }
 
 // TODO

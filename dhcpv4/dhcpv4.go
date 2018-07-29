@@ -679,3 +679,15 @@ func (d *DHCPv4) ToBytes() []byte {
 	}
 	return ret
 }
+
+// OptionGetter is a interface that knows how to retrieve an option from a
+// structure of options given an OptionCode.
+type OptionGetter interface {
+	GetOption(OptionCode) []Option
+	GetOneOption(OptionCode) Option
+}
+
+// HasOption checks whether the OptionGetter `o` has the given `opcode` Option.
+func HasOption(o OptionGetter, opcode OptionCode) bool {
+	return o.GetOneOption(opcode) != nil
+}

@@ -136,7 +136,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 			&OptVersion{Version1_1},
 		},
 	}
-	foundOpts := o.GetOptions(OptionBootImageList)
+	foundOpts := o.GetOption(OptionBootImageList)
 	require.Empty(t, foundOpts, "should not get any options")
 
 	// One option
@@ -146,7 +146,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 			&OptVersion{Version1_1},
 		},
 	}
-	foundOpts = o.GetOptions(OptionMessageType)
+	foundOpts = o.GetOption(OptionMessageType)
 	require.Equal(t, 1, len(foundOpts), "should only get one option")
 	require.Equal(t, MessageTypeList, foundOpts[0].(*OptMessageType).Type)
 
@@ -158,7 +158,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 			&OptVersion{Version1_0},
 		},
 	}
-	foundOpts = o.GetOptions(OptionVersion)
+	foundOpts = o.GetOption(OptionVersion)
 	require.Equal(t, 2, len(foundOpts), "should get two options")
 	require.Equal(t, Version1_1, foundOpts[0].(*OptVersion).Version)
 	require.Equal(t, Version1_0, foundOpts[1].(*OptVersion).Version)
