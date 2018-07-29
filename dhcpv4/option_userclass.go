@@ -39,7 +39,7 @@ func (op *OptUserClass) Length() int {
 }
 
 func (op *OptUserClass) String() string {
-	ucStrings := make([]string, len(op.UserClasses))
+	ucStrings := make([]string, 0, len(op.UserClasses))
 	for _, uc := range op.UserClasses {
 		ucStrings = append(ucStrings, string(uc))
 	}

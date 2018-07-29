@@ -124,7 +124,7 @@ func MakeListeningSocket(ifname string) (int, error) {
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
+func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]DHCPv4, error) {
 	conversation := make([]DHCPv4, 1)
 	var err error
 
@@ -140,9 +140,13 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 
 	// Discover
 	if discover == nil {
-		discover, err = NewDiscoveryForInterface(ifname)
+		discover, err = NewDiscoveryForInterface(ifname, modifiers...)
 		if err != nil {
 			return conversation, err
+		}
+	} else {
+		for _, mod := range modifiers {
+			discover = mod(discover)
 		}
 	}
 	conversation[0] = *discover
@@ -155,7 +159,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4) ([]DHCPv4, error) {
 	conversation = append(conversation, *offer)
 
 	// Request
-	request, err := RequestFromOffer(*offer)
+	request, err := RequestFromOffer(*offer, modifiers...)
 	if err != nil {
 		return conversation, err
 	}
