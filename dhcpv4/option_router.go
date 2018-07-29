@@ -8,7 +8,7 @@ import (
 // This option implements the router option
 // https://tools.ietf.org/html/rfc2132
 
-// OptDomainRouter represents an option encapsulating the routers.
+// OptRouter represents an option encapsulating the routers.
 type OptRouter struct {
 	Routers []net.IP
 }
