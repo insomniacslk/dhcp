@@ -34,18 +34,18 @@ func TestParseOptRouter(t *testing.T) {
 	require.Equal(t, &OptRouter{Routers: routers}, o)
 
 	// Short byte stream
-	data = []byte{byte(OptionDomainNameServer)}
-	_, err = ParseOptDomainNameServer(data)
+	data = []byte{byte(OptionRouter)}
+	_, err = ParseOptRouter(data)
 	require.Error(t, err, "should get error from short byte stream")
 
 	// Wrong code
 	data = []byte{54, 2, 1, 1}
-	_, err = ParseOptDomainNameServer(data)
+	_, err = ParseOptRouter(data)
 	require.Error(t, err, "should get error from wrong code")
 
 	// Bad length
-	data = []byte{byte(OptionDomainNameServer), 6, 1, 1, 1}
-	_, err = ParseOptDomainNameServer(data)
+	data = []byte{byte(OptionRouter), 6, 1, 1, 1}
+	_, err = ParseOptRouter(data)
 	require.Error(t, err, "should get error from bad length")
 }
 
