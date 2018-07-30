@@ -20,7 +20,7 @@ func TestParseOptIPAddressLeaseTime(t *testing.T) {
 	require.Equal(t, &OptIPAddressLeaseTime{LeaseTime: 43200}, o)
 
 	// Short byte stream
-	data = []byte{51, 4}
+	data = []byte{51, 4, 168, 192}
 	_, err = ParseOptIPAddressLeaseTime(data)
 	require.Error(t, err, "should get error from short byte stream")
 

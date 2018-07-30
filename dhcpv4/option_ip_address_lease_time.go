@@ -17,7 +17,7 @@ type OptIPAddressLeaseTime struct {
 // sequence of bytes and returns it, or an error.
 func ParseOptIPAddressLeaseTime(data []byte) (*OptIPAddressLeaseTime, error) {
 	// Should at least have code, length, and lease time.
-	if len(data) < 4 {
+	if len(data) < 6 {
 		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
