@@ -14,7 +14,7 @@ func TestOptMaximumDHCPMessageSizeInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptMaximumDHCPMessageSize(t *testing.T) {
-	data := []byte{57, 2, 5, 220} // DISCOVER
+	data := []byte{57, 2, 5, 220}
 	o, err := ParseOptMaximumDHCPMessageSize(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptMaximumDHCPMessageSize{Size: 1500}, o)
