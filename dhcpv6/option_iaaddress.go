@@ -9,7 +9,7 @@ import (
 	"net"
 )
 
-// OptIAAddress represents an OPTION_IAADDR
+// OptIAAddress represents an OptionIAAddr
 type OptIAAddress struct {
 	IPv6Addr          net.IP
 	PreferredLifetime uint32
@@ -19,13 +19,13 @@ type OptIAAddress struct {
 
 // Code returns the option's code
 func (op *OptIAAddress) Code() OptionCode {
-	return OPTION_IAADDR
+	return OptionIAAddr
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAAddress) ToBytes() []byte {
 	buf := make([]byte, 28)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IAADDR))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAAddr))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	copy(buf[4:20], op.IPv6Addr[:])
 	binary.BigEndian.PutUint32(buf[20:24], op.PreferredLifetime)

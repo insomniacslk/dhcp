@@ -198,20 +198,20 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 
 	require.Equal(t, s.Type(), MessageTypeSolicit)
 	// Check CID
-	cidOption := s.GetOneOption(OPTION_CLIENTID)
+	cidOption := s.GetOneOption(OptionClientID)
 	require.NotNil(t, cidOption)
 	cid, ok := cidOption.(*OptClientId)
 	require.True(t, ok)
 	require.Equal(t, cid.Cid, duid)
 
 	// Check ORO
-	oroOption := s.GetOneOption(OPTION_ORO)
+	oroOption := s.GetOneOption(OptionORO)
 	require.NotNil(t, oroOption)
 	oro, ok := oroOption.(*OptRequestedOption)
 	require.True(t, ok)
 	opts := oro.RequestedOptions()
-	require.Contains(t, opts, DNS_RECURSIVE_NAME_SERVER)
-	require.Contains(t, opts, DOMAIN_SEARCH_LIST)
+	require.Contains(t, opts, OptionDNSRecursiveNameServer)
+	require.Contains(t, opts, OptionDomainSearchList)
 	require.Equal(t, len(opts), 2)
 }
 

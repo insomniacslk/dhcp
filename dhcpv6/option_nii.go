@@ -33,12 +33,12 @@ type OptNetworkInterfaceId struct {
 }
 
 func (op *OptNetworkInterfaceId) Code() OptionCode {
-	return OPTION_NII
+	return OptionNII
 }
 
 func (op *OptNetworkInterfaceId) ToBytes() []byte {
 	buf := make([]byte, 7)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_NII))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionNII))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	buf[4] = op.type_
 	buf[5] = op.major

@@ -14,12 +14,12 @@ type OptRemoteId struct {
 }
 
 func (op *OptRemoteId) Code() OptionCode {
-	return OPTION_REMOTE_ID
+	return OptionRemoteID
 }
 
 func (op *OptRemoteId) ToBytes() []byte {
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_REMOTE_ID))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionRemoteID))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint32(buf[4:8], uint32(op.enterpriseNumber))
 	buf = append(buf, op.remoteId...)

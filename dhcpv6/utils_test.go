@@ -12,7 +12,7 @@ func TestIsNetboot(t *testing.T) {
 
 	msg2 := DHCPv6Message{}
 	optro := OptRequestedOption{}
-	optro.AddRequestedOption(OPT_BOOTFILE_URL)
+	optro.AddRequestedOption(OptionBootfileURL)
 	msg2.AddOption(&optro)
 	require.True(t, IsNetboot(&msg2))
 

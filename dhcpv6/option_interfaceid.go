@@ -13,12 +13,12 @@ type OptInterfaceId struct {
 }
 
 func (op *OptInterfaceId) Code() OptionCode {
-	return OPTION_INTERFACE_ID
+	return OptionInterfaceID
 }
 
 func (op *OptInterfaceId) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_INTERFACE_ID))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionInterfaceID))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(len(op.interfaceId)))
 	buf = append(buf, op.interfaceId...)
 	return buf

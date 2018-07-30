@@ -26,7 +26,7 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 		0, 8, // EFI_XSCALE
 	}
 	expected := []byte{
-		0, 61, // OPTION_CLIENT_ARCH_TYPE
+		0, 61, // OptionClientArchType
 		0, 2, // length
 		0, 8, // EFI_XSCALE
 	}
@@ -40,5 +40,5 @@ func TestOptClientArchType(t *testing.T) {
 		ArchType: EFI_ITANIUM,
 	}
 	require.Equal(t, opt.Length(), 2)
-	require.Equal(t, opt.Code(), OPTION_CLIENT_ARCH_TYPE)
+	require.Equal(t, opt.Code(), OptionClientArchType)
 }

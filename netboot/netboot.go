@@ -67,7 +67,7 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 		opt      dhcpv6.Option
 		bootfile string
 	)
-	opt = reply.GetOneOption(dhcpv6.OPT_BOOTFILE_URL)
+	opt = reply.GetOneOption(dhcpv6.OptionBootfileURL)
 	if opt == nil {
 		log.Printf("no bootfile URL option found in REPLY, looking for it in ADVERTISE")
 		// as a fallback, look for bootfile URL in the advertise
@@ -82,7 +82,7 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 		if advertise == nil {
 			return nil, "", errors.New("no ADVERTISE found")
 		}
-		opt = advertise.GetOneOption(dhcpv6.OPT_BOOTFILE_URL)
+		opt = advertise.GetOneOption(dhcpv6.OptionBootfileURL)
 		if opt == nil {
 			return nil, "", errors.New("no bootfile URL option found in ADVERTISE")
 		}

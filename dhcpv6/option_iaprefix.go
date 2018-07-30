@@ -18,12 +18,12 @@ type OptIAPrefix struct {
 }
 
 func (op *OptIAPrefix) Code() OptionCode {
-	return OPTION_IAPREFIX
+	return OptionIAPrefix
 }
 
 func (op *OptIAPrefix) ToBytes() []byte {
 	buf := make([]byte, 12)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IAPREFIX))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPrefix))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint32(buf[4:8], op.preferredLifetime)
 	binary.BigEndian.PutUint32(buf[8:12], op.validLifetime)

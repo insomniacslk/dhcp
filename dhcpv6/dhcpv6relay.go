@@ -185,7 +185,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	for {
 		linkAddr = append(linkAddr, relay.LinkAddr())
 		peerAddr = append(peerAddr, relay.PeerAddr())
-		optiids = append(optiids, relay.GetOneOption(OPTION_INTERFACE_ID))
+		optiids = append(optiids, relay.GetOneOption(OptionInterfaceID))
 		decap, err := DecapsulateRelay(relay)
 		if err != nil {
 			return nil, err

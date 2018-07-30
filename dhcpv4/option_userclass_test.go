@@ -12,7 +12,7 @@ func TestOptUserClassToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OPTION_USER_CLASS
+		77, // OptionUserClass
 		10, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
@@ -57,7 +57,7 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OPTION_USER_CLASS
+		77, // OptionUserClass
 		15, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		4, 't', 'e', 's', 't',

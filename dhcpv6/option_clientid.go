@@ -14,12 +14,12 @@ type OptClientId struct {
 }
 
 func (op *OptClientId) Code() OptionCode {
-	return OPTION_CLIENTID
+	return OptionClientID
 }
 
 func (op *OptClientId) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_CLIENTID))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionClientID))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	buf = append(buf, op.Cid.ToBytes()...)
 	return buf

@@ -75,8 +75,8 @@ func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
 	d.AddOption(&OptClientId{Cid: duid})
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
-		DNS_RECURSIVE_NAME_SERVER,
-		DOMAIN_SEARCH_LIST,
+		OptionDNSRecursiveNameServer,
+		OptionDomainSearchList,
 	})
 	d.AddOption(oro)
 	d.AddOption(&OptElapsedTime{})
@@ -126,7 +126,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	adv.SetMessage(MessageTypeAdvertise)
 	adv.SetTransactionID(sol.TransactionID())
 	// add Client ID
-	cid := sol.GetOneOption(OPTION_CLIENTID)
+	cid := sol.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, errors.New("Client ID cannot be nil in SOLICIT when building ADVERTISE")
 	}
@@ -158,13 +158,13 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	req.SetMessage(MessageTypeRequest)
 	req.SetTransactionID(adv.TransactionID())
 	// add Client ID
-	cid := adv.GetOneOption(OPTION_CLIENTID)
+	cid := adv.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, fmt.Errorf("Client ID cannot be nil in ADVERTISE when building REQUEST")
 	}
 	req.AddOption(cid)
 	// add Server ID
-	sid := adv.GetOneOption(OPTION_SERVERID)
+	sid := adv.GetOneOption(OptionServerID)
 	if sid == nil {
 		return nil, fmt.Errorf("Server ID cannot be nil in ADVERTISE when building REQUEST")
 	}
@@ -172,7 +172,7 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	// add Elapsed Time
 	req.AddOption(&OptElapsedTime{})
 	// add IA_NA
-	iaNa := adv.GetOneOption(OPTION_IA_NA)
+	iaNa := adv.GetOneOption(OptionIANA)
 	if iaNa == nil {
 		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
 	}
@@ -180,13 +180,13 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	// add OptRequestedOption
 	oro := OptRequestedOption{}
 	oro.SetRequestedOptions([]OptionCode{
-		DNS_RECURSIVE_NAME_SERVER,
-		DOMAIN_SEARCH_LIST,
+		OptionDNSRecursiveNameServer,
+		OptionDomainSearchList,
 	})
 	req.AddOption(&oro)
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
-	vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
+	vClass := adv.GetOneOption(OptionVendorClass)
 	if vClass != nil {
 		req.AddOption(vClass)
 	}
@@ -220,7 +220,7 @@ func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	rep.SetMessage(MessageTypeReply)
 	rep.SetTransactionID(msg.TransactionID())
 	// add Client ID
-	cid := message.GetOneOption(OPTION_CLIENTID)
+	cid := message.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, errors.New("Client ID cannot be nil when building REPLY")
 	}

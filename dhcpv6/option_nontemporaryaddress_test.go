@@ -47,7 +47,7 @@ func TestOptIANAGetOneOption(t *testing.T) {
 	opt := OptIANA{
 		Options: []Option{&OptElapsedTime{}, oaddr},
 	}
-	require.Equal(t, oaddr, opt.GetOneOption(OPTION_IAADDR))
+	require.Equal(t, oaddr, opt.GetOneOption(OptionIAAddr))
 }
 
 func TestOptIANAGetOneOptionMissingOpt(t *testing.T) {
@@ -57,7 +57,7 @@ func TestOptIANAGetOneOptionMissingOpt(t *testing.T) {
 	opt := OptIANA{
 		Options: []Option{&OptElapsedTime{}, oaddr},
 	}
-	require.Equal(t, nil, opt.GetOneOption(DNS_RECURSIVE_NAME_SERVER))
+	require.Equal(t, nil, opt.GetOneOption(OptionDNSRecursiveNameServer))
 }
 
 func TestOptIANADelOption(t *testing.T) {
@@ -69,13 +69,13 @@ func TestOptIANADelOption(t *testing.T) {
 	optiana1.Options = append(optiana1.Options, &optsc)
 	optiana1.Options = append(optiana1.Options, &optiaaddr)
 	optiana1.Options = append(optiana1.Options, &optiaaddr)
-	optiana1.DelOption(OPTION_IAADDR)
+	optiana1.DelOption(OptionIAAddr)
 	require.Equal(t, optiana1.Options, []Option{&optsc})
 
 	optiana2.Options = append(optiana2.Options, &optiaaddr)
 	optiana2.Options = append(optiana2.Options, &optsc)
 	optiana2.Options = append(optiana2.Options, &optiaaddr)
-	optiana2.DelOption(OPTION_IAADDR)
+	optiana2.DelOption(OptionIAAddr)
 	require.Equal(t, optiana2.Options, []Option{&optsc})
 }
 
@@ -91,7 +91,7 @@ func TestOptIANAToBytes(t *testing.T) {
 		},
 	}
 	expected := []byte{
-		0, 3, // OPTION_IA_NA
+		0, 3, // OptionIANA
 		0, 18, // length
 		1, 2, 3, 4, // IA ID
 		0, 0, 0x30, 0x39, // T1 = 12345

@@ -134,7 +134,7 @@ func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	if !l.IsRelay() {
 		return l, nil
 	}
-	opt := l.GetOneOption(OPTION_RELAY_MSG)
+	opt := l.GetOneOption(OptionRelayMsg)
 	if opt == nil {
 		return nil, fmt.Errorf("No OptRelayMsg found")
 	}

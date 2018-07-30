@@ -13,12 +13,12 @@ type OptElapsedTime struct {
 }
 
 func (op *OptElapsedTime) Code() OptionCode {
-	return OPTION_ELAPSED_TIME
+	return OptionElapsedTime
 }
 
 func (op *OptElapsedTime) ToBytes() []byte {
 	buf := make([]byte, 6)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_ELAPSED_TIME))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionElapsedTime))
 	binary.BigEndian.PutUint16(buf[2:4], 2)
 	binary.BigEndian.PutUint16(buf[4:6], uint16(op.ElapsedTime))
 	return buf

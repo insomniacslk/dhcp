@@ -30,7 +30,7 @@ func TestOptClientIdToBytes(t *testing.T) {
 		},
 	}
 	expected := []byte{
-		0, 1, // OPTION_CLIENTID
+		0, 1, // OptionClientID
 		0, 10, // length
 		0, 3, // DUID_LL
 		0, 1, // hwtype ethernet
@@ -46,7 +46,7 @@ func TestOptClientIdDecodeEncode(t *testing.T) {
 		5, 4, 3, 2, 1, 0, // hw addr
 	}
 	expected := append([]byte{
-		0, 1, // OPTION_CLIENTID
+		0, 1, // OptionClientID
 		0, 10, // length
 	}, data...)
 	opt, err := ParseOptClientId(data)
@@ -63,5 +63,5 @@ func TestOptionClientId(t *testing.T) {
 		},
 	}
 	require.Equal(t, opt.Length(), 10)
-	require.Equal(t, opt.Code(), OPTION_CLIENTID)
+	require.Equal(t, opt.Code(), OptionClientID)
 }
