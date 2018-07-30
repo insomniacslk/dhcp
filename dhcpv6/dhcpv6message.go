@@ -101,7 +101,7 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 		return nil, err
 	}
 	duid := Duid{
-		Type:          DUID_LLT,
+		Type:          DuidLLT,
 		HwType:        iana.HwTypeEthernet,
 		Time:          GetTime(),
 		LinkLayerAddr: iface.HardwareAddr,

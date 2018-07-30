@@ -188,7 +188,7 @@ func TestNewSolicitWithCID(t *testing.T) {
 	require.NoError(t, err)
 
 	duid := Duid{
-		Type:          DUID_LL,
+		Type:          DuidLL,
 		HwType:        iana.HwTypeEthernet,
 		LinkLayerAddr: hwAddr,
 	}

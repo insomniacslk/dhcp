@@ -10,13 +10,13 @@ import (
 
 func TestParseOptClientId(t *testing.T) {
 	data := []byte{
-		0, 3, // DUID_LL
+		0, 3, // DuidLL
 		0, 1, // hwtype ethernet
 		0, 1, 2, 3, 4, 5, // hw addr
 	}
 	opt, err := ParseOptClientId(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.Cid.Type, DUID_LL)
+	require.Equal(t, opt.Cid.Type, DuidLL)
 	require.Equal(t, opt.Cid.HwType, iana.HwTypeEthernet)
 	require.Equal(t, opt.Cid.LinkLayerAddr, net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}))
 }
@@ -24,7 +24,7 @@ func TestParseOptClientId(t *testing.T) {
 func TestOptClientIdToBytes(t *testing.T) {
 	opt := OptClientId{
 		Cid: Duid{
-			Type:          DUID_LL,
+			Type:          DuidLL,
 			HwType:        iana.HwTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{5, 4, 3, 2, 1, 0}),
 		},
@@ -32,7 +32,7 @@ func TestOptClientIdToBytes(t *testing.T) {
 	expected := []byte{
 		0, 1, // OPTION_CLIENTID
 		0, 10, // length
-		0, 3, // DUID_LL
+		0, 3, // DuidLL
 		0, 1, // hwtype ethernet
 		5, 4, 3, 2, 1, 0, // hw addr
 	}
@@ -41,7 +41,7 @@ func TestOptClientIdToBytes(t *testing.T) {
 
 func TestOptClientIdDecodeEncode(t *testing.T) {
 	data := []byte{
-		0, 3, // DUID_LL
+		0, 3, // DuidLL
 		0, 1, // hwtype ethernet
 		5, 4, 3, 2, 1, 0, // hw addr
 	}
@@ -57,7 +57,7 @@ func TestOptClientIdDecodeEncode(t *testing.T) {
 func TestOptionClientId(t *testing.T) {
 	opt := OptClientId{
 		Cid: Duid{
-			Type:          DUID_LL,
+			Type:          DuidLL,
 			HwType:        iana.HwTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{0xde, 0xad, 0, 0, 0xbe, 0xef}),
 		},

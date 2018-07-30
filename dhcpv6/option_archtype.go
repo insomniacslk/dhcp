@@ -13,30 +13,30 @@ type ArchType uint16
 
 // see rfc4578
 const (
-	INTEL_X86PC       ArchType = 0
-	NEC_PC98          ArchType = 1
-	EFI_ITANIUM       ArchType = 2
-	DEC_ALPHA         ArchType = 3
-	ARC_X86           ArchType = 4
-	INTEL_LEAN_CLIENT ArchType = 5
-	EFI_IA32          ArchType = 6
-	EFI_BC            ArchType = 7
-	EFI_XSCALE        ArchType = 8
-	EFI_X86_64        ArchType = 9
+	Intelx86PC      ArchType = 0
+	NECPC98         ArchType = 1
+	EFIItanium      ArchType = 2
+	DECAlpha        ArchType = 3
+	ARCx86          ArchType = 4
+	IntelLeanClient ArchType = 5
+	EFIIA32         ArchType = 6
+	EFIBC           ArchType = 7
+	EFIXscale       ArchType = 8
+	EFIx8664        ArchType = 9
 )
 
 // ArchTypeToStringMap maps an ArchType to a mnemonic name
 var ArchTypeToStringMap = map[ArchType]string{
-	INTEL_X86PC:       "Intel x86PC",
-	NEC_PC98:          "NEC/PC98",
-	EFI_ITANIUM:       "EFI Itanium",
-	DEC_ALPHA:         "DEC Alpha",
-	ARC_X86:           "Arc x86",
-	INTEL_LEAN_CLIENT: "Intel Lean Client",
-	EFI_IA32:          "EFI IA32",
-	EFI_BC:            "EFI BC",
-	EFI_XSCALE:        "EFI Xscale",
-	EFI_X86_64:        "EFI x86-64",
+	Intelx86PC:      "Intel x86PC",
+	NECPC98:         "NEC/PC98",
+	EFIItanium:      "EFI Itanium",
+	DECAlpha:        "DEC Alpha",
+	ARCx86:          "Arc x86",
+	IntelLeanClient: "Intel Lean Client",
+	EFIIA32:         "EFI IA32",
+	EFIBC:           "EFI BC",
+	EFIXscale:       "EFI Xscale",
+	EFIx8664:        "EFI x86-64",
 }
 
 // OptClientArchType represents an option CLIENT_ARCH_TYPE

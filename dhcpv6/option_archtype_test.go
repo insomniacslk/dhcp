@@ -8,11 +8,11 @@ import (
 
 func TestParseOptClientArchType(t *testing.T) {
 	data := []byte{
-		0, 6, // EFI_IA32
+		0, 6, // EFIIA32
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.ArchType, EFI_IA32)
+	require.Equal(t, opt.ArchType, EFIIA32)
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
@@ -23,12 +23,12 @@ func TestParseOptClientArchTypeInvalid(t *testing.T) {
 
 func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 	data := []byte{
-		0, 8, // EFI_XSCALE
+		0, 8, // EFIXscale
 	}
 	expected := []byte{
 		0, 61, // OPTION_CLIENT_ARCH_TYPE
 		0, 2, // length
-		0, 8, // EFI_XSCALE
+		0, 8, // EFIXscale
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 
 func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
-		ArchType: EFI_ITANIUM,
+		ArchType: EFIItanium,
 	}
 	require.Equal(t, opt.Length(), 2)
 	require.Equal(t, opt.Code(), OPTION_CLIENT_ARCH_TYPE)
