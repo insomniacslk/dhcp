@@ -50,7 +50,7 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 	var reply dhcpv6.DHCPv6
 	for _, m := range conversation {
 		// look for a REPLY
-		if m.Type() == dhcpv6.REPLY {
+		if m.Type() == dhcpv6.MessageTypeReply {
 			reply = m
 			break
 		}
@@ -74,7 +74,7 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 		var advertise dhcpv6.DHCPv6
 		for _, m := range conversation {
 			// look for an ADVERTISE
-			if m.Type() == dhcpv6.ADVERTISE {
+			if m.Type() == dhcpv6.MessageTypeAdvertise {
 				advertise = m
 				break
 			}
