@@ -42,12 +42,14 @@ func ParseOption(data []byte) (Option, error) {
 	switch OptionCode(data[0]) {
 	case OptionSubnetMask:
 		opt, err = ParseOptSubnetMask(data)
+	case OptionRouter:
+		opt, err = ParseOptRouter(data)
+	case OptionRequestedIPAddress:
+		opt, err = ParseOptRequestedIPAddress(data)
 	case OptionDHCPMessageType:
 		opt, err = ParseOptMessageType(data)
 	case OptionParameterRequestList:
 		opt, err = ParseOptParameterRequestList(data)
-	case OptionRequestedIPAddress:
-		opt, err = ParseOptRequestedIPAddress(data)
 	case OptionServerIdentifier:
 		opt, err = ParseOptServerIdentifier(data)
 	case OptionBroadcastAddress:

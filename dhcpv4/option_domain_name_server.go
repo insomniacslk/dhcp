@@ -48,7 +48,7 @@ func (o *OptDomainNameServer) Code() OptionCode {
 func (o *OptDomainNameServer) ToBytes() []byte {
 	ret := []byte{byte(o.Code()), byte(o.Length())}
 	for _, ns := range o.NameServers {
-		ret = append(ret, ns...)
+		ret = append(ret, ns.To4()...)
 	}
 	return ret
 }
