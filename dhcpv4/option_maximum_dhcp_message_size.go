@@ -8,7 +8,7 @@ import (
 // This option implements the Maximum DHCP Message size option
 // https://tools.ietf.org/html/rfc2132
 
-// OptMaximumDHCPMessageSize represents the DHCP message type option.
+// OptMaximumDHCPMessageSize represents the Maximum DHCP Message size option.
 type OptMaximumDHCPMessageSize struct {
 	Size uint16
 }
@@ -16,7 +16,7 @@ type OptMaximumDHCPMessageSize struct {
 // ParseOptMaximumDHCPMessageSize constructs an OptMaximumDHCPMessageSize struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptMaximumDHCPMessageSize(data []byte) (*OptMaximumDHCPMessageSize, error) {
-	// Should at least have code, length, and message type.
+	// Should at least have code, length, and message size.
 	if len(data) < 4 {
 		return nil, ErrShortByteStream
 	}
