@@ -31,7 +31,7 @@ func TestParseOptIPAddressLeaseTime(t *testing.T) {
 
 	// Bad length
 	data = []byte{51, 5, 1, 1, 1, 1, 1}
-	_, err = ParseOptMaximumDHCPMessageSize(data)
+	_, err = ParseOptIPAddressLeaseTime(data)
 	require.Error(t, err, "should get error from bad length")
 }
 
