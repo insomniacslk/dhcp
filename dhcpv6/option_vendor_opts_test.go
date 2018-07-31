@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"fmt"
 	"bytes"
 	"testing"
 )
@@ -19,8 +20,8 @@ func TestOptVendorOpts(t *testing.T) {
 	if en := opt.EnterpriseNumber(); en != 0xaabbccdd {
 		t.Fatalf("Invalid Enterprise Number. Expected 0xaabbccdd, got %v", en)
 	}
-	if rid := opt.VendorOpts(); !bytes.Equal(rid, vendorOpts) {
-		t.Fatalf("Invalid Remote ID. Expected %v, got %v", expected, rid)
+	if vop := opt.VendorOpts(); !bytes.Equal(vop, vendorOpts) {
+		t.Fatalf("Invalid VendorOption. Expected %v, got %v", expected, vop)
 	}
 }
 
@@ -34,5 +35,35 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, expected) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
+	}
+}
+
+func TestOptVendorOptsSetEnterpriseNumber(t *testing.T) {
+	opt := OptVendorOpts{}
+	opt.SetEnterpriseNumber(uint32(3062))
+	expected := uint32(3062)
+	if opt.EnterpriseNumber() != expected {
+		t.Fatalf("Invalid SetEnterpriseNumber result. Expected %v, got %v", expected, opt.EnterpriseNumber())
+	}
+}
+
+func TestOptVendorOptsSetVendorOpts(t *testing.T) {
+	opt := OptVendorOpts{}
+	opt.SetVendorOpts([]byte("!Arista;DCS-7304;01.00;HSH14425148"))
+	expected := []byte("!Arista;DCS-7304;01.00;HSH14425148")
+	if !bytes.Equal(opt.VendorOpts(), expected) {
+		t.Fatalf("Invalid SetEnterpriseNumber result. Expected %v, got %v", expected, opt.VendorOpts())
+	}
+}
+
+func TestOptVendorOptsString(t *testing.T) {
+	opt := OptVendorOpts{}
+	opt.SetEnterpriseNumber(uint32(3062))
+	opt.SetVendorOpts([]byte("!Arista;DCS-7304;01.00;HSH14425148"))
+	expected := fmt.Sprintf("OptVendorOpts{enterprisenum=%v, vendorOpts=%s}",
+		opt.enterpriseNumber, opt.vendorOpts,
+	)
+	if opt.String() != expected {
+		t.Fatalf("Invalid SetEnterpriseNumber result. \nExpected %v \nGot \t %v", expected, opt.String())
 	}
 }
