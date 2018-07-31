@@ -72,6 +72,8 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptBootfileName(data)
 	case OptionUserClassInformation:
 		opt, err = ParseOptUserClass(data)
+	case OptionDNSDomainSearchList:
+		opt, err = ParseOptDomainSearch(data)
 	default:
 		opt, err = ParseOptionGeneric(data)
 	}
