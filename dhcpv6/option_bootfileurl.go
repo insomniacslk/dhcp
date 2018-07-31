@@ -8,20 +8,20 @@ import (
 	"fmt"
 )
 
-// OptBootFileURL implements the OPT_BOOTFILE_URL option
+// OptBootFileURL implements the OptionBootfileURL option
 type OptBootFileURL struct {
 	BootFileURL []byte
 }
 
 // Code returns the option code
 func (op *OptBootFileURL) Code() OptionCode {
-	return OPT_BOOTFILE_URL
+	return OptionBootfileURL
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptBootFileURL) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPT_BOOTFILE_URL))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionBootfileURL))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(len(op.BootFileURL)))
 	buf = append(buf, op.BootFileURL...)
 	return buf

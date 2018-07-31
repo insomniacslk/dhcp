@@ -20,7 +20,7 @@ func TestParseOptDomainSearchList(t *testing.T) {
 
 func TestOptDomainSearchListToBytes(t *testing.T) {
 	expected := []byte{
-		0, 24, // DOMAIN_SEARCH_LIST
+		0, 24, // OptionDomainSearchList
 		0, 33, // length
 		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'o', 'r', 'g', 0,

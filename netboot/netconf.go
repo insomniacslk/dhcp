@@ -30,7 +30,7 @@ type NetConf struct {
 // GetNetConfFromPacketv6 extracts network configuration information from a DHCPv6
 // Reply packet and returns a populated NetConf structure
 func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
-	opt := d.GetOneOption(dhcpv6.OPTION_IA_NA)
+	opt := d.GetOneOption(dhcpv6.OptionIANA)
 	if opt == nil {
 		return nil, errors.New("No option IA NA found")
 	}
@@ -39,7 +39,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	oiana := opt.(*dhcpv6.OptIANA)
 	iaaddrs := make([]*dhcpv6.OptIAAddress, 0)
 	for _, o := range oiana.Options {
-		if o.Code() == dhcpv6.OPTION_IAADDR {
+		if o.Code() == dhcpv6.OptionIAAddr {
 			iaaddrs = append(iaaddrs, o.(*dhcpv6.OptIAAddress))
 		}
 	}
@@ -55,7 +55,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 		})
 	}
 	// get DNS configuration
-	opt = d.GetOneOption(dhcpv6.DNS_RECURSIVE_NAME_SERVER)
+	opt = d.GetOneOption(dhcpv6.OptionDNSRecursiveNameServer)
 	if opt == nil {
 		return nil, errors.New("No option DNS Recursive Name Servers found ")
 	}
@@ -63,7 +63,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	// TODO should this be copied?
 	netconf.DNSServers = odnsserv.NameServers
 
-	opt = d.GetOneOption(dhcpv6.DOMAIN_SEARCH_LIST)
+	opt = d.GetOneOption(dhcpv6.OptionDomainSearchList)
 	if opt == nil {
 		return nil, errors.New("No option DNS Domain Search List found")
 	}

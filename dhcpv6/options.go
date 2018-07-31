@@ -68,41 +68,41 @@ func ParseOption(dataStart []byte) (Option, error) {
 	)
 	optData := dataStart[4 : 4+length]
 	switch code {
-	case OPTION_CLIENTID:
+	case OptionClientID:
 		opt, err = ParseOptClientId(optData)
-	case OPTION_SERVERID:
+	case OptionServerID:
 		opt, err = ParseOptServerId(optData)
-	case OPTION_ELAPSED_TIME:
+	case OptionElapsedTime:
 		opt, err = ParseOptElapsedTime(optData)
-	case OPTION_ORO:
+	case OptionORO:
 		opt, err = ParseOptRequestedOption(optData)
-	case DNS_RECURSIVE_NAME_SERVER:
+	case OptionDNSRecursiveNameServer:
 		opt, err = ParseOptDNSRecursiveNameServer(optData)
-	case DOMAIN_SEARCH_LIST:
+	case OptionDomainSearchList:
 		opt, err = ParseOptDomainSearchList(optData)
-	case OPTION_IA_NA:
+	case OptionIANA:
 		opt, err = ParseOptIANA(optData)
-	case OPTION_IA_PD:
+	case OptionIAPD:
 		opt, err = ParseOptIAForPrefixDelegation(optData)
-	case OPTION_IAADDR:
+	case OptionIAAddr:
 		opt, err = ParseOptIAAddress(optData)
-	case OPTION_IAPREFIX:
+	case OptionIAPrefix:
 		opt, err = ParseOptIAPrefix(optData)
-	case OPTION_STATUS_CODE:
+	case OptionStatusCode:
 		opt, err = ParseOptStatusCode(optData)
-	case OPTION_RELAY_MSG:
+	case OptionRelayMsg:
 		opt, err = ParseOptRelayMsg(optData)
-	case OPTION_REMOTE_ID:
+	case OptionRemoteID:
 		opt, err = ParseOptRemoteId(optData)
-	case OPTION_INTERFACE_ID:
+	case OptionInterfaceID:
 		opt, err = ParseOptInterfaceId(optData)
-	case OPTION_CLIENT_ARCH_TYPE:
+	case OptionClientArchType:
 		opt, err = ParseOptClientArchType(optData)
-	case OPTION_NII:
+	case OptionNII:
 		opt, err = ParseOptNetworkInterfaceId(optData)
-	case OPT_BOOTFILE_URL:
+	case OptionBootfileURL:
 		opt, err = ParseOptBootFileURL(optData)
-	case OPTION_USER_CLASS:
+	case OptionUserClass:
 		opt, err = ParseOptUserClass(optData)
 	default:
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}

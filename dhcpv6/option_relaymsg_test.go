@@ -16,9 +16,9 @@ func TestRelayMsgParseOptRelayMsg(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := opt.Code(); code != OPTION_RELAY_MSG {
-		t.Fatalf("Invalid option code. Expected OPTION_RELAY_MSG (%v), got %v",
-			OPTION_RELAY_MSG, code,
+	if code := opt.Code(); code != OptionRelayMsg {
+		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
+			OptionRelayMsg, code,
 		)
 	}
 }
@@ -40,9 +40,9 @@ func TestRelayMsgOptionsFromBytes(t *testing.T) {
 		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts))
 	}
 	opt := opts[0]
-	if code := opt.Code(); code != OPTION_RELAY_MSG {
-		t.Fatalf("Invalid option code. Expected OPTION_RELAY_MSG (%v), got %v",
-			OPTION_RELAY_MSG, code,
+	if code := opt.Code(); code != OptionRelayMsg {
+		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
+			OptionRelayMsg, code,
 		)
 	}
 }
@@ -76,9 +76,9 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if len(r.options) != 1 {
 		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.options))
 	}
-	if code := r.options[0].Code(); code != OPTION_RELAY_MSG {
-		t.Fatalf("Invalid option code. Expected OPTION_RELAY_MSG (%v), got %v",
-			OPTION_RELAY_MSG, code,
+	if code := r.options[0].Code(); code != OptionRelayMsg {
+		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
+			OptionRelayMsg, code,
 		)
 	}
 	opt := r.options[0]

@@ -18,13 +18,13 @@ type OptStatusCode struct {
 
 // Code returns the option code
 func (op *OptStatusCode) Code() OptionCode {
-	return OPTION_STATUS_CODE
+	return OptionStatusCode
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptStatusCode) ToBytes() []byte {
 	buf := make([]byte, 6)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_STATUS_CODE))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionStatusCode))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint16(buf[4:6], uint16(op.StatusCode))
 	buf = append(buf, op.StatusMessage...)

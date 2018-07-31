@@ -16,7 +16,7 @@ func TestWithClientID(t *testing.T) {
 	}
 	m, err := NewMessage(WithClientID(duid))
 	require.NoError(t, err)
-	opt := m.GetOneOption(OPTION_CLIENTID)
+	opt := m.GetOneOption(OptionClientID)
 	require.NotNil(t, opt)
 	cid := opt.(*OptClientId)
 	require.Equal(t, cid.Cid, duid)
@@ -30,7 +30,7 @@ func TestWithServerID(t *testing.T) {
 	}
 	m, err := NewMessage(WithServerID(duid))
 	require.NoError(t, err)
-	opt := m.GetOneOption(OPTION_SERVERID)
+	opt := m.GetOneOption(OptionServerID)
 	require.NotNil(t, opt)
 	sid := opt.(*OptServerId)
 	require.Equal(t, sid.Sid, duid)

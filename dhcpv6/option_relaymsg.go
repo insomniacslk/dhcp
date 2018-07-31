@@ -13,12 +13,12 @@ type OptRelayMsg struct {
 }
 
 func (op *OptRelayMsg) Code() OptionCode {
-	return OPTION_RELAY_MSG
+	return OptionRelayMsg
 }
 
 func (op *OptRelayMsg) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_RELAY_MSG))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionRelayMsg))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	buf = append(buf, op.relayMessage.ToBytes()...)
 	return buf

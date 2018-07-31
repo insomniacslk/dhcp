@@ -11,14 +11,14 @@ import (
 // if the "boot file" option is included in the packet, which is useful for
 // ADVERTISE/REPLY packet.
 func IsNetboot(msg DHCPv6) bool {
-	for _, optoro := range msg.GetOption(OPTION_ORO) {
+	for _, optoro := range msg.GetOption(OptionORO) {
 		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
-			if o == OPT_BOOTFILE_URL {
+			if o == OptionBootfileURL {
 				return true
 			}
 		}
 	}
-	if optbf := msg.GetOneOption(OPT_BOOTFILE_URL); optbf != nil {
+	if optbf := msg.GetOneOption(OptionBootfileURL); optbf != nil {
 		return true
 	}
 	return false
@@ -42,14 +42,14 @@ func IsUsingUEFI(msg DHCPv6) bool {
 	//               7    EFI BC
 	//               8    EFI Xscale
 	//               9    EFI x86-64
-	if opt := msg.GetOneOption(OPTION_CLIENT_ARCH_TYPE); opt != nil {
+	if opt := msg.GetOneOption(OptionClientArchType); opt != nil {
 		optat := opt.(*OptClientArchType)
 		// TODO investigate if other types are appropriate
 		if optat.ArchType == EFI_BC || optat.ArchType == EFI_X86_64 {
 			return true
 		}
 	}
-	if opt := msg.GetOneOption(OPTION_USER_CLASS); opt != nil {
+	if opt := msg.GetOneOption(OptionUserClass); opt != nil {
 		optuc := opt.(*OptUserClass)
 		for _, uc := range optuc.UserClasses {
 			if strings.Contains(string(uc), "EFI") {

@@ -25,7 +25,7 @@ func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
 	ns2 := net.ParseIP("2001:4860:4860::8888")
 	nameservers := []net.IP{ns1, ns2}
 	expected := []byte{
-		0, 23, // DNS_RECURSIVE_NAME_SERVER
+		0, 23, // OptionDNSRecursiveNameServer
 		0, 32, // length
 	}
 	expected = append(expected, []byte(ns1)...)
