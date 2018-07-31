@@ -6,7 +6,7 @@ import (
 )
 
 func TestLabelsFromBytes(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{
+	labels, err := labelsFromBytes([]byte{
 		0x9, 's', 'l', 'a', 'c', 'k', 'w', 'a', 'r', 'e',
 		0x2, 'i', 't',
 		0x0,
@@ -23,7 +23,7 @@ func TestLabelsFromBytes(t *testing.T) {
 }
 
 func TestLabelsFromBytesZeroLength(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{})
+	labels, err := labelsFromBytes([]byte{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +33,7 @@ func TestLabelsFromBytesZeroLength(t *testing.T) {
 }
 
 func TestLabelsFromBytesInvalidLength(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{0x3, 0xaa, 0xbb}) // short length
+	labels, err := labelsFromBytes([]byte{0x3, 0xaa, 0xbb}) // short length
 	if err == nil {
 		t.Fatal("Expected error, got nil")
 	}
@@ -46,7 +46,7 @@ func TestLabelsFromBytesInvalidLength(t *testing.T) {
 }
 
 func TestLabelToBytes(t *testing.T) {
-	encodedLabel := LabelToBytes("slackware.it")
+	encodedLabel := labelToBytes("slackware.it")
 	expected := []byte{
 		0x9, 's', 'l', 'a', 'c', 'k', 'w', 'a', 'r', 'e',
 		0x2, 'i', 't',
@@ -58,7 +58,7 @@ func TestLabelToBytes(t *testing.T) {
 }
 
 func TestLabelToBytesZeroLength(t *testing.T) {
-	encodedLabel := LabelToBytes("")
+	encodedLabel := labelToBytes("")
 	expected := []byte{0}
 	if !bytes.Equal(encodedLabel, expected) {
 		t.Fatalf("Invalid label. Expected: %v, got: %v", expected, encodedLabel)

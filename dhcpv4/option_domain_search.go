@@ -12,16 +12,20 @@ type OptDomainSearch struct {
 	DomainSearch []string
 }
 
+// Code returns the option code.
 func (op *OptDomainSearch) Code() OptionCode {
 	return OptionDNSDomainSearchList
 }
 
+// ToBytes returns a serialized stream of bytes for this option.
 func (op *OptDomainSearch) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
-	buf = append(buf, LabelsToBytes(op.DomainSearch)...)
+	buf = append(buf, labelsToBytes(op.DomainSearch)...)
 	return buf
 }
 
+// Length returns the length of the data portion (excluding option code an byte
+// length). 
 func (op *OptDomainSearch) Length() int {
 	var length int
 	for _, label := range op.DomainSearch {
@@ -30,11 +34,13 @@ func (op *OptDomainSearch) Length() int {
 	return length
 }
 
+// String returns a human-readable string.
 func (op *OptDomainSearch) String() string {
 	return fmt.Sprintf("DNS Domain Search List ->", op.DomainSearch)
 }
 
-// build an OptDomainSearch structure from a sequence of bytes.
+// ParseOptDomainSearch returns a new OptDomainSearch from a byte stream, or
+// error if any.
 func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
 	if len(data) < 2 {
 		return nil, ErrShortByteStream
@@ -47,7 +53,7 @@ func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
 	if len(data) < 2+length {
 		return nil, ErrShortByteStream
 	}
-	domainSearch, err := LabelsFromBytes(data[2:length+2])
+	domainSearch, err := labelsFromBytes(data[2:length+2])
 	if err != nil {
 		return nil, err
 	}

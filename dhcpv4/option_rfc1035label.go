@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func LabelsFromBytes(buf []byte) ([]string, error) {
+func labelsFromBytes(buf []byte) ([]string, error) {
 	var (
 		pos     = 0
 		domains = make([]string, 0)
@@ -32,7 +32,7 @@ func LabelsFromBytes(buf []byte) ([]string, error) {
 	}
 }
 
-func LabelToBytes(label string) []byte {
+func labelToBytes(label string) []byte {
 	var encodedLabel []byte
 	if len(label) == 0 {
 		return []byte{0}
@@ -44,10 +44,10 @@ func LabelToBytes(label string) []byte {
 	return append(encodedLabel, 0)
 }
 
-func LabelsToBytes(labels []string) []byte {
+func labelsToBytes(labels []string) []byte {
 	var encodedLabels []byte
 	for _, label := range labels {
-		encodedLabels = append(encodedLabels, LabelToBytes(label)...)
+		encodedLabels = append(encodedLabels, labelToBytes(label)...)
 	}
 	return encodedLabels
 }
