@@ -3,7 +3,7 @@ package dhcpv4
 import "fmt"
 
 // This option implements the host name option
-// https://tools.ietf.org/html/rfc2132
+// https://tools.ietf.org/html/rfc2132.txt
 
 // OptHostName represents an option encapsulating the host name.
 type OptHostName struct {
