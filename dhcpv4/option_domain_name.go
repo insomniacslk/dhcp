@@ -2,10 +2,10 @@ package dhcpv4
 
 import "fmt"
 
-// This option implements the server domani name option
+// This option implements the domain name option
 // https://tools.ietf.org/html/rfc2132
 
-// OptDomainName represents an option encapsulating the server identifier.
+// OptDomainName represents an option encapsulating the domain name.
 type OptDomainName struct {
 	DomainName string
 }
@@ -13,7 +13,7 @@ type OptDomainName struct {
 // ParseOptDomainName returns a new OptDomainName from a byte
 // stream, or error if any.
 func ParseOptDomainName(data []byte) (*OptDomainName, error) {
-	if len(data) < 2 {
+	if len(data) < 3 {
 		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
