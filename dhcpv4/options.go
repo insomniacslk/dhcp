@@ -45,7 +45,7 @@ func ParseOption(data []byte) (Option, error) {
 	case OptionRouter:
 		opt, err = ParseOptRouter(data)
 	case OptionHostName:
-		opt, err = ParseOptDomainName(data)
+		opt, err = ParseOptHostName(data)
 	case OptionRequestedIPAddress:
 		opt, err = ParseOptRequestedIPAddress(data)
 	case OptionIPAddressLeaseTime:
