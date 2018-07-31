@@ -36,7 +36,7 @@ func (op *OptDomainSearch) Length() int {
 
 // String returns a human-readable string.
 func (op *OptDomainSearch) String() string {
-	return fmt.Sprintf("DNS Domain Search List ->", op.DomainSearch)
+	return fmt.Sprintf("DNS Domain Search List -> %v", op.DomainSearch)
 }
 
 // ParseOptDomainSearch returns a new OptDomainSearch from a byte stream, or
