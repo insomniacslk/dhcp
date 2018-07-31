@@ -71,7 +71,7 @@ func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.(*DHCPv6Message).SetMessage(SOLICIT)
+	d.(*DHCPv6Message).SetMessage(MessageTypeSolicit)
 	d.AddOption(&OptClientId{Cid: duid})
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
@@ -114,7 +114,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	if solicit == nil {
 		return nil, errors.New("SOLICIT cannot be nil")
 	}
-	if solicit.Type() != SOLICIT {
+	if solicit.Type() != MessageTypeSolicit {
 		return nil, errors.New("The passed SOLICIT must have SOLICIT type set")
 	}
 	sol, ok := solicit.(*DHCPv6Message)
@@ -123,7 +123,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	}
 	// build ADVERTISE from SOLICIT
 	adv := DHCPv6Message{}
-	adv.SetMessage(ADVERTISE)
+	adv.SetMessage(MessageTypeAdvertise)
 	adv.SetTransactionID(sol.TransactionID())
 	// add Client ID
 	cid := sol.GetOneOption(OPTION_CLIENTID)
@@ -146,7 +146,7 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	if advertise == nil {
 		return nil, fmt.Errorf("ADVERTISE cannot be nil")
 	}
-	if advertise.Type() != ADVERTISE {
+	if advertise.Type() != MessageTypeAdvertise {
 		return nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
 	}
 	adv, ok := advertise.(*DHCPv6Message)
@@ -155,7 +155,7 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	}
 	// build REQUEST from ADVERTISE
 	req := DHCPv6Message{}
-	req.SetMessage(REQUEST)
+	req.SetMessage(MessageTypeRequest)
 	req.SetTransactionID(adv.TransactionID())
 	// add Client ID
 	cid := adv.GetOneOption(OPTION_CLIENTID)
@@ -207,9 +207,9 @@ func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, e
 		return nil, errors.New("DHCPv6Message cannot be nil")
 	}
 	switch message.Type() {
-		case REQUEST, CONFIRM, RENEW, REBIND, RELEASE:
-		default:
-			return nil, errors.New("Cannot create REPLY from the passed message type set")
+	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew, MessageTypeRebind, MessageTypeRelease:
+	default:
+		return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}
 	msg, ok := message.(*DHCPv6Message)
 	if !ok {
@@ -217,7 +217,7 @@ func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	}
 	// build REPLY from MESSAGE
 	rep := DHCPv6Message{}
-	rep.SetMessage(REPLY)
+	rep.SetMessage(MessageTypeReply)
 	rep.SetTransactionID(msg.TransactionID())
 	// add Client ID
 	cid := message.GetOneOption(OPTION_CLIENTID)
@@ -243,7 +243,7 @@ func (d *DHCPv6Message) SetMessage(messageType MessageType) {
 	if msgString == "" {
 		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
 	}
-	if messageType == RELAY_FORW || messageType == RELAY_REPL {
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
 		log.Printf("Warning: using a RELAY message type with a non-relay message: %v (%v)",
 			msgString, messageType)
 	}

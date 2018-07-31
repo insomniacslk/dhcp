@@ -33,18 +33,18 @@ func TestNewMessage(t *testing.T) {
 	d, err := NewMessage()
 	require.NoError(t, err)
 	require.NotNil(t, d)
-	require.Equal(t, SOLICIT, d.Type())
+	require.Equal(t, MessageTypeSolicit, d.Type())
 	require.NotEqual(t, 0, d.(*DHCPv6Message).transactionID)
 	require.Empty(t, d.(*DHCPv6Message).options)
 }
 
 func TestDecapsulateRelayIndex(t *testing.T) {
 	m := DHCPv6Message{}
-	r1, err := EncapsulateRelay(&m, RELAY_FORW, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
+	r1, err := EncapsulateRelay(&m, MessageTypeRelayForward, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
 	require.NoError(t, err)
-	r2, err := EncapsulateRelay(r1, RELAY_FORW, net.IPv6loopback, net.IPv6linklocalallnodes)
+	r2, err := EncapsulateRelay(r1, MessageTypeRelayForward, net.IPv6loopback, net.IPv6linklocalallnodes)
 	require.NoError(t, err)
-	r3, err := EncapsulateRelay(r2, RELAY_FORW, net.IPv6unspecified, net.IPv6linklocalallrouters)
+	r3, err := EncapsulateRelay(r2, MessageTypeRelayForward, net.IPv6unspecified, net.IPv6linklocalallrouters)
 	require.NoError(t, err)
 
 	first, err := DecapsulateRelayIndex(r3, 0)
@@ -83,10 +83,10 @@ func TestDecapsulateRelayIndex(t *testing.T) {
 func TestSettersAndGetters(t *testing.T) {
 	d := DHCPv6Message{}
 	// Message
-	d.SetMessage(SOLICIT)
-	require.Equal(t, SOLICIT, d.Type())
-	d.SetMessage(ADVERTISE)
-	require.Equal(t, ADVERTISE, d.Type())
+	d.SetMessage(MessageTypeSolicit)
+	require.Equal(t, MessageTypeSolicit, d.Type())
+	d.SetMessage(MessageTypeAdvertise)
+	require.Equal(t, MessageTypeAdvertise, d.Type())
 
 	// TransactionID
 	d.SetTransactionID(12345)
@@ -109,7 +109,7 @@ func TestAddOption(t *testing.T) {
 
 func TestToBytes(t *testing.T) {
 	d := DHCPv6Message{}
-	d.SetMessage(SOLICIT)
+	d.SetMessage(MessageTypeSolicit)
 	d.SetTransactionID(0xabcdef)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
@@ -128,7 +128,7 @@ func TestFromAndToBytes(t *testing.T) {
 
 func TestNewAdvertiseFromSolicit(t *testing.T) {
 	s := DHCPv6Message{}
-	s.SetMessage(SOLICIT)
+	s.SetMessage(MessageTypeSolicit)
 	s.SetTransactionID(0xabcdef)
 	cid := OptClientId{}
 	s.AddOption(&cid)
@@ -137,7 +137,7 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
-	require.Equal(t, a.Type(), ADVERTISE)
+	require.Equal(t, a.Type(), MessageTypeAdvertise)
 }
 
 func TestNewReplyFromDHCPv6Message(t *testing.T) {
@@ -150,31 +150,31 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	sid.Sid = duid
 	msg.AddOption(&sid)
 
-	msg.SetMessage(CONFIRM)
+	msg.SetMessage(MessageTypeConfirm)
 	rep, err := NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
+	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(RENEW)
+	msg.SetMessage(MessageTypeRenew)
 	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
+	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(REBIND)
+	msg.SetMessage(MessageTypeRebind)
 	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
+	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(RELEASE)
+	msg.SetMessage(MessageTypeRelease)
 	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
-	require.Equal(t, rep.Type(), REPLY)
+	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(SOLICIT)
+	msg.SetMessage(MessageTypeSolicit)
 	rep, err = NewReplyFromDHCPv6Message(&msg)
 	require.Error(t, err)
 
@@ -183,7 +183,7 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestNewSolicitWithCID(t *testing.T) {
+func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 	hwAddr, err := net.ParseMAC("24:0A:9E:9F:EB:2B")
 	require.NoError(t, err)
 
@@ -196,7 +196,7 @@ func TestNewSolicitWithCID(t *testing.T) {
 	s, err := NewSolicitWithCID(duid)
 	require.NoError(t, err)
 
-	require.Equal(t, s.Type(), SOLICIT)
+	require.Equal(t, s.Type(), MessageTypeSolicit)
 	// Check CID
 	cidOption := s.GetOneOption(OPTION_CLIENTID)
 	require.NotNil(t, cidOption)
@@ -215,5 +215,5 @@ func TestNewSolicitWithCID(t *testing.T) {
 	require.Equal(t, len(opts), 2)
 }
 
-// TODO test NewSolicit
+// TODO test NewMessageTypeSolicit
 //      test String and Summary

@@ -7,7 +7,7 @@ import (
 
 func TestRelayMsgParseOptRelayMsg(t *testing.T) {
 	opt, err := ParseOptRelayMsg([]byte{
-		1,                // SOLICIT
+		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
 		0, 2, // option length
@@ -27,7 +27,7 @@ func TestRelayMsgOptionsFromBytes(t *testing.T) {
 	opts, err := OptionsFromBytes([]byte{
 		0, 9, // option: relay message
 		0, 10, // relayed message length
-		1,                // SOLICIT
+		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
 		0, 2, // option length
@@ -55,7 +55,7 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, // peerAddr
 		0, 9, // option: relay message
 		0, 10, // relayed message length
-		1,                // SOLICIT
+		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
 		0, 2, // option length
@@ -70,8 +70,8 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 			reflect.TypeOf(d),
 		)
 	}
-	if mType := r.Type(); mType != RELAY_FORW {
-		t.Fatalf("Invalid messge type for relay. Expected %v, got %v", RELAY_FORW, mType)
+	if mType := r.Type(); mType != MessageTypeRelayForward {
+		t.Fatalf("Invalid messge type for relay. Expected %v, got %v", MessageTypeRelayForward, mType)
 	}
 	if len(r.options) != 1 {
 		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.options))
@@ -94,9 +94,9 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 			reflect.TypeOf(innerDHCP),
 		)
 	}
-	if dType := innerDHCP.Type(); dType != SOLICIT {
-		t.Fatalf("Invalid inner DHCP type. Expected SOLICIT (%v), got %v",
-			SOLICIT, dType,
+	if dType := innerDHCP.Type(); dType != MessageTypeSolicit {
+		t.Fatalf("Invalid inner DHCP type. Expected MessageTypeSolicit (%v), got %v",
+			MessageTypeSolicit, dType,
 		)
 	}
 	if tID := innerDHCP.TransactionID(); tID != 0xaabbcc {
