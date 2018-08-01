@@ -38,6 +38,10 @@ type DHCPv4 struct {
 	options        []Option
 }
 
+// Modifier defines the signature for functions that can modify DHCPv4
+// structures. This is used to simplify packet manipulation
+type Modifier func(d *DHCPv4) *DHCPv4
+
 // IPv4AddrsForInterface obtains the currently-configured, non-loopback IPv4
 // addresses for iface.
 func IPv4AddrsForInterface(iface *net.Interface) ([]net.IP, error) {
@@ -184,7 +188,7 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 }
 
 // RequestFromOffer builds a DHCPv4 request from an offer.
-func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
+func RequestFromOffer(offer DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
 		return nil, err
@@ -214,11 +218,14 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
 	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr()})
 	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
 	return d, nil
 }
 
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
-func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
+func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	reply, err := New()
 	if err != nil {
 		return nil, err
@@ -231,6 +238,9 @@ func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
 	reply.SetTransactionID(request.TransactionID())
 	reply.SetFlags(request.Flags())
 	reply.SetGatewayIPAddr(request.GatewayIPAddr())
+	for _, mod := range modifiers {
+		reply = mod(reply)
+	}
 	return reply, nil
 }
 
