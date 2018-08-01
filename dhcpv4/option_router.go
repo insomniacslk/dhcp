@@ -13,7 +13,7 @@ type OptRouter struct {
 	Routers []net.IP
 }
 
-// ParseOptRouter returns a new OptRouter from a byte  stream, or error if any.
+// ParseOptRouter returns a new OptRouter from a byte stream, or error if any.
 func ParseOptRouter(data []byte) (*OptRouter, error) {
 	if len(data) < 2 {
 		return nil, ErrShortByteStream
