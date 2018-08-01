@@ -1,4 +1,4 @@
-package dnscompress
+package rfc1035label
 
 import (
 	"fmt"

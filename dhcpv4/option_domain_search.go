@@ -6,7 +6,7 @@ package dhcpv4
 import (
 	"fmt"
 
-	"github.com/insomniacslk/dhcp/dnscompress"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
 // OptDomainSearch represents an option encapsulating a domain search list.
@@ -22,7 +22,7 @@ func (op *OptDomainSearch) Code() OptionCode {
 // ToBytes returns a serialized stream of bytes for this option.
 func (op *OptDomainSearch) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
-	buf = append(buf, dnscompress.LabelsToBytes(op.DomainSearch)...)
+	buf = append(buf, rfc1035label.LabelsToBytes(op.DomainSearch)...)
 	return buf
 }
 
@@ -55,7 +55,7 @@ func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
 	if len(data) < 2+length {
 		return nil, ErrShortByteStream
 	}
-	domainSearch, err := dnscompress.LabelsFromBytes(data[2:length+2])
+	domainSearch, err := rfc1035label.LabelsFromBytes(data[2:length+2])
 	if err != nil {
 		return nil, err
 	}
