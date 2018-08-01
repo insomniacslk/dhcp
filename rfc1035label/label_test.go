@@ -1,4 +1,4 @@
-package dhcpv6
+package rfc1035label
 
 import (
 	"bytes"
