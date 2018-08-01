@@ -6,6 +6,8 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+
+	"github.com/insomniacslk/dhcp/dnscompress"
 )
 
 // OptDomainSearchList list implements a DOMAIN_SEARCH_LIST option
@@ -21,7 +23,7 @@ func (op *OptDomainSearchList) ToBytes() []byte {
 	buf := make([]byte, 4)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(DOMAIN_SEARCH_LIST))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	buf = append(buf, LabelsToBytes(op.DomainSearchList)...)
+	buf = append(buf, dnscompress.LabelsToBytes(op.DomainSearchList)...)
 	return buf
 }
 
@@ -42,7 +44,7 @@ func (op *OptDomainSearchList) String() string {
 func ParseOptDomainSearchList(data []byte) (*OptDomainSearchList, error) {
 	opt := OptDomainSearchList{}
 	var err error
-	opt.DomainSearchList, err = LabelsFromBytes(data)
+	opt.DomainSearchList, err = dnscompress.LabelsFromBytes(data)
 	if err != nil {
 		return nil, err
 	}
