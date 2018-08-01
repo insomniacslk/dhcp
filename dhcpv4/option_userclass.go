@@ -66,6 +66,23 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 			totalLength, len(data))
 	}
 
+	// Check if option is Microsoft style instead of RFC compliant, issue #113
+
+	// User-class options are, according to RFC3004, supposed to contain a set
+	// of strings each with length UC_Len_i. Here we check that this is so,
+	// by seeing if all the UC_Len_i lengths are consistent with the overall
+	// option length. If the lengths don't add up, we assume that the option
+	// is a single string and non RFC3004 compliant
+	var counting int
+	for counting < totalLength {
+		// UC_Len_i does not include itself so add 1
+		counting += int(data[counting]) + 1
+	}
+	if counting != totalLength {
+		opt.UserClasses = append(opt.UserClasses, data[:totalLength])
+		return &opt, nil
+	}
+
 	for i := 0; i < totalLength; {
 		ucLen := int(data[i])
 		if ucLen == 0 {
