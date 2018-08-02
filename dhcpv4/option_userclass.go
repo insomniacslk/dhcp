@@ -12,6 +12,7 @@ import (
 // OptUserClass represents an option encapsulating User Classes.
 type OptUserClass struct {
 	UserClasses [][]byte
+	Rfc3004 bool
 }
 
 // Code returns the option code
@@ -22,6 +23,9 @@ func (op *OptUserClass) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
+	if !op.Rfc3004 && len(op.UserClasses) == 1 {
+		return append(buf, op.UserClasses[0]...)
+	}
 	for _, uc := range op.UserClasses {
 		buf = append(buf, byte(len(uc)))
 		buf = append(buf, uc...)
@@ -32,6 +36,9 @@ func (op *OptUserClass) ToBytes() []byte {
 // Length returns the option length
 func (op *OptUserClass) Length() int {
 	ret := 0
+	if !op.Rfc3004 && len(op.UserClasses) == 1 {
+		return len(op.UserClasses[0])
+	}
 	for _, uc := range op.UserClasses {
 		ret += 1 + len(uc)
 	}
@@ -82,7 +89,7 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		opt.UserClasses = append(opt.UserClasses, data[:totalLength])
 		return &opt, nil
 	}
-
+	opt.Rfc3004 = true
 	for i := 0; i < totalLength; {
 		ucLen := int(data[i])
 		if ucLen == 0 {
