@@ -10,5 +10,5 @@ func TestUserClassModifier(t *testing.T) {
 	d, _ := New()
 	userClass := WithUserClass([]byte("linuxboot"))
 	d = userClass(d)
-	require.Equal(t, "OptUserClass{userclass=[linuxboot]}", d.options[0].String())
+	require.Equal(t, "User Class Information -> linuxboot", d.options[0].String())
 }

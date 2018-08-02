@@ -12,6 +12,7 @@ import (
 // OptUserClass represents an option encapsulating User Classes.
 type OptUserClass struct {
 	UserClasses [][]byte
+	Rfc3004 bool
 }
 
 // Code returns the option code
@@ -22,6 +23,9 @@ func (op *OptUserClass) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
+	if !op.Rfc3004 {
+		return append(buf, op.UserClasses[0]...)
+	}
 	for _, uc := range op.UserClasses {
 		buf = append(buf, byte(len(uc)))
 		buf = append(buf, uc...)
@@ -32,6 +36,9 @@ func (op *OptUserClass) ToBytes() []byte {
 // Length returns the option length
 func (op *OptUserClass) Length() int {
 	ret := 0
+	if !op.Rfc3004 {
+		return len(op.UserClasses[0])
+	}
 	for _, uc := range op.UserClasses {
 		ret += 1 + len(uc)
 	}
@@ -40,10 +47,14 @@ func (op *OptUserClass) Length() int {
 
 func (op *OptUserClass) String() string {
 	ucStrings := make([]string, 0, len(op.UserClasses))
-	for _, uc := range op.UserClasses {
-		ucStrings = append(ucStrings, string(uc))
+	if !op.Rfc3004 {
+		ucStrings = append(ucStrings, string(op.UserClasses[0]))
+	} else {
+		for _, uc := range op.UserClasses {
+			ucStrings = append(ucStrings, string(uc))
+		}
 	}
-	return fmt.Sprintf("OptUserClass{userclass=[%s]}", strings.Join(ucStrings, ", "))
+	return fmt.Sprintf("User Class Information -> %v", strings.Join(ucStrings, ", "))
 }
 
 // ParseOptUserClass returns a new OptUserClass from a byte stream or
@@ -51,7 +62,7 @@ func (op *OptUserClass) String() string {
 func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	opt := OptUserClass{}
 
-	if len(data) < 4 {
+	if len(data) < 3 {
 		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
@@ -82,7 +93,7 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		opt.UserClasses = append(opt.UserClasses, data[:totalLength])
 		return &opt, nil
 	}
-
+	opt.Rfc3004 = true
 	for i := 0; i < totalLength; {
 		ucLen := int(data[i])
 		if ucLen == 0 {
