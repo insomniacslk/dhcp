@@ -44,8 +44,14 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptSubnetMask(data)
 	case OptionRouter:
 		opt, err = ParseOptRouter(data)
+	case OptionDomainNameServer:
+		opt, err = ParseOptDomainNameServer(data)
 	case OptionHostName:
 		opt, err = ParseOptHostName(data)
+	case OptionDomainName:
+		opt, err = ParseOptDomainName(data)
+	case OptionBroadcastAddress:
+		opt, err = ParseOptBroadcastAddress(data)
 	case OptionNTPServers:
 		opt, err = ParseOptNTPServers(data)
 	case OptionRequestedIPAddress:
@@ -54,28 +60,24 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptIPAddressLeaseTime(data)
 	case OptionDHCPMessageType:
 		opt, err = ParseOptMessageType(data)
-	case OptionParameterRequestList:
-		opt, err = ParseOptParameterRequestList(data)
 	case OptionServerIdentifier:
 		opt, err = ParseOptServerIdentifier(data)
-	case OptionBroadcastAddress:
-		opt, err = ParseOptBroadcastAddress(data)
+	case OptionParameterRequestList:
+		opt, err = ParseOptParameterRequestList(data)
 	case OptionMaximumDHCPMessageSize:
 		opt, err = ParseOptMaximumDHCPMessageSize(data)
 	case OptionClassIdentifier:
 		opt, err = ParseOptClassIdentifier(data)
-	case OptionDomainName:
-		opt, err = ParseOptDomainName(data)
-	case OptionDomainNameServer:
-		opt, err = ParseOptDomainNameServer(data)
-	case OptionVendorIdentifyingVendorClass:
-		opt, err = ParseOptVIVC(data)
 	case OptionTFTPServerName:
 		opt, err = ParseOptTFTPServerName(data)
 	case OptionBootfileName:
 		opt, err = ParseOptBootfileName(data)
 	case OptionUserClassInformation:
 		opt, err = ParseOptUserClass(data)
+	case OptionClientSystemArchitectureType:
+		opt, err = ParseOptClientArchType(data)
+	case OptionVendorIdentifyingVendorClass:
+		opt, err = ParseOptVIVC(data)
 	case OptionDNSDomainSearchList:
 		opt, err = ParseOptDomainSearch(data)
 	default:

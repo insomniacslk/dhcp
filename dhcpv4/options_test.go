@@ -41,20 +41,20 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 1, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
-	// Parameter request list
-	option = []byte{55, 3, 5, 53, 61}
-	opt, err = ParseOption(option)
-	require.NoError(t, err)
-	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
-	require.Equal(t, 3, opt.Length(), "Length")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
 	// Option server ID
 	option = []byte{54, 4, 1, 2, 3, 4}
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionServerIdentifier, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Parameter request list
+	option = []byte{55, 3, 5, 53, 61}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
+	require.Equal(t, 3, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
 	// Option max message size
