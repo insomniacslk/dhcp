@@ -39,15 +39,18 @@ var ArchTypeToStringMap = map[ArchType]string{
 	EFI_X86_64:        "EFI x86-64",
 }
 
-// OptClientArchType represents an option CLIENT_ARCH_TYPE
+// OptRouter represents an option encapsulating the Client System Architecture
+// Type option Definition.
 type OptClientArchType struct {
 	ArchTypes []ArchType
 }
 
+// Code returns the option code.
 func (o *OptClientArchType) Code() OptionCode {
 	return OptionClientSystemArchitectureType
 }
 
+// ToBytes returns a serialized stream of bytes for this option.
 func (o *OptClientArchType) ToBytes() []byte {
 	ret := []byte{byte(o.Code()), byte(o.Length())}
 	for _, at := range o.ArchTypes {
@@ -58,10 +61,13 @@ func (o *OptClientArchType) ToBytes() []byte {
 	return ret
 }
 
+// Length returns the length of the data portion (excluding option code an byte
+// length).
 func (o *OptClientArchType) Length() int {
 	return 2*len(o.ArchTypes)
 }
 
+// String returns a human-readable string.
 func (o *OptClientArchType) String() string {
 	var archTypes string
 	for idx, at := range o.ArchTypes {
@@ -77,9 +83,8 @@ func (o *OptClientArchType) String() string {
 	return fmt.Sprintf("Client System Architecture Type -> %v", archTypes)
 }
 
-// ParseOptClientArchType builds an OptClientArchType structure from
-// a sequence of bytes The input data does not include option code and
-// length bytes.
+// ParseOptClientArchType returns a new OptClientArchType from a byte stream,
+// or error if any.
 func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 	if len(data) < 2 {
 		return nil, ErrShortByteStream
