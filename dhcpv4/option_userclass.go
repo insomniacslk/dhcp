@@ -23,7 +23,7 @@ func (op *OptUserClass) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
-	if !op.Rfc3004 && len(op.UserClasses) == 1 {
+	if !op.Rfc3004 {
 		return append(buf, op.UserClasses[0]...)
 	}
 	for _, uc := range op.UserClasses {
@@ -36,7 +36,7 @@ func (op *OptUserClass) ToBytes() []byte {
 // Length returns the option length
 func (op *OptUserClass) Length() int {
 	ret := 0
-	if !op.Rfc3004 && len(op.UserClasses) == 1 {
+	if !op.Rfc3004 {
 		return len(op.UserClasses[0])
 	}
 	for _, uc := range op.UserClasses {
@@ -47,10 +47,14 @@ func (op *OptUserClass) Length() int {
 
 func (op *OptUserClass) String() string {
 	ucStrings := make([]string, 0, len(op.UserClasses))
-	for _, uc := range op.UserClasses {
-		ucStrings = append(ucStrings, string(uc))
+	if !op.Rfc3004 {
+		ucStrings = append(ucStrings, string(op.UserClasses[0]))
+	} else {
+		for _, uc := range op.UserClasses {
+			ucStrings = append(ucStrings, string(uc))
+		}
 	}
-	return fmt.Sprintf("OptUserClass{userclass=[%s]}", strings.Join(ucStrings, ", "))
+	return fmt.Sprintf("User Class Information -> %v", strings.Join(ucStrings, ", "))
 }
 
 // ParseOptUserClass returns a new OptUserClass from a byte stream or

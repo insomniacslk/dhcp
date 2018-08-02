@@ -98,6 +98,7 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 			[]byte("linuxboot"),
 			[]byte("test"),
 		},
+		Rfc3004: true,
 	}
 	data := opt.ToBytes()
 	expected := []byte{

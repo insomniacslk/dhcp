@@ -363,7 +363,7 @@ func TestDHCPv4RequestFromOfferWithModifier(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
 	require.Equal(t, MessageTypeRequest, *req.MessageType())
-	require.Equal(t, "OptUserClass{userclass=[linuxboot]}", req.options[3].String())
+	require.Equal(t, "User Class Information -> linuxboot", req.options[3].String())
 }
 
 func TestNewReplyFromRequest(t *testing.T) {
@@ -385,7 +385,7 @@ func TestNewReplyFromRequestWithModifier(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID(), reply.TransactionID())
 	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
-	require.Equal(t, "OptUserClass{userclass=[linuxboot]}", reply.options[0].String())
+	require.Equal(t, "User Class Information -> linuxboot", reply.options[0].String())
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {
