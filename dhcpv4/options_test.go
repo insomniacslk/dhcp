@@ -33,6 +33,14 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Option domain name server
+	option = []byte{6, 4, 192, 168, 1, 1}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionDomainNameServer, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Requested IP address
 	option = []byte{50, 4, 1, 2, 3, 4}
 	opt, err = ParseOption(option)
