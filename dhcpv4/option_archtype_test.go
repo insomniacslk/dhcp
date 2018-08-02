@@ -52,7 +52,7 @@ func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {
 		93,   // OptionClientSystemArchitectureType
 		4,    // Length
 		0, 8, // EFI_XSCALE
-		0, 6, // EFI_XSCALE
+		0, 6, // EFI_IA32
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
