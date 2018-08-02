@@ -58,7 +58,7 @@ func (op *OptUserClass) String() string {
 func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	opt := OptUserClass{}
 
-	if len(data) < 4 {
+	if len(data) < 3 {
 		return nil, ErrShortByteStream
 	}
 	code := OptionCode(data[0])
