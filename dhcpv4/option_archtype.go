@@ -39,8 +39,8 @@ var ArchTypeToStringMap = map[ArchType]string{
 	EFI_X86_64:        "EFI x86-64",
 }
 
-// OptRouter represents an option encapsulating the Client System Architecture
-// Type option Definition.
+// OptClientArchType represents an option encapsulating the Client System
+// Architecture Type option Definition.
 type OptClientArchType struct {
 	ArchTypes []ArchType
 }
