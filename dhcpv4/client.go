@@ -148,7 +148,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	for _, mod := range modifiers {
 		discover = mod(discover)
 	}
-	conversation[0] = *discover
+	conversation[0] = discover
 
 	// Offer
 	offer, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout, MessageTypeOffer)
