@@ -28,7 +28,7 @@ func (op *OptTFTPServerName) Length() int {
 }
 
 func (op *OptTFTPServerName) String() string {
-	return fmt.Sprintf("OptTFTPServerName{TFTPServerName=%s}", op.TFTPServerName)
+	return fmt.Sprintf("TFTP Server Name -> %v", op.TFTPServerName)
 }
 
 // ParseOptTFTPServerName returns a new OptTFTPServerName fomr a byte stream or error if any
