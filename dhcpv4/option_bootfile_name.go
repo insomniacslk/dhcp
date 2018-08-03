@@ -28,7 +28,7 @@ func (op *OptBootfileName) Length() int {
 }
 
 func (op *OptBootfileName) String() string {
-	return fmt.Sprintf("Bootfile Name -> %v", op.BootfileName)
+	return fmt.Sprintf("Bootfile Name -> %s", op.BootfileName)
 
 }
 

@@ -58,3 +58,8 @@ func TestParseOptBootfileNameShortLength(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("linu"), opt.BootfileName)
 }
+
+func TestOptBootfileNameString(t *testing.T) {
+	o := OptBootfileName{BootfileName: []byte("testy test")}
+	require.Equal(t, "Bootfile Name -> testy test", o.String())
+}
