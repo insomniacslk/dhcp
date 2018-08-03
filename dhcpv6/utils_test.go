@@ -22,6 +22,17 @@ func TestIsNetboot(t *testing.T) {
 	require.True(t, IsNetboot(&msg3))
 }
 
+func TestIsRequetsed(t *testing.T) {
+	msg1 := DHCPv6Message{}
+	require.False(t, IsRequested(&msg1, OptionDNSRecursiveNameServer))
+
+	msg2 := DHCPv6Message{}
+	optro := OptRequestedOption{}
+	optro.AddRequestedOption(OptionDNSRecursiveNameServer)
+	msg2.AddOption(&optro)
+	require.True(t, IsRequested(&msg2, OptionDNSRecursiveNameServer))
+}
+
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
 	msg := DHCPv6Message{}
 	opt := OptClientArchType{ArchType: EFI_BC}

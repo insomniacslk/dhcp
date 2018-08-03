@@ -11,15 +11,24 @@ import (
 // if the "boot file" option is included in the packet, which is useful for
 // ADVERTISE/REPLY packet.
 func IsNetboot(msg DHCPv6) bool {
-	for _, optoro := range msg.GetOption(OptionORO) {
-		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
-			if o == OptionBootfileURL {
-				return true
-			}
-		}
+	if IsRequested(msg, OptionBootfileURL) {
+		return true
 	}
 	if optbf := msg.GetOneOption(OptionBootfileURL); optbf != nil {
 		return true
+	}
+	return false
+}
+
+// IsRequested function takes a DHCPv6 message and an OptionCode, and returns
+// true if that option is within the requested options of the DHCPv6 message.
+func IsRequested(msg DHCPv6, requested OptionCode) bool {
+	for _, optoro := range msg.GetOption(OptionORO) {
+		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
+			if o == requested {
+				return true
+			}
+		}
 	}
 	return false
 }
