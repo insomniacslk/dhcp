@@ -21,7 +21,7 @@ import (
 	"fmt"
 )
 
-// OptVendorOpts implements the OPTION_VENDOR_OPTS option
+// OptVendorOpts implements the OptionVendorOpts option
 type OptVendorOpts struct {
 	enterpriseNumber uint32
 	vendorOpts       []byte
@@ -29,13 +29,13 @@ type OptVendorOpts struct {
 
 // Code returns the option code
 func (op *OptVendorOpts) Code() OptionCode {
-	return OPTION_VENDOR_OPTS
+	return OptionVendorOpts
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptVendorOpts) ToBytes() []byte {
 	buf := make([]byte, 8)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_VENDOR_OPTS))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionVendorOpts))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint32(buf[4:8], uint32(op.enterpriseNumber))
 	buf = append(buf, op.vendorOpts...)
