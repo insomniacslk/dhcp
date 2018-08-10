@@ -187,8 +187,8 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	return d, nil
 }
 
-// RequestFromOffer builds a DHCPv4 request from an offer.
-func RequestFromOffer(offer DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
+// NewRequestFromOffer builds a DHCPv4 request from an offer.
+func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
 		return nil, err

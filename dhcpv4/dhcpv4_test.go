@@ -342,24 +342,24 @@ func TestAddOption(t *testing.T) {
 	require.Equal(t, options[3].Code(), OptionEnd)
 }
 
-func TestDHCPv4RequestFromOffer(t *testing.T) {
+func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
 	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
 	offer.AddOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
-	req, err := RequestFromOffer(*offer)
+	req, err := NewRequestFromOffer(offer)
 	require.NoError(t, err)
 	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
 	require.Equal(t, MessageTypeRequest, *req.MessageType())
 }
 
-func TestDHCPv4RequestFromOfferWithModifier(t *testing.T) {
+func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
 	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
 	offer.AddOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
 	userClass := WithUserClass([]byte("linuxboot"), false)
-	req, err := RequestFromOffer(*offer, userClass)
+	req, err := NewRequestFromOffer(offer, userClass)
 	require.NoError(t, err)
 	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
 	require.Equal(t, MessageTypeRequest, *req.MessageType())

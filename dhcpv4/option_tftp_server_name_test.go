@@ -58,3 +58,8 @@ func TestParseOptTFTPServerNameShortLength(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte("linu"), opt.TFTPServerName)
 }
+
+func TestOptTFTPServerNameString(t *testing.T) {
+	o := OptTFTPServerName{TFTPServerName: []byte("testy test")}
+	require.Equal(t, "TFTP Server Name -> testy test", o.String())
+}
