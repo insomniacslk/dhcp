@@ -9,21 +9,21 @@ import (
 	"net"
 )
 
-// OptDNSRecursiveNameServer represents a DNS_RECURSIVE_NAME_SERVER option
+// OptDNSRecursiveNameServer represents a OptionDNSRecursiveNameServer option
 type OptDNSRecursiveNameServer struct {
 	NameServers []net.IP
 }
 
 // Code returns the option code
 func (op *OptDNSRecursiveNameServer) Code() OptionCode {
-	return DNS_RECURSIVE_NAME_SERVER
+	return OptionDNSRecursiveNameServer
 }
 
 // ToBytes returns the option serialized to bytes, including option code and
 // length
 func (op *OptDNSRecursiveNameServer) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(DNS_RECURSIVE_NAME_SERVER))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionDNSRecursiveNameServer))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	for _, ns := range op.NameServers {
 		buf = append(buf, ns...)

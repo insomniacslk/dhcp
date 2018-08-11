@@ -13,13 +13,13 @@ type OptRequestedOption struct {
 }
 
 func (op *OptRequestedOption) Code() OptionCode {
-	return OPTION_ORO
+	return OptionORO
 }
 
 func (op *OptRequestedOption) ToBytes() []byte {
 	buf := make([]byte, 4)
 	roBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_ORO))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionORO))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	for _, ro := range op.requestedOptions {
 		binary.BigEndian.PutUint16(roBytes, uint16(ro))

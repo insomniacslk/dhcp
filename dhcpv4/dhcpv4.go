@@ -38,6 +38,10 @@ type DHCPv4 struct {
 	options        []Option
 }
 
+// Modifier defines the signature for functions that can modify DHCPv4
+// structures. This is used to simplify packet manipulation
+type Modifier func(d *DHCPv4) *DHCPv4
+
 // GetExternalIPv4Addrs obtains the currently-configured, non-loopback IPv4
 // addresses from `addrs` coming from a particular interface (e.g.
 // net.Interface.Addrs).
@@ -157,8 +161,8 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
 	return d, nil
 }
 
-// RequestFromOffer builds a DHCPv4 request from an offer.
-func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
+// NewRequestFromOffer builds a DHCPv4 request from an offer.
+func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
 		return nil, err
@@ -188,11 +192,14 @@ func RequestFromOffer(offer DHCPv4) (*DHCPv4, error) {
 	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
 	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr()})
 	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
+	for _, mod := range modifiers {
+		d = mod(d)
+	}
 	return d, nil
 }
 
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
-func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
+func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	reply, err := New()
 	if err != nil {
 		return nil, err
@@ -205,6 +212,9 @@ func NewReplyFromRequest(request *DHCPv4) (*DHCPv4, error) {
 	reply.SetTransactionID(request.TransactionID())
 	reply.SetFlags(request.Flags())
 	reply.SetGatewayIPAddr(request.GatewayIPAddr())
+	for _, mod := range modifiers {
+		reply = mod(reply)
+	}
 	return reply, nil
 }
 
@@ -664,10 +674,10 @@ func (d *DHCPv4) ToBytes() []byte {
 	ret = append(ret, u16...)
 	binary.BigEndian.PutUint16(u16, d.flags)
 	ret = append(ret, u16...)
-	ret = append(ret, d.clientIPAddr[:4]...)
-	ret = append(ret, d.yourIPAddr[:4]...)
-	ret = append(ret, d.serverIPAddr[:4]...)
-	ret = append(ret, d.gatewayIPAddr[:4]...)
+	ret = append(ret, d.clientIPAddr.To4()...)
+	ret = append(ret, d.yourIPAddr.To4()...)
+	ret = append(ret, d.serverIPAddr.To4()...)
+	ret = append(ret, d.gatewayIPAddr.To4()...)
 	ret = append(ret, d.clientHwAddr[:16]...)
 	ret = append(ret, d.serverHostName[:64]...)
 	ret = append(ret, d.bootFileName[:128]...)

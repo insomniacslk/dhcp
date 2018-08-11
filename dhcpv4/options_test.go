@@ -17,20 +17,52 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, generic.Length())
 	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
 
-	// Message type
-	option = []byte{53, 1, 1}
+	// Option subnet mask
+	option = []byte{1, 4, 255, 255, 255, 0}
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
-	require.Equal(t, OptionDHCPMessageType, opt.Code(), "Code")
-	require.Equal(t, 1, opt.Length(), "Length")
+	require.Equal(t, OptionSubnetMask, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
-	// Parameter request list
-	option = []byte{55, 3, 5, 53, 61}
+	// Option router
+	option = []byte{3, 4, 192, 168, 1, 1}
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
-	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
-	require.Equal(t, 3, opt.Length(), "Length")
+	require.Equal(t, OptionRouter, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option domain name server
+	option = []byte{6, 4, 192, 168, 1, 1}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionDomainNameServer, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option host name
+	option = []byte{12, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionHostName, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option domain name
+	option = []byte{15, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionDomainName, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option NTP servers
+	option = []byte{42, 4, 10, 10, 10, 10}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionNTPServers, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
 	// Requested IP address
@@ -41,12 +73,28 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Message type
+	option = []byte{53, 1, 1}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionDHCPMessageType, opt.Code(), "Code")
+	require.Equal(t, 1, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Option server ID
 	option = []byte{54, 4, 1, 2, 3, 4}
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionServerIdentifier, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Parameter request list
+	option = []byte{55, 3, 5, 53, 61}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
+	require.Equal(t, 3, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
 	// Option max message size
@@ -87,6 +135,14 @@ func TestParseOption(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OptionUserClassInformation, opt.Code(), "Code")
 	require.Equal(t, 5, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option client system architecture type option
+	option = []byte{93, 4, 't', 'e', 's', 't'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionClientSystemArchitectureType, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
 

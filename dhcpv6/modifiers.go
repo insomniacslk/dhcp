@@ -29,15 +29,15 @@ func WithNetboot(d DHCPv6) DHCPv6 {
 		log.Printf("WithNetboot: not a DHCPv6Message")
 		return d
 	}
-	// add OPT_BOOTFILE_URL and OPT_BOOTFILE_PARAM
-	opt := msg.GetOneOption(OPTION_ORO)
+	// add OptionBootfileURL and OptionBootfileParam
+	opt := msg.GetOneOption(OptionORO)
 	if opt == nil {
 		opt = &OptRequestedOption{}
 	}
 	// TODO only add options if they are not there already
 	oro := opt.(*OptRequestedOption)
-	oro.AddRequestedOption(OPT_BOOTFILE_URL)
-	oro.AddRequestedOption(OPT_BOOTFILE_PARAM)
+	oro.AddRequestedOption(OptionBootfileURL)
+	oro.AddRequestedOption(OptionBootfileParam)
 	msg.UpdateOption(oro)
 	return d
 }

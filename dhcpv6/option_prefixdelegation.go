@@ -16,12 +16,12 @@ type OptIAForPrefixDelegation struct {
 }
 
 func (op *OptIAForPrefixDelegation) Code() OptionCode {
-	return OPTION_IA_PD
+	return OptionIAPD
 }
 
 func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	buf := make([]byte, 16)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IA_PD))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPD))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	copy(buf[4:8], op.iaId[:])
 	binary.BigEndian.PutUint32(buf[8:12], op.t1)

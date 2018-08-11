@@ -9,12 +9,26 @@ import (
 func TestOptUserClassToBytes(t *testing.T) {
 	opt := OptUserClass{
 		UserClasses: [][]byte{[]byte("linuxboot")},
+		Rfc3004: true,
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OPTION_USER_CLASS
+		77, // OptionUserClass
 		10, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	require.Equal(t, expected, data)
+}
+
+func TestOptUserClassMicrosoftToBytes(t *testing.T) {
+	opt := OptUserClass{
+		UserClasses: [][]byte{[]byte("linuxboot")},
+	}
+	data := opt.ToBytes()
+	expected := []byte{
+		77, // OptionUserClass
+		9,  // length
+		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, expected, data)
 }
@@ -38,6 +52,36 @@ func TestParseOptUserClassNone(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestParseOptUserClassMicrosoft(t *testing.T) {
+	expected := []byte{
+		77, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	opt, err := ParseOptUserClass(expected)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(opt.UserClasses))
+	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
+}
+
+func TestParseOptUserClassMicrosoftShort(t *testing.T) {
+	expected := []byte{
+		77, 1, 'l',
+	}
+	opt, err := ParseOptUserClass(expected)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(opt.UserClasses))
+	require.Equal(t, []byte("l"), opt.UserClasses[0])
+}
+
+func TestParseOptUserClassMicrosoftLongerThanLength(t *testing.T) {
+	expected := []byte{
+		77, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't', 'X',
+	}
+	opt, err := ParseOptUserClass(expected)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(opt.UserClasses))
+	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
+}
+
 func TestParseOptUserClass(t *testing.T) {
 	expected := []byte{
 		77, 10, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
@@ -54,10 +98,11 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 			[]byte("linuxboot"),
 			[]byte("test"),
 		},
+		Rfc3004: true,
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OPTION_USER_CLASS
+		77, // OptionUserClass
 		15, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		4, 't', 'e', 's', 't',
@@ -73,14 +118,6 @@ func TestParseOptUserClassLongerThanLength(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, len(opt.UserClasses))
 	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
-}
-
-func TestParseOptUserClassShorterThanLength(t *testing.T) {
-	expected := []byte{
-		77, 10, 10, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	_, err := ParseOptUserClass(expected)
-	require.Error(t, err)
 }
 
 func TestParseOptUserClassShorterTotalLength(t *testing.T) {

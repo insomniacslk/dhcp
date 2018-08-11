@@ -16,12 +16,12 @@ type OptIANA struct {
 }
 
 func (op *OptIANA) Code() OptionCode {
-	return OPTION_IA_NA
+	return OptionIANA
 }
 
 func (op *OptIANA) ToBytes() []byte {
 	buf := make([]byte, 16)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_IA_NA))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIANA))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	copy(buf[4:8], op.IaId[:])
 	binary.BigEndian.PutUint32(buf[8:12], op.T1)

@@ -389,19 +389,19 @@ func TestStrippedOptions(t *testing.T) {
 	}
 }
 
-func TestRequestFromOffer(t *testing.T) {
+func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
 	offer.SetBroadcast()
 	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
-	req, err := RequestFromOffer(*offer)
+	req, err := NewRequestFromOffer(offer)
 	require.Error(t, err)
 
 	// Now add the option so it doesn't error out.
 	offer.AddOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
 
 	// Broadcast request
-	req, err = RequestFromOffer(*offer)
+	req, err = NewRequestFromOffer(offer)
 	require.NoError(t, err)
 	require.NotNil(t, req.MessageType())
 	require.Equal(t, MessageTypeRequest, *req.MessageType())
@@ -410,10 +410,23 @@ func TestRequestFromOffer(t *testing.T) {
 
 	// Unicast request
 	offer.SetUnicast()
-	req, err = RequestFromOffer(*offer)
+	req, err = NewRequestFromOffer(offer)
 	require.NoError(t, err)
 	require.True(t, req.IsUnicast())
 	require.False(t, req.IsBroadcast())
+}
+
+func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
+	offer, err := New()
+	require.NoError(t, err)
+	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+	offer.AddOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
+	userClass := WithUserClass([]byte("linuxboot"), false)
+	req, err := NewRequestFromOffer(offer, userClass)
+	require.NoError(t, err)
+	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
+	require.Equal(t, MessageTypeRequest, *req.MessageType())
+	require.Equal(t, "User Class Information -> linuxboot", req.options[3].String())
 }
 
 func TestNewReplyFromRequest(t *testing.T) {
@@ -426,7 +439,19 @@ func TestNewReplyFromRequest(t *testing.T) {
 	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
 }
 
-func TestMessageTypeNil(t *testing.T) {
+func TestNewReplyFromRequestWithModifier(t *testing.T) {
+	discover, err := New()
+	require.NoError(t, err)
+	discover.SetGatewayIPAddr(net.IPv4(192, 168, 0, 1))
+	userClass := WithUserClass([]byte("linuxboot"), false)
+	reply, err := NewReplyFromRequest(discover, userClass)
+	require.NoError(t, err)
+	require.Equal(t, discover.TransactionID(), reply.TransactionID())
+	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
+	require.Equal(t, "User Class Information -> linuxboot", reply.options[0].String())
+}
+
+func TestDHCPv4MessageTypeNil(t *testing.T) {
 	m, err := New()
 	require.NoError(t, err)
 	require.Nil(t, m.MessageType())

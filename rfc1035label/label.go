@@ -1,10 +1,14 @@
-package dhcpv6
+package rfc1035label
 
 import (
 	"fmt"
 	"strings"
 )
 
+// This implements the compression from RFC 1035, section 4.1.4
+// https://tools.ietf.org/html/rfc1035
+
+// LabelsFromBytes decodes a serialized stream and returns a list of labels
 func LabelsFromBytes(buf []byte) ([]string, error) {
 	var (
 		pos     = 0
@@ -30,9 +34,9 @@ func LabelsFromBytes(buf []byte) ([]string, error) {
 		label += string(buf[pos : pos+length])
 		pos += length
 	}
-	return domains, nil
 }
 
+// LabelToBytes encodes a label and returns a serialized stream of bytes
 func LabelToBytes(label string) []byte {
 	var encodedLabel []byte
 	if len(label) == 0 {
@@ -45,6 +49,8 @@ func LabelToBytes(label string) []byte {
 	return append(encodedLabel, 0)
 }
 
+// LabelsToBytes encodes a list of labels and returns a serialized stream of
+// bytes
 func LabelsToBytes(labels []string) []byte {
 	var encodedLabels []byte
 	for _, label := range labels {

@@ -12,7 +12,7 @@ func TestIsNetboot(t *testing.T) {
 
 	msg2 := DHCPv6Message{}
 	optro := OptRequestedOption{}
-	optro.AddRequestedOption(OPT_BOOTFILE_URL)
+	optro.AddRequestedOption(OptionBootfileURL)
 	msg2.AddOption(&optro)
 	require.True(t, IsNetboot(&msg2))
 
@@ -61,7 +61,7 @@ func TestGetTransactionIDMessage(t *testing.T) {
 func TestGetTransactionIDRelay(t *testing.T) {
 	message, err := NewMessage()
 	require.NoError(t, err)
-	relay, err := EncapsulateRelay(message, RELAY_FORW, nil, nil)
+	relay, err := EncapsulateRelay(message, MessageTypeRelayForward, nil, nil)
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(relay)
 	require.NoError(t, err)

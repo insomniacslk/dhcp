@@ -71,12 +71,12 @@ func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
 	if err != nil {
 		return nil, err
 	}
-	d.(*DHCPv6Message).SetMessage(SOLICIT)
+	d.(*DHCPv6Message).SetMessage(MessageTypeSolicit)
 	d.AddOption(&OptClientId{Cid: duid})
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
-		DNS_RECURSIVE_NAME_SERVER,
-		DOMAIN_SEARCH_LIST,
+		OptionDNSRecursiveNameServer,
+		OptionDomainSearchList,
 	})
 	d.AddOption(oro)
 	d.AddOption(&OptElapsedTime{})
@@ -114,7 +114,7 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	if solicit == nil {
 		return nil, errors.New("SOLICIT cannot be nil")
 	}
-	if solicit.Type() != SOLICIT {
+	if solicit.Type() != MessageTypeSolicit {
 		return nil, errors.New("The passed SOLICIT must have SOLICIT type set")
 	}
 	sol, ok := solicit.(*DHCPv6Message)
@@ -123,10 +123,10 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	}
 	// build ADVERTISE from SOLICIT
 	adv := DHCPv6Message{}
-	adv.SetMessage(ADVERTISE)
+	adv.SetMessage(MessageTypeAdvertise)
 	adv.SetTransactionID(sol.TransactionID())
 	// add Client ID
-	cid := sol.GetOneOption(OPTION_CLIENTID)
+	cid := sol.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, errors.New("Client ID cannot be nil in SOLICIT when building ADVERTISE")
 	}
@@ -146,7 +146,7 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	if advertise == nil {
 		return nil, fmt.Errorf("ADVERTISE cannot be nil")
 	}
-	if advertise.Type() != ADVERTISE {
+	if advertise.Type() != MessageTypeAdvertise {
 		return nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
 	}
 	adv, ok := advertise.(*DHCPv6Message)
@@ -155,16 +155,16 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	}
 	// build REQUEST from ADVERTISE
 	req := DHCPv6Message{}
-	req.SetMessage(REQUEST)
+	req.SetMessage(MessageTypeRequest)
 	req.SetTransactionID(adv.TransactionID())
 	// add Client ID
-	cid := adv.GetOneOption(OPTION_CLIENTID)
+	cid := adv.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, fmt.Errorf("Client ID cannot be nil in ADVERTISE when building REQUEST")
 	}
 	req.AddOption(cid)
 	// add Server ID
-	sid := adv.GetOneOption(OPTION_SERVERID)
+	sid := adv.GetOneOption(OptionServerID)
 	if sid == nil {
 		return nil, fmt.Errorf("Server ID cannot be nil in ADVERTISE when building REQUEST")
 	}
@@ -172,7 +172,7 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	// add Elapsed Time
 	req.AddOption(&OptElapsedTime{})
 	// add IA_NA
-	iaNa := adv.GetOneOption(OPTION_IA_NA)
+	iaNa := adv.GetOneOption(OptionIANA)
 	if iaNa == nil {
 		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
 	}
@@ -180,13 +180,13 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	// add OptRequestedOption
 	oro := OptRequestedOption{}
 	oro.SetRequestedOptions([]OptionCode{
-		DNS_RECURSIVE_NAME_SERVER,
-		DOMAIN_SEARCH_LIST,
+		OptionDNSRecursiveNameServer,
+		OptionDomainSearchList,
 	})
 	req.AddOption(&oro)
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
-	vClass := adv.GetOneOption(OPTION_VENDOR_CLASS)
+	vClass := adv.GetOneOption(OptionVendorClass)
 	if vClass != nil {
 		req.AddOption(vClass)
 	}
@@ -207,9 +207,9 @@ func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, e
 		return nil, errors.New("DHCPv6Message cannot be nil")
 	}
 	switch message.Type() {
-		case REQUEST, CONFIRM, RENEW, REBIND, RELEASE:
-		default:
-			return nil, errors.New("Cannot create REPLY from the passed message type set")
+	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew, MessageTypeRebind, MessageTypeRelease:
+	default:
+		return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}
 	msg, ok := message.(*DHCPv6Message)
 	if !ok {
@@ -217,10 +217,10 @@ func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	}
 	// build REPLY from MESSAGE
 	rep := DHCPv6Message{}
-	rep.SetMessage(REPLY)
+	rep.SetMessage(MessageTypeReply)
 	rep.SetTransactionID(msg.TransactionID())
 	// add Client ID
-	cid := message.GetOneOption(OPTION_CLIENTID)
+	cid := message.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, errors.New("Client ID cannot be nil when building REPLY")
 	}
@@ -243,7 +243,7 @@ func (d *DHCPv6Message) SetMessage(messageType MessageType) {
 	if msgString == "" {
 		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
 	}
-	if messageType == RELAY_FORW || messageType == RELAY_REPL {
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
 		log.Printf("Warning: using a RELAY message type with a non-relay message: %v (%v)",
 			msgString, messageType)
 	}

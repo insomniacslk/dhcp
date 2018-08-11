@@ -81,16 +81,16 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	if packet == nil {
 		return nil, fmt.Errorf("Packet to send cannot be nil")
 	}
-	if expectedType == MSGTYPE_NONE {
+	if expectedType == MessageTypeNone {
 		// infer the expected type from the packet being sent
-		if packet.Type() == SOLICIT {
-			expectedType = ADVERTISE
-		} else if packet.Type() == REQUEST {
-			expectedType = REPLY
-		} else if packet.Type() == RELAY_FORW {
-			expectedType = RELAY_REPL
-		} else if packet.Type() == LEASEQUERY {
-			expectedType = LEASEQUERY_REPLY
+		if packet.Type() == MessageTypeSolicit {
+			expectedType = MessageTypeAdvertise
+		} else if packet.Type() == MessageTypeRequest {
+			expectedType = MessageTypeReply
+		} else if packet.Type() == MessageTypeRelayForward {
+			expectedType = MessageTypeRelayReply
+		} else if packet.Type() == MessageTypeLeaseQuery {
+			expectedType = MessageTypeLeaseQueryReply
 		} // and probably more
 	}
 	// if no LocalAddr is specified, get the interface's link-local address
@@ -167,7 +167,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 				continue
 			}
 		}
-		if expectedType == MSGTYPE_NONE {
+		if expectedType == MessageTypeNone {
 			// just take whatever arrived
 			break
 		} else if adv.Type() == expectedType {
@@ -190,7 +190,7 @@ func (c *Client) Solicit(ifname string, solicit DHCPv6, modifiers ...Modifier) (
 	for _, mod := range modifiers {
 		solicit = mod(solicit)
 	}
-	advertise, err := c.sendReceive(ifname, solicit, MSGTYPE_NONE)
+	advertise, err := c.sendReceive(ifname, solicit, MessageTypeNone)
 	return solicit, advertise, err
 }
 
@@ -207,6 +207,6 @@ func (c *Client) Request(ifname string, advertise, request DHCPv6, modifiers ...
 	for _, mod := range modifiers {
 		request = mod(request)
 	}
-	reply, err := c.sendReceive(ifname, request, MSGTYPE_NONE)
+	reply, err := c.sendReceive(ifname, request, MessageTypeNone)
 	return request, reply, err
 }

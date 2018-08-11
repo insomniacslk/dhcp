@@ -17,13 +17,13 @@ type OptUserClass struct {
 
 // Code returns the option code
 func (op *OptUserClass) Code() OptionCode {
-	return OPTION_USER_CLASS
+	return OptionUserClass
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
 	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OPTION_USER_CLASS))
+	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionUserClass))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	u16 := make([]byte, 2)
 	for _, uc := range op.UserClasses {
