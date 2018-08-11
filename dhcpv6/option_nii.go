@@ -10,21 +10,21 @@ import (
 
 // see rfc4578
 const (
-	NII_LANDESK_NOPXE   = 0
-	NII_PXE_GEN_I       = 1
-	NII_PXE_GEN_II      = 2
-	NII_UNDI_NOEFI      = 3
-	NII_UNDI_EFI_GEN_I  = 4
-	NII_UNDI_EFI_GEN_II = 5
+	NIILANDeskNoPXE = 0
+	NIIPXEGenI      = 1
+	NIIPXEGenII     = 2
+	NIIUNDINoEFI    = 3
+	NIIUNDIEFIGenI  = 4
+	NIIUNDIEFIGenII = 5
 )
 
 var NIIToStringMap = map[uint8]string{
-	NII_LANDESK_NOPXE:   "LANDesk service agent boot ROMs. No PXE",
-	NII_PXE_GEN_I:       "First gen. PXE boot ROMs",
-	NII_PXE_GEN_II:      "Second gen. PXE boot ROMs",
-	NII_UNDI_NOEFI:      "UNDI 32/64 bit. UEFI drivers, no UEFI runtime",
-	NII_UNDI_EFI_GEN_I:  "UNDI 32/64 bit. UEFI runtime 1st gen",
-	NII_UNDI_EFI_GEN_II: "UNDI 32/64 bit. UEFI runtime 2nd gen",
+	NIILANDeskNoPXE: "LANDesk service agent boot ROMs. No PXE",
+	NIIPXEGenI:      "First gen. PXE boot ROMs",
+	NIIPXEGenII:     "Second gen. PXE boot ROMs",
+	NIIUNDINoEFI:    "UNDI 32/64 bit. UEFI drivers, no UEFI runtime",
+	NIIUNDIEFIGenI:  "UNDI 32/64 bit. UEFI runtime 1st gen",
+	NIIUNDIEFIGenII: "UNDI 32/64 bit. UEFI runtime 2nd gen",
 }
 
 type OptNetworkInterfaceId struct {
