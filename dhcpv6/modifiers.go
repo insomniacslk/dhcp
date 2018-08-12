@@ -2,6 +2,8 @@ package dhcpv6
 
 import (
 	"log"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // WithClientID adds a client ID option to a DHCPv6 packet
@@ -53,9 +55,9 @@ func WithUserClass(uc []byte) Modifier {
 }
 
 // WithArchType adds an arch type option to the packet
-func WithArchType(at ArchType) Modifier {
+func WithArchType(at iana.ArchType) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		ao := OptClientArchType{ArchType: at}
+		ao := OptClientArchType{ArchTypes: []iana.ArchType{at}}
 		d.AddOption(&ao)
 		return d
 	}
