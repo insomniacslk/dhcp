@@ -286,6 +286,33 @@ func (d *DHCPv6Message) UpdateOption(option Option) {
 	d.AddOption(option)
 }
 
+// IsNetboot returns true if the machine is trying to netboot. It checks if
+// "boot file" is one of the requested options, which is useful for
+// SOLICIT/REQUEST packet types, it also checks if the "boot file" option is
+// included in the packet, which is useful for ADVERTISE/REPLY packet.
+func (d *DHCPv6Message) IsNetboot() bool {
+	if d.IsOptionRequested(OptionBootfileURL) {
+		return true
+	}
+	if optbf := d.GetOneOption(OptionBootfileURL); optbf != nil {
+		return true
+	}
+	return false
+}
+
+// IsOptionRequested takes an OptionCode and returns true if that option is
+// within the requested options of the DHCPv6 message.
+func (d *DHCPv6Message) IsOptionRequested(requested OptionCode) bool {
+	for _, optoro := range d.GetOption(OptionORO) {
+		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
+			if o == requested {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (d *DHCPv6Message) String() string {
 	return fmt.Sprintf("DHCPv6Message(messageType=%v transactionID=0x%06x, %d options)",
 		d.MessageTypeToString(), d.TransactionID(), len(d.options),

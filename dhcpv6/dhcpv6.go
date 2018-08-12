@@ -202,35 +202,6 @@ func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (D
 	return &outer, nil
 }
 
-// IsNetboot function takes a DHCPv6 message and returns true if the machine
-// is trying to netboot. It checks if "boot file" is one of the requested
-// options, which is useful for SOLICIT/REQUEST packet types, it also checks
-// if the "boot file" option is included in the packet, which is useful for
-// ADVERTISE/REPLY packet.
-func IsNetboot(msg DHCPv6) bool {
-	if IsOptionRequested(msg, OptionBootfileURL) {
-		return true
-	}
-	if optbf := msg.GetOneOption(OptionBootfileURL); optbf != nil {
-		return true
-	}
-	return false
-}
-
-// IsOptionRequested function takes a DHCPv6 message and an OptionCode, and
-// returns true if that option is within the requested options of the DHCPv6
-// message.
-func IsOptionRequested(msg DHCPv6, requested OptionCode) bool {
-	for _, optoro := range msg.GetOption(OptionORO) {
-		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
-			if o == requested {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // IsUsingUEFI function takes a DHCPv6 message and returns true if
 // the machine trying to netboot is using UEFI of false if it is not.
 func IsUsingUEFI(msg DHCPv6) bool {
