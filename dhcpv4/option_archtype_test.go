@@ -3,6 +3,7 @@ package dhcpv4
 import (
 	"testing"
 
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,7 +15,7 @@ func TestParseOptClientArchType(t *testing.T) {
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.ArchTypes[0], EFI_IA32)
+	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
 }
 
 func TestParseOptClientArchTypeMultiple(t *testing.T) {
@@ -26,8 +27,8 @@ func TestParseOptClientArchTypeMultiple(t *testing.T) {
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.ArchTypes[0], EFI_IA32)
-	require.Equal(t, opt.ArchTypes[1], EFI_ITANIUM)
+	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
+	require.Equal(t, opt.ArchTypes[1], iana.EFI_ITANIUM)
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
@@ -61,7 +62,7 @@ func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {
 
 func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
-		ArchTypes: []ArchType{EFI_ITANIUM},
+		ArchTypes: []iana.ArchType{iana.EFI_ITANIUM},
 	}
 	require.Equal(t, opt.Length(), 2)
 	require.Equal(t, opt.Code(), OptionClientSystemArchitectureType)
