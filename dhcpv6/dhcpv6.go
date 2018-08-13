@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 type DHCPv6 interface {
@@ -222,9 +224,11 @@ func IsUsingUEFI(msg DHCPv6) bool {
 	//               9    EFI x86-64
 	if opt := msg.GetOneOption(OptionClientArchType); opt != nil {
 		optat := opt.(*OptClientArchType)
-		// TODO investigate if other types are appropriate
-		if optat.ArchType == EFI_BC || optat.ArchType == EFI_X86_64 {
-			return true
+		for _, at := range optat.ArchTypes {
+			// TODO investigate if other types are appropriate
+			if at == iana.EFI_BC || at == iana.EFI_X86_64 {
+				return true
+			}
 		}
 	}
 	if opt := msg.GetOneOption(OptionUserClass); opt != nil {
