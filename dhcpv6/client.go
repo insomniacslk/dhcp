@@ -11,7 +11,7 @@ const (
 	DefaultWriteTimeout       = 3 * time.Second // time to wait for write calls
 	DefaultReadTimeout        = 3 * time.Second // time to wait for read calls
 	DefaultInterfaceUpTimeout = 3 * time.Second // time to wait before a network interface goes up
-	maxUDPReceivedPacketSize  = 8192            // arbitrary size. Theoretically could be up to 65kb
+	MaxUDPReceivedPacketSize  = 8192            // arbitrary size. Theoretically could be up to 65kb
 )
 
 // Broadcast destination IP addresses as defined by RFC 3315
@@ -148,7 +148,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		isMessage = true
 	}
 	for {
-		buf := make([]byte, maxUDPReceivedPacketSize)
+		buf := make([]byte, MaxUDPReceivedPacketSize)
 		n, _, _, _, err := conn.ReadMsgUDP(buf, oobdata)
 		if err != nil {
 			return nil, err
