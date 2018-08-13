@@ -682,6 +682,19 @@ func (d *DHCPv4) ValidateOptions() {
 	}
 }
 
+// IsOptionRequested returns true if that option is within the requested
+// options of the DHCPv4 message.
+func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
+	for _, optprl := range d.GetOption(OptionParameterRequestList) {
+		for _, o := range optprl.(*OptParameterRequestList).RequestedOpts {
+			if o == requested {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // ToBytes encodes a DHCPv4 structure into a sequence of bytes in its wire
 // format.
 func (d *DHCPv4) ToBytes() []byte {

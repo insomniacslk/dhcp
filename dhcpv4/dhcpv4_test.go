@@ -401,6 +401,16 @@ func TestDHCPv4MessageTypeDiscovery(t *testing.T) {
 	require.Equal(t, MessageTypeDiscover, *m.MessageType())
 }
 
+func TestIsOptionRequested(t *testing.T) {
+	pkt, err := New()
+	require.NoError(t, err)
+	require.False(t, pkt.IsOptionRequested(OptionDomainNameServer))
+
+	optprl := OptParameterRequestList{RequestedOpts: []OptionCode{OptionDomainNameServer}}
+	pkt.AddOption(&optprl)
+	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
+}
+
 // TODO
 //      test broadcast/unicast flags
 //      test Options setter/getter

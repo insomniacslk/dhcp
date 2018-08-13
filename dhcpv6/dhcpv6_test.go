@@ -215,5 +215,52 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 	require.Equal(t, len(opts), 2)
 }
 
+
+func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
+	msg := DHCPv6Message{}
+	opt := OptClientArchType{ArchType: EFI_BC}
+	msg.AddOption(&opt)
+	require.True(t, IsUsingUEFI(&msg))
+}
+
+func TestIsUsingUEFIArchTypeFalse(t *testing.T) {
+	msg := DHCPv6Message{}
+	opt := OptClientArchType{ArchType: INTEL_X86PC}
+	msg.AddOption(&opt)
+	require.False(t, IsUsingUEFI(&msg))
+}
+
+func TestIsUsingUEFIUserClassTrue(t *testing.T) {
+	msg := DHCPv6Message{}
+	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeUEFI")}}
+	msg.AddOption(&opt)
+	require.True(t, IsUsingUEFI(&msg))
+}
+
+func TestIsUsingUEFIUserClassFalse(t *testing.T) {
+	msg := DHCPv6Message{}
+	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeLegacy")}}
+	msg.AddOption(&opt)
+	require.False(t, IsUsingUEFI(&msg))
+}
+
+func TestGetTransactionIDMessage(t *testing.T) {
+	message, err := NewMessage()
+	require.NoError(t, err)
+	transactionID, err := GetTransactionID(message)
+	require.NoError(t, err)
+	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+}
+
+func TestGetTransactionIDRelay(t *testing.T) {
+	message, err := NewMessage()
+	require.NoError(t, err)
+	relay, err := EncapsulateRelay(message, MessageTypeRelayForward, nil, nil)
+	require.NoError(t, err)
+	transactionID, err := GetTransactionID(relay)
+	require.NoError(t, err)
+	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+}
+
 // TODO test NewMessageTypeSolicit
 //      test String and Summary
