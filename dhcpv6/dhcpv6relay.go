@@ -165,6 +165,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 		err                error
 		linkAddr, peerAddr []net.IP
 		optiids            []Option
+		optrid             []Option
 	)
 	if relayForw == nil {
 		return nil, errors.New("RELAY_FORW cannot be nil")
@@ -186,6 +187,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 		linkAddr = append(linkAddr, relay.LinkAddr())
 		peerAddr = append(peerAddr, relay.PeerAddr())
 		optiids = append(optiids, relay.GetOneOption(OptionInterfaceID))
+		optrid = append(optrid, relay.GetOneOption(OptionRemoteID))
 		decap, err := DecapsulateRelay(relay)
 		if err != nil {
 			return nil, err
@@ -199,6 +201,9 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	for i := len(linkAddr) - 1; i >= 0; i-- {
 		msg, err = EncapsulateRelay(msg, MessageTypeRelayReply, linkAddr[i], peerAddr[i])
 		if opt := optiids[i]; opt != nil {
+			msg.AddOption(opt)
+		}
+		if opt := optrid[i]; opt != nil {
 			msg.AddOption(opt)
 		}
 		if err != nil {
