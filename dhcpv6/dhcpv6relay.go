@@ -158,13 +158,15 @@ func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
 	}
 }
 
-// NewRelayReplFromRelayForw creates a RELAY_REPL packet based on a RELAY_FORW
-// packet and replaces the inner message with the passed DHCPv6 message.
+// NewRelayReplFromRelayForw creates a MessageTypeRelayReply based on a
+// MessageTypeRelayForward and replaces the inner message with the passed
+// DHCPv6 message. It copies the OptionInterfaceID and OptionRemoteID if the
+// options are present in the Relay packet.
 func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	var (
 		err                error
 		linkAddr, peerAddr []net.IP
-		optiids            []Option
+		optiid             []Option
 		optrid             []Option
 	)
 	if relayForw == nil {
@@ -186,7 +188,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	for {
 		linkAddr = append(linkAddr, relay.LinkAddr())
 		peerAddr = append(peerAddr, relay.PeerAddr())
-		optiids = append(optiids, relay.GetOneOption(OptionInterfaceID))
+		optiid = append(optiid, relay.GetOneOption(OptionInterfaceID))
 		optrid = append(optrid, relay.GetOneOption(OptionRemoteID))
 		decap, err := DecapsulateRelay(relay)
 		if err != nil {
@@ -200,14 +202,14 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	}
 	for i := len(linkAddr) - 1; i >= 0; i-- {
 		msg, err = EncapsulateRelay(msg, MessageTypeRelayReply, linkAddr[i], peerAddr[i])
-		if opt := optiids[i]; opt != nil {
+		if err != nil {
+			return nil, err
+		}
+		if opt := optiid[i]; opt != nil {
 			msg.AddOption(opt)
 		}
 		if opt := optrid[i]; opt != nil {
 			msg.AddOption(opt)
-		}
-		if err != nil {
-			return nil, err
 		}
 	}
 	return msg, nil
