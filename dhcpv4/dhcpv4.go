@@ -42,6 +42,19 @@ type DHCPv4 struct {
 // structures. This is used to simplify packet manipulation
 type Modifier func(d *DHCPv4) *DHCPv4
 
+// IPv4AddrsForInterface obtains the currently-configured, non-loopback IPv4
+// addresses for iface.
+func IPv4AddrsForInterface(iface *net.Interface) ([]net.IP, error) {
+	if iface == nil {
+		return nil, errors.New("IPv4AddrsForInterface: iface cannot be nil")
+	}
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	return GetExternalIPv4Addrs(addrs)
+}
+
 // GetExternalIPv4Addrs obtains the currently-configured, non-loopback IPv4
 // addresses from `addrs` coming from a particular interface (e.g.
 // net.Interface.Addrs).
@@ -118,6 +131,17 @@ func New() (*DHCPv4, error) {
 	return &d, nil
 }
 
+// NewDiscoveryForInterface builds a new DHCPv4 Discovery message, with a default
+// Ethernet HW type and the hardware address obtained from the specified
+// interface.
+func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	return NewDiscovery(iface.HardwareAddr)
+}
+
 // NewDiscovery builds a new DHCPv4 Discovery message, with a default Ethernet
 // HW type and specified hardware address.
 func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
@@ -141,6 +165,34 @@ func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 		},
 	})
 	return d, nil
+}
+
+// NewInformForInterface builds a new DHCPv4 Informational message with default
+// Ethernet HW type and the hardware address obtained from the specified
+// interface.
+func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) {
+	// get hw addr
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set Client IP as iface's currently-configured IP.
+	localIPs, err := IPv4AddrsForInterface(iface)
+	if err != nil || len(localIPs) == 0 {
+		return nil, fmt.Errorf("could not get local IPs for iface %s", ifname)
+	}
+	pkt, err := NewInform(iface.HardwareAddr, localIPs[0])
+	if err != nil {
+		return nil, err
+	}
+
+	if needsBroadcast {
+		pkt.SetBroadcast()
+	} else {
+		pkt.SetUnicast()
+	}
+	return pkt, nil
 }
 
 // NewInform builds a new DHCPv4 Informational message with default Ethernet HW
