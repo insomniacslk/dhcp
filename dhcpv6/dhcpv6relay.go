@@ -170,14 +170,14 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 		optrid             []Option
 	)
 	if relayForw == nil {
-		return nil, errors.New("RELAY_FORW cannot be nil")
+		return nil, errors.New("MessageTypeRelayForward cannot be nil")
 	}
 	relay, ok := relayForw.(*DHCPv6Relay)
 	if !ok {
 		return nil, errors.New("Not a DHCPv6Relay")
 	}
 	if relay.Type() != MessageTypeRelayForward {
-		return nil, errors.New("The passed packet is not of type RELAY_FORW")
+		return nil, errors.New("The passed packet is not of type MessageTypeRelayForward")
 	}
 	if msg == nil {
 		return nil, errors.New("The passed message cannot be nil")
