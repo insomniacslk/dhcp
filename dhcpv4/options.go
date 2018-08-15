@@ -126,6 +126,9 @@ func OptionsFromBytesWithoutMagicCookie(data []byte) ([]Option, error) {
 			return nil, err
 		}
 		options = append(options, opt)
+		if opt.Code() == OptionEnd {
+			break
+		}
 
 		// Options with zero length have no length byte, so here we handle the
 		// ones with nonzero length

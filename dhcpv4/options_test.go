@@ -167,12 +167,9 @@ func TestOptionsFromBytes(t *testing.T) {
 	}
 	opts, err := OptionsFromBytes(options)
 	require.NoError(t, err)
-	require.Equal(t, 5, len(opts))
+	require.Equal(t, 2, len(opts))
 	require.Equal(t, opts[0].(*OptionGeneric), &OptionGeneric{OptionCode: OptionNameServer, Data: []byte{192, 168, 1, 1}})
 	require.Equal(t, opts[1].(*OptionGeneric), &OptionGeneric{OptionCode: OptionEnd})
-	require.Equal(t, opts[2].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
-	require.Equal(t, opts[3].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
-	require.Equal(t, opts[4].(*OptionGeneric), &OptionGeneric{OptionCode: OptionPad})
 }
 
 func TestOptionsFromBytesZeroLength(t *testing.T) {

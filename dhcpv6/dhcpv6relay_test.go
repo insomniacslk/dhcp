@@ -108,19 +108,23 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 }
 
 func TestNewRelayRepFromRelayForw(t *testing.T) {
+	// create a new relay forward
 	rf := DHCPv6Relay{}
 	rf.SetMessageType(MessageTypeRelayForward)
 	rf.SetPeerAddr(net.IPv6linklocalallrouters)
 	rf.SetLinkAddr(net.IPv6interfacelocalallnodes)
-	oro := OptRelayMsg{}
-	s := DHCPv6Message{}
-	s.SetMessage(MessageTypeSolicit)
-	cid := OptClientId{}
-	s.AddOption(&cid)
-	oro.SetRelayMessage(&s)
-	rf.AddOption(&oro)
+	rf.AddOption(&OptInterfaceId{})
+	rf.AddOption(&OptRemoteId{})
 
-	a, err := NewAdvertiseFromSolicit(&s)
+	// create the inner message
+	s, err := NewMessage()
+	require.NoError(t, err)
+	s.AddOption(&OptClientId{})
+	orm := OptRelayMsg{}
+	orm.SetRelayMessage(s)
+	rf.AddOption(&orm)
+
+	a, err := NewAdvertiseFromSolicit(s)
 	require.NoError(t, err)
 	rr, err := NewRelayReplFromRelayForw(&rf, a)
 	require.NoError(t, err)
@@ -129,6 +133,8 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	require.Equal(t, relay.HopCount(), rf.HopCount())
 	require.Equal(t, relay.PeerAddr(), rf.PeerAddr())
 	require.Equal(t, relay.LinkAddr(), rf.LinkAddr())
+	require.NotNil(t, rr.GetOneOption(OptionInterfaceID))
+	require.NotNil(t, rr.GetOneOption(OptionRemoteID))
 	m, err := relay.GetInnerMessage()
 	require.NoError(t, err)
 	require.Equal(t, m, a)
