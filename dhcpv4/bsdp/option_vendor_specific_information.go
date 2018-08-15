@@ -131,8 +131,8 @@ func (o *OptVendorSpecificInformation) Length() int {
 	return length
 }
 
-// GetOptions returns all suboptions that match the given OptionCode code.
-func (o *OptVendorSpecificInformation) GetOptions(code dhcpv4.OptionCode) []dhcpv4.Option {
+// GetOption returns all suboptions that match the given OptionCode code.
+func (o *OptVendorSpecificInformation) GetOption(code dhcpv4.OptionCode) []dhcpv4.Option {
 	var opts []dhcpv4.Option
 	for _, opt := range o.Options {
 		if opt.Code() == code {
@@ -142,9 +142,9 @@ func (o *OptVendorSpecificInformation) GetOptions(code dhcpv4.OptionCode) []dhcp
 	return opts
 }
 
-// GetOption returns the first suboption that matches the OptionCode code.
+// GetOneOption returns the first suboption that matches the OptionCode code.
 func (o *OptVendorSpecificInformation) GetOneOption(code dhcpv4.OptionCode) dhcpv4.Option {
-	opts := o.GetOptions(code)
+	opts := o.GetOption(code)
 	if len(opts) == 0 {
 		return nil
 	}
