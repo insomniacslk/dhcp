@@ -45,11 +45,21 @@ type Modifier func(d *DHCPv4) *DHCPv4
 // IPv4AddrsForInterface obtains the currently-configured, non-loopback IPv4
 // addresses for iface.
 func IPv4AddrsForInterface(iface *net.Interface) ([]net.IP, error) {
-	addrs, err := iface.Addrs()
-	var v4addrs []net.IP
-	if err != nil {
-		return v4addrs, err
+	if iface == nil {
+		return nil, errors.New("IPv4AddrsForInterface: iface cannot be nil")
 	}
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	return GetExternalIPv4Addrs(addrs)
+}
+
+// GetExternalIPv4Addrs obtains the currently-configured, non-loopback IPv4
+// addresses from `addrs` coming from a particular interface (e.g.
+// net.Interface.Addrs).
+func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
+	var v4addrs []net.IP
 	for _, addr := range addrs {
 		var ip net.IP
 		switch v := addr.(type) {
@@ -125,19 +135,25 @@ func New() (*DHCPv4, error) {
 // Ethernet HW type and the hardware address obtained from the specified
 // interface.
 func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	return NewDiscovery(iface.HardwareAddr)
+}
+
+// NewDiscovery builds a new DHCPv4 Discovery message, with a default Ethernet
+// HW type and specified hardware address.
+func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 	d, err := New()
 	if err != nil {
 		return nil, err
 	}
 	// get hw addr
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return nil, err
-	}
 	d.SetOpcode(OpcodeBootRequest)
 	d.SetHwType(iana.HwTypeEthernet)
-	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
-	d.SetClientHwAddr(iface.HardwareAddr)
+	d.SetHwAddrLen(uint8(len(hwaddr)))
+	d.SetClientHwAddr(hwaddr)
 	d.SetBroadcast()
 	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
 	d.AddOption(&OptParameterRequestList{
@@ -155,25 +171,10 @@ func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
 // Ethernet HW type and the hardware address obtained from the specified
 // interface.
 func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) {
-	d, err := New()
-	if err != nil {
-		return nil, err
-	}
-
 	// get hw addr
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
-	}
-	d.SetOpcode(OpcodeBootRequest)
-	d.SetHwType(iana.HwTypeEthernet)
-	d.SetHwAddrLen(uint8(len(iface.HardwareAddr)))
-	d.SetClientHwAddr(iface.HardwareAddr)
-
-	if needsBroadcast {
-		d.SetBroadcast()
-	} else {
-		d.SetUnicast()
 	}
 
 	// Set Client IP as iface's currently-configured IP.
@@ -181,8 +182,33 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	if err != nil || len(localIPs) == 0 {
 		return nil, fmt.Errorf("could not get local IPs for iface %s", ifname)
 	}
-	d.SetClientIPAddr(localIPs[0])
+	pkt, err := NewInform(iface.HardwareAddr, localIPs[0])
+	if err != nil {
+		return nil, err
+	}
 
+	if needsBroadcast {
+		pkt.SetBroadcast()
+	} else {
+		pkt.SetUnicast()
+	}
+	return pkt, nil
+}
+
+// NewInform builds a new DHCPv4 Informational message with default Ethernet HW
+// type and specified hardware address. It does NOT put a DHCP End option at the
+// end.
+func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
+	d, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	d.SetOpcode(OpcodeBootRequest)
+	d.SetHwType(iana.HwTypeEthernet)
+	d.SetHwAddrLen(uint8(len(hwaddr)))
+	d.SetClientHwAddr(hwaddr)
+	d.SetClientIPAddr(localIP)
 	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
 	return d, nil
 }
@@ -727,4 +753,16 @@ func (d *DHCPv4) ToBytes() []byte {
 		ret = append(ret, opt.ToBytes()...)
 	}
 	return ret
+}
+
+// OptionGetter is a interface that knows how to retrieve an option from a
+// structure of options given an OptionCode.
+type OptionGetter interface {
+	GetOption(OptionCode) []Option
+	GetOneOption(OptionCode) Option
+}
+
+// HasOption checks whether the OptionGetter `o` has the given `opcode` Option.
+func HasOption(o OptionGetter, opcode OptionCode) bool {
+	return o.GetOneOption(opcode) != nil
 }

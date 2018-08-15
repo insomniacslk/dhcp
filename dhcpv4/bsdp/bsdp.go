@@ -40,7 +40,7 @@ func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	if err != nil {
 		return nil, err
 	}
-	bootImageOpts := vendorOpt.GetOptions(OptionBootImageList)
+	bootImageOpts := vendorOpt.GetOption(OptionBootImageList)
 	for _, opt := range bootImageOpts {
 		images = append(images, opt.(*OptBootImageList).Images...)
 	}
@@ -53,8 +53,30 @@ func needsReplyPort(replyPort uint16) bool {
 
 // NewInformListForInterface creates a new INFORM packet for interface ifname
 // with configuration options specified by config.
-func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
-	d, err := dhcpv4.NewInformForInterface(iface /* needsBroadcast = */, false)
+func NewInformListForInterface(ifname string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	// Get currently configured IP.
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	localIPs, err := dhcpv4.GetExternalIPv4Addrs(addrs)
+	if err != nil {
+		return nil, fmt.Errorf("could not get local IPv4 addr for %s: %v", iface.Name, err)
+	}
+	if localIPs == nil || len(localIPs) == 0 {
+		return nil, fmt.Errorf("could not get local IPv4 addr for %s", iface.Name)
+	}
+	return NewInformList(iface.HardwareAddr, localIPs[0], replyPort)
+}
+
+// NewInformList creates a new INFORM packet for interface with hardware address
+// `hwaddr` and IP `localIP`. Packet will be sent out on port `replyPort`.
+func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*dhcpv4.DHCPv4, error) {
+	d, err := dhcpv4.NewInform(hwaddr, localIP)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +113,7 @@ func NewInformListForInterface(iface string, replyPort uint16) (*dhcpv4.DHCPv4, 
 }
 
 // InformSelectForAck constructs an INFORM[SELECT] packet given an ACK to the
-// previously-sent INFORM[LIST] with Config config.
+// previously-sent INFORM[LIST].
 func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootImage) (*dhcpv4.DHCPv4, error) {
 	d, err := dhcpv4.New()
 	if err != nil {
