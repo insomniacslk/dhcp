@@ -14,6 +14,20 @@ import (
 // prefer this BSDP-specific option over the DHCP standard option.
 const MaxDHCPMessageSize = 1500
 
+// AppleVendorID is the string constant set in the vendor class identifier (DHCP
+// option 60) that is sent by the server.
+const AppleVendorID = "AAPLBSDPC"
+
+// ReplyConfig is a struct containing some common configuration values for a
+// BSDP reply (ACK).
+type ReplyConfig struct {
+	ServerIP                     net.IP
+	ServerHostname, BootFileName string
+	ServerPriority               int
+	Images                       []BootImage
+	DefaultImage, SelectedImage  *BootImage
+}
+
 // ParseBootImageListFromAck parses the list of boot images presented in the
 // ACK[LIST] packet and returns them as a list of BootImages.
 func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
@@ -138,4 +152,80 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
 	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
 	return d, nil
+}
+
+// NewReplyForInformList constructs an ACK for the INFORM[LIST] packet `inform`
+// with additional options in `config`.
+func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.DHCPv4, error) {
+	if config.DefaultImage == nil {
+		return nil, errors.New("NewReplyForInformList: no default boot image ID set")
+	}
+	if len(config.Images) == 0 {
+		return nil, errors.New("NewReplyForInformList: no boot images provided")
+	}
+	reply, err := dhcpv4.NewReplyFromRequest(inform)
+	if err != nil {
+		return nil, err
+	}
+	reply.SetClientIPAddr(inform.ClientIPAddr())
+	reply.SetYourIPAddr(net.IPv4zero)
+	reply.SetGatewayIPAddr(inform.GatewayIPAddr())
+	reply.SetServerIPAddr(config.ServerIP)
+	reply.SetServerHostName([]byte(config.ServerHostname))
+
+	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
+	reply.AddOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+
+	// BSDP opts.
+	vendorOpts := []dhcpv4.Option{
+		&OptMessageType{Type: MessageTypeList},
+		&OptServerPriority{Priority: config.ServerPriority},
+		&OptDefaultBootImageID{ID: config.DefaultImage.ID},
+		&OptBootImageList{Images: config.Images},
+	}
+	if config.SelectedImage != nil {
+		vendorOpts = append(vendorOpts, &OptSelectedBootImageID{ID: config.SelectedImage.ID})
+	}
+	reply.AddOption(&OptVendorSpecificInformation{Options: vendorOpts})
+
+	reply.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	return reply, nil
+}
+
+// NewReplyForInformSelect constructs an ACK for the INFORM[Select] packet
+// `inform` with additional options in `config`.
+func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.DHCPv4, error) {
+	if config.SelectedImage == nil {
+		return nil, errors.New("NewReplyForInformSelect: no selected boot image ID set")
+	}
+	if len(config.Images) == 0 {
+		return nil, errors.New("NewReplyForInformSelect: no boot images provided")
+	}
+	reply, err := dhcpv4.NewReplyFromRequest(inform)
+	if err != nil {
+		return nil, err
+	}
+
+	reply.SetClientIPAddr(inform.ClientIPAddr())
+	reply.SetYourIPAddr(net.IPv4zero)
+	reply.SetGatewayIPAddr(inform.GatewayIPAddr())
+	reply.SetServerIPAddr(config.ServerIP)
+	reply.SetServerHostName([]byte(config.ServerHostname))
+	reply.SetBootFileName([]byte(config.BootFileName))
+
+	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
+	reply.AddOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+
+	// BSDP opts.
+	reply.AddOption(&OptVendorSpecificInformation{
+		Options: []dhcpv4.Option{
+			&OptMessageType{Type: MessageTypeSelect},
+			&OptSelectedBootImageID{ID: config.SelectedImage.ID},
+		},
+	})
+
+	reply.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	return reply, nil
 }

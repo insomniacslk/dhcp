@@ -13,5 +13,5 @@ func MakeVendorClassIdentifier() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("AAPLBSDPC/i386/%s", hwModel), nil
+	return fmt.Sprintf("%s/i386/%s", AppleVendorID, hwModel), nil
 }
