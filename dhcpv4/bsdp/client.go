@@ -2,8 +2,6 @@ package bsdp
 
 import (
 	"errors"
-	"fmt"
-	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
@@ -51,24 +49,10 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.D
 	if err != nil {
 		return conversation, err
 	}
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return conversation, err
-	}
-
-	// Get currently configured IP.
-	addrs, err := iface.Addrs()
-	if err != nil {
-		return conversation, err
-	}
-	localIPs, err := dhcpv4.GetExternalIPv4Addrs(addrs)
-	if err != nil {
-		return conversation, fmt.Errorf("could not get local IPv4 addr for %s: %v", iface.Name, err)
-	}
 
 	// INFORM[LIST]
 	if informList == nil {
-		informList, err = NewInformList(iface.HardwareAddr, localIPs[0], dhcpv4.ClientPort)
+		informList, err = NewInformListForInterface(ifname, dhcpv4.ClientPort)
 		if err != nil {
 			return conversation, err
 		}

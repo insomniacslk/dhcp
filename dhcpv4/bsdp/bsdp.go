@@ -37,6 +37,28 @@ func needsReplyPort(replyPort uint16) bool {
 	return replyPort != 0 && replyPort != dhcpv4.ClientPort
 }
 
+// NewInformListForInterface creates a new INFORM packet for interface ifname
+// with configuration options specified by config.
+func NewInformListForInterface(ifname string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+	// Get currently configured IP.
+	addrs, err := iface.Addrs()
+	if err != nil {
+		return nil, err
+	}
+	localIPs, err := dhcpv4.GetExternalIPv4Addrs(addrs)
+	if err != nil {
+		return nil, fmt.Errorf("could not get local IPv4 addr for %s: %v", iface.Name, err)
+	}
+	if localIPs == nil || len(localIPs) == 0 {
+		return nil, fmt.Errorf("could not get local IPv4 addr for %s", iface.Name)
+	}
+	return NewInformList(iface.HardwareAddr, localIPs[0], replyPort)
+}
+
 // NewInformList creates a new INFORM packet for interface with hardware address
 // `hwaddr` and IP `localIP`. Packet will be sent out on port `replyPort`.
 func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*dhcpv4.DHCPv4, error) {
