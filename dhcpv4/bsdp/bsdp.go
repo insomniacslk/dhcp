@@ -160,7 +160,7 @@ func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.D
 	if config.DefaultImage == nil {
 		return nil, errors.New("NewReplyForInformList: no default boot image ID set")
 	}
-	if len(config.Images) == 0 {
+	if config.Images == nil || len(config.Images) == 0 {
 		return nil, errors.New("NewReplyForInformList: no boot images provided")
 	}
 	reply, err := dhcpv4.NewReplyFromRequest(inform)
@@ -199,7 +199,7 @@ func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4
 	if config.SelectedImage == nil {
 		return nil, errors.New("NewReplyForInformSelect: no selected boot image ID set")
 	}
-	if len(config.Images) == 0 {
+	if config.Images == nil || len(config.Images) == 0 {
 		return nil, errors.New("NewReplyForInformSelect: no boot images provided")
 	}
 	reply, err := dhcpv4.NewReplyFromRequest(inform)

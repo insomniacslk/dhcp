@@ -80,6 +80,11 @@ func TestNewReplyForInformList_NoImages(t *testing.T) {
 		DefaultImage: &fakeImage,
 	})
 	require.Error(t, err)
+
+	_, err = NewReplyForInformList(inform, ReplyConfig{
+		Images:        nil,
+		SelectedImage: &fakeImage,
+	})
 }
 
 // TODO (get9): clean up when #99 lands.
@@ -183,6 +188,12 @@ func TestNewReplyForInformSelect_NoImages(t *testing.T) {
 	}
 	_, err := NewReplyForInformSelect(inform, ReplyConfig{
 		Images:        []BootImage{},
+		SelectedImage: &fakeImage,
+	})
+	require.Error(t, err)
+
+	_, err = NewReplyForInformSelect(inform, ReplyConfig{
+		Images:        nil,
 		SelectedImage: &fakeImage,
 	})
 	require.Error(t, err)
