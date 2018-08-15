@@ -108,7 +108,7 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 }
 
 func TestNewRelayRepFromRelayForw(t *testing.T) {
-	// create a new RelayForward
+	// create a new relay forward
 	rf := DHCPv6Relay{}
 	rf.SetMessageType(MessageTypeRelayForward)
 	rf.SetPeerAddr(net.IPv6linklocalallrouters)
