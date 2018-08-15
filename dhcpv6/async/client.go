@@ -1,4 +1,4 @@
-package dhcpv6
+package async
 
 import (
 	"context"
@@ -6,10 +6,13 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/fanliao/go-promise"
+	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
-// AsyncClient implements an asynchronous DHCPv6 client
-type AsyncClient struct {
+// Client implements an asynchronous DHCPv6 client
+type Client struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	LocalAddr    net.Addr
@@ -19,35 +22,35 @@ type AsyncClient struct {
 	connection   *net.UDPConn
 	cancel       context.CancelFunc
 	stopping     *sync.WaitGroup
-	receiveQueue chan DHCPv6
-	sendQueue    chan DHCPv6
+	receiveQueue chan dhcpv6.DHCPv6
+	sendQueue    chan dhcpv6.DHCPv6
 	packetsLock  sync.Mutex
-	packets      map[uint32](chan Response)
+	packets      map[uint32]*promise.Promise
 	errors       chan error
 }
 
-// NewAsyncClient creates an asynchronous client
-func NewAsyncClient() *AsyncClient {
-	return &AsyncClient{
-		ReadTimeout:  DefaultReadTimeout,
-		WriteTimeout: DefaultWriteTimeout,
+// NewClient creates an asynchronous client
+func NewClient() *Client {
+	return &Client{
+		ReadTimeout:  dhcpv6.DefaultReadTimeout,
+		WriteTimeout: dhcpv6.DefaultWriteTimeout,
 	}
 }
 
 // OpenForInterface starts the client on the specified interface, replacing
 // client LocalAddr with a link-local address of the given interface and
 // standard DHCP port (546).
-func (c *AsyncClient) OpenForInterface(ifname string, bufferSize int) error {
-	addr, err := GetLinkLocalAddr(ifname)
+func (c *Client) OpenForInterface(ifname string, bufferSize int) error {
+	addr, err := dhcpv6.GetLinkLocalAddr(ifname)
 	if err != nil {
 		return err
 	}
-	c.LocalAddr = &net.UDPAddr{IP: *addr, Port: DefaultClientPort, Zone: ifname}
+	c.LocalAddr = &net.UDPAddr{IP: *addr, Port: dhcpv6.DefaultClientPort, Zone: ifname}
 	return c.Open(bufferSize)
 }
 
 // Open starts the client
-func (c *AsyncClient) Open(bufferSize int) error {
+func (c *Client) Open(bufferSize int) error {
 	var (
 		addr *net.UDPAddr
 		ok   bool
@@ -64,9 +67,9 @@ func (c *AsyncClient) Open(bufferSize int) error {
 		return err
 	}
 	c.stopping = new(sync.WaitGroup)
-	c.sendQueue = make(chan DHCPv6, bufferSize)
-	c.receiveQueue = make(chan DHCPv6, bufferSize)
-	c.packets = make(map[uint32](chan Response))
+	c.sendQueue = make(chan dhcpv6.DHCPv6, bufferSize)
+	c.receiveQueue = make(chan dhcpv6.DHCPv6, bufferSize)
+	c.packets = make(map[uint32]*promise.Promise)
 	c.packetsLock = sync.Mutex{}
 	c.errors = make(chan error)
 
@@ -79,7 +82,7 @@ func (c *AsyncClient) Open(bufferSize int) error {
 }
 
 // Close stops the client
-func (c *AsyncClient) Close() {
+func (c *Client) Close() {
 	// Wait for sender and receiver loops
 	c.stopping.Add(2)
 	c.cancel()
@@ -93,17 +96,17 @@ func (c *AsyncClient) Close() {
 }
 
 // Errors returns a channel where runtime errors are posted
-func (c *AsyncClient) Errors() <-chan error {
+func (c *Client) Errors() <-chan error {
 	return c.errors
 }
 
-func (c *AsyncClient) addError(err error) {
+func (c *Client) addError(err error) {
 	if !c.IgnoreErrors {
 		c.errors <- err
 	}
 }
 
-func (c *AsyncClient) receiverLoop(ctx context.Context) {
+func (c *Client) receiverLoop(ctx context.Context) {
 	defer func() { c.stopping.Done() }()
 	for {
 		select {
@@ -115,7 +118,7 @@ func (c *AsyncClient) receiverLoop(ctx context.Context) {
 	}
 }
 
-func (c *AsyncClient) senderLoop(ctx context.Context) {
+func (c *Client) senderLoop(ctx context.Context) {
 	defer func() { c.stopping.Done() }()
 	for {
 		select {
@@ -127,41 +130,41 @@ func (c *AsyncClient) senderLoop(ctx context.Context) {
 	}
 }
 
-func (c *AsyncClient) send(packet DHCPv6) {
-	transactionID, err := GetTransactionID(packet)
+func (c *Client) send(packet dhcpv6.DHCPv6) {
+	transactionID, err := dhcpv6.GetTransactionID(packet)
 	if err != nil {
 		c.addError(fmt.Errorf("Warning: This should never happen, there is no transaction ID on %s", packet))
 		return
 	}
 	c.packetsLock.Lock()
-	f := c.packets[transactionID]
+	p := c.packets[transactionID]
 	c.packetsLock.Unlock()
 
 	raddr, err := c.remoteAddr()
 	if err != nil {
-		f <- NewResponse(nil, err)
+		p.Reject(err)
 		return
 	}
 
 	c.connection.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
 	_, err = c.connection.WriteTo(packet.ToBytes(), raddr)
 	if err != nil {
-		f <- NewResponse(nil, err)
+		p.Reject(err)
 		return
 	}
 
 	c.receiveQueue <- packet
 }
 
-func (c *AsyncClient) receive(_ DHCPv6) {
+func (c *Client) receive(_ dhcpv6.DHCPv6) {
 	var (
 		oobdata  = []byte{}
-		received DHCPv6
+		received dhcpv6.DHCPv6
 	)
 
 	c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	for {
-		buffer := make([]byte, maxUDPReceivedPacketSize)
+		buffer := make([]byte, dhcpv6.MaxUDPReceivedPacketSize)
 		n, _, _, _, err := c.connection.ReadMsgUDP(buffer, oobdata)
 		if err != nil {
 			if err, ok := err.(net.Error); !ok || !err.Timeout() {
@@ -169,7 +172,7 @@ func (c *AsyncClient) receive(_ DHCPv6) {
 			}
 			return
 		}
-		received, err = FromBytes(buffer[:n])
+		received, err = dhcpv6.FromBytes(buffer[:n])
 		if err != nil {
 			// skip non-DHCP packets
 			continue
@@ -177,23 +180,23 @@ func (c *AsyncClient) receive(_ DHCPv6) {
 		break
 	}
 
-	transactionID, err := GetTransactionID(received)
+	transactionID, err := dhcpv6.GetTransactionID(received)
 	if err != nil {
 		c.addError(fmt.Errorf("Unable to get a transactionID for %s: %s", received, err))
 		return
 	}
 
 	c.packetsLock.Lock()
-	if f, ok := c.packets[transactionID]; ok {
+	if p, ok := c.packets[transactionID]; ok {
 		delete(c.packets, transactionID)
-		f <- NewResponse(received, nil)
+		p.Resolve(received)
 	}
 	c.packetsLock.Unlock()
 }
 
-func (c *AsyncClient) remoteAddr() (*net.UDPAddr, error) {
+func (c *Client) remoteAddr() (*net.UDPAddr, error) {
 	if c.RemoteAddr == nil {
-		return &net.UDPAddr{IP: AllDHCPRelayAgentsAndServers, Port: DefaultServerPort}, nil
+		return &net.UDPAddr{IP: dhcpv6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}, nil
 	}
 
 	if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
@@ -204,32 +207,20 @@ func (c *AsyncClient) remoteAddr() (*net.UDPAddr, error) {
 
 // Send inserts a message to the queue to be sent asynchronously.
 // Returns a future which resolves to response and error.
-func (c *AsyncClient) Send(message DHCPv6, modifiers ...Modifier) Future {
+func (c *Client) Send(message dhcpv6.DHCPv6, modifiers ...dhcpv6.Modifier) *promise.Future {
 	for _, mod := range modifiers {
 		message = mod(message)
 	}
 
-	transactionID, err := GetTransactionID(message)
+	transactionID, err := dhcpv6.GetTransactionID(message)
 	if err != nil {
-		return NewFailureFuture(err)
+		return promise.Wrap(err)
 	}
 
-	f := NewFuture()
+	p := promise.NewPromise()
 	c.packetsLock.Lock()
-	c.packets[transactionID] = f
+	c.packets[transactionID] = p
 	c.packetsLock.Unlock()
 	c.sendQueue <- message
-	return f
-}
-
-// Exchange executes asynchronously a 4-way DHCPv6 request (SOLICIT,
-// ADVERTISE, REQUEST, REPLY).
-func (c *AsyncClient) Exchange(solicit DHCPv6, modifiers ...Modifier) Future {
-	return c.Send(solicit).OnSuccess(func(advertise DHCPv6) Future {
-		request, err := NewRequestFromAdvertise(advertise)
-		if err != nil {
-			return NewFailureFuture(err)
-		}
-		return c.Send(request, modifiers...)
-	})
+	return p.Future
 }

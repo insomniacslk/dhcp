@@ -15,7 +15,6 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 	var (
 		conversation []dhcpv6.DHCPv6
 	)
-	modifiers = append(modifiers, dhcpv6.WithNetboot)
 	delay := 2 * time.Second
 	for i := 0; i <= retries; i++ {
 		log.Printf("sending request, attempt #%d", i+1)
@@ -26,6 +25,9 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 
 		client := dhcpv6.NewClient()
 		client.ReadTimeout = timeout
+		// WithNetboot is added only later, to avoid applying it twice (one
+		// here and one in the above call to NewSolicitForInterface)
+		modifiers = append(modifiers, dhcpv6.WithNetboot)
 		conversation, err = client.Exchange(ifname, solicit, modifiers...)
 		if err != nil {
 			log.Printf("Client.Exchange failed: %v", err)

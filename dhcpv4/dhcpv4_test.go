@@ -493,5 +493,15 @@ func TestNewInform(t *testing.T) {
 	require.True(t, m.ClientIPAddr().Equal(localIP))
 }
 
+func TestIsOptionRequested(t *testing.T) {
+	pkt, err := New()
+	require.NoError(t, err)
+	require.False(t, pkt.IsOptionRequested(OptionDomainNameServer))
+
+	optprl := OptParameterRequestList{RequestedOpts: []OptionCode{OptionDomainNameServer}}
+	pkt.AddOption(&optprl)
+	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
+}
+
 // TODO
 //      test Summary() and String()

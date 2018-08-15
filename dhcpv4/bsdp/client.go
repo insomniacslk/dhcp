@@ -38,8 +38,8 @@ func castVendorOpt(ack *dhcpv4.DHCPv4) {
 
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DHCPv4, error) {
-	conversation := make([]dhcpv4.DHCPv4, 1)
+func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.DHCPv4, error) {
+	conversation := make([]*dhcpv4.DHCPv4, 1)
 	var err error
 
 	// Get our file descriptor for the broadcast socket.
@@ -73,7 +73,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 			return conversation, err
 		}
 	}
-	conversation[0] = *informList
+	conversation[0] = informList
 
 	// ACK[LIST]
 	ackForList, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informList, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
@@ -83,7 +83,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 
 	// Rewrite vendor-specific option for pretty printing.
 	castVendorOpt(ackForList)
-	conversation = append(conversation, *ackForList)
+	conversation = append(conversation, ackForList)
 
 	// Parse boot images sent back by server
 	bootImages, err := ParseBootImageListFromAck(*ackForList)
@@ -99,7 +99,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	if err != nil {
 		return conversation, err
 	}
-	conversation = append(conversation, *informSelect)
+	conversation = append(conversation, informSelect)
 
 	// ACK[SELECT]
 	ackForSelect, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informSelect, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
@@ -107,5 +107,5 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]dhcpv4.DH
 	if err != nil {
 		return conversation, err
 	}
-	return append(conversation, *ackForSelect), nil
+	return append(conversation, ackForSelect), nil
 }
