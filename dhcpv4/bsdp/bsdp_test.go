@@ -9,6 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func RequireHasOption(t *testing.T, opts dhcpv4.OptionGetter, opt dhcpv4.Option) {
+	require.NotNil(t, opts, "must pass list of options")
+	require.NotNil(t, opt, "must pass option")
+	require.True(t, dhcpv4.HasOption(opts, opt.Code()))
+	actual := opts.GetOneOption(opt.Code())
+	require.Equal(t, opt, actual)
+}
+
 func TestParseBootImageListFromAck(t *testing.T) {
 	expectedBootImages := []BootImage{
 		BootImage{
@@ -142,16 +150,10 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionVendorSpecificInformation))
 	opt = m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionMessageType))
-	opt = vendorInfo.GetOneOption(OptionMessageType)
-	require.Equal(t, MessageTypeSelect, opt.(*OptMessageType).Type)
+	RequireHasOption(t, vendorInfo, &OptMessageType{Type: MessageTypeSelect})
 	require.True(t, dhcpv4.HasOption(vendorInfo, OptionVersion))
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionSelectedBootImageID))
-	opt = vendorInfo.GetOneOption(OptionSelectedBootImageID)
-	require.Equal(t, bootImage.ID, opt.(*OptSelectedBootImageID).ID)
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionServerIdentifier))
-	opt = vendorInfo.GetOneOption(OptionServerIdentifier)
-	require.True(t, serverID.Equal(opt.(*OptServerIdentifier).ServerID))
+	RequireHasOption(t, vendorInfo, &OptSelectedBootImageID{ID: bootImage.ID})
+	RequireHasOption(t, vendorInfo, &OptServerIdentifier{ServerID: serverID})
 }
 
 func TestInformSelectForAck_NoServerID(t *testing.T) {
@@ -214,7 +216,158 @@ func TestInformSelectForAck_ReplyPort(t *testing.T) {
 	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionVendorSpecificInformation))
 	opt := m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionReplyPort))
-	opt = vendorInfo.GetOneOption(OptionReplyPort)
-	require.Equal(t, replyPort, opt.(*OptReplyPort).Port)
+	RequireHasOption(t, vendorInfo, &OptReplyPort{Port: replyPort})
+}
+
+func TestNewReplyForInformList_NoDefaultImage(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	_, err := NewReplyForInformList(inform, ReplyConfig{})
+	require.Error(t, err)
+}
+
+func TestNewReplyForInformList_NoImages(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	fakeImage := BootImage{
+		ID: BootImageID{ImageType: BootImageTypeMacOSX},
+	}
+	_, err := NewReplyForInformList(inform, ReplyConfig{
+		Images:       []BootImage{},
+		DefaultImage: &fakeImage,
+	})
+	require.Error(t, err)
+
+	_, err = NewReplyForInformList(inform, ReplyConfig{
+		Images:        nil,
+		SelectedImage: &fakeImage,
+	})
+	require.Error(t, err)
+}
+
+func TestNewReplyForInformList(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	images := []BootImage{
+		BootImage{
+			ID: BootImageID{
+				IsInstall: true,
+				ImageType: BootImageTypeMacOSX,
+				Index:     0x7070,
+			},
+			Name: "image-1",
+		},
+		BootImage{
+			ID: BootImageID{
+				IsInstall: true,
+				ImageType: BootImageTypeMacOSX,
+				Index:     0x8080,
+			},
+			Name: "image-2",
+		},
+	}
+	config := ReplyConfig{
+		Images:         images,
+		DefaultImage:   &images[0],
+		ServerIP:       net.IP{9, 9, 9, 9},
+		ServerHostname: "bsdp.foo.com",
+		ServerPriority: 0x7070,
+	}
+	ack, err := NewReplyForInformList(inform, config)
+	require.NoError(t, err)
+	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
+	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+
+	// Validate options.
+	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
+
+	// Ensure options terminated with End option.
+	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options()[len(ack.Options())-1])
+
+	// Vendor-specific options.
+	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
+	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeList})
+	RequireHasOption(t, vendorOpts, &OptDefaultBootImageID{ID: images[0].ID})
+	RequireHasOption(t, vendorOpts, &OptServerPriority{Priority: 0x7070})
+	RequireHasOption(t, vendorOpts, &OptBootImageList{Images: images})
+
+	// Add in selected boot image, ensure it's in the generated ACK.
+	config.SelectedImage = &images[0]
+	ack, err = NewReplyForInformList(inform, config)
+	require.NoError(t, err)
+	vendorOpts = ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
+	RequireHasOption(t, vendorOpts, &OptSelectedBootImageID{ID: images[0].ID})
+}
+
+func TestNewReplyForInformSelect_NoSelectedImage(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	_, err := NewReplyForInformSelect(inform, ReplyConfig{})
+	require.Error(t, err)
+}
+
+func TestNewReplyForInformSelect_NoImages(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	fakeImage := BootImage{
+		ID: BootImageID{ImageType: BootImageTypeMacOSX},
+	}
+	_, err := NewReplyForInformSelect(inform, ReplyConfig{
+		Images:        []BootImage{},
+		SelectedImage: &fakeImage,
+	})
+	require.Error(t, err)
+
+	_, err = NewReplyForInformSelect(inform, ReplyConfig{
+		Images:        nil,
+		SelectedImage: &fakeImage,
+	})
+	require.Error(t, err)
+}
+
+func TestNewReplyForInformSelect(t *testing.T) {
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	images := []BootImage{
+		BootImage{
+			ID: BootImageID{
+				IsInstall: true,
+				ImageType: BootImageTypeMacOSX,
+				Index:     0x7070,
+			},
+			Name: "image-1",
+		},
+		BootImage{
+			ID: BootImageID{
+				IsInstall: true,
+				ImageType: BootImageTypeMacOSX,
+				Index:     0x8080,
+			},
+			Name: "image-2",
+		},
+	}
+	config := ReplyConfig{
+		Images:         images,
+		SelectedImage:  &images[0],
+		ServerIP:       net.IP{9, 9, 9, 9},
+		ServerHostname: "bsdp.foo.com",
+		ServerPriority: 0x7070,
+	}
+	ack, err := NewReplyForInformSelect(inform, config)
+	require.NoError(t, err)
+	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
+	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+
+	// Validate options.
+	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
+
+	// Ensure options are terminated with End option.
+	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options()[len(ack.Options())-1])
+
+	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
+	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeSelect})
+	RequireHasOption(t, vendorOpts, &OptSelectedBootImageID{ID: images[0].ID})
 }

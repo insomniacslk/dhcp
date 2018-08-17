@@ -6,7 +6,7 @@ import "github.com/insomniacslk/dhcp/dhcpv4"
 // on non-darwin hosts where the vendor class identifier cannot be determined.
 // It should mostly be used for debugging if testing BSDP on a non-darwin
 // system.
-const DefaultMacOSVendorClassIdentifier = "AAPLBSDP/i386/MacMini6,1"
+const DefaultMacOSVendorClassIdentifier = AppleVendorID + "/i386/MacMini6,1"
 
 // Options (occur as sub-options of DHCP option 43).
 const (
