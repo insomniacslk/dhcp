@@ -1,0 +1,21 @@
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/fanliao/go-promise v0.0.0-20141029170127-1890db352a72
+github.com/fanliao/go-promise
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/stretchr/testify v1.2.2
+github.com/stretchr/testify/require
+github.com/stretchr/testify/assert
+# github.com/vishvananda/netlink v1.0.0
+github.com/vishvananda/netlink
+github.com/vishvananda/netlink/nl
+# github.com/vishvananda/netns v0.0.0-20180720170159-13995c7128cc
+github.com/vishvananda/netns
+# golang.org/x/net v0.0.0-20180816102801-aaf60122140d
+golang.org/x/net/ipv4
+golang.org/x/net/bpf
+golang.org/x/net/internal/iana
+golang.org/x/net/internal/socket
+# golang.org/x/sys v0.0.0-20180816055513-1c9583448a9c
+golang.org/x/sys/unix
