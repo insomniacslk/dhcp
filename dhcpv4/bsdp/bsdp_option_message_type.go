@@ -19,6 +19,13 @@ const (
 	MessageTypeFailed MessageType = 3
 )
 
+func (m MessageType) String() string {
+	if s, ok := MessageTypeToString[m]; ok {
+		return s
+	}
+	return "Unknown"
+}
+
 // MessageTypeToString maps each BSDP message type to a human-readable string.
 var MessageTypeToString = map[MessageType]string{
 	MessageTypeList:   "LIST",
@@ -60,11 +67,7 @@ func (o *OptMessageType) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptMessageType) String() string {
-	s, ok := MessageTypeToString[o.Type]
-	if !ok {
-		s = "UNKNOWN"
-	}
-	return fmt.Sprintf("BSDP Message Type -> %s", s)
+	return fmt.Sprintf("BSDP Message Type -> %s", o.Type.String())
 }
 
 // Length returns the length of the data portion of this option.

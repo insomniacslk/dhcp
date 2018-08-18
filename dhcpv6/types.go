@@ -1,5 +1,9 @@
 package dhcpv6
 
+import (
+	"log"
+)
+
 // from http://www.networksorcery.com/enp/protocol/dhcpv6.htm
 
 // MessageType represents the kind of DHCPv6 message.
@@ -28,13 +32,18 @@ const (
 	MessageTypeLeaseQueryData     MessageType = 17
 )
 
+func (m MessageType) String() string {
+	if s, ok := MessageTypeToStringMap[m]; ok {
+		return s
+	}
+	return "Unknown"
+}
+
 // MessageTypeToString converts a MessageType to a human-readable string
 // representation.
 func MessageTypeToString(t MessageType) string {
-	if m, ok := MessageTypeToStringMap[t]; ok {
-		return m
-	}
-	return "Unknown"
+	log.Printf("Warning: MessageTypeToString is deprecated and will be removed, use MessageType.String() instead")
+	return t.String()
 }
 
 // MessageTypeToStringMap contains the mapping of MessageTypes to human-readable

@@ -42,5 +42,5 @@ func TestOptMessageTypeString(t *testing.T) {
 
 	// unknown
 	o = OptMessageType{99}
-	require.Equal(t, "BSDP Message Type -> UNKNOWN", o.String())
+	require.Equal(t, "BSDP Message Type -> Unknown", o.String())
 }

@@ -307,17 +307,13 @@ func (d *DHCPv4) Opcode() OpcodeType {
 
 // OpcodeToString returns the mnemonic name for the packet's opcode.
 func (d *DHCPv4) OpcodeToString() string {
-	opcode := OpcodeToString[d.opcode]
-	if opcode == "" {
-		opcode = "Invalid"
-	}
-	return opcode
+	return d.opcode.String()
 }
 
 // SetOpcode sets a new opcode for the packet. It prints a warning if the opcode
 // is unknown, but does not generate an error.
 func (d *DHCPv4) SetOpcode(opcode OpcodeType) {
-	if OpcodeToString[opcode] == "" {
+	if _, ok := OpcodeToString[opcode]; !ok {
 		log.Printf("Warning: unknown DHCPv4 opcode: %v", opcode)
 	}
 	d.opcode = opcode
@@ -695,8 +691,7 @@ func (d *DHCPv4) ValidateOptions() {
 				log.Print("Warning: found duplicate End option")
 			}
 			if opt.Code() != OptionEnd && opt.Code() != OptionPad {
-				name := OptionCodeToString[opt.Code()]
-				log.Printf("Warning: found option %v (%v) after End option", opt.Code(), name)
+				log.Printf("Warning: found option %v (%v) after End option", opt.Code(), opt.Code().String())
 			}
 		}
 		if opt.Code() == OptionEnd {

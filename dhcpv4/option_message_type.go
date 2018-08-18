@@ -43,11 +43,7 @@ func (o *OptMessageType) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptMessageType) String() string {
-	s, ok := MessageTypeToString[o.MessageType]
-	if !ok {
-		s = "UNKNOWN"
-	}
-	return fmt.Sprintf("DHCP Message Type -> %s", s)
+	return fmt.Sprintf("DHCP Message Type -> %s", o.MessageType.String())
 }
 
 // Length returns the length of the data portion (excluding option code and byte
