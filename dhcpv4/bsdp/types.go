@@ -8,10 +8,6 @@ import "github.com/insomniacslk/dhcp/dhcpv4"
 // system.
 const DefaultMacOSVendorClassIdentifier = AppleVendorID + "/i386/MacMini6,1"
 
-// OptionCode represents a BSDP option code. It is equivalent to
-// dhcpv4.OptionCode
-type OptionCode = dhcpv4.OptionCode
-
 // Options (occur as sub-options of DHCP option 43).
 const (
 	OptionMessageType                   dhcpv4.OptionCode = 1
@@ -32,7 +28,7 @@ const (
 
 // OptionCodeToString maps BSDP OptionCodes to human-readable strings
 // describing what they are.
-var OptionCodeToString = map[OptionCode]string{
+var OptionCodeToString = map[dhcpv4.OptionCode]string{
 	OptionMessageType:                   "BSDP Message Type",
 	OptionVersion:                       "BSDP Version",
 	OptionServerIdentifier:              "BSDP Server Identifier",
