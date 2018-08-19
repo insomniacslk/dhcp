@@ -10,4 +10,3 @@ See examples at https://github.com/insomniacslk/exdhcp
 * Systemboot, a LinuxBoot distribution that runs as system firmware, https://github.com/systemboot/systemboot 
 * Router7, a pure-Go router implementation for fiber7 connections, https://github.com/rtr7/router7
 * Beats from ElasticSearch, https://github.com/elastic/beats
-* APM Server from ElasticSearch, https://github.com/elastic/apm-server
