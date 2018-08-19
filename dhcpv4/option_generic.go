@@ -52,11 +52,7 @@ func (o OptionGeneric) ToBytes() []byte {
 
 // String returns a human-readable representation of a generic option.
 func (o OptionGeneric) String() string {
-	code, ok := OptionCodeToString[o.OptionCode]
-	if !ok {
-		code = "Unknown"
-	}
-	return fmt.Sprintf("%v -> %v", code, o.Data)
+	return fmt.Sprintf("%v -> %v", o.OptionCode.String(), o.Data)
 }
 
 // Length returns the number of bytes comprising the data section of the option.

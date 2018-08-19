@@ -48,5 +48,5 @@ func TestOptMessageTypeString(t *testing.T) {
 
 	// unknown
 	o = OptMessageType{MessageType: 99}
-	require.Equal(t, "DHCP Message Type -> UNKNOWN", o.String())
+	require.Equal(t, "DHCP Message Type -> Unknown", o.String())
 }

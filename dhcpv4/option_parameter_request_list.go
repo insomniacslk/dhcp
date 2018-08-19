@@ -53,11 +53,11 @@ func (o *OptParameterRequestList) ToBytes() []byte {
 func (o *OptParameterRequestList) String() string {
 	var optNames []string
 	for _, ro := range o.RequestedOpts {
-		if name, ok := OptionCodeToString[ro]; ok {
-			optNames = append(optNames, name)
-		} else {
-			optNames = append(optNames, fmt.Sprintf("Unknown (%v)", ro))
+		name := ro.String()
+		if name == "Unknown" {
+			name += fmt.Sprintf("%s (%v)", name, ro)
 		}
+		optNames = append(optNames, name)
 	}
 	return fmt.Sprintf("Parameter Request List -> [%v]", strings.Join(optNames, ", "))
 }

@@ -21,6 +21,13 @@ const (
 	MessageTypeInform   MessageType = 8
 )
 
+func (m MessageType) String() string {
+	if s, ok := MessageTypeToString[m]; ok {
+		return s
+	}
+	return "Unknown"
+}
+
 // MessageTypeToString maps DHCP message types to human-readable strings.
 var MessageTypeToString = map[MessageType]string{
 	MessageTypeDiscover: "DISCOVER",
@@ -41,6 +48,13 @@ const (
 	OpcodeBootRequest OpcodeType = 1
 	OpcodeBootReply   OpcodeType = 2
 )
+
+func (o OpcodeType) String() string {
+	if s, ok := OpcodeToString[o]; ok {
+		return s
+	}
+	return "Unknown"
+}
 
 // OpcodeToString maps an OpcodeType to its mnemonic name
 var OpcodeToString = map[OpcodeType]string{
@@ -211,6 +225,13 @@ const (
 	// Options 224-254 are reserved for private use
 	OptionEnd OptionCode = 255
 )
+
+func (o OptionCode) String() string {
+	if s, ok := OptionCodeToString[o]; ok {
+		return s
+	}
+	return "Unknown"
+}
 
 // OptionCodeToString maps an OptionCode to its mnemonic name
 var OptionCodeToString = map[OptionCode]string{

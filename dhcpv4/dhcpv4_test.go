@@ -250,7 +250,7 @@ func TestToStringMethods(t *testing.T) {
 	d.SetOpcode(OpcodeBootReply)
 	require.Equal(t, "BootReply", d.OpcodeToString())
 	d.SetOpcode(OpcodeType(0))
-	require.Equal(t, "Invalid", d.OpcodeToString())
+	require.Equal(t, "Unknown", d.OpcodeToString())
 
 	// HwTypeToString
 	d.SetHwType(iana.HwTypeEthernet)
