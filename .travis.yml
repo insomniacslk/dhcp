@@ -8,6 +8,10 @@ go:
   - "1.10"
   - tip
 
+env:
+  # to enable Go modules on Go v1.11
+  - GO111MODULE=on
+
 before_install:
   - go get -t -v ./...
 
