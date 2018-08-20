@@ -35,3 +35,19 @@ func TestWithServerID(t *testing.T) {
 	sid := opt.(*OptServerId)
 	require.Equal(t, sid.Sid, duid)
 }
+
+func TestWithRequestedOptions(t *testing.T) {
+	// Check if ORO is created when no ORO present
+	m, err := NewMessage(WithRequestedOptions(OptionClientID))
+	require.NoError(t, err)
+	opt := m.GetOneOption(OptionORO)
+	require.NotNil(t, opt)
+	oro := opt.(*OptRequestedOption)
+	require.ElementsMatch(t, oro.RequestedOptions(), []OptionCode{OptionClientID})
+	// Check if already set options are preserved
+	m = WithRequestedOptions(OptionServerID)(m)
+	opt = m.GetOneOption(OptionORO)
+	require.NotNil(t, opt)
+	oro = opt.(*OptRequestedOption)
+	require.ElementsMatch(t, oro.RequestedOptions(), []OptionCode{OptionClientID, OptionServerID})
+}

@@ -62,3 +62,19 @@ func WithArchType(at iana.ArchType) Modifier {
 		return d
 	}
 }
+
+// WithRequestedOptions adds requested options to the packet
+func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		opt := d.GetOneOption(OptionORO)
+		if opt == nil {
+			opt = &OptRequestedOption{}
+		}
+		oro := opt.(*OptRequestedOption)
+		for _, optionCode := range optionCodes {
+			oro.AddRequestedOption(optionCode)
+		}
+		d.UpdateOption(oro)
+		return d
+	}
+}

@@ -37,6 +37,11 @@ func (op *OptRequestedOption) SetRequestedOptions(opts []OptionCode) {
 }
 
 func (op *OptRequestedOption) AddRequestedOption(opt OptionCode) {
+	for _, requestedOption := range op.requestedOptions {
+		if opt == requestedOption {
+			fmt.Printf("Warning: option %s is already set, appending duplicate", OptionCodeToString[opt])
+		}
+	}
 	op.requestedOptions = append(op.requestedOptions, opt)
 }
 
