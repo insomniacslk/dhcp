@@ -19,7 +19,7 @@ func TestDHCPv6Relay(t *testing.T) {
 		// options is left empty here for testing purposes, even if it's
 		// mandatory to have at least a relay message option
 	}
-	if mt := r.MessageType(); mt != MessageTypeRelayForward {
+	if mt := r.Type(); mt != MessageTypeRelayForward {
 		t.Fatalf("Invalid message type. Expected %v, got %v", MessageTypeRelayForward, mt)
 	}
 	if hc := r.HopCount(); hc != 10 {
@@ -40,7 +40,7 @@ func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 	r := DHCPv6Relay{}
 	// set and get message type
 	r.SetMessageType(MessageTypeRelayReply)
-	if mt := r.MessageType(); mt != MessageTypeRelayReply {
+	if mt := r.Type(); mt != MessageTypeRelayReply {
 		t.Fatalf("Invalid message type. Expected %v, got %v", MessageTypeRelayReply, mt)
 	}
 	// set and get hop count

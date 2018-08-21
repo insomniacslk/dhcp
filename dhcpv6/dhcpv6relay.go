@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -27,7 +28,7 @@ func (r *DHCPv6Relay) MessageTypeToString() string {
 func (r *DHCPv6Relay) String() string {
 	ret := fmt.Sprintf(
 		"DHCPv6Relay(messageType=%v hopcount=%v, linkaddr=%v, peeraddr=%v, %d options)",
-		r.MessageTypeToString(), r.hopCount, r.linkAddr, r.peerAddr, len(r.options),
+		r.Type().String(), r.hopCount, r.linkAddr, r.peerAddr, len(r.options),
 	)
 	return ret
 }
@@ -40,7 +41,7 @@ func (r *DHCPv6Relay) Summary() string {
 			"  linkaddr=%v\n"+
 			"  peeraddr=%v\n"+
 			"  options=%v\n",
-		r.MessageTypeToString(),
+		r.Type().String(),
 		r.hopCount,
 		r.linkAddr,
 		r.peerAddr,
@@ -63,6 +64,7 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 }
 
 func (r *DHCPv6Relay) MessageType() MessageType {
+	log.Printf("Warning: DHCPv6Relay.MessageType() is deprecated and will be removed, use DHCPv6Relay.Type() instead")
 	return r.messageType
 }
 
