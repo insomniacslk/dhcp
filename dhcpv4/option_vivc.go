@@ -30,12 +30,12 @@ func ParseOptVIVC(data []byte) (*OptVIVC, error) {
 	if code != OptionVendorIdentifyingVendorClass {
 		return nil, fmt.Errorf("expected code %v, got %v", OptionVendorIdentifyingVendorClass, code)
 	}
-	length := int(data[1])
-	data = data[2:]
 
-	if length != len(data) {
+	length := int(data[1])
+	if len(data) < 2+length {
 		return nil, ErrShortByteStream
 	}
+	data = data[2:length+2]
 
 	ids := []VIVCIdentifier{}
 	for len(data) > 5 {

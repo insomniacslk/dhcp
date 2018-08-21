@@ -56,6 +56,13 @@ func TestParseOptVICO(t *testing.T) {
 	data[6] = 40
 	_, err = ParseOptVIVC(data)
 	require.Error(t, err, "should get error from bad length")
+
+	// Longer than length
+	data[1] = 10
+	data[6] = 5
+	o, err = ParseOptVIVC(data)
+	require.NoError(t, err)
+	require.Equal(t, o.Identifiers[0].Data, []byte("Cisco"))
 }
 
 func TestOptVIVCString(t *testing.T) {
