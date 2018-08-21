@@ -239,7 +239,7 @@ func (d *DHCPv6Message) Type() MessageType {
 }
 
 func (d *DHCPv6Message) SetMessage(messageType MessageType) {
-	msgString := MessageTypeToString(messageType)
+	msgString := messageType.String()
 	if msgString == "" {
 		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
 	}
@@ -315,7 +315,7 @@ func (d *DHCPv6Message) IsOptionRequested(requested OptionCode) bool {
 
 func (d *DHCPv6Message) String() string {
 	return fmt.Sprintf("DHCPv6Message(messageType=%v transactionID=0x%06x, %d options)",
-		d.MessageTypeToString(), d.TransactionID(), len(d.options),
+		d.Type().String(), d.TransactionID(), len(d.options),
 	)
 }
 
@@ -324,7 +324,7 @@ func (d *DHCPv6Message) Summary() string {
 		"DHCPv6Message\n"+
 			"  messageType=%v\n"+
 			"  transactionid=0x%06x\n",
-		d.MessageTypeToString(),
+		d.Type().String(),
 		d.TransactionID(),
 	)
 	ret += "  options=["
