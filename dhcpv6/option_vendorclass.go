@@ -74,5 +74,8 @@ func ParseOptVendorClass(data []byte) (*OptVendorClass, error) {
 		opt.Data = append(opt.Data, data[2:vcLen+2])
 		data = data[2+vcLen:]
 	}
+	if len(opt.Data) < 1 {
+		return nil, errors.New("ParseOptVendorClass: at least one vendor class data is required")
+	}
 	return &opt, nil
 }
