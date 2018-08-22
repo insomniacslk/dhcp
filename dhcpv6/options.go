@@ -72,38 +72,40 @@ func ParseOption(dataStart []byte) (Option, error) {
 		opt, err = ParseOptClientId(optData)
 	case OptionServerID:
 		opt, err = ParseOptServerId(optData)
-	case OptionElapsedTime:
-		opt, err = ParseOptElapsedTime(optData)
+	case OptionIANA:
+		opt, err = ParseOptIANA(optData)
+	case OptionIAAddr:
+		opt, err = ParseOptIAAddress(optData)
 	case OptionORO:
 		opt, err = ParseOptRequestedOption(optData)
+	case OptionElapsedTime:
+		opt, err = ParseOptElapsedTime(optData)
+	case OptionRelayMsg:
+		opt, err = ParseOptRelayMsg(optData)
+	case OptionStatusCode:
+		opt, err = ParseOptStatusCode(optData)
+	case OptionUserClass:
+		opt, err = ParseOptUserClass(optData)
+	case OptionVendorClass:
+		opt, err = ParseOptVendorClass(optData)
+	case OptionInterfaceID:
+		opt, err = ParseOptInterfaceId(optData)
 	case OptionDNSRecursiveNameServer:
 		opt, err = ParseOptDNSRecursiveNameServer(optData)
 	case OptionDomainSearchList:
 		opt, err = ParseOptDomainSearchList(optData)
-	case OptionIANA:
-		opt, err = ParseOptIANA(optData)
 	case OptionIAPD:
 		opt, err = ParseOptIAForPrefixDelegation(optData)
-	case OptionIAAddr:
-		opt, err = ParseOptIAAddress(optData)
 	case OptionIAPrefix:
 		opt, err = ParseOptIAPrefix(optData)
-	case OptionStatusCode:
-		opt, err = ParseOptStatusCode(optData)
-	case OptionRelayMsg:
-		opt, err = ParseOptRelayMsg(optData)
 	case OptionRemoteID:
 		opt, err = ParseOptRemoteId(optData)
-	case OptionInterfaceID:
-		opt, err = ParseOptInterfaceId(optData)
+	case OptionBootfileURL:
+		opt, err = ParseOptBootFileURL(optData)
 	case OptionClientArchType:
 		opt, err = ParseOptClientArchType(optData)
 	case OptionNII:
 		opt, err = ParseOptNetworkInterfaceId(optData)
-	case OptionBootfileURL:
-		opt, err = ParseOptBootFileURL(optData)
-	case OptionUserClass:
-		opt, err = ParseOptUserClass(optData)
 	default:
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
 	}
