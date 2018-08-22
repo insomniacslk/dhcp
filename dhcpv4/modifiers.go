@@ -47,3 +47,19 @@ func WithNetboot(d *DHCPv4) *DHCPv4 {
 	}
 	return d
 }
+
+// WithRequestedOptions adds requested options to the packet
+func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		params := d.GetOneOption(OptionParameterRequestList)
+		if params == nil {
+			params = &OptParameterRequestList{}
+			d.AddOption(params)
+		}
+		opts := params.(*OptParameterRequestList)
+		for _, optionCode := range optionCodes {
+			opts.RequestedOpts = append(opts.RequestedOpts, optionCode)
+		}
+		return d
+	}
+}

@@ -67,3 +67,22 @@ func TestWithNetbootExistingBoth(t *testing.T) {
 	d = WithNetboot(d)
 	require.Equal(t, "Parameter Request List -> [Bootfile Name, TFTP Server Name]", d.options[0].String())
 }
+
+func TestWithRequestedOptions(t *testing.T) {
+	// Check if OptionParameterRequestList is created when not present
+	d, err := New()
+	require.NoError(t, err)
+	d = WithRequestedOptions(OptionFQDN)(d)
+	require.NotNil(t, d)
+	o := d.GetOneOption(OptionParameterRequestList)
+	require.NotNil(t, o)
+	opts := o.(*OptParameterRequestList)
+	require.ElementsMatch(t, opts.RequestedOpts, []OptionCode{OptionFQDN})
+	// Check if already set options are preserved
+	d = WithRequestedOptions(OptionHostName)(d)
+	require.NotNil(t, d)
+	o = d.GetOneOption(OptionParameterRequestList)
+	require.NotNil(t, o)
+	opts = o.(*OptParameterRequestList)
+	require.ElementsMatch(t, opts.RequestedOpts, []OptionCode{OptionFQDN, OptionHostName})
+}
