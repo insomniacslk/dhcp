@@ -9,8 +9,8 @@ import (
 
 // OptVendorClass represents a DHCPv6 Vendor Class option
 type OptVendorClass struct {
-	EntID uint32
-	Data  [][]byte
+	EnterpriseNumber uint32
+	Data             [][]byte
 }
 
 // Code returns the option code
@@ -23,7 +23,7 @@ func (op *OptVendorClass) ToBytes() []byte {
 	buf := make([]byte, 8)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionVendorClass))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	binary.BigEndian.PutUint32(buf[4:8], uint32(op.EntID))
+	binary.BigEndian.PutUint32(buf[4:8], uint32(op.EnterpriseNumber))
 	u16 := make([]byte, 2)
 	for _, data := range op.Data {
 		binary.BigEndian.PutUint16(u16, uint16(len(data)))
@@ -48,7 +48,7 @@ func (op *OptVendorClass) String() string {
 	for _, data := range op.Data {
 		vcStrings = append(vcStrings, string(data))
 	}
-	return fmt.Sprintf("OptVendorClass{enterprisenum=%d, data=[%s]}", op.EntID, strings.Join(vcStrings, ", "))
+	return fmt.Sprintf("OptVendorClass{enterprisenum=%d, data=[%s]}", op.EnterpriseNumber, strings.Join(vcStrings, ", "))
 }
 
 // ParseOptVendorClass builds an OptVendorClass structure from a sequence of
@@ -58,7 +58,7 @@ func ParseOptVendorClass(data []byte) (*OptVendorClass, error) {
 	if len(data) < 4 {
 		return nil, fmt.Errorf("Invalid vendor opts data length. Expected at least 4 bytes, got %v", len(data))
 	}
-	opt.EntID = binary.BigEndian.Uint32(data[:4])
+	opt.EnterpriseNumber = binary.BigEndian.Uint32(data[:4])
 	data = data[4:]
 	for {
 		if len(data) == 0 {
