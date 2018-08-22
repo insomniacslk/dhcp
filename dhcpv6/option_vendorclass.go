@@ -51,8 +51,8 @@ func (op *OptVendorClass) String() string {
 	return fmt.Sprintf("OptVendorClass{enterprisenum=%d, data=[%s]}", op.EntID, strings.Join(vcStrings, ", "))
 }
 
-// build an OptVendorClass structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
+// ParseOptVendorClass builds an OptVendorClass structure from a sequence of
+// bytes. The input data does not include option code and length bytes.
 func ParseOptVendorClass(data []byte) (*OptVendorClass, error) {
 	opt := OptVendorClass{}
 	if len(data) < 4 {
