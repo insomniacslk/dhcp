@@ -1,6 +1,7 @@
 package dhcpv4
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -85,4 +86,16 @@ func TestWithRequestedOptions(t *testing.T) {
 	require.NotNil(t, o)
 	opts = o.(*OptParameterRequestList)
 	require.ElementsMatch(t, opts.RequestedOpts, []OptionCode{OptionFQDN, OptionHostName})
+}
+
+func TestWithRelay(t *testing.T) {
+	d, err := New()
+	require.NoError(t, err)
+	ip := net.ParseIP("10.0.0.1")
+	require.NotNil(t, ip)
+	d = WithRelay(ip)(d)
+	require.NotNil(t, d)
+	require.True(t, d.IsUnicast(), "expected unicast")
+	require.Equal(t, ip, d.GatewayIPAddr())
+	require.Equal(t, uint8(1), d.HopCount())
 }
