@@ -1,5 +1,9 @@
 package dhcpv4
 
+import (
+	"net"
+)
+
 // WithUserClass adds a user class option to the packet.
 // The rfc parameter allows you to specify if the userclass should be
 // rfc compliant or not. More details in issue #113
@@ -60,6 +64,17 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 		for _, optionCode := range optionCodes {
 			opts.RequestedOpts = append(opts.RequestedOpts, optionCode)
 		}
+		return d
+	}
+}
+
+// WithRelay adds parameters required for DHCPv4 to be relayed by the relay
+// server with given ip
+func WithRelay(ip net.IP) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		d.SetUnicast()
+		d.SetGatewayIPAddr(ip)
+		d.SetHopCount(1)
 		return d
 	}
 }
