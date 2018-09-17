@@ -201,13 +201,14 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 
 // NewReplyFromDHCPv6Message creates a new REPLY packet based on a
 // DHCPv6Message. The function is to be used when generating a reply to
-// REQUEST, CONFIRM, RENEW, REBIND and RELEASE packets.
+// REQUEST, CONFIRM, RENEW, REBIND, RELEASE and INFORMATION-REQUEST packets.
 func NewReplyFromDHCPv6Message(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
 	if message == nil {
 		return nil, errors.New("DHCPv6Message cannot be nil")
 	}
 	switch message.Type() {
-	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew, MessageTypeRebind, MessageTypeRelease:
+	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew,
+		MessageTypeRebind, MessageTypeRelease, MessageTypeInformationRequest:
 	default:
 		return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}

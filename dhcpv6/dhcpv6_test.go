@@ -174,6 +174,12 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
+	msg.SetMessage(MessageTypeInformationRequest)
+	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	require.NoError(t, err)
+	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.Type(), MessageTypeReply)
+
 	msg.SetMessage(MessageTypeSolicit)
 	rep, err = NewReplyFromDHCPv6Message(&msg)
 	require.Error(t, err)
