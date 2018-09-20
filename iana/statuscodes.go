@@ -5,12 +5,13 @@ type StatusCode uint16
 
 // IANA status codes as defined by rfc 3315 par. 24..4
 const (
-	StatusSuccess      StatusCode = 0
-	StatusUnspecFail   StatusCode = 1
-	StatusNoAddrsAvail StatusCode = 2
-	StatusNoBinding    StatusCode = 3
-	StatusNotOnLink    StatusCode = 4
-	StatusUseMulticast StatusCode = 5
+	StatusSuccess       StatusCode = 0
+	StatusUnspecFail    StatusCode = 1
+	StatusNoAddrsAvail  StatusCode = 2
+	StatusNoBinding     StatusCode = 3
+	StatusNotOnLink     StatusCode = 4
+	StatusUseMulticast  StatusCode = 5
+	StatusNoPrefixAvail StatusCode = 6
 )
 
 // StatusCodeToString returns a mnemonic name for a given status code
@@ -23,10 +24,11 @@ func StatusCodeToString(s StatusCode) string {
 
 // StatusCodeToStringMap maps status codes to their names
 var StatusCodeToStringMap = map[StatusCode]string{
-	StatusSuccess:      "Success",
-	StatusUnspecFail:   "UnspecFail",
-	StatusNoAddrsAvail: "NoAddrsAvail",
-	StatusNoBinding:    "NoBinding",
-	StatusNotOnLink:    "NotOnLink",
-	StatusUseMulticast: "UseMulticast",
+	StatusSuccess:       "Success",
+	StatusUnspecFail:    "UnspecFail",
+	StatusNoAddrsAvail:  "NoAddrsAvail",
+	StatusNoBinding:     "NoBinding",
+	StatusNotOnLink:     "NotOnLink",
+	StatusUseMulticast:  "UseMulticast",
+	StatusNoPrefixAvail: "NoPrefixAvail",
 }
