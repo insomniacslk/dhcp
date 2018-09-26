@@ -51,14 +51,18 @@ func main() {
 
 */
 
+// Handler is a type that defines the handler function to be called every time a
+// valid DHCPv6 message is received
 type Handler func(conn net.PacketConn, peer net.Addr, m DHCPv6)
 
+// Server represents a DHCPv6 server object
 type Server struct {
 	conn      net.PacketConn
 	LocalAddr net.UDPAddr
 	Handler   Handler
 }
 
+// ActivateAndServe starts the DHCPv6 server
 func (s *Server) ActivateAndServe() error {
 	if s.conn == nil {
 		conn, err := net.ListenUDP("udp6", &s.LocalAddr)
@@ -99,6 +103,7 @@ func (s *Server) ActivateAndServe() error {
 	return nil
 }
 
+// NewServer initializes and returns a new Server object
 func NewServer(addr net.UDPAddr, handler Handler) *Server {
 	return &Server{
 		LocalAddr: addr,
