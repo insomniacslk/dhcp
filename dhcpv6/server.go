@@ -66,6 +66,8 @@ type Server struct {
 	localAddr  net.UDPAddr
 }
 
+// LocalAddr returns the local address of the listening socked, or nil if not
+// listening
 func (s *Server) LocalAddr() net.Addr {
 	if s.conn == nil {
 		return nil
