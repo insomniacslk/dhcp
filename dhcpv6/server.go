@@ -128,6 +128,7 @@ func (s *Server) ActivateAndServe() error {
 	return nil
 }
 
+// Close sends a termination request to the server, and closes the UDP listener
 func (s *Server) Close() error {
 	s.shouldStop = true
 	for {
