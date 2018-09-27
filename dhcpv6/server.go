@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -60,8 +61,8 @@ type Handler func(conn net.PacketConn, peer net.Addr, m DHCPv6)
 // Server represents a DHCPv6 server object
 type Server struct {
 	conn       net.PacketConn
-	shouldStop bool
-	running    bool
+	connMutex  sync.Mutex
+	shouldStop chan bool
 	Handler    Handler
 	localAddr  net.UDPAddr
 }
@@ -69,6 +70,8 @@ type Server struct {
 // LocalAddr returns the local address of the listening socked, or nil if not
 // listening
 func (s *Server) LocalAddr() net.Addr {
+	s.connMutex.Lock()
+	defer s.connMutex.Unlock()
 	if s.conn == nil {
 		return nil
 	}
@@ -77,7 +80,7 @@ func (s *Server) LocalAddr() net.Addr {
 
 // ActivateAndServe starts the DHCPv6 server
 func (s *Server) ActivateAndServe() error {
-	s.shouldStop = false
+	s.connMutex.Lock()
 	if s.conn == nil {
 		conn, err := net.ListenUDP("udp6", &s.localAddr)
 		if err != nil {
@@ -85,6 +88,7 @@ func (s *Server) ActivateAndServe() error {
 		}
 		s.conn = conn
 	}
+	s.connMutex.Unlock()
 	var (
 		pc *net.UDPConn
 		ok bool
@@ -97,11 +101,12 @@ func (s *Server) ActivateAndServe() error {
 	}
 	log.Printf("Server listening on %s", pc.LocalAddr())
 	log.Print("Ready to handle requests")
-	s.running = true
 	for {
-		if s.shouldStop {
-			s.running = false
+		log.Printf("CHECK")
+		select {
+		case <-s.shouldStop:
 			break
+		case <-time.After(time.Millisecond):
 		}
 		pc.SetReadDeadline(time.Now().Add(time.Second))
 		rbuf := make([]byte, 4096) // FIXME this is bad
@@ -130,13 +135,9 @@ func (s *Server) ActivateAndServe() error {
 
 // Close sends a termination request to the server, and closes the UDP listener
 func (s *Server) Close() error {
-	s.shouldStop = true
-	for {
-		if !s.running {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
+	s.shouldStop <- true
+	s.connMutex.Lock()
+	defer s.connMutex.Unlock()
 	if s.conn != nil {
 		return s.conn.Close()
 	}
@@ -146,7 +147,8 @@ func (s *Server) Close() error {
 // NewServer initializes and returns a new Server object
 func NewServer(addr net.UDPAddr, handler Handler) *Server {
 	return &Server{
-		localAddr: addr,
-		Handler:   handler,
+		localAddr:  addr,
+		Handler:    handler,
+		shouldStop: make(chan bool, 1),
 	}
 }
