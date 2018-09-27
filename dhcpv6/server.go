@@ -67,7 +67,7 @@ type Server struct {
 	localAddr  net.UDPAddr
 }
 
-// LocalAddr returns the local address of the listening socked, or nil if not
+// LocalAddr returns the local address of the listening socket, or nil if not
 // listening
 func (s *Server) LocalAddr() net.Addr {
 	s.connMutex.Lock()
@@ -88,6 +88,10 @@ func (s *Server) ActivateAndServe() error {
 		}
 		s.conn = conn
 	}
+	defer func() {
+		s.conn.Close()
+		s.conn = nil
+	}()
 	s.connMutex.Unlock()
 	var (
 		pc *net.UDPConn
@@ -102,7 +106,6 @@ func (s *Server) ActivateAndServe() error {
 	log.Printf("Server listening on %s", pc.LocalAddr())
 	log.Print("Ready to handle requests")
 	for {
-		log.Printf("CHECK")
 		select {
 		case <-s.shouldStop:
 			break
@@ -129,7 +132,6 @@ func (s *Server) ActivateAndServe() error {
 		}
 		s.Handler(pc, peer, m)
 	}
-	s.conn.Close()
 	return nil
 }
 
