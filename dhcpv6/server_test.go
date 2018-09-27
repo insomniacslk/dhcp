@@ -59,8 +59,12 @@ func TestNewServer(t *testing.T) {
 
 func TestServerActivateAndServe(t *testing.T) {
 	handler := func(conn net.PacketConn, peer net.Addr, m DHCPv6) {
-		log.Printf("MESSAGE from %s, reply with %v", peer, m.ToBytes())
-		if _, err := conn.WriteTo(m.ToBytes(), peer); err != nil {
+		adv, err := NewAdvertiseFromSolicit(m)
+		if err != nil {
+			log.Printf("NewAdvertiseFromSolicit failed: %v", err)
+			return
+		}
+		if _, err := conn.WriteTo(adv.ToBytes(), peer); err != nil {
 			log.Printf("Cannot reply to client: %v", err)
 		}
 	}

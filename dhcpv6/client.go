@@ -127,6 +127,13 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		return nil, err
 	}
 	defer conn.Close()
+	// wait for the listener to be ready
+	for {
+		if conn.LocalAddr() != nil {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
 
 	// send the packet out
 	conn.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
