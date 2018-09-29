@@ -34,7 +34,7 @@ func ParseOptBootImageList(data []byte) (*OptBootImageList, error) {
 	var bootImages []BootImage
 	idx := 2
 	for {
-		if idx >= len(data) {
+		if idx >= length+2 {
 			break
 		}
 		image, err := BootImageFromBytes(data[idx:])

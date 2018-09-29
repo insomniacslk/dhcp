@@ -82,6 +82,59 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 	}
 	o, err = ParseOptVendorSpecificInformation(data)
 	require.Error(t, err)
+
+	// Boot images + default.
+	data = []byte{
+		43,      // code
+		7,       // length
+		1, 1, 1, // List option
+		2, 2, 1, 1, // Version option
+		5, 2, 1, 1, // Reply port option
+
+		// Boot image list
+		9, 22,
+		0x1, 0x0, 0x03, 0xe9, // ID
+		6, // name length
+		'b', 's', 'd', 'p', '-', '1',
+		0x80, 0x0, 0x23, 0x31, // ID
+		6, // name length
+		'b', 's', 'd', 'p', '-', '2',
+
+		// Default Boot Image ID
+		7, 4, 0x1, 0x0, 0x03, 0xe9,
+	}
+	o, err = ParseOptVendorSpecificInformation(data)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(o.Options))
+	for _, opt := range []dhcpv4.OptionCode{
+		OptionMessageType,
+		OptionVersion,
+		OptionReplyPort,
+		OptionBootImageList,
+		OptionDefaultBootImageID,
+	} {
+		require.True(t, dhcpv4.HasOption(o, opt))
+	}
+	optBootImage := o.GetOneOption(OptionBootImageList).(*OptBootImageList)
+	expectedBootImages := []BootImage{
+		BootImage{
+			ID: BootImageID{
+				IsInstall: false,
+				ImageType: BootImageTypeMacOSX,
+				Index:     1001,
+			},
+			Name: "bsdp-1",
+		},
+		BootImage{
+			ID: BootImageID{
+				IsInstall: true,
+				ImageType: BootImageTypeMacOS9,
+				Index:     9009,
+			},
+			Name: "bsdp-2",
+		},
+	}
+	require.Equal(t, expectedBootImages, optBootImage.Images)
 }
 
 func TestOptVendorSpecificInformationString(t *testing.T) {
