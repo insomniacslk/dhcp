@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -127,8 +128,12 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		return nil, err
 	}
 	defer conn.Close()
-	// wait for the listener to be ready
+	// wait for the listener to be ready, fail if it takes too much time
+	deadline := time.Now().Add(time.Second)
 	for {
+		if now := time.Now(); now.After(deadline) {
+			return nil, errors.New("Timed out waiting for listener to be ready")
+		}
 		if conn.LocalAddr() != nil {
 			break
 		}
