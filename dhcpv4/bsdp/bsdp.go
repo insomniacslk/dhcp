@@ -51,6 +51,9 @@ func needsReplyPort(replyPort uint16) bool {
 	return replyPort != 0 && replyPort != dhcpv4.ClientPort
 }
 
+// MessageTypeFromPacket extracts the BSDP message type (LIST, SELECT) from the
+// vendor-specific options and returns it. If the message type option cannot be
+// found, returns false.
 func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) (MessageType, bool) {
 	var (
 		messageType MessageType
