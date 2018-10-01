@@ -371,3 +371,72 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeSelect})
 	RequireHasOption(t, vendorOpts, &OptSelectedBootImageID{ID: images[0].ID})
 }
+
+func TestMessageTypeForPacket(t *testing.T) {
+	var (
+		pkt            *dhcpv4.DHCPv4
+		gotMessageType MessageType
+		gotOK          bool
+	)
+
+	testcases := []struct {
+		tcName          string
+		opts            []dhcpv4.Option
+		wantOK          bool
+		wantMessageType MessageType
+	}{
+		{
+			tcName: "No options",
+			opts:   []dhcpv4.Option{},
+			wantOK: false,
+		},
+		{
+			tcName: "Some options, no vendor opts",
+			opts: []dhcpv4.Option{
+				&dhcpv4.OptHostName{HostName: "foobar1234"},
+			},
+			wantOK: false,
+		},
+		{
+			tcName: "Vendor opts, no message type",
+			opts: []dhcpv4.Option{
+				&dhcpv4.OptHostName{HostName: "foobar1234"},
+				&OptVendorSpecificInformation{
+					Options: []dhcpv4.Option{
+						&OptVersion{Version: Version1_1},
+					},
+				},
+			},
+			wantOK: false,
+		},
+		{
+			tcName: "Vendor opts, with message type",
+			opts: []dhcpv4.Option{
+				&dhcpv4.OptHostName{HostName: "foobar1234"},
+				&OptVendorSpecificInformation{
+					Options: []dhcpv4.Option{
+						&OptVersion{Version: Version1_1},
+						&OptMessageType{Type: MessageTypeList},
+					},
+				},
+			},
+			wantOK:          true,
+			wantMessageType: MessageTypeList,
+		},
+	}
+	for _, tt := range testcases {
+		t.Run(tt.tcName, func(t *testing.T) {
+			pkt, _ = dhcpv4.New()
+			for _, opt := range tt.opts {
+				pkt.AddOption(opt)
+			}
+			gotMessageType, gotOK = MessageTypeFromPacket(pkt)
+			if tt.wantOK {
+				require.True(t, gotOK)
+				require.Equal(t, tt.wantMessageType, gotMessageType)
+			} else {
+				require.False(t, gotOK)
+			}
+		})
+	}
+}
