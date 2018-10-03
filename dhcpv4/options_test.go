@@ -144,6 +144,13 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, OptionClientSystemArchitectureType, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	option = []byte{17, 4, '/', 'f', 'o', 'o'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRootPath, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
