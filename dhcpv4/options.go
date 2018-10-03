@@ -80,6 +80,8 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptVIVC(data)
 	case OptionDNSDomainSearchList:
 		opt, err = ParseOptDomainSearch(data)
+	case OptionRootPath:
+		opt, err = ParseOptRootPath(data)
 	default:
 		opt, err = ParseOptionGeneric(data)
 	}
