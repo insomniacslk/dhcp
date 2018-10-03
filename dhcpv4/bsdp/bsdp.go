@@ -54,24 +54,21 @@ func needsReplyPort(replyPort uint16) bool {
 // MessageTypeFromPacket extracts the BSDP message type (LIST, SELECT) from the
 // vendor-specific options and returns it. If the message type option cannot be
 // found, returns false.
-func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) (MessageType, bool) {
+func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) *MessageType {
 	var (
-		messageType MessageType
-		vendorOpts  *OptVendorSpecificInformation
-		err         error
+		vendorOpts *OptVendorSpecificInformation
+		err        error
 	)
 	for _, opt := range packet.GetOption(dhcpv4.OptionVendorSpecificInformation) {
-		if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err != nil {
-			return messageType, false
-		}
-		if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
-			if optMessageType, ok := o.(*OptMessageType); ok {
-				return optMessageType.Type, true
+		if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err == nil {
+			if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
+				if optMessageType, ok := o.(*OptMessageType); ok {
+					return &optMessageType.Type
+				}
 			}
-			return messageType, false
 		}
 	}
-	return messageType, false
+	return nil
 }
 
 // NewInformListForInterface creates a new INFORM packet for interface ifname
