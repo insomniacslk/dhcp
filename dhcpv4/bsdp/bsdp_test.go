@@ -375,27 +375,26 @@ func TestNewReplyForInformSelect(t *testing.T) {
 func TestMessageTypeForPacket(t *testing.T) {
 	var (
 		pkt            *dhcpv4.DHCPv4
-		gotMessageType MessageType
-		gotOK          bool
+		gotMessageType *MessageType
 	)
+
+	list := new(MessageType)
+	*list = MessageTypeList
 
 	testcases := []struct {
 		tcName          string
 		opts            []dhcpv4.Option
-		wantOK          bool
-		wantMessageType MessageType
+		wantMessageType *MessageType
 	}{
 		{
 			tcName: "No options",
 			opts:   []dhcpv4.Option{},
-			wantOK: false,
 		},
 		{
 			tcName: "Some options, no vendor opts",
 			opts: []dhcpv4.Option{
 				&dhcpv4.OptHostName{HostName: "foobar1234"},
 			},
-			wantOK: false,
 		},
 		{
 			tcName: "Vendor opts, no message type",
@@ -407,7 +406,6 @@ func TestMessageTypeForPacket(t *testing.T) {
 					},
 				},
 			},
-			wantOK: false,
 		},
 		{
 			tcName: "Vendor opts, with message type",
@@ -420,8 +418,7 @@ func TestMessageTypeForPacket(t *testing.T) {
 					},
 				},
 			},
-			wantOK:          true,
-			wantMessageType: MessageTypeList,
+			wantMessageType: list,
 		},
 	}
 	for _, tt := range testcases {
@@ -430,12 +427,10 @@ func TestMessageTypeForPacket(t *testing.T) {
 			for _, opt := range tt.opts {
 				pkt.AddOption(opt)
 			}
-			gotMessageType, gotOK = MessageTypeFromPacket(pkt)
-			if tt.wantOK {
-				require.True(t, gotOK)
-				require.Equal(t, tt.wantMessageType, gotMessageType)
-			} else {
-				require.False(t, gotOK)
+			gotMessageType = MessageTypeFromPacket(pkt)
+			require.Equal(t, tt.wantMessageType, gotMessageType)
+			if tt.wantMessageType != nil {
+				require.Equal(t, *tt.wantMessageType, *gotMessageType)
 			}
 		})
 	}
