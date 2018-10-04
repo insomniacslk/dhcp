@@ -214,7 +214,7 @@ func TestSettersAndGetters(t *testing.T) {
 
 	// getter/setter for SendToIPAddr
 	require.Nil(t, d.SendToIPAddr())
-	d.SetGatewayIPAddr(net.IPv4(5, 4, 3, 2))
+	d.SetSendToIPAddr(net.IPv4(5, 4, 3, 2))
 	require.True(t, d.SendToIPAddr().Equal(net.IPv4(5, 4, 3, 2)))
 
 	// getter/setter for ClientHwAddr
