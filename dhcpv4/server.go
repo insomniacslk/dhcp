@@ -58,7 +58,7 @@ func main() {
 // valid DHCPv4 message is received
 type Handler func(conn net.PacketConn, peer net.Addr, m *DHCPv4)
 
-// Server represents a DHCPv6 server object
+// Server represents a DHCPv4 server object
 type Server struct {
 	conn       net.PacketConn
 	connMutex  sync.Mutex
