@@ -32,6 +32,7 @@ type DHCPv4 struct {
 	yourIPAddr     net.IP
 	serverIPAddr   net.IP
 	gatewayIPAddr  net.IP
+	sendToIPAddr   net.IP
 	clientHwAddr   [16]byte
 	serverHostName [64]byte
 	bootFileName   [128]byte
@@ -470,6 +471,16 @@ func (d *DHCPv4) GatewayIPAddr() net.IP {
 // SetGatewayIPAddr sets the gateway IP address.
 func (d *DHCPv4) SetGatewayIPAddr(gatewayIPAddr net.IP) {
 	d.gatewayIPAddr = gatewayIPAddr
+}
+
+// SendToIPAddr returns the sendto IP address.
+func (d *DHCPv4) SendToIPAddr() net.IP {
+	return d.sendToIPAddr
+}
+
+// SetSendToIPAddr sets the sendto IP address.
+func (d *DHCPv4) SetSendToIPAddr(sendToIPAddr net.IP) {
+	d.sendToIPAddr = sendToIPAddr
 }
 
 // ClientHwAddr returns the client hardware (MAC) address.

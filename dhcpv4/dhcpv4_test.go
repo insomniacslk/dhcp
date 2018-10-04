@@ -71,6 +71,7 @@ func TestFromBytes(t *testing.T) {
 	require.True(t, d.ClientIPAddr().Equal(net.IPv4zero))
 	require.True(t, d.YourIPAddr().Equal(net.IPv4zero))
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4zero))
+	require.Nil(t, d.SendToIPAddr())
 	clientHwAddr := d.ClientHwAddr()
 	require.Equal(t, clientHwAddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	hostname := d.ServerHostName()
@@ -210,6 +211,11 @@ func TestSettersAndGetters(t *testing.T) {
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(13, 14, 15, 16)))
 	d.SetGatewayIPAddr(net.IPv4(16, 15, 14, 13))
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(16, 15, 14, 13)))
+
+	// getter/setter for SendToIPAddr
+	require.Nil(t, d.SendToIPAddr())
+	d.SetSendToIPAddr(net.IPv4(5, 4, 3, 2))
+	require.True(t, d.SendToIPAddr().Equal(net.IPv4(5, 4, 3, 2)))
 
 	// getter/setter for ClientHwAddr
 	hwaddr := d.ClientHwAddr()
