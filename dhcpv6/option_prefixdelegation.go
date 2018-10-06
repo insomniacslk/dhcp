@@ -12,7 +12,7 @@ type OptIAForPrefixDelegation struct {
 	iaId    [4]byte
 	t1      uint32
 	t2      uint32
-	Options []Option
+	options []Option
 }
 
 // Code returns the option code
@@ -28,7 +28,7 @@ func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	copy(buf[4:8], op.iaId[:])
 	binary.BigEndian.PutUint32(buf[8:12], op.t1)
 	binary.BigEndian.PutUint32(buf[12:16], op.t2)
-	for _, opt := range op.Options {
+	for _, opt := range op.options {
 		buf = append(buf, opt.ToBytes()...)
 	}
 	return buf
@@ -64,10 +64,26 @@ func (op *OptIAForPrefixDelegation) SetT2(t2 uint32) {
 	op.t2 = t2
 }
 
+// Options serializes the options and returns them as a sequence of bytes
+func (op *OptIAForPrefixDelegation) Options() []byte {
+	buf := op.ToBytes()
+	return buf[16:]
+}
+
+// SetOptions sets the options as a sequence of bytes
+func (op *OptIAForPrefixDelegation) SetOptions(options []byte) error {
+	var err error
+	op.options, err = OptionsFromBytes(options)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Length returns the option length
 func (op *OptIAForPrefixDelegation) Length() int {
 	l := 12
-	for _, opt := range op.Options {
+	for _, opt := range op.options {
 		l += 4 + opt.Length()
 	}
 	return l
@@ -76,18 +92,18 @@ func (op *OptIAForPrefixDelegation) Length() int {
 // String returns a string representation of the OptIAForPrefixDelegation data
 func (op *OptIAForPrefixDelegation) String() string {
 	return fmt.Sprintf("OptIAForPrefixDelegation{IAID=%v, t1=%v, t2=%v, options=%v}",
-		op.iaId, op.t1, op.t2, op.Options)
+		op.iaId, op.t1, op.t2, op.options)
 }
 
 // GetOneOption will get an option of the give type from the Options field, if
 // it is present. It will return `nil` otherwise
 func (op *OptIAForPrefixDelegation) GetOneOption(code OptionCode) Option {
-	return getOption(op.Options, code)
+	return getOption(op.options, code)
 }
 
 // DelOption will remove all the options that match a Option code.
 func (op *OptIAForPrefixDelegation) DelOption(code OptionCode) {
-	op.Options = delOption(op.Options, code)
+	op.options = delOption(op.options, code)
 }
 
 // build an OptIAForPrefixDelegation structure from a sequence of bytes.
@@ -101,7 +117,7 @@ func ParseOptIAForPrefixDelegation(data []byte) (*OptIAForPrefixDelegation, erro
 	copy(opt.iaId[:], data[:4])
 	opt.t1 = binary.BigEndian.Uint32(data[4:8])
 	opt.t2 = binary.BigEndian.Uint32(data[8:12])
-	opt.Options, err = OptionsFromBytes(data[12:])
+	opt.options, err = OptionsFromBytes(data[12:])
 	if err != nil {
 		return nil, err
 	}

@@ -58,9 +58,8 @@ func TestOptIAForPrefixDelegationGetOneOption(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opt := OptIAForPrefixDelegation{
-		Options: []Option{&OptElapsedTime{}, oaddr},
-	}
+	opt := OptIAForPrefixDelegation{}
+	opt.SetOptions(oaddr.ToBytes())
 	require.Equal(t, oaddr, opt.GetOneOption(OptionIAPrefix))
 }
 
@@ -75,9 +74,8 @@ func TestOptIAForPrefixDelegationGetOneOptionMissingOpt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	opt := OptIAForPrefixDelegation{
-		Options: []Option{&OptElapsedTime{}, oaddr},
-	}
+	opt := OptIAForPrefixDelegation{}
+	opt.SetOptions(oaddr.ToBytes())
 	require.Equal(t, nil, opt.GetOneOption(OptionDNSRecursiveNameServer))
 }
 
@@ -87,17 +85,22 @@ func TestOptIAForPrefixDelegationDelOption(t *testing.T) {
 	optiaaddr := OptIAPrefix{}
 	optsc := OptStatusCode{}
 
-	optiana1.Options = append(optiana1.Options, &optsc)
-	optiana1.Options = append(optiana1.Options, &optiaaddr)
-	optiana1.Options = append(optiana1.Options, &optiaaddr)
-	optiana1.DelOption(OptionIAPrefix)
-	require.Equal(t, optiana1.Options, []Option{&optsc})
+	var buf = make([]byte, 0)
 
-	optiana2.Options = append(optiana2.Options, &optiaaddr)
-	optiana2.Options = append(optiana2.Options, &optsc)
-	optiana2.Options = append(optiana2.Options, &optiaaddr)
+	buf = append(buf, optsc.ToBytes()...)
+	buf = append(buf, optiaaddr.ToBytes()...)
+	buf = append(buf, optiaaddr.ToBytes()...)
+	optiana1.SetOptions(buf)
+	optiana1.DelOption(OptionIAPrefix)
+	require.Equal(t, optiana1.Options(), optsc.ToBytes())
+
+	buf = make([]byte, 0)
+	buf = append(buf, optiaaddr.ToBytes()...)
+	buf = append(buf, optsc.ToBytes()...)
+	buf = append(buf, optiaaddr.ToBytes()...)
+	optiana2.SetOptions(buf)
 	optiana2.DelOption(OptionIAPrefix)
-	require.Equal(t, optiana2.Options, []Option{&optsc})
+	require.Equal(t, optiana2.Options(), optsc.ToBytes())
 }
 
 func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
@@ -111,10 +114,8 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 		iaId: [4]byte{1, 2, 3, 4},
 		t1:   12345,
 		t2:   54321,
-		Options: []Option{
-			&oaddr,
-		},
 	}
+	opt.SetOptions(oaddr.ToBytes())
 	expected := []byte{
 		0, 25, // OptionIAPD
 		0, 41, // length
