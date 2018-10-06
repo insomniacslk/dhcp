@@ -15,10 +15,12 @@ type OptIAForPrefixDelegation struct {
 	Options []Option
 }
 
+// Code returns the option code
 func (op *OptIAForPrefixDelegation) Code() OptionCode {
 	return OptionIAPD
 }
 
+// ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	buf := make([]byte, 16)
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPD))
@@ -32,30 +34,37 @@ func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	return buf
 }
 
+// IAID returns the identity association identifier for this option
 func (op *OptIAForPrefixDelegation) IAID() []byte {
 	return op.iaId[:]
 }
 
+// SetIAID sets the identity association identifier for this option
 func (op *OptIAForPrefixDelegation) SetIAID(iaId [4]byte) {
 	op.iaId = iaId
 }
 
+// T1 returns the T1 timer for this option
 func (op *OptIAForPrefixDelegation) T1() uint32 {
 	return op.t1
 }
 
+// SetT1 sets the T1 timer for this option
 func (op *OptIAForPrefixDelegation) SetT1(t1 uint32) {
 	op.t1 = t1
 }
 
+// T2 returns the T2 timer for this option
 func (op *OptIAForPrefixDelegation) T2() uint32 {
 	return op.t2
 }
 
+// SetT2 sets the T2 timer for this option
 func (op *OptIAForPrefixDelegation) SetT2(t2 uint32) {
 	op.t2 = t2
 }
 
+// Length returns the option length
 func (op *OptIAForPrefixDelegation) Length() int {
 	l := 12
 	for _, opt := range op.Options {
@@ -64,6 +73,7 @@ func (op *OptIAForPrefixDelegation) Length() int {
 	return l
 }
 
+// String returns a string representation of the OptIAForPrefixDelegation data
 func (op *OptIAForPrefixDelegation) String() string {
 	return fmt.Sprintf("OptIAForPrefixDelegation{IAID=%v, t1=%v, t2=%v, options=%v}",
 		op.iaId, op.t1, op.t2, op.Options)
