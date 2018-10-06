@@ -66,6 +66,7 @@ func (op *OptIAForPrefixDelegation) SetT2(t2 uint32) {
 
 // Options serializes the options and returns them as a sequence of bytes
 func (op *OptIAForPrefixDelegation) Options() []byte {
+	log.Printf("Warning: OptIAForPrefixDelegation.Options() is deprecated and will be changed to a public field")
 	buf := op.ToBytes()
 	return buf[16:]
 }
