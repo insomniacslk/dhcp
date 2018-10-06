@@ -6,6 +6,7 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+	"log"
 )
 
 type OptIAForPrefixDelegation struct {
