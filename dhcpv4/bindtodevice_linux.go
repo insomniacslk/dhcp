@@ -2,10 +2,8 @@
 
 package dhcpv4
 
-import (
-	"syscall"
-)
+import "golang.org/x/sys/unix"
 
 func BindToInterface(fd int, ifname string) error {
-	return syscall.BindToDevice(fd, ifname)
+	return unix.BindToDevice(fd, ifname)
 }

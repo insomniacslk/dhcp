@@ -2,14 +2,15 @@ package bsdp
 
 import (
 	"fmt"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // MakeVendorClassIdentifier calls the sysctl syscall on macOS to get the
 // platform model.
 func MakeVendorClassIdentifier() (string, error) {
 	// Fetch hardware model for class ID.
-	hwModel, err := syscall.Sysctl("hw.model")
+	hwModel, err := unix.Sysctl("hw.model")
 	if err != nil {
 		return "", err
 	}
