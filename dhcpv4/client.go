@@ -5,10 +5,10 @@ import (
 	"errors"
 	"net"
 	"os"
-	"syscall"
 	"time"
 
 	"golang.org/x/net/ipv4"
+	"golang.org/x/sys/unix"
 )
 
 // MaxUDPReceivedPacketSize is the (arbitrary) maximum UDP packet size supported
@@ -69,22 +69,22 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	return ret, nil
 }
 
-// MakeBroadcastSocket creates a socket that can be passed to syscall.Sendto
+// MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
 // that will send packets out to the broadcast address.
 func MakeBroadcastSocket(ifname string) (int, error) {
-	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_RAW, syscall.IPPROTO_RAW)
+	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
 	if err != nil {
 		return fd, err
 	}
-	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_REUSEADDR, 1)
 	if err != nil {
 		return fd, err
 	}
-	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_HDRINCL, 1)
+	err = unix.SetsockoptInt(fd, unix.IPPROTO_IP, unix.IP_HDRINCL, 1)
 	if err != nil {
 		return fd, err
 	}
-	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_BROADCAST, 1)
+	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_BROADCAST, 1)
 	if err != nil {
 		return fd, err
 	}
@@ -98,17 +98,17 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 // MakeListeningSocket creates a listening socket on 0.0.0.0 for the DHCP client
 // port and returns it.
 func MakeListeningSocket(ifname string) (int, error) {
-	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, syscall.IPPROTO_UDP)
+	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM, unix.IPPROTO_UDP)
 	if err != nil {
 		return fd, err
 	}
-	err = syscall.SetsockoptInt(fd, syscall.SOL_SOCKET, syscall.SO_REUSEADDR, 1)
+	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_REUSEADDR, 1)
 	if err != nil {
 		return fd, err
 	}
 	var addr [4]byte
 	copy(addr[:], net.IPv4zero.To4())
-	if err = syscall.Bind(fd, &syscall.SockaddrInet4{Port: ClientPort, Addr: addr}); err != nil {
+	if err = unix.Bind(fd, &unix.SockaddrInet4{Port: ClientPort, Addr: addr}); err != nil {
 		return fd, err
 	}
 	err = BindToInterface(fd, ifname)
@@ -184,15 +184,17 @@ func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, write
 
 	// Create a goroutine to perform the blocking send, and time it out after
 	// a certain amount of time.
-	var destination [4]byte
+	var (
+		destination [4]byte
+		response    *DHCPv4
+	)
 	copy(destination[:], net.IPv4bcast.To4())
-	remoteAddr := syscall.SockaddrInet4{Port: ClientPort, Addr: destination}
+	remoteAddr := unix.SockaddrInet4{Port: ClientPort, Addr: destination}
 	recvErrors := make(chan error, 1)
-	var response *DHCPv4
 	go func(errs chan<- error) {
-		conn, err := net.FileConn(os.NewFile(uintptr(recvFd), ""))
+		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
 		if err != nil {
-			errs <- err
+			errs <- innerErr
 			return
 		}
 		defer conn.Close()
@@ -200,15 +202,15 @@ func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, write
 
 		for {
 			buf := make([]byte, MaxUDPReceivedPacketSize)
-			n, _, _, _, err := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
-			if err != nil {
-				errs <- err
+			n, _, _, _, innerErr := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
+			if innerErr != nil {
+				errs <- innerErr
 				return
 			}
 
-			response, err = FromBytes(buf[:n])
+			response, innerErr = FromBytes(buf[:n])
 			if err != nil {
-				errs <- err
+				errs <- innerErr
 				return
 			}
 			// check that this is a response to our message
@@ -231,7 +233,7 @@ func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, write
 		}
 		recvErrors <- nil
 	}(recvErrors)
-	if err = syscall.Sendto(sendFd, packetBytes, 0, &remoteAddr); err != nil {
+	if err = unix.Sendto(sendFd, packetBytes, 0, &remoteAddr); err != nil {
 		return nil, err
 	}
 
