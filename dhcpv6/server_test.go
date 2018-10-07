@@ -5,9 +5,27 @@ import (
 	"net"
 	"testing"
 	"time"
+	"errors"
 
 	"github.com/stretchr/testify/require"
 )
+
+// utility function to return the loopback interface name
+func getLoopbackInterface() (string, error) {
+		var ifaces []net.Interface
+		var err error
+		if ifaces, err = net.Interfaces(); err != nil {
+				return "", err
+		}
+
+		for _, iface := range ifaces {
+			if iface.Flags & net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
+					return iface.Name, nil
+			}
+		}
+
+		return "", errors.New("No loopback interface found")
+}
 
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
@@ -15,7 +33,6 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP("::1"),
 		Port: 0,
-		Zone: "lo",
 	}
 	s := NewServer(laddr, handler)
 	go s.ActivateAndServe()
@@ -23,7 +40,6 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	c := NewClient()
 	c.LocalAddr = &net.UDPAddr{
 		IP:   net.ParseIP("::1"),
-		Zone: "lo",
 	}
 	for {
 		if s.LocalAddr() != nil {
@@ -35,7 +51,6 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	c.RemoteAddr = &net.UDPAddr{
 		IP:   net.ParseIP("::1"),
 		Port: s.LocalAddr().(*net.UDPAddr).Port,
-		Zone: "lo",
 	}
 
 	return c, s
@@ -45,7 +60,6 @@ func TestNewServer(t *testing.T) {
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP("::1"),
 		Port: 0,
-		Zone: "lo",
 	}
 	handler := func(conn net.PacketConn, peer net.Addr, m DHCPv6) {}
 	s := NewServer(laddr, handler)
@@ -71,7 +85,9 @@ func TestServerActivateAndServe(t *testing.T) {
 	c, s := setUpClientAndServer(handler)
 	defer s.Close()
 
-	_, _, err := c.Solicit("lo", nil)
+	iface, err := getLoopbackInterface()
+	require.NoError(t, err)
 
+	_, _, err = c.Solicit(iface, nil)
 	require.NoError(t, err)
 }
