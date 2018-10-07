@@ -5,25 +5,26 @@ import (
 	"net"
 	"testing"
 	"time"
+	"errors"
 
 	"github.com/stretchr/testify/require"
 )
 
 // utility function to return the loopback interface name
-func getLoopbackInterface() string {
-        var ifaces []net.Interface
-        var err error
-        if ifaces, err = net.Interfaces(); err != nil {
-                return ""
-        }
+func getLoopbackInterface() (string, error) {
+		var ifaces []net.Interface
+		var err error
+		if ifaces, err = net.Interfaces(); err != nil {
+				return "", err
+		}
 
-        for _, iface := range ifaces {
-            if iface.Flags & net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
-                    return iface.Name
-            }
-        }
+		for _, iface := range ifaces {
+			if iface.Flags & net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
+					return iface.Name, nil
+			}
+		}
 
-        return ""
+		return "", errors.New("No loopback interface found")
 }
 
 // utility function to set up a client and a server instance and run it in
@@ -84,6 +85,9 @@ func TestServerActivateAndServe(t *testing.T) {
 	c, s := setUpClientAndServer(handler)
 	defer s.Close()
 
-	_, _, err := c.Solicit(getLoopbackInterface(), nil)
+	iface, err := getLoopbackInterface()
+	require.NoError(t, err)
+
+	_, _, err = c.Solicit(iface, nil)
 	require.NoError(t, err)
 }
