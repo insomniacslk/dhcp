@@ -125,7 +125,7 @@ func MakeListeningSocket(ifname string) (int, error) {
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
 func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
-	conversation := make([]*DHCPv4, 1)
+	conversation := make([]*DHCPv4, 0)
 	var err error
 
 	// Get our file descriptor for the broadcast socket.
@@ -148,7 +148,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	for _, mod := range modifiers {
 		discover = mod(discover)
 	}
-	conversation[0] = discover
+	conversation = append(conversation, discover)
 
 	// Offer
 	offer, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout, MessageTypeOffer)
