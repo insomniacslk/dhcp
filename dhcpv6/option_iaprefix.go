@@ -86,8 +86,8 @@ func (op *OptIAPrefix) String() string {
 // The input data does not include option code and length bytes.
 func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
 	opt := OptIAPrefix{}
-	if len(data) < 12 {
-		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 12 bytes, got %v", len(data))
+	if len(data) < 25 {
+		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 25 bytes, got %v", len(data))
 	}
 	opt.preferredLifetime = binary.BigEndian.Uint32(data[:4])
 	opt.validLifetime = binary.BigEndian.Uint32(data[4:8])

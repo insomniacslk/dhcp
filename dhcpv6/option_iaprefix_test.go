@@ -50,3 +50,15 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
 	}
 }
+
+func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
+	buf := []byte{
+		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
+		0xee, 0xff, 0x00, 0x11, // validLifetime
+		36,                     // prefixLength
+		0, 0, 0, 0, 0, 0, 0,    // truncated ipv6Prefix
+	}
+	if opt, err := ParseOptIAPrefix(buf); err == nil {
+		t.Fatalf("ParseOptIAPrefix: Expected error on truncated option, got %v", opt)
+	}
+}
