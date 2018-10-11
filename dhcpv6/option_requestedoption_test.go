@@ -1,65 +1,15 @@
 package dhcpv6
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func captureStdout(t *testing.T, f func()) string {
-	stdout := os.Stdout
-	r, w, err := os.Pipe()
-	require.NoError(t, err)
-	os.Stdout = w
-	outC := make(chan string)
-	go func() {
-		var buf strings.Builder
-		_, err := io.Copy(&buf, r)
-		r.Close()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "captureStdout(): copying pipe: %v\n", err)
-			os.Exit(1)
-		}
-		outC <- buf.String()
-	}()
-
-	defer func() {
-		w.Close()
-		os.Stdout = stdout
-	}()
-
-	f()
-	w.Close()
-	out := <-outC
-
-	return out
-}
-
 func TestOptRequestedOption(t *testing.T) {
 	expected := []byte{0, 1, 0, 2}
 	_, err := ParseOptRequestedOption(expected)
 	require.NoError(t, err, "ParseOptRequestedOption() correct options should not error")
-}
-
-func TestOptRequestedOptionAddRequestedOptionDuplicate(t *testing.T) {
-	opt := OptRequestedOption{}
-
-	opt.AddRequestedOption(OptionDNSRecursiveNameServer)
-
-	output := captureStdout(t, func() {
-		opt.AddRequestedOption(OptionDNSRecursiveNameServer)
-	})
-
-	require.Contains(
-		t,
-		output,
-		"appending duplicate",
-		"AddRequestedOption() should complain to stdout when a duplicate entry is added",
-	)
 }
 
 func TestOptRequestedOptionParseOptRequestedOptionTooShort(t *testing.T) {
