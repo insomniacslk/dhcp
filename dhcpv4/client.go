@@ -43,7 +43,7 @@ type ClientExchangeOptions struct {
 type Client struct {
 	ReadTimeout, WriteTimeout time.Duration
 	RemoteAddr   *net.UDPAddr
-	LocalAddr 	 *net.UDPAddr
+	LocalAddr    *net.UDPAddr
 }
 
 // NewClient generates a new client to perform a DHCP exchange with, setting the
@@ -92,7 +92,7 @@ func MakeRawPacket(payload []byte, serverAddr, clientAddr *net.UDPAddr) ([]byte,
 
 // MakeRawSocket creates a socket that can be passed to unix.Sendto.
 func MakeRawSocket() (int, error) {
-	d, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
+	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
 	if err != nil {
 		return fd, err
 	}
