@@ -16,9 +16,9 @@ func TestParseOptServerId(t *testing.T) {
 	}
 	opt, err := ParseOptServerId(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.Sid.Type, DUID_LL)
-	require.Equal(t, opt.Sid.HwType, iana.HwTypeEthernet)
-	require.Equal(t, opt.Sid.LinkLayerAddr, net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}))
+	require.Equal(t, DUID_LL, opt.Sid.Type)
+	require.Equal(t, iana.HwTypeEthernet, opt.Sid.HwType)
+	require.Equal(t, net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}), opt.Sid.LinkLayerAddr)
 }
 
 func TestOptServerIdToBytes(t *testing.T) {
@@ -62,6 +62,30 @@ func TestOptionServerId(t *testing.T) {
 			LinkLayerAddr: net.HardwareAddr([]byte{0xde, 0xad, 0, 0, 0xbe, 0xef}),
 		},
 	}
-	require.Equal(t, opt.Length(), 10)
-	require.Equal(t, opt.Code(), OptionServerID)
+	require.Equal(t, 10, opt.Length())
+	require.Equal(t, OptionServerID, opt.Code())
+	require.Contains(
+		t,
+		opt.String(),
+		"sid=DUID{type=DUID-LL hwtype=Ethernet hwaddr=de:ad:00:00:be:ef}",
+		"String() should contain the correct sid output",
+	)
+}
+
+func TestOptServerIdParseOptServerIdBogusDUID(t *testing.T) {
+	data := []byte{
+		0, 4, // DUID_UUID
+		1, 2, 3, 4, 5, 6, 7, 8, 9, // a UUID should be 18 bytes not 17
+		10, 11, 12, 13, 14, 15, 16, 17,
+	}
+	_, err := ParseOptServerId(data)
+	require.Error(t, err, "A truncated OptServerId DUID should return an error")
+}
+
+func TestOptServerIdParseOptServerIdInvalidTooShort(t *testing.T) {
+	data := []byte{
+		0, // truncated: DUIDs are at least 2 bytes
+	}
+	_, err := ParseOptServerId(data)
+	require.Error(t, err, "A truncated OptServerId should return an error")
 }

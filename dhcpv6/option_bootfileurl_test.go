@@ -3,6 +3,8 @@ package dhcpv6
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptBootFileURL(t *testing.T) {
@@ -17,6 +19,7 @@ func TestOptBootFileURL(t *testing.T) {
 	if url := opt.BootFileURL; !bytes.Equal(url, expected) {
 		t.Fatalf("Invalid boot file URL. Expected %v, got %v", expected, url)
 	}
+	require.Contains(t, opt.String(), "BootFileUrl=https://insomniac.slackware.it", "String() should contain the correct BootFileUrl output")
 }
 
 func TestOptBootFileURLToBytes(t *testing.T) {

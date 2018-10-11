@@ -13,9 +13,11 @@ func TestParseOptDomainSearchList(t *testing.T) {
 	}
 	opt, err := ParseOptDomainSearchList(data)
 	require.NoError(t, err)
-	require.Equal(t, len(opt.DomainSearchList), 2)
-	require.Equal(t, opt.DomainSearchList[0], "example.com")
-	require.Equal(t, opt.DomainSearchList[1], "subnet.example.org")
+	require.Equal(t, OptionDomainSearchList, opt.Code())
+	require.Equal(t, 2, len(opt.DomainSearchList))
+	require.Equal(t, "example.com", opt.DomainSearchList[0])
+	require.Equal(t, "subnet.example.org", opt.DomainSearchList[1])
+	require.Contains(t, opt.String(), "searchlist=[example.com subnet.example.org]", "String() should contain the correct domain search output")
 }
 
 func TestOptDomainSearchListToBytes(t *testing.T) {
@@ -31,5 +33,14 @@ func TestOptDomainSearchListToBytes(t *testing.T) {
 			"subnet.example.org",
 		},
 	}
-	require.Equal(t, opt.ToBytes(), expected)
+	require.Equal(t, expected, opt.ToBytes())
+}
+
+func TestParseOptDomainSearchListInvalidLength(t *testing.T) {
+	data := []byte{
+		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
+		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', // truncated
+	}
+	_, err := ParseOptDomainSearchList(data)
+	require.Error(t, err, "A truncated OptDomainSearchList should return an error")
 }

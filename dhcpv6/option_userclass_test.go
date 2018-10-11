@@ -63,3 +63,35 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 	}
 	require.Equal(t, expected, data)
 }
+
+func TestOptUserClassParseOptUserClassTooShort(t *testing.T) {
+	buf := []byte{
+		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+		0, 4, 't', 'e',
+	}
+	_, err := ParseOptUserClass(buf)
+	require.Error(t, err, "ParseOptUserClass() should error if given truncated user classes")
+
+	buf = []byte{
+		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+		0,
+	}
+	_, err = ParseOptUserClass(buf)
+	require.Error(t, err, "ParseOptUserClass() should error if given a truncated length")
+}
+
+func TestOptUserClassString(t *testing.T) {
+	data := []byte{
+		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+		0, 4, 't', 'e', 's', 't',
+	}
+	opt, err := ParseOptUserClass(data)
+	require.NoError(t, err)
+
+	require.Contains(
+		t,
+		opt.String(),
+		"userclass=[linuxboot, test]",
+		"String() should contain the list of user classes",
+	)
+}

@@ -3,6 +3,8 @@ package dhcpv6
 import (
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestRelayMsgParseOptRelayMsg(t *testing.T) {
@@ -154,4 +156,31 @@ func TestSample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
+	_, err := ParseOptRelayMsg([]byte{
+		1,                // MessageTypeSolicit
+		0xaa, 0xbb, 0xcc, // transaction ID
+		0, 8, // option: elapsed time
+		// no length/value for elapsed time option
+	})
+	require.Error(t, err, "ParseOptRelayMsg() should return an error if the encapsulated message is invalid")
+}
+
+func TestRelayMsgString(t *testing.T) {
+	opt, err := ParseOptRelayMsg([]byte{
+		1,                // MessageTypeSolicit
+		0xaa, 0xbb, 0xcc, // transaction ID
+		0, 8, // option: elapsed time
+		0, 2, // option length
+		0, 0, // option value
+	})
+	require.NoError(t, err)
+	require.Contains(
+		t,
+		opt.String(),
+		"relaymsg=DHCPv6Message",
+		"String() should contain the relaymsg contents",
+	)
 }

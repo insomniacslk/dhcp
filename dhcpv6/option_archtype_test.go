@@ -13,7 +13,7 @@ func TestParseOptClientArchType(t *testing.T) {
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
+	require.Equal(t, iana.EFI_IA32, opt.ArchTypes[0])
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
@@ -33,13 +33,14 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.ToBytes(), expected)
+	require.Equal(t, expected, opt.ToBytes())
 }
 
 func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
 		ArchTypes: []iana.ArchType{iana.EFI_ITANIUM},
 	}
-	require.Equal(t, opt.Length(), 2)
-	require.Equal(t, opt.Code(), OptionClientArchType)
+	require.Equal(t, 2, opt.Length())
+	require.Equal(t, OptionClientArchType, opt.Code())
+	require.Contains(t, opt.String(), "archtype=EFI Itanium", "String() should contain the correct ArchType output")
 }
