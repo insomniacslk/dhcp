@@ -27,10 +27,23 @@ var (
 	DefaultWriteTimeout = 3 * time.Second
 )
 
+// ClientExchangeOptions specifies a set of options to be used for a particular
+// exchange.
+type ClientExchangeOptions struct {
+	// UnicastSocket is used to ask the library to use an unicast socket instead
+	// of a broadcast socket for the DHCPv4 exchange. Note that it's on the
+	// user of the library to set up the actual DHCP packet (ex: by specifying a
+	// server address) so this actually works as expected.
+	UnicastSocket bool
+}
+
 // Client is the object that actually performs the DHCP exchange. It currently
-// only has read and write timeout values.
+// only has read and write timeout values, plus (optional) local and remote
+// addresses.
 type Client struct {
 	ReadTimeout, WriteTimeout time.Duration
+	RemoteAddr   *net.UDPAddr
+	LocalAddr 	 *net.UDPAddr
 }
 
 // NewClient generates a new client to perform a DHCP exchange with, setting the
@@ -42,12 +55,20 @@ func NewClient() *Client {
 	}
 }
 
-// MakeRawBroadcastPacket converts payload (a serialized DHCPv4 packet) into a
-// raw packet suitable for UDP broadcast.
+// MakeRawBroadcastPacket leverages MakeRawPacket to create a raw packet suitable
+// for UDP broadcast.
 func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
+	serverAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	clientAddr := &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	return MakeRawPacket(payload, serverAddr, clientAddr)
+}
+
+// MakeRawPacket converts a payload (a serialized DHCPv4 packet) into a
+// raw packet for the specified serverAddr from the specified clientAddr.
+func MakeRawPacket(payload []byte, serverAddr, clientAddr *net.UDPAddr) ([]byte, error) {
 	udp := make([]byte, 8)
-	binary.BigEndian.PutUint16(udp[:2], ClientPort)
-	binary.BigEndian.PutUint16(udp[2:4], ServerPort)
+	binary.BigEndian.PutUint16(udp[:2], uint16(clientAddr.Port))
+	binary.BigEndian.PutUint16(udp[2:4], uint16(serverAddr.Port))
 	binary.BigEndian.PutUint16(udp[4:6], uint16(8+len(payload)))
 	binary.BigEndian.PutUint16(udp[6:8], 0) // try to offload the checksum
 
@@ -57,8 +78,8 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 		TotalLen: 20 + len(udp) + len(payload),
 		TTL:      64,
 		Protocol: 17, // UDP
-		Dst:      net.IPv4bcast,
-		Src:      net.IPv4zero,
+		Dst:      serverAddr.IP,
+		Src:      clientAddr.IP,
 	}
 	ret, err := h.Marshal()
 	if err != nil {
@@ -69,10 +90,9 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	return ret, nil
 }
 
-// MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
-// that will send packets out to the broadcast address.
-func MakeBroadcastSocket(ifname string) (int, error) {
-	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
+// MakeRawSocket creates a socket that can be passed to unix.Sendto.
+func MakeRawSocket() (int, error) {
+	d, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
 	if err != nil {
 		return fd, err
 	}
@@ -84,7 +104,31 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 	if err != nil {
 		return fd, err
 	}
+	return fd, nil
+}
+
+// MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
+// that will send packets out to the broadcast address.
+func MakeBroadcastSocket(ifname string) (int, error) {
+	fd, err := MakeRawSocket()
+	if err != nil {
+		return fd, err
+	}
 	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_BROADCAST, 1)
+	if err != nil {
+		return fd, err
+	}
+	err = BindToInterface(fd, ifname)
+	if err != nil {
+		return fd, err
+	}
+	return fd, nil
+}
+
+// MakeUnicastSocket creates a socket that can be passed to unix.Sendto
+// that will send packets to a single address
+func MakeUnicastSocket(ifname string) (int, error) {
+	fd, err := MakeRawSocket()
 	if err != nil {
 		return fd, err
 	}
@@ -118,18 +162,30 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
-// Exchange runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
+// Exchange is a shortcut for ExchangeWithOptions when you want to use the default
+// option set.
+func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
+	return c.ExchangeWithOptions(ifname, discover, &ClientExchangeOptions{}, modifiers...)
+}
+
+
+// ExchangeWithOptions runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
 // over UDP. Does not retry in case of failures. Returns a list of DHCPv4
 // structures representing the exchange. It can contain up to four elements,
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
+func (c *Client) ExchangeWithOptions(ifname string, discover *DHCPv4, options *ClientExchangeOptions, modifiers ...Modifier) ([]*DHCPv4, error) {
 	conversation := make([]*DHCPv4, 0)
 	var err error
 
-	// Get our file descriptor for the broadcast socket.
-	sfd, err := MakeBroadcastSocket(ifname)
+	// Get our file descriptor for the raw socket we need.
+	var sfd int
+	if options.UnicastSocket {
+		sfd, err = MakeUnicastSocket(ifname)
+	} else {
+		sfd, err = MakeBroadcastSocket(ifname)
+	}
 	if err != nil {
 		return conversation, err
 	}
@@ -151,7 +207,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := BroadcastSendReceive(sfd, rfd, discover, c.ReadTimeout, c.WriteTimeout, MessageTypeOffer)
+	offer, err := c.SendReceive(sfd, rfd, discover, MessageTypeOffer)
 	if err != nil {
 		return conversation, err
 	}
@@ -165,12 +221,96 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, request)
 
 	// Ack
-	ack, err := BroadcastSendReceive(sfd, rfd, request, c.ReadTimeout, c.WriteTimeout, MessageTypeAck)
+	ack, err := c.SendReceive(sfd, rfd, request, MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, ack)
 	return conversation, nil
+}
+
+// SendReceive sends a packet (with some write timeout) and waits for a
+// response up to some read timeout value. If the message type is not
+// MessageTypeNone, it will wait for a specific message type
+func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
+	serverAddr := c.RemoteAddr
+	if serverAddr == nil {
+		serverAddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	}
+	clientAddr := c.LocalAddr
+	if clientAddr == nil {
+		clientAddr = &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	}
+	packetBytes, err := MakeRawPacket(packet.ToBytes(), serverAddr, clientAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a goroutine to perform the blocking send, and time it out after
+	// a certain amount of time.
+	var (
+		destination [4]byte
+		response    *DHCPv4
+	)
+	copy(destination[:], serverAddr.IP.To4())
+	remoteAddr := unix.SockaddrInet4{Port: clientAddr.Port, Addr: destination}
+	recvErrors := make(chan error, 1)
+	go func(errs chan<- error) {
+		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
+		if err != nil {
+			errs <- innerErr
+			return
+		}
+		defer conn.Close()
+		conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
+
+		for {
+			buf := make([]byte, MaxUDPReceivedPacketSize)
+			n, _, _, _, innerErr := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
+			if innerErr != nil {
+				errs <- innerErr
+				return
+			}
+
+			response, innerErr = FromBytes(buf[:n])
+			if err != nil {
+				errs <- innerErr
+				return
+			}
+			// check that this is a response to our message
+			if response.TransactionID() != packet.TransactionID() {
+				continue
+			}
+			// wait for a response message
+			if response.Opcode() != OpcodeBootReply {
+				continue
+			}
+			// if we are not requested to wait for a specific message type,
+			// return what we have
+			if messageType == MessageTypeNone {
+				break
+			}
+			// break if it's a reply of the desired type, continue otherwise
+			if response.MessageType() != nil && *response.MessageType() == messageType {
+				break
+			}
+		}
+		recvErrors <- nil
+	}(recvErrors)
+	if err = unix.Sendto(sendFd, packetBytes, 0, &remoteAddr); err != nil {
+		return nil, err
+	}
+
+	select {
+	case err = <-recvErrors:
+		if err != nil {
+			return nil, err
+		}
+	case <-time.After(c.ReadTimeout):
+		return nil, errors.New("timed out while listening for replies")
+	}
+
+	return response, nil
 }
 
 // BroadcastSendReceive broadcasts packet (with some write timeout) and waits for a
