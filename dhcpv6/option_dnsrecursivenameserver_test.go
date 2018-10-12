@@ -16,8 +16,10 @@ func TestParseOptDNSRecursiveNameServer(t *testing.T) {
 	}
 	opt, err := ParseOptDNSRecursiveNameServer(data)
 	require.NoError(t, err)
-	require.Equal(t, opt.NameServers, expected)
-	require.Equal(t, opt.Length(), 16)
+	require.Equal(t, expected, opt.NameServers)
+	require.Equal(t, OptionDNSRecursiveNameServer, opt.Code())
+	require.Equal(t, 16, opt.Length())
+	require.Contains(t, opt.String(), "nameservers=[2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct nameservers output")
 }
 
 func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
@@ -31,5 +33,13 @@ func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
 	expected = append(expected, []byte(ns1)...)
 	expected = append(expected, []byte(ns2)...)
 	opt := OptDNSRecursiveNameServer{NameServers: nameservers}
-	require.Equal(t, opt.ToBytes(), expected)
+	require.Equal(t, expected, opt.ToBytes())
+}
+
+func TestParseOptDNSRecursiveNameServerParseBogusNameserver(t *testing.T) {
+	data := []byte{
+		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
+	}
+	_, err := ParseOptDNSRecursiveNameServer(data)
+	require.Error(t, err, "An invalid nameserver IPv6 address should return an error")
 }

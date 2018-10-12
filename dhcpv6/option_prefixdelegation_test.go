@@ -20,6 +20,10 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 	opt, err := ParseOptIAForPrefixDelegation(data)
 	require.NoError(t, err)
 	require.Equal(t, len(data), opt.Length())
+	require.Equal(t, OptionIAPD, opt.Code())
+	require.Equal(t, []byte{1, 0, 0, 0}, opt.IAID())
+	require.Equal(t, uint32(1), opt.T1())
+	require.Equal(t, uint32(2), opt.T2())
 }
 
 func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidLength(t *testing.T) {
@@ -110,12 +114,12 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 	oaddr.SetPrefixLength(36)
 	oaddr.SetIPv6Prefix([16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
 
-	opt := OptIAForPrefixDelegation{
-		iaId: [4]byte{1, 2, 3, 4},
-		t1:   12345,
-		t2:   54321,
-	}
+	opt := OptIAForPrefixDelegation{}
+	opt.SetIAID([4]byte{1, 2, 3, 4})
+	opt.SetT1(12345)
+	opt.SetT2(54321)
 	opt.SetOptions(oaddr.ToBytes())
+
 	expected := []byte{
 		0, 25, // OptionIAPD
 		0, 41, // length
@@ -129,4 +133,48 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
 	}
 	require.Equal(t, expected, opt.ToBytes())
+}
+
+func TestOptIAForPrefixDelegationSetOptionsTooShort(t *testing.T) {
+	buf := []byte{
+		0, 26, 0, 25, // 26 = IAPrefix Option, 25 = length
+		0xaa, 0xbb, 0xcc, 0xdd, // IAPrefix preferredLifetime
+		0xee, 0xff, // truncated half-way through validLifetime
+	}
+
+	oaddr := OptIAForPrefixDelegation{}
+	err := oaddr.SetOptions(buf)
+	require.Error(t, err, "SetOptions() should return an error if invalid options are set")
+}
+
+func TestOptIAForPrefixDelegationString(t *testing.T) {
+	data := []byte{
+		1, 0, 0, 0, // IAID
+		0, 0, 0, 1, // T1
+		0, 0, 0, 2, // T2
+		0, 26, 0, 25, // 26 = IAPrefix Option, 25 = length
+		0xaa, 0xbb, 0xcc, 0xdd, // IAPrefix preferredLifetime
+		0xee, 0xff, 0x00, 0x11, // IAPrefix validLifetime
+		36, // IAPrefix prefixLength
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
+	}
+	opt, err := ParseOptIAForPrefixDelegation(data)
+	require.NoError(t, err)
+
+	str := opt.String()
+	require.Contains(
+		t, str,
+		"IAID=[1 0 0 0]",
+		"String() should return the IAID",
+	)
+	require.Contains(
+		t, str,
+		"t1=1, t2=2",
+		"String() should return the T1/T2 options",
+	)
+	require.Contains(
+		t, str,
+		"options=[",
+		"String() should return a list of options",
+	)
 }

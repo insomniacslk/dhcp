@@ -3,6 +3,8 @@ package dhcpv6
 import (
 	"bytes"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptElapsedTime(t *testing.T) {
@@ -41,4 +43,12 @@ func TestOptElapsedTimeString(t *testing.T) {
 	if optString := opt.String(); optString != expected {
 		t.Fatalf("Invalid elapsed time string. Expected %v, got %v", expected, optString)
 	}
+}
+
+func TestOptElapsedTimeParseInvalidOption(t *testing.T) {
+	_, err := ParseOptElapsedTime([]byte{0xaa})
+	require.Error(t, err, "A short option should return an error")
+
+	_, err = ParseOptElapsedTime([]byte{0xaa, 0xbb, 0xcc})
+	require.Error(t, err, "An option with too many bytes should return an error")
 }

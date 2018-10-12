@@ -17,6 +17,7 @@ func TestOptIANAParseOptIANA(t *testing.T) {
 	opt, err := ParseOptIANA(data)
 	require.NoError(t, err)
 	require.Equal(t, len(data), opt.Length())
+	require.Equal(t, OptionIANA, opt.Code())
 }
 
 func TestOptIANAParseOptIANAInvalidLength(t *testing.T) {
@@ -99,4 +100,32 @@ func TestOptIANAToBytes(t *testing.T) {
 		0, 8, 0, 2, 0xaa, 0xbb,
 	}
 	require.Equal(t, expected, opt.ToBytes())
+}
+
+func TestOptIANAString(t *testing.T) {
+	data := []byte{
+		1, 0, 0, 0, // IAID
+		0, 0, 0, 1, // T1
+		0, 0, 0, 2, // T2
+		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
+	}
+	opt, err := ParseOptIANA(data)
+	require.NoError(t, err)
+
+	str := opt.String()
+	require.Contains(
+		t, str,
+		"IAID=[1 0 0 0]",
+		"String() should return the IAID",
+	)
+	require.Contains(
+		t, str,
+		"t1=1, t2=2",
+		"String() should return the T1/T2 options",
+	)
+	require.Contains(
+		t, str,
+		"options=[",
+		"String() should return a list of options",
+	)
 }
