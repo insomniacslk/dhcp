@@ -28,16 +28,6 @@ var (
 	DefaultWriteTimeout = 3 * time.Second
 )
 
-// ClientExchangeOptions specifies a set of options to be used for a particular
-// exchange.
-type ClientExchangeOptions struct {
-	// UnicastSocket is used to ask the library to use an unicast socket instead
-	// of a broadcast socket for the DHCPv4 exchange. Note that it's on the
-	// user of the library to set up the actual DHCP packet (ex: by specifying a
-	// server address) so this actually works as expected.
-	UnicastSocket bool
-}
-
 // Client is the object that actually performs the DHCP exchange. It currently
 // only has read and write timeout values, plus (optional) local and remote
 // addresses.
