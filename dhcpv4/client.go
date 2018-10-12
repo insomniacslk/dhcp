@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"time"
+	"fmt"
 
 	"golang.org/x/net/ipv4"
 	"golang.org/x/sys/unix"
@@ -42,8 +43,8 @@ type ClientExchangeOptions struct {
 // addresses.
 type Client struct {
 	ReadTimeout, WriteTimeout time.Duration
-	RemoteAddr   *net.UDPAddr
-	LocalAddr    *net.UDPAddr
+	RemoteAddr   net.Addr
+	LocalAddr    net.Addr
 }
 
 // NewClient generates a new client to perform a DHCP exchange with, setting the
@@ -228,15 +229,27 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
 func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
-	serverAddr := c.RemoteAddr
-	if serverAddr == nil {
-		serverAddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	var laddr net.UDPAddr
+	if c.LocalAddr == nil {
+		laddr = net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	} else {
+		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
+			laddr = *addr
+		} else {
+			return nil, fmt.Errorf("Invalid local address: not a net.UDPAddr: %v", c.LocalAddr)
+		}
 	}
-	clientAddr := c.LocalAddr
-	if clientAddr == nil {
-		clientAddr = &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	var raddr net.UDPAddr
+	if c.RemoteAddr == nil {
+		raddr = net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	} else {
+		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
+			raddr = *addr
+		} else {
+			return nil, fmt.Errorf("Invalid remote address: not a net.UDPAddr: %v", c.RemoteAddr)
+		}
 	}
-	packetBytes, err := MakeRawPacket(packet.ToBytes(), serverAddr, clientAddr)
+	packetBytes, err := MakeRawPacket(packet.ToBytes(), &raddr, &laddr)
 	if err != nil {
 		return nil, err
 	}
@@ -247,8 +260,8 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 		destination [4]byte
 		response    *DHCPv4
 	)
-	copy(destination[:], serverAddr.IP.To4())
-	remoteAddr := unix.SockaddrInet4{Port: clientAddr.Port, Addr: destination}
+	copy(destination[:], raddr.IP.To4())
+	remoteAddr := unix.SockaddrInet4{Port: laddr.Port, Addr: destination}
 	recvErrors := make(chan error, 1)
 	go func(errs chan<- error) {
 		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
