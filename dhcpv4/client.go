@@ -162,26 +162,21 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
-// Exchange is a shortcut for ExchangeWithOptions when you want to use the default
-// option set.
-func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
-	return c.ExchangeWithOptions(ifname, discover, &ClientExchangeOptions{}, modifiers...)
-}
-
-
-// ExchangeWithOptions runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
+// Exchange runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
 // over UDP. Does not retry in case of failures. Returns a list of DHCPv4
 // structures representing the exchange. It can contain up to four elements,
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func (c *Client) ExchangeWithOptions(ifname string, discover *DHCPv4, options *ClientExchangeOptions, modifiers ...Modifier) ([]*DHCPv4, error) {
+func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
 	conversation := make([]*DHCPv4, 0)
 	var err error
 
 	// Get our file descriptor for the raw socket we need.
 	var sfd int
-	if options.UnicastSocket {
+	// TODO: we should check the IP is actually not a broadcast address for the
+	// subnet here.
+	if c.RemoteAddr != nil {
 		sfd, err = MakeUnicastSocket(ifname)
 	} else {
 		sfd, err = MakeBroadcastSocket(ifname)
