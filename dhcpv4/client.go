@@ -219,7 +219,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := c.SendReceive(sfd, rfd, discover, MessageTypeOffer)
+	offer, err := c.sendReceive(sfd, rfd, discover, MessageTypeOffer)
 	if err != nil {
 		return conversation, err
 	}
@@ -233,7 +233,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, request)
 
 	// Ack
-	ack, err := c.SendReceive(sfd, rfd, request, MessageTypeAck)
+	ack, err := c.sendReceive(sfd, rfd, request, MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -244,7 +244,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 // SendReceive sends a packet (with some write timeout) and waits for a
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
-func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
+func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
 	raddr, laddr, err := c.getAddresses()
 	if err != nil {
 		return nil, err
