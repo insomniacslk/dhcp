@@ -50,6 +50,7 @@ func NewClient() *Client {
 // MakeRawBroadcastPacket leverages MakeRawPacket to create a raw packet suitable
 // for UDP broadcast.
 func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
+	log.Printf("Warning: dhcpv4.MakeRawBroadcastPacket() is deprecated and will be removed.")
 	serverAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
 	clientAddr := &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
 	return MakeRawPacket(payload, serverAddr, clientAddr)
