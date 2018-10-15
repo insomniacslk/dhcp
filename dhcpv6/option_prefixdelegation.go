@@ -38,6 +38,7 @@ func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 func (op *OptIAForPrefixDelegation) T1() uint32 {
 	return op.t1
 }
+
 // SetT1 sets the T1 timer for this option
 func (op *OptIAForPrefixDelegation) SetT1(t1 uint32) {
 	op.t1 = t1
@@ -47,6 +48,7 @@ func (op *OptIAForPrefixDelegation) SetT1(t1 uint32) {
 func (op *OptIAForPrefixDelegation) T2() uint32 {
 	return op.t2
 }
+
 // SetT2 sets the T2 timer for this option
 func (op *OptIAForPrefixDelegation) SetT2(t2 uint32) {
 	op.t2 = t2
