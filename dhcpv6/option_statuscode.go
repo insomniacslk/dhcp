@@ -38,7 +38,7 @@ func (op *OptStatusCode) Length() int {
 
 func (op *OptStatusCode) String() string {
 	return fmt.Sprintf("OptStatusCode{code=%s (%d), message=%v}",
-		iana.StatusCodeToString(op.StatusCode), op.StatusCode,
+		op.StatusCode.String(), op.StatusCode,
 		string(op.StatusMessage))
 }
 

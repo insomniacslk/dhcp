@@ -42,8 +42,7 @@ func (o *OptClientArchType) Length() int {
 func (o *OptClientArchType) String() string {
 	var archTypes string
 	for idx, at := range o.ArchTypes {
-		name := iana.ArchTypeToString(at)
-		archTypes += name
+		archTypes += at.String()
 		if idx < len(o.ArchTypes)-1 {
 			archTypes += ", "
 		}

@@ -38,8 +38,8 @@ const (
 	StatusExcessiveTimeSkew          StatusCode = 22
 )
 
-// StatusCodeToString returns a mnemonic name for a given status code
-func StatusCodeToString(s StatusCode) string {
+// String returns a mnemonic name for a given status code
+func (s StatusCode) String() string {
 	if sc := StatusCodeToStringMap[s]; sc != "" {
 		return sc
 	}

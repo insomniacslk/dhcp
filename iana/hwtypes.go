@@ -78,3 +78,11 @@ var HwTypeToString = map[HwTypeType]string{
 	HwTypeWiegandInterface:     "Wiegand Interface",
 	HwTypePureIP:               "Pure IP",
 }
+
+func (h HwTypeType) String() string {
+	hwtype := HwTypeToString[h]
+	if hwtype == "" {
+		hwtype = "Invalid"
+	}
+	return hwtype
+}

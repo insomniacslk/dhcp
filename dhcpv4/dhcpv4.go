@@ -327,11 +327,7 @@ func (d *DHCPv4) HwType() iana.HwTypeType {
 // HwTypeToString returns the mnemonic name for the hardware type, e.g.
 // "Ethernet". If the type is unknown, it returns "Unknown".
 func (d *DHCPv4) HwTypeToString() string {
-	hwtype, ok := iana.HwTypeToString[d.hwType]
-	if !ok {
-		hwtype = "Invalid"
-	}
-	return hwtype
+	return d.hwType.String()
 }
 
 // SetHwType returns the hardware type as defined by IANA.

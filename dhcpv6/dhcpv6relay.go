@@ -3,7 +3,6 @@ package dhcpv6
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net"
 )
 
@@ -22,7 +21,7 @@ func (r *DHCPv6Relay) Type() MessageType {
 }
 
 func (r *DHCPv6Relay) MessageTypeToString() string {
-	return MessageTypeToString(r.messageType)
+	return r.messageType.String()
 }
 
 func (r *DHCPv6Relay) String() string {
@@ -61,11 +60,6 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	}
 
 	return ret
-}
-
-func (r *DHCPv6Relay) MessageType() MessageType {
-	log.Printf("Warning: DHCPv6Relay.MessageType() is deprecated and will be removed, use DHCPv6Relay.Type() instead")
-	return r.messageType
 }
 
 func (r *DHCPv6Relay) SetMessageType(messageType MessageType) {

@@ -1,9 +1,5 @@
 package dhcpv6
 
-import (
-	"log"
-)
-
 // from http://www.networksorcery.com/enp/protocol/dhcpv6.htm
 
 // MessageType represents the kind of DHCPv6 message.
@@ -37,13 +33,6 @@ func (m MessageType) String() string {
 		return s
 	}
 	return "Unknown"
-}
-
-// MessageTypeToString converts a MessageType to a human-readable string
-// representation.
-func MessageTypeToString(t MessageType) string {
-	log.Printf("Warning: MessageTypeToString is deprecated and will be removed, use MessageType.String() instead")
-	return t.String()
 }
 
 // MessageTypeToStringMap contains the mapping of MessageTypes to human-readable
