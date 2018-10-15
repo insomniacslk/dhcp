@@ -26,11 +26,10 @@ var DuidTypeToString = map[DuidType]string{
 }
 
 func (d DuidType) String() string {
-	dtype := DuidTypeToString[d]
-	if dtype == "" {
-		dtype = "Unknown"
+	if dtype, ok := DuidTypeToString[d]; ok {
+		return dtype
 	}
-	return dtype
+	return "Unknown"
 }
 
 type Duid struct {
