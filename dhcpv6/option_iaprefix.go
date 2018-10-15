@@ -35,6 +35,7 @@ func (op *OptIAPrefix) ToBytes() []byte {
 	return buf
 }
 
+// Length returns the option length
 func (op *OptIAPrefix) Length() int {
 	opLen := 25
 	for _, opt := range op.Options {
