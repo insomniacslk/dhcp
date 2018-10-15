@@ -59,7 +59,7 @@ func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
 	if len(data) < 24 {
 		return nil, fmt.Errorf("Invalid IA Address data length. Expected at least 24 bytes, got %v", len(data))
 	}
-	opt.IPv6Addr = data[:16]
+	opt.IPv6Addr = net.IP(data[:16])
 	opt.PreferredLifetime = binary.BigEndian.Uint32(data[16:20])
 	opt.ValidLifetime = binary.BigEndian.Uint32(data[20:24])
 	opt.Options, err = OptionsFromBytes(data[24:])
