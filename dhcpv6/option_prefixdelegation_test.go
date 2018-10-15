@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"net"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -106,10 +107,10 @@ func TestOptIAForPrefixDelegationDelOption(t *testing.T) {
 
 func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 	oaddr := OptIAPrefix{}
-	oaddr.SetPreferredLifetime(0xaabbccdd)
-	oaddr.SetValidLifetime(0xeeff0011)
-	oaddr.SetPrefixLength(36)
-	oaddr.SetIPv6Prefix([16]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	oaddr.PreferredLifetime = 0xaabbccdd
+	oaddr.ValidLifetime = 0xeeff0011
+	oaddr.PrefixLength = 36
+	oaddr.IPv6Prefix = net.IPv6zero
 
 	opt := OptIAForPrefixDelegation{}
 	opt.IaId = [4]byte{1, 2, 3, 4}
