@@ -22,8 +22,8 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 	require.Equal(t, len(data), opt.Length())
 	require.Equal(t, OptionIAPD, opt.Code())
 	require.Equal(t, [4]byte{1, 0, 0, 0}, opt.IaId)
-	require.Equal(t, uint32(1), opt.T1())
-	require.Equal(t, uint32(2), opt.T2())
+	require.Equal(t, uint32(1), opt.T1)
+	require.Equal(t, uint32(2), opt.T2)
 }
 
 func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidLength(t *testing.T) {
@@ -113,8 +113,8 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 
 	opt := OptIAForPrefixDelegation{}
 	opt.IaId = [4]byte{1, 2, 3, 4}
-	opt.SetT1(12345)
-	opt.SetT2(54321)
+	opt.T1 = 12345
+	opt.T2 = 54321
 	opt.Options = append(opt.Options, &oaddr)
 
 	expected := []byte{
