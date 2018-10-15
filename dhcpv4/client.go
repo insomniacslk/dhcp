@@ -247,7 +247,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 	if err != nil {
 		return nil, err
 	}
-	packetBytes, err := makeRawPacket(packet.ToBytes(), raddr, laddr)
+	packetBytes, err := MakeRawPacket(packet.ToBytes(), raddr, laddr)
 	if err != nil {
 		return nil, err
 	}
