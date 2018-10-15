@@ -252,7 +252,7 @@ func (d *DHCPv6Message) SetMessage(messageType MessageType) {
 }
 
 func (d *DHCPv6Message) MessageTypeToString() string {
-	return MessageTypeToString(d.messageType)
+	return d.messageType.String()
 }
 
 func (d *DHCPv6Message) TransactionID() uint32 {

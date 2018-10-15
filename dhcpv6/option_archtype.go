@@ -39,8 +39,7 @@ func (op *OptClientArchType) Length() int {
 func (op *OptClientArchType) String() string {
 	atStrings := make([]string, 0)
 	for _, at := range op.ArchTypes {
-		name := iana.ArchTypeToString(at)
-		atStrings = append(atStrings, name)
+		atStrings = append(atStrings, at.String())
 	}
 	return fmt.Sprintf("OptClientArchType{archtype=%v}", strings.Join(atStrings, ", "))
 }

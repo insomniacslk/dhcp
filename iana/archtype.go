@@ -32,8 +32,8 @@ var ArchTypeToStringMap = map[ArchType]string{
 }
 
 
-// ArchTypeToString returns a mnemonic name for a given architecture type
-func ArchTypeToString(a ArchType) string {
+// String returns a mnemonic name for a given architecture type
+func (a ArchType) String() string {
 	if at := ArchTypeToStringMap[a]; at != "" {
 		return at
 	}

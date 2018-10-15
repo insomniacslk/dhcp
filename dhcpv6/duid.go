@@ -25,6 +25,14 @@ var DuidTypeToString = map[DuidType]string{
 	DUID_UUID: "DUID-UUID",
 }
 
+func (d DuidType) String() string {
+	dtype := DuidTypeToString[d]
+	if dtype == "" {
+		dtype = "Unknown"
+	}
+	return dtype
+}
+
 type Duid struct {
 	Type                 DuidType
 	HwType               iana.HwTypeType // for DUID-LLT and DUID-LL. Ignored otherwise. RFC 826
@@ -79,14 +87,6 @@ func (d *Duid) ToBytes() []byte {
 }
 
 func (d *Duid) String() string {
-	dtype := DuidTypeToString[d.Type]
-	if dtype == "" {
-		dtype = "Unknown"
-	}
-	hwtype := iana.HwTypeToString[d.HwType]
-	if hwtype == "" {
-		hwtype = "Unknown"
-	}
 	var hwaddr string
 	if d.HwType == iana.HwTypeEthernet {
 		for _, b := range d.LinkLayerAddr {
@@ -96,7 +96,7 @@ func (d *Duid) String() string {
 			hwaddr = hwaddr[:len(hwaddr)-1]
 		}
 	}
-	return fmt.Sprintf("DUID{type=%v hwtype=%v hwaddr=%v}", dtype, hwtype, hwaddr)
+	return fmt.Sprintf("DUID{type=%v hwtype=%v hwaddr=%v}", d.Type.String(), d.HwType.String(), hwaddr)
 }
 
 func DuidFromBytes(data []byte) (*Duid, error) {
