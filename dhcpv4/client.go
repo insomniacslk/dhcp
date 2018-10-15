@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 	"fmt"
+	"reflect"
 
 	"golang.org/x/net/ipv4"
 	"golang.org/x/sys/unix"
@@ -153,6 +154,31 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
+func (c *Client) getAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
+	var laddr *net.UDPAddr
+	if c.LocalAddr == nil {
+		laddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	} else {
+		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
+			laddr = addr
+		} else {
+			return nil, nil, fmt.Errorf("Invalid local address: only net.UDPAddr is supported, got %v instead", reflect.TypeOf(c.LocalAddr))
+		}
+	}
+	var raddr *net.UDPAddr
+	if c.RemoteAddr == nil {
+		raddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	} else {
+		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
+			raddr = addr
+		} else {
+			return nil, nil, fmt.Errorf("Invalid remote address: only net.UDPAddr is supported, got %v instead", reflect.TypeOf(c.RemoteAddr))
+		}
+	}
+
+	return raddr, laddr, nil
+}
+
 // Exchange runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
 // over UDP. Does not retry in case of failures. Returns a list of DHCPv4
 // structures representing the exchange. It can contain up to four elements,
@@ -219,27 +245,11 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
 func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
-	var laddr net.UDPAddr
-	if c.LocalAddr == nil {
-		laddr = net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	} else {
-		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
-			laddr = *addr
-		} else {
-			return nil, fmt.Errorf("Invalid local address: not a net.UDPAddr: %v", c.LocalAddr)
-		}
+	raddr, laddr, err := c.getAddresses()
+	if err != nil {
+		return nil, err
 	}
-	var raddr net.UDPAddr
-	if c.RemoteAddr == nil {
-		raddr = net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	} else {
-		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
-			raddr = *addr
-		} else {
-			return nil, fmt.Errorf("Invalid remote address: not a net.UDPAddr: %v", c.RemoteAddr)
-		}
-	}
-	packetBytes, err := MakeRawPacket(packet.ToBytes(), &raddr, &laddr)
+	packetBytes, err := makeRawPacket(packet.ToBytes(), raddr, laddr)
 	if err != nil {
 		return nil, err
 	}
