@@ -82,8 +82,8 @@ func MakeRawPacket(payload []byte, serverAddr, clientAddr *net.UDPAddr) ([]byte,
 	return ret, nil
 }
 
-// MakeRawSocket creates a socket that can be passed to unix.Sendto.
-func MakeRawSocket() (int, error) {
+// makeRawSocket creates a socket that can be passed to unix.Sendto.
+func makeRawSocket() (int, error) {
 	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
 	if err != nil {
 		return fd, err
@@ -102,15 +102,11 @@ func MakeRawSocket() (int, error) {
 // MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
 // that will send packets out to the broadcast address.
 func MakeBroadcastSocket(ifname string) (int, error) {
-	fd, err := MakeRawSocket()
+	fd, err := makeRawSocket()
 	if err != nil {
 		return fd, err
 	}
 	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_BROADCAST, 1)
-	if err != nil {
-		return fd, err
-	}
-	err = BindToInterface(fd, ifname)
 	if err != nil {
 		return fd, err
 	}
@@ -120,7 +116,7 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 // MakeUnicastSocket creates a socket that can be passed to unix.Sendto
 // that will send packets to a single address
 func MakeUnicastSocket(ifname string) (int, error) {
-	fd, err := MakeRawSocket()
+	fd, err := makeRawSocket()
 	if err != nil {
 		return fd, err
 	}
