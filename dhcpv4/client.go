@@ -321,6 +321,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
 func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration, messageType MessageType) (*DHCPv4, error) {
+	log.Printf("Warning: dhcpv4.BroadcastSendAndReceive() is deprecated and will be removed. You should use dhcpv4.client.Exchange() instead.")
 	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
 	if err != nil {
 		return nil, err
