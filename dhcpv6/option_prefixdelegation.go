@@ -10,8 +10,8 @@ import (
 
 type OptIAForPrefixDelegation struct {
 	IaId    [4]byte
-	T1      uint32
-	T2      uint32
+	t1      uint32
+	t2      uint32
 	Options []Option
 }
 
@@ -26,12 +26,30 @@ func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPD))
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	copy(buf[4:8], op.IaId[:])
-	binary.BigEndian.PutUint32(buf[8:12], op.T1)
-	binary.BigEndian.PutUint32(buf[12:16], op.T2)
+	binary.BigEndian.PutUint32(buf[8:12], op.t1)
+	binary.BigEndian.PutUint32(buf[12:16], op.t2)
 	for _, opt := range op.Options {
 		buf = append(buf, opt.ToBytes()...)
 	}
 	return buf
+}
+
+// T1 returns the T1 timer for this option
+func (op *OptIAForPrefixDelegation) T1() uint32 {
+	return op.t1
+}
+// SetT1 sets the T1 timer for this option
+func (op *OptIAForPrefixDelegation) SetT1(t1 uint32) {
+	op.t1 = t1
+}
+
+// T2 returns the T2 timer for this option
+func (op *OptIAForPrefixDelegation) T2() uint32 {
+	return op.t2
+}
+// SetT2 sets the T2 timer for this option
+func (op *OptIAForPrefixDelegation) SetT2(t2 uint32) {
+	op.t2 = t2
 }
 
 // Length returns the option length
@@ -46,7 +64,7 @@ func (op *OptIAForPrefixDelegation) Length() int {
 // String returns a string representation of the OptIAForPrefixDelegation data
 func (op *OptIAForPrefixDelegation) String() string {
 	return fmt.Sprintf("OptIAForPrefixDelegation{IAID=%v, t1=%v, t2=%v, options=%v}",
-		op.IaId, op.T1, op.T2, op.Options)
+		op.IaId, op.t1, op.t2, op.Options)
 }
 
 // GetOneOption will get an option of the give type from the Options field, if
@@ -69,8 +87,8 @@ func ParseOptIAForPrefixDelegation(data []byte) (*OptIAForPrefixDelegation, erro
 		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 12 bytes, got %v", len(data))
 	}
 	copy(opt.IaId[:], data[:4])
-	opt.T1 = binary.BigEndian.Uint32(data[4:8])
-	opt.T2 = binary.BigEndian.Uint32(data[8:12])
+	opt.t1 = binary.BigEndian.Uint32(data[4:8])
+	opt.t2 = binary.BigEndian.Uint32(data[8:12])
 	opt.Options, err = OptionsFromBytes(data[12:])
 	if err != nil {
 		return nil, err
