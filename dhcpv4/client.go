@@ -138,29 +138,36 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
-func (c *Client) getUDPAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
-	var laddr *net.UDPAddr
-	if c.LocalAddr == nil {
-		laddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+func toUDPAddr(addr net.Addr, defaultAddr *net.UDPAddr) (*net.UDPAddr, error) {
+	var uaddr *net.UDPAddr
+	if addr == nil {
+		uaddr = defaultAddr
 	} else {
-		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
-			laddr = addr
+		if addr, ok := addr.(*net.UDPAddr); ok {
+			uaddr = addr
 		} else {
-			return nil, nil, fmt.Errorf("Invalid local address: only net.UDPAddr is supported, got %v instead", reflect.TypeOf(c.LocalAddr))
+			return nil, fmt.Errorf("could not convert to net.UDPAddr, got %v instead", reflect.TypeOf(addr))
 		}
 	}
-	var raddr *net.UDPAddr
-	if c.RemoteAddr == nil {
-		raddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	} else {
-		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
-			raddr = addr
-		} else {
-			return nil, nil, fmt.Errorf("Invalid remote address: only net.UDPAddr is supported, got %v instead", reflect.TypeOf(c.RemoteAddr))
-		}
-	}
+	return uaddr, nil
+}
 
-	return raddr, laddr, nil
+func (c *Client) getLocalUDPAddr() (*net.UDPAddr, error) {
+	defaultLocalAddr := &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	laddr, err := toUDPAddr(c.LocalAddr, defaultLocalAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid local address: %s", err)
+	}
+	return laddr, nil
+}
+
+func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
+	defaultRemoteAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	raddr, err := toUDPAddr(c.LocalAddr, defaultRemoteAddr)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid remote address: %s", err)
+	}
+	return raddr, nil
 }
 
 // Exchange runs a full DORA transaction: Discover, Offer, Request, Acknowledge,
@@ -172,7 +179,7 @@ func (c *Client) getUDPAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
 func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
 	conversation := make([]*DHCPv4, 0)
 	var err error
-	raddr, _, err := c.getUDPAddresses()
+	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
 	}
@@ -229,11 +236,15 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	return conversation, nil
 }
 
-// SendReceive sends a packet (with some write timeout) and waits for a
+// sendReceive sends a packet (with some write timeout) and waits for a
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
 func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
-	raddr, laddr, err := c.getUDPAddresses()
+	raddr, err := c.getRemoteUDPAddr()
+	if err != nil {
+		return nil, err
+	}
+	laddr, err := c.getLocalUDPAddr()
 	if err != nil {
 		return nil, err
 	}
