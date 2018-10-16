@@ -12,8 +12,8 @@ import (
 type OptIAPrefix struct {
 	PreferredLifetime uint32
 	ValidLifetime     uint32
-	PrefixLength      byte
-	IPv6Prefix        net.IP
+	prefixLength      byte
+	ipv6Prefix        net.IP
 	Options           []Option
 }
 
@@ -27,12 +27,28 @@ func (op *OptIAPrefix) ToBytes() []byte {
 	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
 	binary.BigEndian.PutUint32(buf[4:8], op.PreferredLifetime)
 	binary.BigEndian.PutUint32(buf[8:12], op.ValidLifetime)
-	buf = append(buf, op.PrefixLength)
-	buf = append(buf, op.IPv6Prefix...)
+	buf = append(buf, op.prefixLength)
+	buf = append(buf, op.ipv6Prefix...)
 	for _, opt := range op.Options {
 		buf = append(buf, opt.ToBytes()...)
 	}
 	return buf
+}
+
+func (op *OptIAPrefix) PrefixLength() byte {
+	return op.prefixLength
+}
+
+func (op *OptIAPrefix) SetPrefixLength(pl byte) {
+	op.prefixLength = pl
+}
+
+func (op *OptIAPrefix) IPv6Prefix() net.IP {
+	return op.ipv6Prefix
+}
+
+func (op *OptIAPrefix) SetIPv6Prefix(p net.IP) {
+	op.ipv6Prefix = p
 }
 
 // Length returns the option length
@@ -46,7 +62,7 @@ func (op *OptIAPrefix) Length() int {
 
 func (op *OptIAPrefix) String() string {
 	return fmt.Sprintf("OptIAPrefix{preferredlifetime=%v, validlifetime=%v, prefixlength=%v, ipv6prefix=%v, options=%v}",
-		op.PreferredLifetime, op.ValidLifetime, op.PrefixLength, op.IPv6Prefix, op.Options)
+		op.PreferredLifetime, op.ValidLifetime, op.PrefixLength(), op.IPv6Prefix(), op.Options)
 }
 
 // GetOneOption will get an option of the give type from the Options field, if
@@ -70,8 +86,8 @@ func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
 	}
 	opt.PreferredLifetime = binary.BigEndian.Uint32(data[:4])
 	opt.ValidLifetime = binary.BigEndian.Uint32(data[4:8])
-	opt.PrefixLength = data[8]
-	opt.IPv6Prefix = net.IP(data[9:25])
+	opt.prefixLength = data[8]
+	opt.ipv6Prefix = net.IP(data[9:25])
 	opt.Options, err = OptionsFromBytes(data[25:])
 	if err != nil {
 		return nil, err

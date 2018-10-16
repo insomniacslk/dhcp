@@ -109,8 +109,8 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 	oaddr := OptIAPrefix{}
 	oaddr.PreferredLifetime = 0xaabbccdd
 	oaddr.ValidLifetime = 0xeeff0011
-	oaddr.PrefixLength = 36
-	oaddr.IPv6Prefix = net.IPv6loopback
+	oaddr.SetPrefixLength(36)
+	oaddr.SetIPv6Prefix(net.IPv6loopback)
 
 	opt := OptIAForPrefixDelegation{}
 	opt.IaId = [4]byte{1, 2, 3, 4}
