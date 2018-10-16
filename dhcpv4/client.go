@@ -166,7 +166,7 @@ func (c *Client) getLocalUDPAddr() (*net.UDPAddr, error) {
 
 func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 	defaultRemoteAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	raddr, err := toUDPAddr(c.LocalAddr, defaultRemoteAddr)
+	raddr, err := toUDPAddr(c.RemoteAddr, defaultRemoteAddr)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid remote address: %s", err)
 	}
