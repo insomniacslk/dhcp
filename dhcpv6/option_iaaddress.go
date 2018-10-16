@@ -47,7 +47,7 @@ func (op *OptIAAddress) Length() int {
 
 func (op *OptIAAddress) String() string {
 	return fmt.Sprintf("OptIAAddress{ipv6addr=%v, preferredlifetime=%v, validlifetime=%v, options=%v}",
-		net.IP(op.IPv6Addr[:]), op.PreferredLifetime, op.ValidLifetime, op.Options)
+		op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options)
 }
 
 // ParseOptIAAddress builds an OptIAAddress structure from a sequence
