@@ -57,8 +57,8 @@ func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	return MakeRawUDPPacket(payload, serverAddr, clientAddr)
 }
 
-// MakeRawPacket converts a payload (a serialized DHCPv4 packet) into a
-// raw packet for the specified serverAddr from the specified clientAddr.
+// MakeRawUDPPacket converts a payload (a serialized DHCPv4 packet) into a
+// raw UDP packet for the specified serverAddr from the specified clientAddr.
 func MakeRawUDPPacket(payload []byte, serverAddr, clientAddr net.UDPAddr) ([]byte, error) {
 	udp := make([]byte, 8)
 	binary.BigEndian.PutUint16(udp[:2], uint16(clientAddr.Port))
@@ -172,15 +172,19 @@ func (c *Client) getUDPAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
 func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
 	conversation := make([]*DHCPv4, 0)
 	var err error
-
+	raddr, _, err := c.getUDPAddresses()
+	if err != nil {
+		return nil, err
+	}
 	// Get our file descriptor for the raw socket we need.
 	var sfd int
-	// TODO: we should check the IP is actually not a broadcast address for the
-	// subnet here.
-	if c.RemoteAddr != nil {
-		sfd, err = makeRawSocket()
-	} else {
+	// If the address is not net.IPV4bcast, use a unicast socket. This should
+	// cover the majority of use cases, but we're essentially ignoring the fact
+	// that the IP could be the broadcast address of a specific subnet.
+	if raddr.IP.Equal(net.IPv4bcast) {
 		sfd, err = MakeBroadcastSocket(ifname)
+	} else {
+		sfd, err = makeRawSocket()
 	}
 	if err != nil {
 		return conversation, err
