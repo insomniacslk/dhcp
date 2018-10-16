@@ -52,14 +52,14 @@ func NewClient() *Client {
 // for UDP broadcast.
 func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
 	log.Printf("Warning: dhcpv4.MakeRawBroadcastPacket() is deprecated and will be removed.")
-	serverAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	clientAddr := &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
-	return MakeRawPacket(payload, serverAddr, clientAddr)
+	serverAddr := net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	clientAddr := net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	return MakeRawUDPPacket(payload, serverAddr, clientAddr)
 }
 
 // MakeRawPacket converts a payload (a serialized DHCPv4 packet) into a
 // raw packet for the specified serverAddr from the specified clientAddr.
-func MakeRawPacket(payload []byte, serverAddr, clientAddr *net.UDPAddr) ([]byte, error) {
+func MakeRawUDPPacket(payload []byte, serverAddr, clientAddr net.UDPAddr) ([]byte, error) {
 	udp := make([]byte, 8)
 	binary.BigEndian.PutUint16(udp[:2], uint16(clientAddr.Port))
 	binary.BigEndian.PutUint16(udp[2:4], uint16(serverAddr.Port))
@@ -138,7 +138,7 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
-func (c *Client) getAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
+func (c *Client) getUDPAddresses() (*net.UDPAddr, *net.UDPAddr, error) {
 	var laddr *net.UDPAddr
 	if c.LocalAddr == nil {
 		laddr = &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
@@ -229,11 +229,11 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
 func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
-	raddr, laddr, err := c.getAddresses()
+	raddr, laddr, err := c.getUDPAddresses()
 	if err != nil {
 		return nil, err
 	}
-	packetBytes, err := MakeRawPacket(packet.ToBytes(), raddr, laddr)
+	packetBytes, err := MakeRawUDPPacket(packet.ToBytes(), *raddr, *laddr)
 	if err != nil {
 		return nil, err
 	}
