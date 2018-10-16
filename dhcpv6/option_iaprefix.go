@@ -43,10 +43,12 @@ func (op *OptIAPrefix) SetPrefixLength(pl byte) {
 	op.prefixLength = pl
 }
 
+// IPv6Prefix returns the ipv6Prefix
 func (op *OptIAPrefix) IPv6Prefix() net.IP {
 	return op.ipv6Prefix
 }
 
+// SetIPv6Prefix sets the ipv6Prefix
 func (op *OptIAPrefix) SetIPv6Prefix(p net.IP) {
 	op.ipv6Prefix = p
 }
