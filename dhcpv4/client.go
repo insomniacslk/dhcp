@@ -115,20 +115,6 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 	return fd, nil
 }
 
-// MakeUnicastSocket creates a socket that can be passed to unix.Sendto
-// that will send packets to a single address
-func MakeUnicastSocket(ifname string) (int, error) {
-	fd, err := makeRawSocket()
-	if err != nil {
-		return fd, err
-	}
-	err = BindToInterface(fd, ifname)
-	if err != nil {
-		return fd, err
-	}
-	return fd, nil
-}
-
 // MakeListeningSocket creates a listening socket on 0.0.0.0 for the DHCP client
 // port and returns it.
 func MakeListeningSocket(ifname string) (int, error) {
@@ -192,7 +178,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	// TODO: we should check the IP is actually not a broadcast address for the
 	// subnet here.
 	if c.RemoteAddr != nil {
-		sfd, err = MakeUnicastSocket(ifname)
+		sfd, err = makeRawSocket()
 	} else {
 		sfd, err = MakeBroadcastSocket(ifname)
 	}
