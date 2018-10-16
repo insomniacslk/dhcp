@@ -149,6 +149,9 @@ func toUDPAddr(addr net.Addr, defaultAddr *net.UDPAddr) (*net.UDPAddr, error) {
 			return nil, fmt.Errorf("could not convert to net.UDPAddr, got %v instead", reflect.TypeOf(addr))
 		}
 	}
+	if uaddr.IP.To4() == nil {
+		return nil, fmt.Errorf("'%s' is not a valid IPv4 address", uaddr.IP)
+	}
 	return uaddr, nil
 }
 
