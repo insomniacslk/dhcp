@@ -14,6 +14,7 @@ func TestOptIAPrefix(t *testing.T) {
 		0xee, 0xff, 0x00, 0x11,                         // validLifetime
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
+		0, 8, 0, 2, 0xaa, 0xbb,				// options
 	}
 	opt, err := ParseOptIAPrefix(buf)
 	if err != nil {
@@ -30,6 +31,9 @@ func TestOptIAPrefix(t *testing.T) {
 	}
 	if ip := opt.IPv6Prefix; !bytes.Equal(ip, net.IPv6loopback) {
 		t.Fatalf("Invalid Prefix Length. Expected %v, got %v", net.IPv6loopback, ip)
+	}
+	if opt.Length() != len(buf) {
+		t.Fatalf("Invalid Option Length. Expected %v, got %v", len(buf), opt.Length())
 	}
 }
 
