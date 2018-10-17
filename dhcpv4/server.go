@@ -1,4 +1,4 @@
-package dhcpv6
+package dhcpv4
 
 import (
 	"fmt"
@@ -9,18 +9,18 @@ import (
 )
 
 /*
-  To use the DHCPv6 server code you have to call NewServer with two arguments:
-  - a handler function, that will be called every time a valid DHCPv6 packet is
+  To use the DHCPv4 server code you have to call NewServer with two arguments:
+  - a handler function, that will be called every time a valid DHCPv4 packet is
     received, and
   - an address to listen on.
 
   The handler is a function that takes as input a packet connection, that can be
   used to reply to the client; a peer address, that identifies the client sending
-  the request, and the DHCPv6 packet itself. Just implement your custom logic in
+  the request, and the DHCPv4 packet itself. Just implement your custom logic in
   the handler.
 
   The address to listen on is used to know IP address, port and optionally the
-  scope to create and UDP6 socket to listen on for DHCPv6 traffic.
+  scope to create and UDP socket to listen on for DHCPv4 traffic.
 
   Example program:
 
@@ -31,20 +31,20 @@ import (
 	"log"
 	"net"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
-func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
-	// this function will just print the received DHCPv6 message, without replying
+func handler(conn net.PacketConn, peer net.Addr, m dhcpv4.DHCPv4) {
+	// this function will just print the received DHCPv4 message, without replying
 	log.Print(m.Summary())
 }
 
 func main() {
 	laddr := net.UDPAddr{
-		IP:   net.ParseIP("::1"),
-		Port: 547,
+		IP:   net.ParseIP("127.0.0.1"),
+		Port: 67,
 	}
-	server := dhcpv6.NewServer(laddr, handler)
+	server := dhcpv4.NewServer(laddr, handler)
 
 	defer server.Close()
 	if err := server.ActivateAndServe(); err != nil {
@@ -55,10 +55,10 @@ func main() {
 */
 
 // Handler is a type that defines the handler function to be called every time a
-// valid DHCPv6 message is received
-type Handler func(conn net.PacketConn, peer net.Addr, m DHCPv6)
+// valid DHCPv4 message is received
+type Handler func(conn net.PacketConn, peer net.Addr, m *DHCPv4)
 
-// Server represents a DHCPv6 server object
+// Server represents a DHCPv4 server object
 type Server struct {
 	conn       net.PacketConn
 	connMutex  sync.Mutex
@@ -78,11 +78,11 @@ func (s *Server) LocalAddr() net.Addr {
 	return s.conn.LocalAddr()
 }
 
-// ActivateAndServe starts the DHCPv6 server
+// ActivateAndServe starts the DHCPv4 server
 func (s *Server) ActivateAndServe() error {
 	s.connMutex.Lock()
 	if s.conn == nil {
-		conn, err := net.ListenUDP("udp6", &s.localAddr)
+		conn, err := net.ListenUDP("udp4", &s.localAddr)
 		if err != nil {
 			s.connMutex.Unlock()
 			return err
@@ -125,7 +125,7 @@ func (s *Server) ActivateAndServe() error {
 		log.Printf("Handling request from %v", peer)
 		m, err := FromBytes(rbuf[:n])
 		if err != nil {
-			log.Printf("Error parsing DHCPv6 request: %v", err)
+			log.Printf("Error parsing DHCPv4 request: %v", err)
 			continue
 		}
 		s.Handler(pc, peer, m)
