@@ -118,6 +118,10 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 // MakeListeningSocket creates a listening socket on 0.0.0.0 for the DHCP client
 // port and returns it.
 func MakeListeningSocket(ifname string) (int, error) {
+	return makeListeningSocketWithCustomPort(ifname, ClientPort)
+}
+
+func makeListeningSocketWithCustomPort(ifname string, port int) (int, error) {
 	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_DGRAM, unix.IPPROTO_UDP)
 	if err != nil {
 		return fd, err
@@ -128,7 +132,7 @@ func MakeListeningSocket(ifname string) (int, error) {
 	}
 	var addr [4]byte
 	copy(addr[:], net.IPv4zero.To4())
-	if err = unix.Bind(fd, &unix.SockaddrInet4{Port: ClientPort, Addr: addr}); err != nil {
+	if err = unix.Bind(fd, &unix.SockaddrInet4{Port: port, Addr: addr}); err != nil {
 		return fd, err
 	}
 	err = BindToInterface(fd, ifname)
@@ -186,6 +190,10 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	if err != nil {
 		return nil, err
 	}
+	laddr, err := c.getLocalUDPAddr()
+	if err != nil {
+		return nil, err
+	}
 	// Get our file descriptor for the raw socket we need.
 	var sfd int
 	// If the address is not net.IPV4bcast, use a unicast socket. This should
@@ -199,7 +207,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	if err != nil {
 		return conversation, err
 	}
-	rfd, err := MakeListeningSocket(ifname)
+	rfd, err := makeListeningSocketWithCustomPort(ifname, laddr.Port)
 	if err != nil {
 		return conversation, err
 	}
