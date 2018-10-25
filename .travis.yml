@@ -5,7 +5,7 @@ sudo: required
 go:
   - "1.9"
   - "1.10"
-  - "1.11rc1"
+  - "1.11"
   - tip
 
 before_install:
