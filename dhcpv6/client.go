@@ -37,15 +37,19 @@ func NewClient() *Client {
 	}
 }
 
-// Exchange executes a 4-way DHCPv6 request (SOLICIT, ADVERTISE, REQUEST,
-// REPLY).
+// Exchange executes a 4-way DHCPv6 request (Solicit, Advertise, Request,
+// Reply). The modifiers will be applied to the Solicit and Request packets.
+// A common use is to make sure that the Solicit packet has the right options,
+// see modifiers.go
 func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]DHCPv6, error) {
 	conversation := make([]DHCPv6, 0)
 	var err error
 
 	// Solicit
 	solicit, advertise, err := c.Solicit(ifname, modifiers...)
-	conversation = append(conversation, solicit)
+	if solicit != nil {
+		conversation = append(conversation, solicit)
+	}
 	if err != nil {
 		return conversation, err
 	}
@@ -181,8 +185,9 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	return adv, nil
 }
 
-// Solicit sends a SOLICIT, return the solicit, an ADVERTISE (if not nil), and
-// an error if any
+// Solicit sends a Solicit, return the Solicit, an Advertise (if not nil), and
+// an error if any. The modifiers will be applied to the Solicit before sending
+// it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
 	solicit, err := NewSolicitForInterface(ifname)
 	if err != nil {
@@ -195,8 +200,9 @@ func (c *Client) Solicit(ifname string, modifiers ...Modifier) (DHCPv6, DHCPv6, 
 	return solicit, advertise, err
 }
 
-// Request sends a REQUEST built from an ADVERTISE.
-// It returns the request, a reply if not nil, and an error if any
+// Request sends a Request built from an Advertise. It returns the Request, a
+// Reply (if not nil), and an error if any. The modifiers will be applied to
+// the Request before sending it, see modifiers.go
 func (c *Client) Request(ifname string, advertise DHCPv6, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
 	request, err := NewRequestFromAdvertise(advertise)
 	if err != nil {
