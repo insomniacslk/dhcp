@@ -220,14 +220,13 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 		return fmt.Errorf("could not write resolv.conf file %v", err)
 	}
 
-	iface, err = netlink.LinkByName(ifname)
-	if err != nil {
-		return fmt.Errorf("could not obtain interface when adding default route: %v", err)
-	}
-
 	// add default route information for v4 space. only one default route is allowed
 	// so ignore the others if there are multiple ones
 	if len(netconf.Routers) > 0 {
+		iface, err = netlink.LinkByName(ifname)
+		if err != nil {
+			return fmt.Errorf("could not obtain interface when adding default route: %v", err)
+		}
 		// if there is a default v4 route, remove it, as we want to add the one we just got during
 		// the dhcp transaction. if the route is not present, which is the final state we want,
 		// an error is returned so ignore it
