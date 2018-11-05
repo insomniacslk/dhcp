@@ -3,12 +3,26 @@ package dhcpv4
 import (
 	"errors"
 	"log"
+	"math/rand"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	// initialize seed. This is generally bad, but "good enough"
+	// to generate random ports for these tests
+	rand.Seed(time.Now().UTC().UnixNano())
+}
+
+func randPort() int {
+	// can't use port 0 with raw sockets, so until we implement
+	// a non-raw-sockets client for non-static ports, we have to
+	// deal with this "randomness"
+	return 1024 + rand.Intn(65536-1024)
+}
 
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
@@ -17,7 +31,7 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	loAddr := net.ParseIP("127.0.0.1")
 	laddr := net.UDPAddr{
 		IP:   loAddr,
-		Port: 0,
+		Port: randPort(),
 	}
 	s := NewServer(laddr, handler)
 	go s.ActivateAndServe()
@@ -25,7 +39,7 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	c := NewClient()
 	// FIXME this doesn't deal well with raw sockets, the actual 0 will be used
 	// in the UDP header as source port
-	c.LocalAddr = &net.UDPAddr{IP: loAddr, Port: 0}
+	c.LocalAddr = &net.UDPAddr{IP: loAddr, Port: randPort()}
 	for {
 		if s.LocalAddr() != nil {
 			break
@@ -42,17 +56,17 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 // utility function to return the loopback interface name
 // TODO this is copied from dhcpv6/server_test.go , we should refactor common code in a separate package
 func getLoopbackInterface() (string, error) {
-		var ifaces []net.Interface
-		var err error
-		if ifaces, err = net.Interfaces(); err != nil {
-				return "", err
+	var ifaces []net.Interface
+	var err error
+	if ifaces, err = net.Interfaces(); err != nil {
+		return "", err
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
+			return iface.Name, nil
 		}
-		for _, iface := range ifaces {
-			if iface.Flags & net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
-					return iface.Name, nil
-			}
-		}
-		return "", errors.New("No loopback interface found")
+	}
+	return "", errors.New("No loopback interface found")
 }
 
 func TestNewServer(t *testing.T) {
