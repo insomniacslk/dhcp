@@ -24,6 +24,24 @@ func randPort() int {
 	return 1024 + rand.Intn(65536-1024)
 }
 
+// DORAHandler is a server handler suitable for DORA transactions
+func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
+	offer, err := New()
+	if err != nil {
+		log.Printf("New Offer packet creation failed: %v", err)
+		return
+	}
+	// TODO implement NewOfferFromDiscovery and NewAckFromRequest,
+	//      and replace the bulk of code below that generates the
+	//      response packet
+	offer.SetOpcode(OpcodeBootReply)
+	offer.SetTransactionID(m.TransactionID())
+	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+	if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
+		log.Printf("Cannot reply to client: %v", err)
+	}
+}
+
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
 func setUpClientAndServer(handler Handler) (*Client, *Server) {
@@ -74,8 +92,7 @@ func TestNewServer(t *testing.T) {
 		IP:   net.ParseIP("127.0.0.1"),
 		Port: 0,
 	}
-	handler := func(conn net.PacketConn, peer net.Addr, m *DHCPv4) {}
-	s := NewServer(laddr, handler)
+	s := NewServer(laddr, DORAHandler)
 	defer s.Close()
 
 	require.NotNil(t, s)
@@ -85,20 +102,7 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerActivateAndServe(t *testing.T) {
-	handler := func(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
-		offer, err := New()
-		if err != nil {
-			log.Printf("New Offer packet creation failed: %v", err)
-			return
-		}
-		offer.SetOpcode(OpcodeBootReply)
-		offer.SetTransactionID(m.TransactionID())
-		offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
-		if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
-			log.Printf("Cannot reply to client: %v", err)
-		}
-	}
-	c, s := setUpClientAndServer(handler)
+	c, s := setUpClientAndServer(DORAHandler)
 	defer s.Close()
 
 	lo, err := getLoopbackInterface()
@@ -111,7 +115,6 @@ func TestServerActivateAndServe(t *testing.T) {
 	discover.SetTransactionID(0xaabbccdd)
 	discover.SetUnicast()
 
-	conv, err := c.Exchange(lo, discover)
-	log.Printf("CONV: %+v", conv)
+	_, err = c.Exchange(lo, discover)
 	require.NoError(t, err)
 }
