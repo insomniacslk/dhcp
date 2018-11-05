@@ -55,9 +55,9 @@ func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifie
 		err          error
 	)
 	delay := 2 * time.Second
+	modifiers = append(modifiers, dhcpv4.WithNetboot)
 	for i := 0; i <= retries; i++ {
 		log.Printf("sending request, attempt #%d", i+1)
-		modifiers = append(modifiers, dhcpv4.WithNetboot)
 		client := dhcpv4.NewClient()
 		client.ReadTimeout = timeout
 		conversation, err = client.Exchange(ifname, nil, modifiers...)
