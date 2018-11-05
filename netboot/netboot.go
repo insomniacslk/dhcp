@@ -10,6 +10,10 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
+var sleeper = func(d time.Duration) {
+	time.Sleep(d)
+}
+
 // RequestNetbootv6 sends a netboot request via DHCPv6 and returns the exchanged packets. Additional modifiers
 // can be passed to manipulate both solicit and advertise packets.
 func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifiers ...dhcpv6.Modifier) ([]dhcpv6.DHCPv6, error) {
@@ -37,7 +41,7 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 				// don't wait at the end of the last attempt
 				break
 			}
-			time.Sleep(delay)
+			sleeper(delay)
 			// TODO add random splay
 			delay = delay * 2
 			continue
@@ -68,7 +72,7 @@ func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifie
 				// don't wait at the end of the last attempt
 				break
 			}
-			time.Sleep(delay)
+			sleeper(delay)
 			// TODO add random splay
 			delay = delay * 2
 			continue

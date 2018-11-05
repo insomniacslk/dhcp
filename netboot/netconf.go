@@ -1,8 +1,6 @@
 package netboot
 
 import (
-	"bytes"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -95,7 +93,8 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 		return nil, errors.New("no netmask option in response packet")
 	}
 	netmask := netmaskOption.(*dhcpv4.OptSubnetMask).SubnetMask
-	if binary.LittleEndian.Uint32(netmask) == 0 {
+	ones, _ := netmask.Size()
+	if ones == 0 {
 		return nil, errors.New("netmask extracted from OptSubnetMask options is null")
 	}
 
@@ -120,14 +119,11 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 		PreferredLifetime: 0,
 		ValidLifetime:     int(leaseTime),
 	})
-	if bytes.Equal(netmask, []byte{0, 0, 0, 0}) {
-		return nil, errors.New("netmask in response packet is null")
-	}
 
 	// get DNS configuration
 	dnsServersOption := d.GetOneOption(dhcpv4.OptionDomainNameServer)
 	if dnsServersOption == nil {
-		return nil, errors.New("no dns server option in response packet")
+		return nil, errors.New("name servers option is empty")
 	}
 	dnsServers := dnsServersOption.(*dhcpv4.OptDomainNameServer).NameServers
 	if len(dnsServers) == 0 {
@@ -150,7 +146,7 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	// get default gateway
 	routerOption := d.GetOneOption(dhcpv4.OptionRouter)
 	if routerOption == nil {
-		return nil, errors.New("no router option specified in reponse packet")
+		return nil, errors.New("no router option specified in response packet")
 	}
 
 	routersList := routerOption.(*dhcpv4.OptRouter).Routers
@@ -234,6 +230,10 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 			IP:   net.IPv4(0, 0, 0, 0),
 			Mask: net.CIDRMask(0, 32),
 		}
+		// Remove a possible default route (dst 0.0.0.0) to the L2 domain (gw: 0.0.0.0), which is what
+		// a client would want to add before initiating the DHCP transaction in order not to fail with
+		// ENETUNREACH. If this default route has a specific metric assigned, it doesn't get removed.
+		// The code doesn't remove any other default route (i.e. gw != 0.0.0.0).
 		route := netlink.Route{LinkIndex: iface.Attrs().Index, Dst: dst, Src: net.IPv4(0, 0, 0, 0)}
 		netlink.RouteDel(&route)
 
@@ -241,7 +241,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 		route = netlink.Route{LinkIndex: iface.Attrs().Index, Dst: dst, Src: src, Gw: netconf.Routers[0]}
 		err = netlink.RouteAdd(&route)
 		if err != nil {
-			return fmt.Errorf("could not add default route: %v", err)
+			return fmt.Errorf("could not add default route (%+v) to interface %s: %v", route, iface.Attrs().Name, err)
 		}
 	}
 
