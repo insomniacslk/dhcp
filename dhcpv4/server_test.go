@@ -93,6 +93,7 @@ func TestServerActivateAndServe(t *testing.T) {
 		}
 		offer.SetOpcode(OpcodeBootReply)
 		offer.SetTransactionID(m.TransactionID())
+		offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
 		if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
 			log.Printf("Cannot reply to client: %v", err)
 		}
