@@ -92,6 +92,7 @@ func TestServerActivateAndServe(t *testing.T) {
 			return
 		}
 		offer.SetOpcode(OpcodeBootReply)
+		offer.SetTransactionID(m.TransactionID())
 		if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
 			log.Printf("Cannot reply to client: %v", err)
 		}
@@ -106,10 +107,10 @@ func TestServerActivateAndServe(t *testing.T) {
 	discover, err := NewDiscovery(hwaddr)
 	require.NoError(t, err)
 
-	discover.SetTransactionID(0xaabbcc)
+	discover.SetTransactionID(0xaabbccdd)
 	discover.SetUnicast()
 
 	conv, err := c.Exchange(lo, discover)
+	log.Printf("CONV: %+v", conv)
 	require.NoError(t, err)
-	log.Print(conv)
 }

@@ -623,8 +623,8 @@ func (d *DHCPv4) MessageType() *MessageType {
 }
 
 func (d *DHCPv4) String() string {
-	return fmt.Sprintf("DHCPv4(opcode=%v hwtype=%v hwaddr=%v)",
-		d.OpcodeToString(), d.HwTypeToString(), d.ClientHwAddr())
+	return fmt.Sprintf("DHCPv4(opcode=%v xid=%d hwtype=%v hwaddr=%v)",
+		d.OpcodeToString(), d.TransactionID(), d.HwTypeToString(), d.ClientHwAddr())
 }
 
 // Summary prints detailed information about the packet.
