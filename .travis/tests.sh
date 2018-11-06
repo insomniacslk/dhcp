@@ -13,6 +13,11 @@ for d in $(go list ./... | grep -v vendor); do
         rm profile.out
     fi
     # integration tests
+    if [ "$(basename $d)" = "iana" ]
+    then
+        # skip iana, is's mostly data and there's no test
+        continue
+    fi
     go test -c -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
     sudo "./$(basename $d).test"
     if [ -f profile.out ]; then
