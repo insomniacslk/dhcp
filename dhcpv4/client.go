@@ -275,7 +275,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 	recvErrors := make(chan error, 1)
 	go func(errs chan<- error) {
 		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
-		if err != nil {
+		if innerErr != nil {
 			errs <- innerErr
 			return
 		}
@@ -291,7 +291,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 			}
 
 			response, innerErr = FromBytes(buf[:n])
-			if err != nil {
+			if innerErr != nil {
 				errs <- innerErr
 				return
 			}
