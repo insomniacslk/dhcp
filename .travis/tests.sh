@@ -14,6 +14,9 @@ for d in $(go list ./... | grep -v vendor); do
     fi
 done
 
+# integration tests
+sudo go -tags=integration ./...
+
 # check that we are not breaking some projects that depend on us. Remove this after moving to
 # Go versioned modules, see https://github.com/insomniacslk/dhcp/issues/123
 

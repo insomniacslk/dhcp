@@ -1,3 +1,5 @@
+// +build integration
+
 package dhcpv4
 
 import (
