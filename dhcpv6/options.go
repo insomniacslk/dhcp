@@ -128,6 +128,8 @@ func OptionsFromBytes(data []byte) ([]Option, error) {
 // OptionParser is a function signature for option parsing
 type OptionParser func(data []byte) (Option, error)
 
+// OptionsFromBytesWithParser parses Options from byte sequences using the
+// parsing function that is passed in as a paremeter
 func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, error) {
 	// Parse a sequence of bytes until the end and build a list of options from
 	// it. Returns an error if any invalid option or length is found.
