@@ -128,13 +128,11 @@ func TestServerActivateAndServe(t *testing.T) {
 	lo, err := getLoopbackInterface()
 	require.NoError(t, err)
 
-	hwaddr := []byte{0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06}
-	discover, err := NewDiscovery(hwaddr)
-	require.NoError(t, err)
+	modifiers := []Modifier{
+		WithTransactionID(0xaabbccdd),
+		WithHwAddr([]byte{0, 1, 2, 3, 4, 5, 6}),
+	}
 
-	discover.SetTransactionID(0xaabbccdd)
-	discover.SetUnicast()
-
-	_, err = c.Exchange(lo, discover)
+	_, err = c.Exchange(lo, nil, modifiers...)
 	require.NoError(t, err)
 }

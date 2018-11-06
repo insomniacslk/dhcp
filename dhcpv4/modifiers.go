@@ -4,6 +4,42 @@ import (
 	"net"
 )
 
+// WithTransactionID sets the Transaction ID for the DHCPv4 packet
+func WithTransactionID(xid uint32) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		d.SetTransactionID(xid)
+		return d
+	}
+}
+
+// WithBroadcast sets the packet to be broadcast or unicast
+func WithBroadcast(broadcast bool) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		if broadcast {
+			d.SetBroadcast()
+		} else {
+			d.SetUnicast()
+		}
+		return d
+	}
+}
+
+// WithHwAddr sets the hardware address for a packet
+func WithHwAddr(hwaddr []byte) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		d.SetClientHwAddr(hwaddr)
+		return d
+	}
+}
+
+// WithOption appends a DHCPv4 option provided by the user
+func WithOption(opt Option) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		d.AddOption(opt)
+		return d
+	}
+}
+
 // WithUserClass adds a user class option to the packet.
 // The rfc parameter allows you to specify if the userclass should be
 // rfc compliant or not. More details in issue #113
