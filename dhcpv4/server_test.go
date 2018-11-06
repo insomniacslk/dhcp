@@ -36,6 +36,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 	//      response packet
 	offer.SetOpcode(OpcodeBootReply)
 	offer.SetTransactionID(m.TransactionID())
+	offer.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
 	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
 	if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
 		log.Printf("Cannot reply to client: %v", err)
