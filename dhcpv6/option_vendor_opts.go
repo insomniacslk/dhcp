@@ -109,17 +109,8 @@ func vendParseOption(dataStart []byte) (Option, error) {
 	}
 
 	optData := dataStart[4 : 4+length]
-	if len(optData) < 2 {
-		return nil, errors.New("vendParseOption: short data: missing length field")
-	}
-
 	if len(optData) < 1 {
 		return nil, errors.New("vendParseOption: at least one vendor options data is required")
-	}
-
-	if length != len(optData) {
-		return nil, fmt.Errorf("Error: declared length is different from actual length for vendor option %d: %d != %d",
-			code, len(optData), length)
 	}
 
 	return &OptionGeneric{OptionCode: code, OptionData: optData}, nil
