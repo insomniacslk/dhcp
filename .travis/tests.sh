@@ -12,10 +12,15 @@ for d in $(go list ./... | grep -v vendor); do
         cat profile.out >> coverage.txt
         rm profile.out
     fi
+    # integration tests
+    # this may fail on systems where `go` is different between regular user
+    # and root
+    sudo go test -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    if [ -f profile.out ]; then
+        cat profile.out >> coverage.txt
+        rm profile.out
+    fi
 done
-
-# integration tests
-sudo go -tags=integration ./...
 
 # check that we are not breaking some projects that depend on us. Remove this after moving to
 # Go versioned modules, see https://github.com/insomniacslk/dhcp/issues/123
