@@ -12,7 +12,7 @@ package dhcpv6
       |                       enterprise-number                       |
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
       .                                                               .
-      .                   option-data (sub-options)         					.
+      .                   option-data (sub-options)         	       .
       .                                                               .
       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
@@ -82,78 +82,46 @@ func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {
 	opt.EnterpriseNumber = binary.BigEndian.Uint32(data[:4])
 
 	var err error
-	opt.VendorOpts, err = VendorOptionsFromBytes(data[4:])
+	opt.VendorOpts, err = OptionsFromBytesWithParser(data[4:], vendParseOption)
 	if err != nil {
 		return nil, err
 	}
 	return &opt, nil
 }
 
-// VendorOptionsFromBytes builds a slice of GenericOptions from a slice of bytes
-func VendorOptionsFromBytes(data []byte) ([]Option, error) {
-	// Parse a sequence of bytes until the end and build a list of options from
-	// it. Returns an error if any invalid option or length is found.
-	options := make([]Option, 0, 10)
-	if len(data) == 0 {
-		// no options, no party
-		return options, nil
-	}
-	if len(data) < 4 {
-		// cannot be shorter than option code (2 bytes) + length (2 bytes)
-		return nil, fmt.Errorf("Invalid options: shorter than 4 bytes")
-	}
-	idx := 0
-	for {
-		if idx == len(data) {
-			break
-		}
-		if idx > len(data) {
-			// this should never happen
-			return nil, fmt.Errorf("Error: reading past the end of options")
-		}
-		opt, err := VendParseOption(data[idx:])
-		if err != nil {
-			return nil, err
-		}
-		options = append(options, opt)
-		idx += opt.Length() + 4 // 4 bytes for type + length
-	}
-	return options, nil
-}
-
-// VendParseOption builds a GenericOption from a slice of bytes
+// vendParseOption builds a GenericOption from a slice of bytes
 // We cannot use the exisitng ParseOption function in options.go because the
 // sub-options include codes specific to each vendor. There are overlaps in these
 // codes with RFC standard codes.
-func VendParseOption(dataStart []byte) (Option, error) {
+func vendParseOption(dataStart []byte) (Option, error) {
 	// Parse a sequence of bytes as a single DHCPv6 option.
 	// Returns the option structure, or an error if any.
 	opt := &OptionGeneric{}
 
 	if len(dataStart) < 4 {
-		return opt, fmt.Errorf("Invalid DHCPv6 option: less than 4 bytes")
+		return opt, fmt.Errorf("Invalid DHCPv6 vendor option: less than 4 bytes")
 	}
 	code := OptionCode(binary.BigEndian.Uint16(dataStart[:2]))
 	length := int(binary.BigEndian.Uint16(dataStart[2:4]))
 	if len(dataStart) < length+4 {
-		return opt, fmt.Errorf("Invalid option length for option %v. Declared %v, actual %v",
+		return opt, fmt.Errorf("Invalid option length for vendor option %v. Declared %v, actual %v",
 			code, length, len(dataStart)-4,
 		)
 	}
 
 	data := dataStart[4 : 4+length]
 	if len(data) < 2 {
-		return opt, errors.New("ParseOptVendorOpts: short data: missing length field")
+		return opt, errors.New("vendParseOption: short data: missing length field")
 	}
 	opt.OptionData = data
 	opt.OptionCode = code
 
 	if len(opt.OptionData) < 1 {
-		return opt, errors.New("ParseOptVendorOpts: at least one vendor options data is required")
+		return opt, errors.New("vendParseOption: at least one vendor options data is required")
 	}
 
 	if length != opt.Length() {
-		return opt, fmt.Errorf("Error: declared length is different from actual length for option %d: %d != %d",
+		return opt, fmt.Errorf("Error: declared length is different from actual length for vendor option %d: %d != %d",
 			code, opt.Length(), length)
 	}
 

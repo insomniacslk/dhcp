@@ -21,6 +21,7 @@ func TestOptVendorOpts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if optLen := opt.Length(); optLen != len(expected) {
 		t.Fatalf("Invalid length. Expected %v, got %v", len(expected), optLen)
 	}
@@ -55,30 +56,13 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 	}
 }
 
-func TestVendorOptionsFromBytes(t *testing.T) {
-	optData := []byte("Arista;DCS-7304;01.00;HSH14425148")
-	var buf []byte
-	buf = append(buf, []byte{00, 1, 00, byte(len(optData))}...)
-	buf = append(buf, optData...)
-
-	var expected []Option
-	expected = append(expected, &OptionGeneric{OptionCode: 1, OptionData: []byte("Arista;DCS-7304;01.00;HSH14425148")})
-	opt, err := VendorOptionsFromBytes(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if !reflect.DeepEqual(opt, expected) {
-		t.Fatalf("Invalid FromBytes result. Expected %v, got %v", expected, opt)
-	}
-}
-
 func TestVendParseOption(t *testing.T) {
 	var buf []byte
 	buf = append(buf, []byte{00, 1, 00, 33}...)
 	buf = append(buf, []byte("Arista;DCS-7304;01.00;HSH14425148")...)
 
 	expected := &OptionGeneric{OptionCode: 1, OptionData: []byte("Arista;DCS-7304;01.00;HSH14425148")}
-	opt, err := VendParseOption(buf)
+	opt, err := vendParseOption(buf)
 	if err != nil {
 		fmt.Println(err)
 	}
