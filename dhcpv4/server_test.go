@@ -26,19 +26,41 @@ func randPort() int {
 
 // DORAHandler is a server handler suitable for DORA transactions
 func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
-	offer, err := New()
+	if m == nil {
+		log.Printf("Packet is nil!")
+		return
+	}
+	if m.Opcode() != OpcodeBootRequest {
+		log.Printf("Not a BootRequest!")
+		return
+	}
+	response, err := New()
 	if err != nil {
-		log.Printf("New Offer packet creation failed: %v", err)
+		log.Printf("New DHCPv4 packet creation failed: %v", err)
 		return
 	}
 	// TODO implement NewOfferFromDiscovery and NewAckFromRequest,
 	//      and replace the bulk of code below that generates the
 	//      response packet
-	offer.SetOpcode(OpcodeBootReply)
-	offer.SetTransactionID(m.TransactionID())
-	offer.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
-	offer.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
-	if _, err := conn.WriteTo(offer.ToBytes(), peer); err != nil {
+	response.SetOpcode(OpcodeBootReply)
+	response.SetTransactionID(m.TransactionID())
+	response.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
+	opt := m.GetOneOption(OptionDHCPMessageType)
+	if opt == nil {
+		log.Printf("No message type found!")
+		return
+	}
+	switch opt.(*OptMessageType).MessageType {
+	case MessageTypeDiscover:
+		response.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+	case MessageTypeRequest:
+		response.AddOption(&OptMessageType{MessageType: MessageTypeAck})
+	default:
+		log.Printf("Unhandled message type: %v", opt.(*OptMessageType).MessageType)
+		return
+	}
+
+	if _, err := conn.WriteTo(response.ToBytes(), peer); err != nil {
 		log.Printf("Cannot reply to client: %v", err)
 	}
 }
