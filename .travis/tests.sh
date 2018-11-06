@@ -13,7 +13,8 @@ for d in $(go list ./... | grep -v vendor); do
         rm profile.out
     fi
     # integration tests
-    sudo GOPATH=$(go env GOPATH) $(which go) test -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    go test -c -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    sudo "./$d.test"
     if [ -f profile.out ]; then
         cat profile.out >> coverage.txt
         rm profile.out
