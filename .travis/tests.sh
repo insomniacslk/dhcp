@@ -14,7 +14,7 @@ for d in $(go list ./... | grep -v vendor); do
     fi
     # integration tests
     go test -c -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
-    sudo "./$d/$(basename $d).test"
+    sudo "./$(basename $d).test"
     if [ -f profile.out ]; then
         cat profile.out >> coverage.txt
         rm profile.out
