@@ -7,8 +7,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTransactionIDModifier(t *testing.T) {
+	d, err := New()
+	require.NoError(t, err)
+	d = WithTransactionID(0xddccbbaa)(d)
+	require.Equal(t, uint32(0xddccbbaa), d.TransactionID())
+}
+
+func TestBroadcastModifier(t *testing.T) {
+	d, err := New()
+	require.NoError(t, err)
+	d = WithBroadcast(true)(d)
+	require.Equal(t, true, d.IsBroadcast())
+}
+
+func TestHwAddrModifier(t *testing.T) {
+	d, err := New()
+	require.NoError(t, err)
+	hwaddr := [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
+	d = WithHwAddr(hwaddr[:])(d)
+	require.Equal(t, hwaddr, d.ClientHwAddr())
+}
+
 func TestUserClassModifier(t *testing.T) {
-	d, _ := New()
+	d, err := New()
+	require.NoError(t, err)
 	userClass := WithUserClass([]byte("linuxboot"), false)
 	d = userClass(d)
 	expected := []byte{

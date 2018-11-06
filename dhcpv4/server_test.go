@@ -128,11 +128,19 @@ func TestServerActivateAndServe(t *testing.T) {
 	lo, err := getLoopbackInterface()
 	require.NoError(t, err)
 
+	xid := uint32(0xaabbccdd)
+	hwaddr := [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
+
 	modifiers := []Modifier{
-		WithTransactionID(0xaabbccdd),
-		WithHwAddr([]byte{0, 1, 2, 3, 4, 5, 6}),
+		WithTransactionID(xid),
+		WithHwAddr(hwaddr[:]),
 	}
 
-	_, err = c.Exchange(lo, nil, modifiers...)
+	conv, err := c.Exchange(lo, nil, modifiers...)
 	require.NoError(t, err)
+	require.Equal(t, 4, len(conv))
+	for _, p := range conv {
+		require.Equal(t, xid, p.TransactionID())
+		require.Equal(t, [16]byte(hwaddr), p.ClientHwAddr())
+	}
 }
