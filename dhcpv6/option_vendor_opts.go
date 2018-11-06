@@ -96,34 +96,31 @@ func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {
 func vendParseOption(dataStart []byte) (Option, error) {
 	// Parse a sequence of bytes as a single DHCPv6 option.
 	// Returns the option structure, or an error if any.
-	opt := &OptionGeneric{}
 
 	if len(dataStart) < 4 {
-		return opt, fmt.Errorf("Invalid DHCPv6 vendor option: less than 4 bytes")
+		return nil, fmt.Errorf("Invalid DHCPv6 vendor option: less than 4 bytes")
 	}
 	code := OptionCode(binary.BigEndian.Uint16(dataStart[:2]))
 	length := int(binary.BigEndian.Uint16(dataStart[2:4]))
 	if len(dataStart) < length+4 {
-		return opt, fmt.Errorf("Invalid option length for vendor option %v. Declared %v, actual %v",
+		return nil, fmt.Errorf("Invalid option length for vendor option %v. Declared %v, actual %v",
 			code, length, len(dataStart)-4,
 		)
 	}
 
-	data := dataStart[4 : 4+length]
-	if len(data) < 2 {
-		return opt, errors.New("vendParseOption: short data: missing length field")
-	}
-	opt.OptionData = data
-	opt.OptionCode = code
-
-	if len(opt.OptionData) < 1 {
-		return opt, errors.New("vendParseOption: at least one vendor options data is required")
+	optData := dataStart[4 : 4+length]
+	if len(optData) < 2 {
+		return nil, errors.New("vendParseOption: short data: missing length field")
 	}
 
-	if length != opt.Length() {
-		return opt, fmt.Errorf("Error: declared length is different from actual length for vendor option %d: %d != %d",
-			code, opt.Length(), length)
+	if len(optData) < 1 {
+		return nil, errors.New("vendParseOption: at least one vendor options data is required")
 	}
 
-	return opt, nil
+	if length != len(optData) {
+		return nil, fmt.Errorf("Error: declared length is different from actual length for vendor option %d: %d != %d",
+			code, len(optData), length)
+	}
+
+	return &OptionGeneric{OptionCode: code, OptionData: optData}, nil
 }
