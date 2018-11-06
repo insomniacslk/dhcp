@@ -13,9 +13,7 @@ for d in $(go list ./... | grep -v vendor); do
         rm profile.out
     fi
     # integration tests
-    # this may fail on systems where `go` is different between regular user
-    # and root
-    sudo go test -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    sudo GOPATH=$(go env GOPATH) $(which go) test -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
     if [ -f profile.out ]; then
         cat profile.out >> coverage.txt
         rm profile.out
