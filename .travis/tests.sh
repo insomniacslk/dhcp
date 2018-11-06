@@ -12,6 +12,15 @@ for d in $(go list ./... | grep -v vendor); do
         cat profile.out >> coverage.txt
         rm profile.out
     fi
+    # integration tests
+    go test -c -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    testbin="./$(basename $d).test"
+    # only run it if it was built - i.e. if there are integ tests
+    test -x "${testbin}" && sudo "./${testbin}"
+    if [ -f profile.out ]; then
+        cat profile.out >> coverage.txt
+        rm profile.out
+    fi
 done
 
 # check that we are not breaking some projects that depend on us. Remove this after moving to

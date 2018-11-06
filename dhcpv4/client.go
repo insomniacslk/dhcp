@@ -3,12 +3,12 @@ package dhcpv4
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"log"
 	"net"
 	"os"
-	"time"
-	"fmt"
 	"reflect"
-	"log"
+	"time"
 
 	"golang.org/x/net/ipv4"
 	"golang.org/x/sys/unix"
@@ -35,8 +35,8 @@ var (
 // addresses.
 type Client struct {
 	ReadTimeout, WriteTimeout time.Duration
-	RemoteAddr   net.Addr
-	LocalAddr    net.Addr
+	RemoteAddr                net.Addr
+	LocalAddr                 net.Addr
 }
 
 // NewClient generates a new client to perform a DHCP exchange with, setting the
@@ -275,7 +275,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 	recvErrors := make(chan error, 1)
 	go func(errs chan<- error) {
 		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
-		if err != nil {
+		if innerErr != nil {
 			errs <- innerErr
 			return
 		}
@@ -291,7 +291,7 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 			}
 
 			response, innerErr = FromBytes(buf[:n])
-			if err != nil {
+			if innerErr != nil {
 				errs <- innerErr
 				return
 			}
