@@ -36,17 +36,12 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 		log.Printf("Not a BootRequest!")
 		return
 	}
-	response, err := New()
+	reply, err := NewReplyFromRequest(m)
 	if err != nil {
-		log.Printf("New DHCPv4 packet creation failed: %v", err)
+		log.Printf("NewReplyFromRequest failed: %v", err)
 		return
 	}
-	// TODO implement NewOfferFromDiscovery and NewAckFromRequest,
-	//      and replace the bulk of code below that generates the
-	//      response packet
-	response.SetOpcode(OpcodeBootReply)
-	response.SetTransactionID(m.TransactionID())
-	response.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
+	reply.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
 	opt := m.GetOneOption(OptionDHCPMessageType)
 	if opt == nil {
 		log.Printf("No message type found!")
@@ -54,15 +49,15 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 	}
 	switch opt.(*OptMessageType).MessageType {
 	case MessageTypeDiscover:
-		response.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+		reply.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
 	case MessageTypeRequest:
-		response.AddOption(&OptMessageType{MessageType: MessageTypeAck})
+		reply.AddOption(&OptMessageType{MessageType: MessageTypeAck})
 	default:
 		log.Printf("Unhandled message type: %v", opt.(*OptMessageType).MessageType)
 		return
 	}
 
-	if _, err := conn.WriteTo(response.ToBytes(), peer); err != nil {
+	if _, err := conn.WriteTo(reply.ToBytes(), peer); err != nil {
 		log.Printf("Cannot reply to client: %v", err)
 	}
 }
