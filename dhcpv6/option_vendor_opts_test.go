@@ -31,6 +31,13 @@ func TestOptVendorOpts(t *testing.T) {
 	if !reflect.DeepEqual(opt.VendorOpts, expectedOpts.VendorOpts) {
 		t.Fatalf("Invalid Vendor Option Data. Expected %v, got %v", expected, expectedOpts.VendorOpts)
 	}
+
+	shortData := make([]byte, 1)
+	opt, err = ParseOptVendorOpts(shortData)
+	if err == nil {
+		t.Fatalf("Short data (<4 bytes) did not cause an error when it should have")
+	}
+
 }
 
 func TestOptVendorOptsToBytes(t *testing.T) {
@@ -69,4 +76,26 @@ func TestVendParseOption(t *testing.T) {
 	if !reflect.DeepEqual(opt, expected) {
 		t.Fatalf("Invalid Vendor Parse Option result. Expected %v, got %v", expected, opt)
 	}
+
+
+	shortData := make([]byte, 1) // data length too small
+	opt, err = vendParseOption(shortData)
+	if err == nil {
+		t.Fatalf("Short data (<4 bytes) did not cause an error when it should have")
+	}
+
+	shortData = []byte{0, 0, 0, 0} // missing actual vendor data.
+	opt, err = vendParseOption(shortData)
+	if err == nil {
+		t.Fatalf("Missing VendorData option. An error should have been returned but wasn't")
+	}
+
+	shortData = []byte{0, 0,
+		0, 4, // declared length
+		0} // data starts here, length of 1
+	opt, err = vendParseOption(shortData)
+	if err == nil {
+		t.Fatalf("Declared length does not match actual data length. An error should have been returned but wasn't")
+	}
+
 }
