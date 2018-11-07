@@ -2,21 +2,26 @@ package bsdp
 
 import (
 	"errors"
+	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
 // Client represents a BSDP client that can perform BSDP exchanges via the
 // broadcast address.
-type Client dhcpv4.Client
+type Client struct {
+	ReadTimeout, WriteTimeout time.Duration
+	dhcpv4.Client
+}
 
 // NewClient constructs a new client with default read and write timeouts from
 // dhcpv4.Client.
-func NewClient() *Client {
-	c := dhcpv4.NewClient()
+func NewClient(readTimeout, writeTimeout time.Duration) *Client {
 	return &Client{
-		ReadTimeout:  c.ReadTimeout,
-		WriteTimeout: c.WriteTimeout,
+		Client: dhcpv4.Client{
+			ReadTimeout:  readTimeout,
+			WriteTimeout: writeTimeout,
+		},
 	}
 }
 
@@ -37,10 +42,7 @@ func castVendorOpt(ack *dhcpv4.DHCPv4) {
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
 func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.DHCPv4, error) {
-	conversation := make([]*dhcpv4.DHCPv4, 1)
-	var err error
-
-	// Get our file descriptor for the broadcast socket.
+	conversation := make([]*dhcpv4.DHCPv4, 0)
 	sendFd, err := dhcpv4.MakeBroadcastSocket(ifname)
 	if err != nil {
 		return conversation, err
@@ -57,10 +59,10 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.D
 			return conversation, err
 		}
 	}
-	conversation[0] = informList
+	conversation = append(conversation, informList)
 
 	// ACK[LIST]
-	ackForList, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informList, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
+	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -86,7 +88,7 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.D
 	conversation = append(conversation, informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := dhcpv4.BroadcastSendReceive(sendFd, recvFd, informSelect, c.ReadTimeout, c.WriteTimeout, dhcpv4.MessageTypeAck)
+	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
 	castVendorOpt(ackForSelect)
 	if err != nil {
 		return conversation, err
