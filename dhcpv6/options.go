@@ -88,6 +88,8 @@ func ParseOption(dataStart []byte) (Option, error) {
 		opt, err = ParseOptUserClass(optData)
 	case OptionVendorClass:
 		opt, err = ParseOptVendorClass(optData)
+	case OptionVendorOpts:
+		opt, err = ParseOptVendorOpts(optData)
 	case OptionInterfaceID:
 		opt, err = ParseOptInterfaceId(optData)
 	case OptionDNSRecursiveNameServer:
@@ -120,6 +122,15 @@ func ParseOption(dataStart []byte) (Option, error) {
 }
 
 func OptionsFromBytes(data []byte) ([]Option, error) {
+	 return OptionsFromBytesWithParser(data, ParseOption)
+}
+
+// OptionParser is a function signature for option parsing
+type OptionParser func(data []byte) (Option, error)
+
+// OptionsFromBytesWithParser parses Options from byte sequences using the
+// parsing function that is passed in as a paremeter
+func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, error) {
 	// Parse a sequence of bytes until the end and build a list of options from
 	// it. Returns an error if any invalid option or length is found.
 	options := make([]Option, 0, 10)
@@ -140,7 +151,7 @@ func OptionsFromBytes(data []byte) ([]Option, error) {
 			// this should never happen
 			return nil, fmt.Errorf("Error: reading past the end of options")
 		}
-		opt, err := ParseOption(data[idx:])
+		opt, err := parser(data[idx:])
 		if err != nil {
 			return nil, err
 		}
