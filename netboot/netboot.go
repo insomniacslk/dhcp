@@ -6,8 +6,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
+
+var sleeper = func(d time.Duration) {
+	time.Sleep(d)
+}
 
 // RequestNetbootv6 sends a netboot request via DHCPv6 and returns the exchanged packets. Additional modifiers
 // can be passed to manipulate both solicit and advertise packets.
@@ -36,7 +41,38 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 				// don't wait at the end of the last attempt
 				break
 			}
-			time.Sleep(delay)
+			sleeper(delay)
+			// TODO add random splay
+			delay = delay * 2
+			continue
+		}
+		break
+	}
+	return conversation, nil
+}
+
+// RequestNetbootv4 sends a netboot request via DHCPv4 and returns the exchanged packets. Additional modifiers
+// can be passed to manipulate both the discover and offer packets.
+func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
+	var (
+		conversation []*dhcpv4.DHCPv4
+		err          error
+	)
+	delay := 2 * time.Second
+	modifiers = append(modifiers, dhcpv4.WithNetboot)
+	for i := 0; i <= retries; i++ {
+		log.Printf("sending request, attempt #%d", i+1)
+		client := dhcpv4.NewClient()
+		client.ReadTimeout = timeout
+		conversation, err = client.Exchange(ifname, nil, modifiers...)
+		if err != nil {
+			log.Printf("Client.Exchange failed: %v", err)
+			log.Printf("sleeping %v before retrying", delay)
+			if i >= retries {
+				// don't wait at the end of the last attempt
+				break
+			}
+			sleeper(delay)
 			// TODO add random splay
 			delay = delay * 2
 			continue
@@ -94,4 +130,29 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 		bootfile = string(obf.BootFileURL)
 	}
 	return netconf, bootfile, nil
+}
+
+// ConversationToNetconfv4 extracts network configuration and boot file URL from a
+// DHCPv4 4-way conversation and returns them, or an error if any.
+func ConversationToNetconfv4(conversation []*dhcpv4.DHCPv4) (*NetConf, string, error) {
+	var reply *dhcpv4.DHCPv4
+	var bootFileUrl string
+	for _, m := range conversation {
+		// look for a BootReply packet of type Offer containing the bootfile URL.
+		// Normally both packets with Message Type OFFER or ACK do contain
+		// the bootfile URL.
+		if m.Opcode() == dhcpv4.OpcodeBootReply && *m.MessageType() == dhcpv4.MessageTypeOffer {
+			bootFileUrl = m.BootFileNameToString()
+			reply = m
+			break
+		}
+	}
+	if reply == nil {
+		return nil, "", errors.New("no OFFER with valid bootfile URL received")
+	}
+	netconf, err := GetNetConfFromPacketv4(reply)
+	if err != nil {
+		return nil, "", fmt.Errorf("could not get netconf: %v", err)
+	}
+	return netconf, bootFileUrl, nil
 }
