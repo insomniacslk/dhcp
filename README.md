@@ -18,7 +18,7 @@ pulled in automatically if necessary.
 
 So, to get `dhcpv6` and `dhpv4` just run:
 ```
-go get github.com/insomniacslk/dhcp/dhcpv{4,6}
+go get -u github.com/insomniacslk/dhcp/dhcpv{4,6}
 ```
 
 
