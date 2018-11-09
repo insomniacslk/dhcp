@@ -33,7 +33,7 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 
 	opt := packet.GetOneOption(dhcpv4.OptionClassIdentifier)
 	if opt == nil {
-		return vd, nil
+		return nil, nil
 	}
 	vc := opt.(*dhcpv4.OptClassIdentifier).Identifier
 
@@ -87,6 +87,6 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 	}
 
-	// We didn't match anything, just return an empty vendor data.
-	return vd, nil
+	// We didn't match anything.
+	return nil, nil
 }
