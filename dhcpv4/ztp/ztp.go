@@ -42,7 +42,7 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
 		if len(p) < 4 {
-			return vd, errVendorOptionMalformed
+			return nil, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
@@ -54,7 +54,7 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	case strings.HasPrefix(vc, "ZPESystems:"):
 		p := strings.Split(vc, ":")
 		if len(p) < 3 {
-			return vd, errVendorOptionMalformed
+			return nil, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
@@ -77,6 +77,8 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 			// No separator was found. Attempt serial number from the hostname
 			if opt := packet.GetOneOption(dhcpv4.OptionHostName); opt != nil {
 				vd.Serial = opt.(*dhcpv4.OptHostName).HostName
+			} else {
+				return nil, errVendorOptionMalformed
 			}
 		} else {
 			vd.Serial = vc[sepIdx+1:]

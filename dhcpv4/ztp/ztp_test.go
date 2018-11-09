@@ -14,14 +14,13 @@ func TestParseV4VendorClass(t *testing.T) {
 		want         *VendorData
 		fail         bool
 	}{
-		{name: "empty", fail: true},
-		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true},
+		{name: "empty"},
+		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345"},
 		{name: "truncatedVendor", vc: "Arista;1234", fail: true},
 		{
 			name: "arista",
 			vc:   "Arista;DCS-7050S-64;01.23;JPE12345678",
-			want: &VendorData{
-				VendorName: "Arista", Model: "DCS-7050S-64", Serial: "JPE12345678"},
+			want: &VendorData{VendorName: "Arista", Model: "DCS-7050S-64", Serial: "JPE12345678"},
 		},
 		{
 			name: "juniper",
@@ -39,21 +38,8 @@ func TestParseV4VendorClass(t *testing.T) {
 			hostname: "DE123",
 			want:     &VendorData{VendorName: "Juniper", Model: "qfx10008", Serial: "DE123"},
 		},
-		{
-			name: "juniperNoSerial",
-			vc:   "Juniper-qfx10008",
-			want: &VendorData{VendorName: "Juniper", Model: "qfx10008", Serial: ""},
-		},
-		{
-			name: "juniperInvalid",
-			vc:   "Juniper-",
-			want: &VendorData{VendorName: "Juniper", Model: "", Serial: ""},
-		},
-		{
-			name: "juniperInvalid2",
-			vc:   "Juniper-qfx99999-",
-			want: &VendorData{VendorName: "Juniper", Model: "qfx99999", Serial: ""},
-		},
+		{name: "juniperNoSerial", vc: "Juniper-qfx10008", fail: true},
+		{name: "juniperInvalid", vc: "Juniper-", fail: true},
 		{
 			name: "zpe",
 			vc:   "ZPESystems:NSC:001234567",
@@ -79,7 +65,9 @@ func TestParseV4VendorClass(t *testing.T) {
 			}
 
 			vd, err := parseV4VendorClass(packet)
-			if !tc.fail {
+			if tc.fail {
+				require.Error(t, err)
+			} else {
 				require.NoError(t, err)
 				require.Equal(t, tc.want, vd)
 			}
