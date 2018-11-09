@@ -1,11 +1,9 @@
 package ztpv4
 
 import (
-	"bytes"
 	"errors"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
@@ -20,30 +18,22 @@ type VendorData struct {
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
 
-// VendorDataV4 will try to parse dhcp4 options data looking for more specific
-// vendor data (like model, serial number, etc).  If the options are missing
-func VendorDataV4(packet *dhcpv4.DHCPv4) VendorData {
-	vd := VendorData{}
-
-	if err := parseV4VendorClass(&vd, packet); err != nil {
-		glog.Errorf("failed to parse vendor data from vendor class: %v", err)
-	}
-
-	if err := parseV4VIVC(&vd, packet); err != nil {
-		glog.Errorf("failed to parse vendor data from vendor-idenitifying vendor class: %v", err)
-	}
-
-	return vd
+// ParseVendorData will try to parse dhcp4 options looking for more
+// specific vendor data (like model, serial number, etc).
+func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	return parseV4VendorClass(packet);
 }
 
 // parseV4Opt60 will attempt to look at the Vendor Class option (Option 60) on
 // DHCPv4.  The option is formatted as a string with the content being specific
 // for the vendor, usually using a deliminator to separate the values.
 // See: https://tools.ietf.org/html/rfc1533#section-9.11
-func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
+func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	vd := &VendorData{}
+
 	opt := packet.GetOneOption(dhcpv4.OptionClassIdentifier)
 	if opt == nil {
-		return nil
+		return vd, nil
 	}
 	vc := opt.(*dhcpv4.OptClassIdentifier).Identifier
 
@@ -52,25 +42,25 @@ func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
 		if len(p) < 4 {
-			return errVendorOptionMalformed
+			return vd, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
 		vd.Model = p[1]
 		vd.Serial = p[3]
-		return nil
+		return vd, nil
 
 	// ZPESystems:NSC:002251623
 	case strings.HasPrefix(vc, "ZPESystems:"):
 		p := strings.Split(vc, ":")
 		if len(p) < 3 {
-			return errVendorOptionMalformed
+			return vd, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
 		vd.Model = p[1]
 		vd.Serial = p[2]
-		return nil
+		return vd, nil
 
 	// Juniper option 60 parsing is a bit more nuanced.  The following are all
 	// "valid" indetifing stings for Juniper:
@@ -94,46 +84,9 @@ func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 		}
 		vd.Model = vc
 
-		return nil
+		return vd, nil
 	}
 
 	// We didn't match anything, just return an empty vendor data.
-	return nil
-}
-
-const entIDCiscoSystems = 0x9
-
-// parseV4Opt124 will attempt to read the Vendor-Identifying Vendor Class
-// (Option 124) on a DHCPv4 packet.  The data is represented in a length/value
-// format with an indentifying enterprise number.
-//
-// See: https://tools.ietf.org/html/rfc3925
-func parseV4VIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
-	opt := packet.GetOneOption(dhcpv4.OptionVendorIdentifyingVendorClass)
-	if opt == nil {
-		return nil
-	}
-	ids := opt.(*dhcpv4.OptVIVC).Identifiers
-
-	for _, id := range ids {
-		if id.EntID == entIDCiscoSystems {
-			vd.VendorName = "Cisco Systems"
-
-			//SN:0;PID:R-IOSXRV9000-CC
-			for _, f := range bytes.Split(id.Data, []byte(";")) {
-				p := bytes.SplitN(f, []byte(":"), 2)
-				if len(p) != 2 {
-					return errVendorOptionMalformed
-				}
-
-				switch string(p[0]) {
-				case "SN":
-					vd.Serial = string(p[1])
-				case "PID":
-					vd.Model = string(p[1])
-				}
-			}
-		}
-	}
-	return nil
+	return vd, nil
 }
