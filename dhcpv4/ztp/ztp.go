@@ -26,7 +26,7 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 
 // parseV4Opt60 will attempt to look at the Vendor Class option (Option 60) on
 // DHCPv4.  The option is formatted as a string with the content being specific
-// for the vendor, usually using a deliminator to separate the values.
+// for the vendor, usually using a delimitator to separate the values.
 // See: https://tools.ietf.org/html/rfc1533#section-9.11
 func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
