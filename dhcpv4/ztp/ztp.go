@@ -8,8 +8,7 @@ import (
 )
 
 // VendorData is optional data a particular vendor may or may not include
-// in the Vendor Class options.  All values are optional and will be zero
-// values if not found.
+// in the Vendor Class options.
 type VendorData struct {
 	VendorName string
 	Model      string
@@ -29,13 +28,12 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 // for the vendor, usually using a delimitator to separate the values.
 // See: https://tools.ietf.org/html/rfc1533#section-9.11
 func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
-	vd := &VendorData{}
-
 	opt := packet.GetOneOption(dhcpv4.OptionClassIdentifier)
 	if opt == nil {
 		return nil, nil
 	}
 	vc := opt.(*dhcpv4.OptClassIdentifier).Identifier
+	vd := &VendorData{}
 
 	switch {
 	// Arista;DCS-7050S-64;01.23;JPE12221671
