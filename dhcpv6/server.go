@@ -117,7 +117,10 @@ func (s *Server) ActivateAndServe() error {
 		if err != nil {
 			switch err.(type) {
 			case net.Error:
-				// silently skip and continue
+				if !err.(net.Error).Timeout() {
+					return err
+				}
+				// if timeout, silently skip and continue
 			default:
 				//complain and continue
 				log.Printf("Error reading from packet conn: %v", err)
