@@ -40,6 +40,7 @@ func TestParseV4VendorClass(t *testing.T) {
 		},
 		{name: "juniperNoSerial", vc: "Juniper-qfx10008", fail: true},
 		{name: "juniperInvalid", vc: "Juniper-", fail: true},
+		{name: "juniperInvalid2", vc: "Juniper-qfx99999-", fail: true},
 		{
 			name: "zpe",
 			vc:   "ZPESystems:NSC:001234567",

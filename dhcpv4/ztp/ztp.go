@@ -79,6 +79,9 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 				return nil, errVendorOptionMalformed
 			}
 		} else {
+			if len(vc) == sepIdx+1 {
+				return nil, errVendorOptionMalformed
+			}
 			vd.Serial = vc[sepIdx+1:]
 			vc = vc[:sepIdx]
 		}
