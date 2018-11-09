@@ -30,6 +30,7 @@ package main
 import (
 	"log"
 	"net"
+	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
@@ -50,6 +51,8 @@ func main() {
 	if err := server.ActivateAndServe(); err != nil {
 		log.Panic(err)
 	}
+	// Serve for 60 seconds
+	time.Sleep(60 * time.Second)
 }
 
 */
@@ -78,63 +81,68 @@ func (s *Server) LocalAddr() net.Addr {
 	return s.conn.LocalAddr()
 }
 
-// ActivateAndServe starts the DHCPv6 server
+// ActivateAndServe starts the DHCPv6 server. The listener will run in
+// background, and can be interrupted with `Server.Close`.
 func (s *Server) ActivateAndServe() error {
 	s.connMutex.Lock()
+	// FIXME check if conn != nil instead, and close it if so. It may
+	//       panic if it's in an invalid state, but better than assuming
+	//       that the already open connection is usable.
 	if s.conn == nil {
 		conn, err := net.ListenUDP("udp6", &s.localAddr)
 		if err != nil {
+			s.connMutex.Unlock()
 			return err
 		}
 		s.conn = conn
 	}
-	defer func() {
-		s.conn.Close()
-		s.conn = nil
-	}()
 	s.connMutex.Unlock()
 	var (
 		pc *net.UDPConn
 		ok bool
 	)
 	if pc, ok = s.conn.(*net.UDPConn); !ok {
-		return fmt.Errorf("Error: not an UDPConn")
+		return fmt.Errorf("error: not an UDPConn")
 	}
 	if pc == nil {
-		return fmt.Errorf("ActivateAndServe: Invalid nil PacketConn")
+		return fmt.Errorf("ActivateAndServe: invalid nil PacketConn")
 	}
 	log.Printf("Server listening on %s", pc.LocalAddr())
 	log.Print("Ready to handle requests")
-	for {
-		select {
-		case <-s.shouldStop:
-			break
-		case <-time.After(time.Millisecond):
-		}
-		pc.SetReadDeadline(time.Now().Add(time.Second))
-		rbuf := make([]byte, 4096) // FIXME this is bad
-		n, peer, err := pc.ReadFrom(rbuf)
-		if err != nil {
-			switch err.(type) {
-			case net.Error:
-				if !err.(net.Error).Timeout() {
-					return err
-				}
-				// if timeout, silently skip and continue
-			default:
-				//complain and continue
-				log.Printf("Error reading from packet conn: %v", err)
+	go func() {
+		for {
+			select {
+			case <-s.shouldStop:
+				break
+			case <-time.After(time.Millisecond):
 			}
-			continue
+			pc.SetReadDeadline(time.Now().Add(time.Second))
+			rbuf := make([]byte, 4096) // FIXME this is bad
+			n, peer, err := pc.ReadFrom(rbuf)
+			if err != nil {
+				switch err.(type) {
+				case net.Error:
+					if !err.(net.Error).Timeout() {
+						// TODO report errors through a channel
+						log.Print(err)
+						return
+					}
+					// if timeout, silently skip and continue
+				default:
+					// complain and continue
+					log.Printf("Error reading from packet conn: %v", err)
+				}
+				continue
+			}
+			log.Printf("Handling request from %v", peer)
+			m, err := FromBytes(rbuf[:n])
+			if err != nil {
+				log.Printf("Error parsing DHCPv6 request: %v", err)
+				continue
+			}
+			go s.Handler(pc, peer, m)
 		}
-		log.Printf("Handling request from %v", peer)
-		m, err := FromBytes(rbuf[:n])
-		if err != nil {
-			log.Printf("Error parsing DHCPv6 request: %v", err)
-			continue
-		}
-		go s.Handler(pc, peer, m)
-	}
+	}()
 	return nil
 }
 
