@@ -133,7 +133,7 @@ func (s *Server) ActivateAndServe() error {
 			log.Printf("Error parsing DHCPv6 request: %v", err)
 			continue
 		}
-		s.Handler(pc, peer, m)
+		go s.Handler(pc, peer, m)
 	}
 	return nil
 }
