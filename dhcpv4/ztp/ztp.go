@@ -63,7 +63,7 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 
 	// Juniper option 60 parsing is a bit more nuanced.  The following are all
-	// "valid" indetifing stings for Juniper:
+	// "valid" identifying stings for Juniper:
 	//    Juniper-ptx1000-DD576      <vendor>-<model>-<serial
 	//    Juniper-qfx10008           <vendor>-<model> (serial in hostname option)
 	//    Juniper-qfx10002-361-DN817 <vendor>-<model>-<serial> (model has a dash in it!)
