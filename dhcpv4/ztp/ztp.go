@@ -20,14 +20,6 @@ var errVendorOptionMalformed = errors.New("malformed vendor option")
 // ParseVendorData will try to parse dhcp4 options looking for more
 // specific vendor data (like model, serial number, etc).
 func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
-	return parseV4VendorClass(packet);
-}
-
-// parseV4Opt60 will attempt to look at the Vendor Class option (Option 60) on
-// DHCPv4.  The option is formatted as a string with the content being specific
-// for the vendor, usually using a delimitator to separate the values.
-// See: https://tools.ietf.org/html/rfc1533#section-9.11
-func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	opt := packet.GetOneOption(dhcpv4.OptionClassIdentifier)
 	if opt == nil {
 		return nil, nil
@@ -66,27 +58,20 @@ func parseV4VendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	//    Juniper-qfx10008           <vendor>-<model> (serial in hostname option)
 	//    Juniper-qfx10002-361-DN817 <vendor>-<model>-<serial> (model has a dash in it!)
 	case strings.HasPrefix(vc, "Juniper-"):
-		// strip of the prefix
-		vc := vc[len("Juniper-"):]
-		vd.VendorName = "Juniper"
-
-		sepIdx := strings.LastIndex(vc, "-")
-		if sepIdx == -1 {
-			// No separator was found. Attempt serial number from the hostname
+		p := strings.Split(vc, "-")
+		if len(p) < 3 {
+			vd.Model = p[1]
 			if opt := packet.GetOneOption(dhcpv4.OptionHostName); opt != nil {
 				vd.Serial = opt.(*dhcpv4.OptHostName).HostName
 			} else {
-				return nil, errVendorOptionMalformed
+				return nil, errors.New("host name option is missing")
 			}
 		} else {
-			if len(vc) == sepIdx+1 {
-				return nil, errVendorOptionMalformed
-			}
-			vd.Serial = vc[sepIdx+1:]
-			vc = vc[:sepIdx]
+			vd.Model = strings.Join(p[1:len(p)-1], "-")
+			vd.Serial = p[len(p)-1]
 		}
-		vd.Model = vc
 
+		vd.VendorName = p[0]
 		return vd, nil
 	}
 

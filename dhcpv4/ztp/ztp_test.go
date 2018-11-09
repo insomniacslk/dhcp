@@ -39,8 +39,6 @@ func TestParseV4VendorClass(t *testing.T) {
 			want:     &VendorData{VendorName: "Juniper", Model: "qfx10008", Serial: "DE123"},
 		},
 		{name: "juniperNoSerial", vc: "Juniper-qfx10008", fail: true},
-		{name: "juniperInvalid", vc: "Juniper-", fail: true},
-		{name: "juniperInvalid2", vc: "Juniper-qfx99999-", fail: true},
 		{
 			name: "zpe",
 			vc:   "ZPESystems:NSC:001234567",
@@ -65,7 +63,7 @@ func TestParseV4VendorClass(t *testing.T) {
 				})
 			}
 
-			vd, err := parseV4VendorClass(packet)
+			vd, err := ParseVendorData(packet)
 			if tc.fail {
 				require.Error(t, err)
 			} else {
