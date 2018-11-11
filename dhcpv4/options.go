@@ -50,6 +50,8 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptHostName(data)
 	case OptionDomainName:
 		opt, err = ParseOptDomainName(data)
+	case OptionRootPath:
+		opt, err = ParseOptRootPath(data)
 	case OptionBroadcastAddress:
 		opt, err = ParseOptBroadcastAddress(data)
 	case OptionNTPServers:
@@ -74,14 +76,14 @@ func ParseOption(data []byte) (Option, error) {
 		opt, err = ParseOptBootfileName(data)
 	case OptionUserClassInformation:
 		opt, err = ParseOptUserClass(data)
+	case OptionRelayAgentInformation:
+		opt, err = ParseOptRelayAgentInformation(data)
 	case OptionClientSystemArchitectureType:
 		opt, err = ParseOptClientArchType(data)
-	case OptionVendorIdentifyingVendorClass:
-		opt, err = ParseOptVIVC(data)
 	case OptionDNSDomainSearchList:
 		opt, err = ParseOptDomainSearch(data)
-	case OptionRootPath:
-		opt, err = ParseOptRootPath(data)
+	case OptionVendorIdentifyingVendorClass:
+		opt, err = ParseOptVIVC(data)
 	default:
 		opt, err = ParseOptionGeneric(data)
 	}
@@ -112,6 +114,15 @@ func OptionsFromBytes(data []byte) ([]Option, error) {
 // and builds a list of options from it. The sequence should not contain the
 // DHCP magic cookie. Returns an error if any invalid option or length is found.
 func OptionsFromBytesWithoutMagicCookie(data []byte) ([]Option, error) {
+	return OptionsFromBytesWithParser(data, ParseOption)
+}
+
+// OptionParser is a function signature for option parsing
+type OptionParser func(data []byte) (Option, error)
+
+// OptionsFromBytesWithParser parses Options from byte sequences using the
+// parsing function that is passed in as a paremeter
+func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, error) {
 	options := make([]Option, 0, 10)
 	idx := 0
 	for {
@@ -122,7 +133,7 @@ func OptionsFromBytesWithoutMagicCookie(data []byte) ([]Option, error) {
 		if idx > len(data) {
 			return nil, errors.New("read past the end of options")
 		}
-		opt, err := ParseOption(data[idx:])
+		opt, err := parser(data[idx:])
 		idx++
 		if err != nil {
 			return nil, err
