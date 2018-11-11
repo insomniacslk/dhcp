@@ -79,6 +79,14 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Requested IP address lease time
+	option = []byte{51, 4, 0, 0, 0, 0}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionIPAddressLeaseTime, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Message type
 	option = []byte{53, 1, 1}
 	opt, err = ParseOption(option)
