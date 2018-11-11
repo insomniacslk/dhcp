@@ -44,4 +44,3 @@ func TestOptRelayAgentInformationToBytesString(t *testing.T) {
 	o := OptRelayAgentInformation{}
 	require.Equal(t, "Relay Agent Information -> []", o.String())
 }
-
