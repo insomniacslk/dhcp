@@ -60,7 +60,7 @@ func (o *OptRelayAgentInformation) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptRelayAgentInformation) String() string {
-	return fmt.Sprintf("Relay Agent Information -> [%v]", o.Options)
+	return fmt.Sprintf("Relay Agent Information -> %v", o.Options)
 }
 
 // Length returns the length of the data portion (excluding option code and byte
