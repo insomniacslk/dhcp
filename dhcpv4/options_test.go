@@ -7,9 +7,19 @@ import (
 )
 
 func TestParseOption(t *testing.T) {
-	// Option subnet mask
-	option := []byte{1, 4, 255, 255, 255, 0}
+	// Generic
+	option := []byte{5, 4, 192, 168, 1, 254} // DNS option
 	opt, err := ParseOption(option)
+	require.NoError(t, err)
+	generic := opt.(*OptionGeneric)
+	require.Equal(t, OptionNameServer, generic.Code())
+	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
+	require.Equal(t, 4, generic.Length())
+	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
+
+	// Option subnet mask
+	option = []byte{1, 4, 255, 255, 255, 0}
+	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionSubnetMask, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
@@ -166,16 +176,6 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, OptionClientSystemArchitectureType, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Generic
-	option = []byte{5, 4, 192, 168, 1, 254} // DNS option
-	opt, err = ParseOption(option)
-	require.NoError(t, err)
-	generic := opt.(*OptionGeneric)
-	require.Equal(t, OptionNameServer, generic.Code())
-	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
-	require.Equal(t, 4, generic.Length())
-	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
