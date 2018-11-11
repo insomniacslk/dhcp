@@ -15,7 +15,7 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 	}
 	opt, err := ParseOptRelayAgentInformation(data)
 	require.NoError(t, err)
-
+	require.Equal(t, len(opt.Options), 2)
 	circuit, ok := opt.Options[0].(*OptionGeneric)
 	require.True(t, ok)
 	remote, ok := opt.Options[1].(*OptionGeneric)
