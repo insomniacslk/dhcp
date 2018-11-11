@@ -13,7 +13,9 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}
-	opt, err := ParseOptRelayAgentInformation(data)
+	opt, err := ParseOptRelayAgentInformation([]byte(""))
+	require.Error(t, err)
+	opt, err = ParseOptRelayAgentInformation(data)
 	require.NoError(t, err)
 	require.Equal(t, len(opt.Options), 2)
 	circuit, ok := opt.Options[0].(*OptionGeneric)
