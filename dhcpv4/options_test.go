@@ -7,19 +7,9 @@ import (
 )
 
 func TestParseOption(t *testing.T) {
-	// Generic
-	option := []byte{5, 4, 192, 168, 1, 254} // DNS option
-	opt, err := ParseOption(option)
-	require.NoError(t, err)
-	generic := opt.(*OptionGeneric)
-	require.Equal(t, OptionNameServer, generic.Code())
-	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
-	require.Equal(t, 4, generic.Length())
-	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
-
 	// Option subnet mask
-	option = []byte{1, 4, 255, 255, 255, 0}
-	opt, err = ParseOption(option)
+	option := []byte{1, 4, 255, 255, 255, 0}
+	opt, err := ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionSubnetMask, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
@@ -54,6 +44,22 @@ func TestParseOption(t *testing.T) {
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionDomainName, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option root path
+	option = []byte{17, 4, '/', 'f', 'o', 'o'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRootPath, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option broadcast address
+	option = []byte{28, 4, 255, 255, 255, 255}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionBroadcastAddress, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
@@ -145,12 +151,15 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
-	option = []byte{17, 4, '/', 'f', 'o', 'o'}
+	// Generic
+	option = []byte{5, 4, 192, 168, 1, 254} // DNS option
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
-	require.Equal(t, OptionRootPath, opt.Code(), "Code")
-	require.Equal(t, 4, opt.Length(), "Length")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+	generic := opt.(*OptionGeneric)
+	require.Equal(t, OptionNameServer, generic.Code())
+	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
+	require.Equal(t, 4, generic.Length())
+	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
 }
 
 func TestParseOptionZeroLength(t *testing.T) {
