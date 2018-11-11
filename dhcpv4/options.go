@@ -145,7 +145,7 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, err
 
 		// Options with zero length have no length byte, so here we handle the
 		// ones with nonzero length
-		if opt.Length() > 0 {
+		if opt.Code() != OptionPad {
 			idx++
 		}
 		idx += opt.Length()

@@ -151,6 +151,14 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 5, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Option relay agent information
+	option = []byte{82, 2, 1, 0}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRelayAgentInformation, opt.Code(), "Code")
+	require.Equal(t, 2, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Option client system architecture type option
 	option = []byte{93, 4, 't', 'e', 's', 't'}
 	opt, err = ParseOption(option)
