@@ -13,8 +13,14 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}
-	opt, err := ParseOptRelayAgentInformation([]byte(""))
+
+	// short bytes
+	opt, err := ParseOptRelayAgentInformation([]byte{})
 	require.Error(t, err)
+
+	// wrong code
+	opt, err = ParseOptRelayAgentInformation([]byte{1, 2, 1, 0})
+
 	opt, err = ParseOptRelayAgentInformation(data)
 	require.NoError(t, err)
 	require.Equal(t, len(opt.Options), 2)
