@@ -59,10 +59,8 @@ func main() {
 	// return a non-empty packet list even if there is an error. This is
 	// intended, because the transaction may fail at any point, and we
 	// still want to know what packets were exchanged until then.
-	// The `nil` argument indicates that we want to use a default Solicit
-	// packet, instead of specifying a custom one ourselves.
-	conversation, err := client.Exchange("eth0", nil)
-
+	conversation, err := client.Exchange("eth0")
+	
 	// Summary() prints a verbose representation of the exchanged packets.
 	for _, packet := range conversation {
 		log.Print(packet.Summary())
