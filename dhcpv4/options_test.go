@@ -57,6 +57,22 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Option root path
+	option = []byte{17, 4, '/', 'f', 'o', 'o'}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRootPath, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Option broadcast address
+	option = []byte{28, 4, 255, 255, 255, 255}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionBroadcastAddress, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Option NTP servers
 	option = []byte{42, 4, 10, 10, 10, 10}
 	opt, err = ParseOption(option)
@@ -70,6 +86,14 @@ func TestParseOption(t *testing.T) {
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionRequestedIPAddress, opt.Code(), "Code")
+	require.Equal(t, 4, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
+	// Requested IP address lease time
+	option = []byte{51, 4, 0, 0, 0, 0}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionIPAddressLeaseTime, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
@@ -137,18 +161,19 @@ func TestParseOption(t *testing.T) {
 	require.Equal(t, 5, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 
+	// Option relay agent information
+	option = []byte{82, 2, 1, 0}
+	opt, err = ParseOption(option)
+	require.NoError(t, err)
+	require.Equal(t, OptionRelayAgentInformation, opt.Code(), "Code")
+	require.Equal(t, 2, opt.Length(), "Length")
+	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+
 	// Option client system architecture type option
 	option = []byte{93, 4, 't', 'e', 's', 't'}
 	opt, err = ParseOption(option)
 	require.NoError(t, err)
 	require.Equal(t, OptionClientSystemArchitectureType, opt.Code(), "Code")
-	require.Equal(t, 4, opt.Length(), "Length")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	option = []byte{17, 4, '/', 'f', 'o', 'o'}
-	opt, err = ParseOption(option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRootPath, opt.Code(), "Code")
 	require.Equal(t, 4, opt.Length(), "Length")
 	require.Equal(t, option, opt.ToBytes(), "ToBytes")
 }
