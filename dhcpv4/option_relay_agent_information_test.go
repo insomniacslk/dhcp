@@ -27,7 +27,7 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 	require.Error(t, err)
 
 	// short sub-option length
-	opt, err = ParseOptRelayAgentInformation([]byte{82, 2, 2, 0})
+	opt, err = ParseOptRelayAgentInformation([]byte{82, 2, 1, 1})
 	require.Error(t, err)
 
 	opt, err = ParseOptRelayAgentInformation(data)
