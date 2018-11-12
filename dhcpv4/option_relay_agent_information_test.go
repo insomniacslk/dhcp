@@ -14,7 +14,7 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 		2, 4, 'b', 'o', 'o', 't',
 	}
 
-	// short option bytes
+	// short bytes
 	opt, err := ParseOptRelayAgentInformation([]byte{})
 	require.Error(t, err)
 
@@ -22,12 +22,12 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 	opt, err = ParseOptRelayAgentInformation([]byte{1, 2, 1, 0})
 	require.Error(t, err)
 
-	// wrong length
+	// wrong option length
 	opt, err = ParseOptRelayAgentInformation([]byte{82, 3, 1, 0})
 	require.Error(t, err)
 
-	// short sub-option bytes
-	opt, err = ParseOptRelayAgentInformation([]byte{82, 2, 1})
+	// short sub-option length
+	opt, err = ParseOptRelayAgentInformation([]byte{82, 2, 2, 0})
 	require.Error(t, err)
 
 	opt, err = ParseOptRelayAgentInformation(data)
