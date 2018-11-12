@@ -52,7 +52,7 @@ func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	if err != nil {
 		return conversation, err
 	}
-	conversation[0] = informList
+	conversation = append(conversation, informList)
 
 	// ACK[LIST]
 	ackForList, err := c.dhcp.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
