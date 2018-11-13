@@ -82,17 +82,17 @@ func (s *Server) LocalAddr() net.Addr {
 // background, and can be interrupted with `Server.Close`.
 func (s *Server) ActivateAndServe() error {
 	s.connMutex.Lock()
-	// FIXME check if conn != nil instead, and close it if so. It may
-	//       panic if it's in an invalid state, but better than assuming
-	//       that the already open connection is usable.
-	if s.conn == nil {
-		conn, err := net.ListenUDP("udp4", &s.localAddr)
-		if err != nil {
-			s.connMutex.Unlock()
-			return err
-		}
-		s.conn = conn
+	if s.conn != nil {
+		// this may panic if s.conn is closed but not reset properly. For that
+		// you should use `Server.Close`.
+		s.Close()
 	}
+	conn, err := net.ListenUDP("udp4", &s.localAddr)
+	if err != nil {
+		s.connMutex.Unlock()
+		return err
+	}
+	s.conn = conn
 	s.connMutex.Unlock()
 	var (
 		pc *net.UDPConn
@@ -145,7 +145,9 @@ func (s *Server) Close() error {
 	s.connMutex.Lock()
 	defer s.connMutex.Unlock()
 	if s.conn != nil {
-		return s.conn.Close()
+		ret := s.conn.Close()
+		s.conn = nil
+		return ret
 	}
 	return nil
 }
