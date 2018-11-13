@@ -109,40 +109,36 @@ func (s *Server) ActivateAndServe() error {
 	}
 	log.Printf("Server listening on %s", pc.LocalAddr())
 	log.Print("Ready to handle requests")
-	go func() {
-		for {
-			select {
-			case <-s.shouldStop:
-				break
-			case <-time.After(time.Millisecond):
-			}
-			pc.SetReadDeadline(time.Now().Add(time.Second))
-			rbuf := make([]byte, 4096) // FIXME this is bad
-			n, peer, err := pc.ReadFrom(rbuf)
-			if err != nil {
-				switch err.(type) {
-				case net.Error:
-					if !err.(net.Error).Timeout() {
-						// TODO report errors through a channel
-						log.Print(err)
-						return
-					}
-					// if timeout, silently skip and continue
-				default:
-					// complain and continue
-					log.Printf("Error reading from packet conn: %v", err)
-				}
-				continue
-			}
-			log.Printf("Handling request from %v", peer)
-			m, err := FromBytes(rbuf[:n])
-			if err != nil {
-				log.Printf("Error parsing DHCPv6 request: %v", err)
-				continue
-			}
-			go s.Handler(pc, peer, m)
+	for {
+		select {
+		case <-s.shouldStop:
+			break
+		case <-time.After(time.Millisecond):
 		}
-	}()
+		pc.SetReadDeadline(time.Now().Add(time.Second))
+		rbuf := make([]byte, 4096) // FIXME this is bad
+		n, peer, err := pc.ReadFrom(rbuf)
+		if err != nil {
+			switch err.(type) {
+			case net.Error:
+				if !err.(net.Error).Timeout() {
+					return err
+				}
+				// if timeout, silently skip and continue
+			default:
+				// complain and continue
+				log.Printf("Error reading from packet conn: %v", err)
+			}
+			continue
+		}
+		log.Printf("Handling request from %v", peer)
+		m, err := FromBytes(rbuf[:n])
+		if err != nil {
+			log.Printf("Error parsing DHCPv6 request: %v", err)
+			continue
+		}
+		go s.Handler(pc, peer, m)
+	}
 	return nil
 }
 
