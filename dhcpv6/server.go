@@ -30,7 +30,6 @@ package main
 import (
 	"log"
 	"net"
-	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
@@ -51,8 +50,6 @@ func main() {
 	if err := server.ActivateAndServe(); err != nil {
 		log.Panic(err)
 	}
-	// Serve for 60 seconds
-	time.Sleep(60 * time.Second)
 }
 
 */
