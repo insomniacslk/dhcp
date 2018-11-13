@@ -78,28 +78,31 @@ func (s *Server) LocalAddr() net.Addr {
 	return s.conn.LocalAddr()
 }
 
-// ActivateAndServe starts the DHCPv4 server
+// ActivateAndServe starts the DHCPv4 server. The listener will run in
+// background, and can be interrupted with `Server.Close`.
 func (s *Server) ActivateAndServe() error {
 	s.connMutex.Lock()
-	if s.conn == nil {
-		conn, err := net.ListenUDP("udp4", &s.localAddr)
-		if err != nil {
-			s.connMutex.Unlock()
-			return err
-		}
-		s.conn = conn
+	if s.conn != nil {
+		// this may panic if s.conn is closed but not reset properly. For that
+		// you should use `Server.Close`.
+		s.Close()
 	}
+	conn, err := net.ListenUDP("udp4", &s.localAddr)
+	if err != nil {
+		s.connMutex.Unlock()
+		return err
+	}
+	s.conn = conn
 	s.connMutex.Unlock()
-	defer s.Close()
 	var (
 		pc *net.UDPConn
 		ok bool
 	)
 	if pc, ok = s.conn.(*net.UDPConn); !ok {
-		return fmt.Errorf("Error: not an UDPConn")
+		return fmt.Errorf("error: not an UDPConn")
 	}
 	if pc == nil {
-		return fmt.Errorf("ActivateAndServe: Invalid nil PacketConn")
+		return fmt.Errorf("ActivateAndServe: invalid nil PacketConn")
 	}
 	log.Printf("Server listening on %s", pc.LocalAddr())
 	log.Print("Ready to handle requests")
@@ -115,7 +118,7 @@ func (s *Server) ActivateAndServe() error {
 		if err != nil {
 			switch err.(type) {
 			case net.Error:
-				if err.(net.Error).Timeout() {
+				if !err.(net.Error).Timeout() {
 					return err
 				}
 				// if timeout, silently skip and continue
@@ -142,7 +145,9 @@ func (s *Server) Close() error {
 	s.connMutex.Lock()
 	defer s.connMutex.Unlock()
 	if s.conn != nil {
-		return s.conn.Close()
+		ret := s.conn.Close()
+		s.conn = nil
+		return ret
 	}
 	return nil
 }
