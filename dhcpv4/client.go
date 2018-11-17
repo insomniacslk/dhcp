@@ -85,7 +85,7 @@ func MakeRawUDPPacket(payload []byte, serverAddr, clientAddr net.UDPAddr) ([]byt
 }
 
 // makeRawSocket creates a socket that can be passed to unix.Sendto.
-func makeRawSocket() (int, error) {
+func makeRawSocket(ifname string) (int, error) {
 	fd, err := unix.Socket(unix.AF_INET, unix.SOCK_RAW, unix.IPPROTO_RAW)
 	if err != nil {
 		return fd, err
@@ -98,13 +98,17 @@ func makeRawSocket() (int, error) {
 	if err != nil {
 		return fd, err
 	}
+	err = BindToInterface(fd, ifname)
+	if err != nil {
+		return fd, err
+	}
 	return fd, nil
 }
 
 // MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
 // that will send packets out to the broadcast address.
 func MakeBroadcastSocket(ifname string) (int, error) {
-	fd, err := makeRawSocket()
+	fd, err := makeRawSocket(ifname)
 	if err != nil {
 		return fd, err
 	}
@@ -202,7 +206,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	if raddr.IP.Equal(net.IPv4bcast) {
 		sfd, err = MakeBroadcastSocket(ifname)
 	} else {
-		sfd, err = makeRawSocket()
+		sfd, err = makeRawSocket(ifname)
 	}
 	if err != nil {
 		return conversation, err
