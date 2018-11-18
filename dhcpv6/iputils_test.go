@@ -138,6 +138,8 @@ func Test_ExtractMAC(t *testing.T) {
 	}
 	solicit, err := NewMessage(WithClientID(duid))
 	require.NoError(t, err)
-	mac, err = ExtractMAC(solicit)
+	relay, err := EncapsulateRelay(solicit, MessageTypeRelayForward, net.IPv6zero, net.IPv6zero)
+	require.NoError(t, err)
+	mac, err = ExtractMAC(relay)
 	require.Equal(t, mac.String(), "aa:aa:aa:aa:aa:aa")
 }
