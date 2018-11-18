@@ -6,6 +6,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -129,4 +130,14 @@ func Test_ExtractMAC(t *testing.T) {
 	mac, err := ExtractMAC(packet)
 	require.NoError(t, err)
 	require.Equal(t, mac.String(), "24:8a:07:56:dc:a4")
+
+	duid := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HwTypeEthernet,
+		LinkLayerAddr: []byte{0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa},
+	}
+	solicit, err := NewMessage(WithClientID(duid))
+	require.NoError(t, err)
+	mac, err = ExtractMAC(solicit)
+	require.Equal(t, mac.String(), "aa:aa:aa:aa:aa:aa")
 }
