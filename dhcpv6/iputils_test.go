@@ -131,6 +131,7 @@ func Test_ExtractMAC(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mac.String(), "24:8a:07:56:dc:a4")
 
+	// MAC extracted from DUID
 	duid := Duid{
 		Type:          DUID_LL,
 		HwType:        iana.HwTypeEthernet,
@@ -142,4 +143,17 @@ func Test_ExtractMAC(t *testing.T) {
 	require.NoError(t, err)
 	mac, err = ExtractMAC(relay)
 	require.Equal(t, mac.String(), "aa:aa:aa:aa:aa:aa")
+
+	// no client ID
+	solicit, err = NewMessage()
+	require.NoError(t, err)
+	mac, err = ExtractMAC(solicit)
+	require.Error(t, err)
+
+	// DUID is not DuidLL or DuidLLT
+	duid = Duid{}
+	solicit, err = NewMessage(WithClientID(duid))
+	require.NoError(t, err)
+	mac, err = ExtractMAC(solicit)
+	require.Error(t, err)
 }
