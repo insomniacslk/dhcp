@@ -125,7 +125,6 @@ func MakeListeningSocket(ifname string) (int, error) {
 }
 
 func htons(v uint16) uint16 {
-	// FIXME this should be portable
 	var tmp [2]byte
 	binary.BigEndian.PutUint16(tmp[:], v)
 	return binary.LittleEndian.Uint16(tmp[:])
@@ -317,12 +316,27 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 				continue
 			}
 			udph := buf[iph.Len:n]
-			// FIXME check source/dest ports. Needed for multiple unicast
-			// clients
+			// check source and destination ports
+			srcPort := int(binary.BigEndian.Uint16(udph[0:2]))
+			expectedSrcPort := ServerPort
+			if c.RemoteAddr != nil {
+				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
+			}
+			if srcPort != expectedSrcPort {
+				continue
+			}
+			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
+			expectedDstPort := ClientPort
+			if c.RemoteAddr != nil {
+				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
+			}
+			if dstPort != expectedDstPort {
+				continue
+			}
+			// UDP checksum is not checked
 			pLen := int(binary.BigEndian.Uint16(udph[4:6]))
 			payload := buf[iph.Len+8 : iph.Len+8+pLen]
 
-			log.Printf("Got %d bytes", n)
 			response, innerErr = FromBytes(payload)
 			if innerErr != nil {
 				log.Print(payload)
