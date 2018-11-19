@@ -208,7 +208,9 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 	for _, ns := range netconf.DNSServers {
 		resolvconf += fmt.Sprintf("nameserver %s\n", ns)
 	}
-	resolvconf += fmt.Sprintf("search %s\n", strings.Join(netconf.DNSSearchList, " "))
+	if len(netconf.DNSSearchList) > 0 {
+		resolvconf += fmt.Sprintf("search %s\n", strings.Join(netconf.DNSSearchList, " "))
+	}
 	if err = ioutil.WriteFile("/etc/resolv.conf", []byte(resolvconf), 0644); err != nil {
 		return fmt.Errorf("could not write resolv.conf file %v", err)
 	}
