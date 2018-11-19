@@ -26,7 +26,7 @@ func LabelsFromBytes(buf []byte) ([]string, error) {
 			label = ""
 		}
 		if len(buf)-pos < length {
-			return nil, fmt.Errorf("DomainNamesFromBytes: invalid short label length")
+			return nil, fmt.Errorf("DomainNamesFromBytes: invalid short label length: %v", buf)
 		}
 		if label != "" {
 			label += "."

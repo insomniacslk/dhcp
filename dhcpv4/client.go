@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"reflect"
 	"time"
 
@@ -125,15 +124,27 @@ func MakeListeningSocket(ifname string) (int, error) {
 	return makeListeningSocketWithCustomPort(ifname, ClientPort)
 }
 
+func htons(v uint16) uint16 {
+	// FIXME this should be portable
+	var tmp [2]byte
+	binary.BigEndian.PutUint16(tmp[:], v)
+	return binary.LittleEndian.Uint16(tmp[:])
+}
+
 func makeListeningSocketWithCustomPort(ifname string, port int) (int, error) {
-	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW, unix.ETH_P_ALL)
+	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_DGRAM, int(htons(unix.ETH_P_IP)))
 	if err != nil {
 		return fd, err
 	}
-	if err := BindToInterface(fd, ifname); err != nil {
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
 		return fd, err
 	}
-	err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_BROADCAST, 1)
+	llAddr := unix.SockaddrLinklayer{
+		Ifindex:  iface.Index,
+		Protocol: htons(unix.ETH_P_IP),
+	}
+	err = unix.Bind(fd, &llAddr)
 	return fd, err
 }
 
@@ -207,6 +218,18 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 		return conversation, err
 	}
 
+	defer func() {
+		// close the sockets
+		if err := unix.Close(sfd); err != nil {
+			log.Printf("unix.Close(sendFd) failed: %v", err)
+		}
+		if sfd != rfd {
+			if err := unix.Close(rfd); err != nil {
+				log.Printf("unix.Close(recvFd) failed: %v", err)
+			}
+		}
+	}()
+
 	// Discover
 	if discover == nil {
 		discover, err = NewDiscoveryForInterface(ifname)
@@ -239,6 +262,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 		return conversation, err
 	}
 	conversation = append(conversation, ack)
+
 	return conversation, nil
 }
 
@@ -270,25 +294,38 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 	recvErrors := make(chan error, 1)
 	go func(errs chan<- error) {
 		// set read timeout
-		timeout := unix.Timeval{
-			Sec:  int64(c.ReadTimeout.Seconds()),
-			Usec: 0,
-		}
+		timeout := unix.NsecToTimeval(c.ReadTimeout.Nanoseconds())
 		if innerErr := unix.SetsockoptTimeval(recvFd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeout); innerErr != nil {
 			errs <- innerErr
 			return
 		}
 		for {
 			buf := make([]byte, MaxUDPReceivedPacketSize)
-			n, innerErr := unix.Read(recvFd, buf)
+			n, _, innerErr := unix.Recvfrom(recvFd, buf, 0)
 			if innerErr != nil {
 				errs <- innerErr
 				return
 			}
-			log.Print("SOMETHING")
 
-			response, innerErr = FromBytes(buf[:n])
+			var iph ipv4.Header
+			if err := iph.Parse(buf[:n]); err != nil {
+				// skip non-IP data
+				continue
+			}
+			if iph.Protocol != 17 {
+				// skip non-UDP packets
+				continue
+			}
+			udph := buf[iph.Len:n]
+			// FIXME check source/dest ports. Needed for multiple unicast
+			// clients
+			pLen := int(binary.BigEndian.Uint16(udph[4:6]))
+			payload := buf[iph.Len+8 : iph.Len+8+pLen]
+
+			log.Printf("Got %d bytes", n)
+			response, innerErr = FromBytes(payload)
 			if innerErr != nil {
+				log.Print(payload)
 				errs <- innerErr
 				return
 			}
@@ -318,18 +355,6 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 		return nil, err
 	}
 
-	defer func() {
-		// close the sockets
-		if err := unix.Close(sendFd); err != nil {
-			log.Printf("unix.Close(sendFd) failed: %v", err)
-		}
-		if sendFd != recvFd {
-			if err := unix.Close(recvFd); err != nil {
-				log.Printf("unix.Close(recvFd) failed: %v", err)
-			}
-		}
-	}()
-
 	select {
 	case err = <-recvErrors:
 		if err == unix.EAGAIN {
@@ -339,83 +364,6 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 			return nil, err
 		}
 	case <-time.After(c.ReadTimeout):
-		return nil, errors.New("timed out while listening for replies")
-	}
-
-	return response, nil
-}
-
-// BroadcastSendReceive broadcasts packet (with some write timeout) and waits for a
-// response up to some read timeout value. If the message type is not
-// MessageTypeNone, it will wait for a specific message type
-func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration, messageType MessageType) (*DHCPv4, error) {
-	log.Printf("Warning: dhcpv4.BroadcastSendAndReceive() is deprecated and will be removed. You should use dhcpv4.client.Exchange() instead.")
-	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a goroutine to perform the blocking send, and time it out after
-	// a certain amount of time.
-	var (
-		destination [4]byte
-		response    *DHCPv4
-	)
-	copy(destination[:], net.IPv4bcast.To4())
-	remoteAddr := unix.SockaddrInet4{Port: ClientPort, Addr: destination}
-	recvErrors := make(chan error, 1)
-	go func(errs chan<- error) {
-		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
-		if err != nil {
-			errs <- innerErr
-			return
-		}
-		defer conn.Close()
-		conn.SetReadDeadline(time.Now().Add(readTimeout))
-
-		for {
-			buf := make([]byte, MaxUDPReceivedPacketSize)
-			n, _, _, _, innerErr := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
-			if innerErr != nil {
-				errs <- innerErr
-				return
-			}
-
-			response, innerErr = FromBytes(buf[:n])
-			if err != nil {
-				errs <- innerErr
-				return
-			}
-			// check that this is a response to our message
-			if response.TransactionID() != packet.TransactionID() {
-				continue
-			}
-			// wait for a response message
-			if response.Opcode() != OpcodeBootReply {
-				continue
-			}
-			// if we are not requested to wait for a specific message type,
-			// return what we have
-			if messageType == MessageTypeNone {
-				break
-			}
-			// break if it's a reply of the desired type, continue otherwise
-			if response.MessageType() != nil && *response.MessageType() == messageType {
-				break
-			}
-		}
-		recvErrors <- nil
-	}(recvErrors)
-	if err = unix.Sendto(sendFd, packetBytes, 0, &remoteAddr); err != nil {
-		return nil, err
-	}
-
-	select {
-	case err = <-recvErrors:
-		if err != nil {
-			return nil, err
-		}
-	case <-time.After(readTimeout):
 		return nil, errors.New("timed out while listening for replies")
 	}
 
