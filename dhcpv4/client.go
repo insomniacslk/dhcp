@@ -340,7 +340,6 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 
 			response, innerErr = FromBytes(payload)
 			if innerErr != nil {
-				log.Print(payload)
 				errs <- innerErr
 				return
 			}
