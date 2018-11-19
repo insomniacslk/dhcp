@@ -177,6 +177,7 @@ func IfUp(ifname string, timeout time.Duration) (netlink.Link, error) {
 		if err := netlink.LinkSetUp(iface); err != nil {
 			return nil, fmt.Errorf("interface %q: %v can't make it up: %v", ifname, iface, err)
 		}
+		time.Sleep(10 * time.Millisecond)
 	}
 
 	return nil, fmt.Errorf("timed out while waiting for %s to come up", ifname)
