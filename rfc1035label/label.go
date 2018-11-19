@@ -1,39 +1,61 @@
 package rfc1035label
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 )
 
-// This implements the compression from RFC 1035, section 4.1.4
-// https://tools.ietf.org/html/rfc1035
+// This implements RFC 1035 labels, including compression.
+// https://tools.ietf.org/html/rfc1035#section-4.1.4
 
 // LabelsFromBytes decodes a serialized stream and returns a list of labels
 func LabelsFromBytes(buf []byte) ([]string, error) {
 	var (
-		pos     = 0
-		domains = make([]string, 0)
-		label   = ""
+		pos, oldPos     int
+		labels          = make([]string, 0)
+		label           string
+		handlingPointer bool
 	)
+
 	for {
 		if pos >= len(buf) {
-			return domains, nil
+			break
 		}
 		length := int(buf[pos])
 		pos++
+		var chunk string
 		if length == 0 {
-			domains = append(domains, label)
+			labels = append(labels, label)
 			label = ""
+			if handlingPointer {
+				pos = oldPos
+				handlingPointer = false
+			}
+		} else if length&0xc0 == 0xc0 {
+			// compression pointer
+			if handlingPointer {
+				return nil, errors.New("rfc1035label: cannot handle nested pointers")
+			}
+			handlingPointer = true
+			if pos+1 > len(buf) {
+				return nil, errors.New("rfc1035label: pointer buffer too short")
+			}
+			off := int(buf[pos-1]&^0xc0)<<8 + int(buf[pos])
+			oldPos = pos + 1
+			pos = off
+		} else {
+			if pos+length > len(buf) {
+				return nil, errors.New("rfc1035label: buffer too short")
+			}
+			chunk = string(buf[pos : pos+length])
+			if label != "" {
+				label += "."
+			}
+			label += chunk
+			pos += length
 		}
-		if len(buf)-pos < length {
-			return nil, fmt.Errorf("DomainNamesFromBytes: invalid short label length")
-		}
-		if label != "" {
-			label += "."
-		}
-		label += string(buf[pos : pos+length])
-		pos += length
 	}
+	return labels, nil
 }
 
 // LabelToBytes encodes a label and returns a serialized stream of bytes
