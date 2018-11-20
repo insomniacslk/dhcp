@@ -42,7 +42,7 @@ func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
 func main() {
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP("::1"),
-		Port: 547,
+		Port: dhcpv6.DefaultServerPort,
 	}
 	server := dhcpv6.NewServer(laddr, handler)
 
