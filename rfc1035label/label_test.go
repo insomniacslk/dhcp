@@ -7,42 +7,35 @@ import (
 )
 
 func TestLabelsFromBytes(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{
-		0x9, 's', 'l', 'a', 'c', 'k', 'w', 'a', 'r', 'e',
-		0x2, 'i', 't',
-		0x0,
-	})
-	require.NoError(t, err)
-	require.Equal(t, 1, len(labels))
-	require.Equal(t, "slackware.it", labels[0])
-}
-
-func TestLabelsFromBytesZeroLength(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{})
-	require.NoError(t, err)
-	require.Equal(t, 0, len(labels))
-}
-
-func TestLabelsFromBytesInvalidLength(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{0x5, 0xaa, 0xbb}) // short length
-	require.Error(t, err)
-	require.Equal(t, 0, len(labels))
-}
-
-func TestLabelsFromBytesInvalidLengthOffByOne(t *testing.T) {
-	labels, err := LabelsFromBytes([]byte{0x3, 0xaa, 0xbb}) // short length
-	require.Error(t, err)
-	require.Equal(t, 0, len(labels))
-}
-
-func TestLabelToBytes(t *testing.T) {
-	encodedLabel := LabelToBytes("slackware.it")
 	expected := []byte{
 		0x9, 's', 'l', 'a', 'c', 'k', 'w', 'a', 'r', 'e',
 		0x2, 'i', 't',
 		0x0,
 	}
-	require.Equal(t, expected, encodedLabel)
+	labels, err := FromBytes(expected)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(labels.Labels))
+	require.Equal(t, len(expected), labels.Length())
+	require.Equal(t, expected, labels.ToBytes())
+	require.Equal(t, "slackware.it", labels.Labels[0])
+}
+
+func TestLabelsFromBytesZeroLength(t *testing.T) {
+	labels, err := FromBytes([]byte{})
+	require.NoError(t, err)
+	require.Equal(t, 0, len(labels.Labels))
+	require.Equal(t, 0, labels.Length())
+	require.Equal(t, []byte{}, labels.ToBytes())
+}
+
+func TestLabelsFromBytesInvalidLength(t *testing.T) {
+	_, err := FromBytes([]byte{0x5, 0xaa, 0xbb}) // short length
+	require.Error(t, err)
+}
+
+func TestLabelsFromBytesInvalidLengthOffByOne(t *testing.T) {
+	_, err := FromBytes([]byte{0x3, 0xaa, 0xbb}) // short length
+	require.Error(t, err)
 }
 
 func TestLabelsToBytes(t *testing.T) {
@@ -55,14 +48,20 @@ func TestLabelsToBytes(t *testing.T) {
 		2, 'i', 't',
 		0,
 	}
-	encodedLabels := LabelsToBytes([]string{"slackware.it", "insomniac.slackware.it"})
-	require.Equal(t, expected, encodedLabels)
+	labels := Labels{
+		Labels: []string{
+			"slackware.it",
+			"insomniac.slackware.it",
+		},
+	}
+	require.Equal(t, expected, labels.ToBytes())
 }
 
 func TestLabelToBytesZeroLength(t *testing.T) {
-	encodedLabel := LabelToBytes("")
-	expected := []byte{0}
-	require.Equal(t, expected, encodedLabel)
+	labels := Labels{
+		Labels: []string{""},
+	}
+	require.Equal(t, []byte{0}, labels.ToBytes())
 }
 
 func TestCompressedLabel(t *testing.T) {
@@ -89,9 +88,11 @@ func TestCompressedLabel(t *testing.T) {
 		"systemboot.org",
 	}
 
-	labels, err := LabelsFromBytes(data)
+	labels, err := FromBytes(data)
 	require.NoError(t, err)
-	require.Equal(t, expected, labels)
+	require.Equal(t, 4, len(labels.Labels))
+	require.Equal(t, expected, labels.Labels)
+	require.Equal(t, len(data), labels.Length())
 }
 
 func TestShortCompressedLabel(t *testing.T) {
@@ -105,7 +106,7 @@ func TestShortCompressedLabel(t *testing.T) {
 		192,
 	}
 
-	_, err := LabelsFromBytes(data)
+	_, err := FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -121,6 +122,6 @@ func TestNestedCompressedLabel(t *testing.T) {
 		9, 'i', 'n', 's', 'o', 'm', 'n', 'i', 'a', 'c',
 		192, 5,
 	}
-	_, err := LabelsFromBytes(data)
+	_, err := FromBytes(data)
 	require.Error(t, err)
 }

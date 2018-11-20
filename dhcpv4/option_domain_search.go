@@ -11,7 +11,7 @@ import (
 
 // OptDomainSearch represents an option encapsulating a domain search list.
 type OptDomainSearch struct {
-	DomainSearch []string
+	DomainSearch *rfc1035label.Labels
 }
 
 // Code returns the option code.
@@ -22,23 +22,19 @@ func (op *OptDomainSearch) Code() OptionCode {
 // ToBytes returns a serialized stream of bytes for this option.
 func (op *OptDomainSearch) ToBytes() []byte {
 	buf := []byte{byte(op.Code()), byte(op.Length())}
-	buf = append(buf, rfc1035label.LabelsToBytes(op.DomainSearch)...)
+	buf = append(buf, op.DomainSearch.ToBytes()...)
 	return buf
 }
 
 // Length returns the length of the data portion (excluding option code an byte
-// length). 
+// length).
 func (op *OptDomainSearch) Length() int {
-	var length int
-	for _, label := range op.DomainSearch {
-		length += len(label) + 2 // add the first and the last length bytes
-	}
-	return length
+	return op.DomainSearch.Length()
 }
 
 // String returns a human-readable string.
 func (op *OptDomainSearch) String() string {
-	return fmt.Sprintf("DNS Domain Search List -> %v", op.DomainSearch)
+	return fmt.Sprintf("DNS Domain Search List -> %v", op.DomainSearch.Labels)
 }
 
 // ParseOptDomainSearch returns a new OptDomainSearch from a byte stream, or
@@ -55,9 +51,9 @@ func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
 	if len(data) < 2+length {
 		return nil, ErrShortByteStream
 	}
-	domainSearch, err := rfc1035label.LabelsFromBytes(data[2:length+2])
+	labels, err := rfc1035label.FromBytes(data[2 : length+2])
 	if err != nil {
 		return nil, err
 	}
-	return &OptDomainSearch{DomainSearch: domainSearch}, nil
+	return &OptDomainSearch{DomainSearch: labels}, nil
 }
