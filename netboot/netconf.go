@@ -69,7 +69,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 	if opt != nil {
 		odomains := opt.(*dhcpv6.OptDomainSearchList)
 		// TODO should this be copied?
-		netconf.DNSSearchList = odomains.DomainSearchList
+		netconf.DNSSearchList = odomains.DomainSearchList.Labels
 	}
 
 	return &netconf, nil
@@ -134,10 +134,10 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	dnsDomainSearchListOption := d.GetOneOption(dhcpv4.OptionDNSDomainSearchList)
 	if dnsDomainSearchListOption != nil {
 		dnsSearchList := dnsDomainSearchListOption.(*dhcpv4.OptDomainSearch).DomainSearch
-		if len(dnsSearchList) == 0 {
+		if len(dnsSearchList.Labels) == 0 {
 			return nil, errors.New("dns search list is empty")
 		}
-		netconf.DNSSearchList = dnsSearchList
+		netconf.DNSSearchList = dnsSearchList.Labels
 	}
 
 	// get default gateway

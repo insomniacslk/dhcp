@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"testing"
 
+	"github.com/insomniacslk/dhcp/rfc1035label"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,9 +15,10 @@ func TestParseOptDomainSearchList(t *testing.T) {
 	opt, err := ParseOptDomainSearchList(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionDomainSearchList, opt.Code())
-	require.Equal(t, 2, len(opt.DomainSearchList))
-	require.Equal(t, "example.com", opt.DomainSearchList[0])
-	require.Equal(t, "subnet.example.org", opt.DomainSearchList[1])
+	require.Equal(t, 2, len(opt.DomainSearchList.Labels))
+	require.Equal(t, len(data), opt.DomainSearchList.Length())
+	require.Equal(t, "example.com", opt.DomainSearchList.Labels[0])
+	require.Equal(t, "subnet.example.org", opt.DomainSearchList.Labels[1])
 	require.Contains(t, opt.String(), "searchlist=[example.com subnet.example.org]", "String() should contain the correct domain search output")
 }
 
@@ -28,9 +30,11 @@ func TestOptDomainSearchListToBytes(t *testing.T) {
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'o', 'r', 'g', 0,
 	}
 	opt := OptDomainSearchList{
-		DomainSearchList: []string{
-			"example.com",
-			"subnet.example.org",
+		DomainSearchList: &rfc1035label.Labels{
+			Labels: []string{
+				"example.com",
+				"subnet.example.org",
+			},
 		},
 	}
 	require.Equal(t, expected, opt.ToBytes())

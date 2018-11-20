@@ -8,11 +8,78 @@ import (
 // This implements RFC 1035 labels, including compression.
 // https://tools.ietf.org/html/rfc1035#section-4.1.4
 
-// LabelsFromBytes decodes a serialized stream and returns a list of labels
-func LabelsFromBytes(buf []byte) ([]string, error) {
+// Labels represents RFC1035 labels
+type Labels struct {
+	// original contains the original bytes if the object was parsed from a byte
+	// sequence, or nil otherwise. The `original` field is necessary to deal
+	// with compressed labels. If the labels are further modified, the original
+	// content is invalidated and no compression will be used.
+	original []byte
+	// Labels contains the parsed labels. A change here invalidates the
+	// `original` object.
+	Labels []string
+}
+
+// same compares two string arrays
+func same(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// ToBytes returns a byte sequence representing the labels. If the original
+// sequence is modified, the labels are parsed again, otherwise the original
+// byte sequence is returned.
+func (l *Labels) ToBytes() []byte {
+	// if the original byte sequence has been modified, invalidate it and
+	// serialize again.
+	// NOTE: this function is not thread-safe. If multiple threads modify
+	// the `Labels` field, the result may be wrong.
+	originalLabels, err := labelsFromBytes(l.original)
+	// if the original object has not been modified, or we cannot parse it,
+	// return the original bytes.
+	if err != nil || (l.original != nil && same(originalLabels, l.Labels)) {
+		return l.original
+	}
+	return labelsToBytes(l.Labels)
+}
+
+// Length returns the length in bytes of the serialized labels
+func (l *Labels) Length() int {
+	return len(l.ToBytes())
+}
+
+// NewLabels returns an initialized Labels object.
+func NewLabels() *Labels {
+	return &Labels{
+		Labels: make([]string, 0),
+	}
+}
+
+// FromBytes returns a Labels object from the given byte sequence, or an error if
+// any.
+func FromBytes(data []byte) (*Labels, error) {
+	lab := NewLabels()
+	l, err := labelsFromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	lab.original = data
+	lab.Labels = l
+	return lab, nil
+}
+
+// fromBytes decodes a serialized stream and returns a list of labels
+func labelsFromBytes(buf []byte) ([]string, error) {
 	var (
-		pos, oldPos     int
 		labels          = make([]string, 0)
+		pos, oldPos     int
 		label           string
 		handlingPointer bool
 	)
@@ -58,8 +125,8 @@ func LabelsFromBytes(buf []byte) ([]string, error) {
 	return labels, nil
 }
 
-// LabelToBytes encodes a label and returns a serialized stream of bytes
-func LabelToBytes(label string) []byte {
+// labelToBytes encodes a label and returns a serialized stream of bytes
+func labelToBytes(label string) []byte {
 	var encodedLabel []byte
 	if len(label) == 0 {
 		return []byte{0}
@@ -71,12 +138,12 @@ func LabelToBytes(label string) []byte {
 	return append(encodedLabel, 0)
 }
 
-// LabelsToBytes encodes a list of labels and returns a serialized stream of
+// labelsToBytes encodes a list of labels and returns a serialized stream of
 // bytes
-func LabelsToBytes(labels []string) []byte {
+func labelsToBytes(labels []string) []byte {
 	var encodedLabels []byte
 	for _, label := range labels {
-		encodedLabels = append(encodedLabels, LabelToBytes(label)...)
+		encodedLabels = append(encodedLabels, labelToBytes(label)...)
 	}
 	return encodedLabels
 }
