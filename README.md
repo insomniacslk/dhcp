@@ -169,7 +169,43 @@ $ go run main.go
 
 ## DHCPv6 server
 
-TODO
+A DHCPv6 server requires the user to implement a request handler. Basically the
+user has to provide the logic to answer to each packet. The library offers a few
+facilities to forge response packets, e.g. `NewAdvertiseFromSolicit`,
+`NewReplyFromDHCPv6Message` and so on. Look at the source code to see what's
+available.
+
+An example server that will print (but not reply to) the client's request is
+shown below:
+
+```
+package main
+
+import (
+        "log"
+        "net"
+
+        "github.com/insomniacslk/dhcp/dhcpv6"
+)
+
+func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
+        // this function will just print the received DHCPv6 message, without replying
+        log.Print(m.Summary())
+}
+
+func main() {
+        laddr := net.UDPAddr{
+                IP:   net.ParseIP("::1"),
+                Port: dhcpv6.DefaultServerPort,
+        }
+        server := dhcpv6.NewServer(laddr, handler)
+
+        defer server.Close()
+        if err := server.ActivateAndServe(); err != nil {
+                log.Panic(err)
+        }
+}
+```
 
 ## DHCPv4 client
 
