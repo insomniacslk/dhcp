@@ -34,7 +34,7 @@ func castVendorOpt(ack *dhcpv4.DHCPv4) {
 
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.DHCPv4, error) {
+func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	conversation := make([]*dhcpv4.DHCPv4, 0)
 
 	// Get our file descriptor for the broadcast socket.
@@ -48,11 +48,9 @@ func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.D
 	}
 
 	// INFORM[LIST]
-	if informList == nil {
-		informList, err = NewInformListForInterface(ifname, dhcpv4.ClientPort)
-		if err != nil {
-			return conversation, err
-		}
+	informList, err := NewInformListForInterface(ifname, dhcpv4.ClientPort)
+	if err != nil {
+		return conversation, err
 	}
 	conversation = append(conversation, informList)
 
