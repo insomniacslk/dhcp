@@ -9,13 +9,13 @@ import (
 // Client represents a BSDP client that can perform BSDP exchanges via the
 // broadcast address.
 type Client struct {
-	dhcp	*dhcpv4.Client
+	dhcpv4.Client
 }
 
 // NewClient constructs a new client with default read and write timeouts from
 // dhcpv4.Client.
 func NewClient() *Client {
-	return &Client{dhcp: dhcpv4.NewClient()}
+	return &Client{Client: dhcpv4.Client{}}
 }
 
 func castVendorOpt(ack *dhcpv4.DHCPv4) {
@@ -34,7 +34,7 @@ func castVendorOpt(ack *dhcpv4.DHCPv4) {
 
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
+func (c *Client) Exchange(ifname string, informList *dhcpv4.DHCPv4) ([]*dhcpv4.DHCPv4, error) {
 	conversation := make([]*dhcpv4.DHCPv4, 0)
 
 	// Get our file descriptor for the broadcast socket.
@@ -48,14 +48,16 @@ func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	}
 
 	// INFORM[LIST]
-	informList, err := NewInformListForInterface(ifname, dhcpv4.ClientPort)
-	if err != nil {
-		return conversation, err
+	if informList == nil {
+		informList, err = NewInformListForInterface(ifname, dhcpv4.ClientPort)
+		if err != nil {
+			return conversation, err
+		}
 	}
 	conversation = append(conversation, informList)
 
 	// ACK[LIST]
-	ackForList, err := c.dhcp.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
+	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -81,7 +83,7 @@ func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	conversation = append(conversation, informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := c.dhcp.SendReceive(sendFd, recvFd, informSelect, dhcpv4.MessageTypeAck)
+	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informSelect, dhcpv4.MessageTypeAck)
 	castVendorOpt(ackForSelect)
 	if err != nil {
 		return conversation, err
