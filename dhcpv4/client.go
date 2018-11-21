@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
 	"reflect"
 	"time"
 
@@ -46,15 +45,6 @@ func NewClient() *Client {
 		ReadTimeout:  DefaultReadTimeout,
 		WriteTimeout: DefaultWriteTimeout,
 	}
-}
-
-// MakeRawBroadcastPacket leverages MakeRawPacket to create a raw packet suitable
-// for UDP broadcast.
-func MakeRawBroadcastPacket(payload []byte) ([]byte, error) {
-	log.Printf("Warning: dhcpv4.MakeRawBroadcastPacket() is deprecated and will be removed.")
-	serverAddr := net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
-	clientAddr := net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
-	return MakeRawUDPPacket(payload, serverAddr, clientAddr)
 }
 
 // MakeRawUDPPacket converts a payload (a serialized DHCPv4 packet) into a
@@ -191,7 +181,6 @@ func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 // containing all the sent and received DHCPv4 messages.
 func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier) ([]*DHCPv4, error) {
 	conversation := make([]*DHCPv4, 0)
-	var err error
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
@@ -243,7 +232,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := c.sendReceive(sfd, rfd, discover, MessageTypeOffer)
+	offer, err := c.SendReceive(sfd, rfd, discover, MessageTypeOffer)
 	if err != nil {
 		return conversation, err
 	}
@@ -257,7 +246,7 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	conversation = append(conversation, request)
 
 	// Ack
-	ack, err := c.sendReceive(sfd, rfd, request, MessageTypeAck)
+	ack, err := c.SendReceive(sfd, rfd, request, MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -266,10 +255,10 @@ func (c *Client) Exchange(ifname string, discover *DHCPv4, modifiers ...Modifier
 	return conversation, nil
 }
 
-// sendReceive sends a packet (with some write timeout) and waits for a
+// SendReceive sends a packet (with some write timeout) and waits for a
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
-func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
+func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
@@ -378,83 +367,6 @@ func (c *Client) sendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 			return nil, err
 		}
 	case <-time.After(c.ReadTimeout):
-		return nil, errors.New("timed out while listening for replies")
-	}
-
-	return response, nil
-}
-
-// BroadcastSendReceive broadcasts packet (with some write timeout) and waits for a
-// response up to some read timeout value. If the message type is not
-// MessageTypeNone, it will wait for a specific message type
-func BroadcastSendReceive(sendFd, recvFd int, packet *DHCPv4, readTimeout, writeTimeout time.Duration, messageType MessageType) (*DHCPv4, error) {
-	log.Printf("Warning: dhcpv4.BroadcastSendAndReceive() is deprecated and will be removed. You should use dhcpv4.client.Exchange() instead.")
-	packetBytes, err := MakeRawBroadcastPacket(packet.ToBytes())
-	if err != nil {
-		return nil, err
-	}
-
-	// Create a goroutine to perform the blocking send, and time it out after
-	// a certain amount of time.
-	var (
-		destination [4]byte
-		response    *DHCPv4
-	)
-	copy(destination[:], net.IPv4bcast.To4())
-	remoteAddr := unix.SockaddrInet4{Port: ClientPort, Addr: destination}
-	recvErrors := make(chan error, 1)
-	go func(errs chan<- error) {
-		conn, innerErr := net.FileConn(os.NewFile(uintptr(recvFd), ""))
-		if err != nil {
-			errs <- innerErr
-			return
-		}
-		defer conn.Close()
-		conn.SetReadDeadline(time.Now().Add(readTimeout))
-
-		for {
-			buf := make([]byte, MaxUDPReceivedPacketSize)
-			n, _, _, _, innerErr := conn.(*net.UDPConn).ReadMsgUDP(buf, []byte{})
-			if innerErr != nil {
-				errs <- innerErr
-				return
-			}
-
-			response, innerErr = FromBytes(buf[:n])
-			if err != nil {
-				errs <- innerErr
-				return
-			}
-			// check that this is a response to our message
-			if response.TransactionID() != packet.TransactionID() {
-				continue
-			}
-			// wait for a response message
-			if response.Opcode() != OpcodeBootReply {
-				continue
-			}
-			// if we are not requested to wait for a specific message type,
-			// return what we have
-			if messageType == MessageTypeNone {
-				break
-			}
-			// break if it's a reply of the desired type, continue otherwise
-			if response.MessageType() != nil && *response.MessageType() == messageType {
-				break
-			}
-		}
-		recvErrors <- nil
-	}(recvErrors)
-	if err = unix.Sendto(sendFd, packetBytes, 0, &remoteAddr); err != nil {
-		return nil, err
-	}
-
-	select {
-	case err = <-recvErrors:
-		if err != nil {
-			return nil, err
-		}
-	case <-time.After(readTimeout):
 		return nil, errors.New("timed out while listening for replies")
 	}
 
