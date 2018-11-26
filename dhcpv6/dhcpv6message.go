@@ -39,15 +39,18 @@ func GenerateTransactionID() (*uint32, error) {
 	for {
 		tidBytes := make([]byte, 4)
 		n, err := rand.Read(tidBytes)
+		if err != nil {
+			return nil, err
+		}
 		if n != 4 {
-			return nil, fmt.Errorf("Invalid random sequence: shorter than 4 bytes")
+			return nil, fmt.Errorf("invalid random sequence: shorter than 4 bytes")
 		}
 		tid, err = BytesToTransactionID(tidBytes)
 		if err != nil {
 			return nil, err
 		}
 		if tid == nil {
-			return nil, fmt.Errorf("Error: got a nil Transaction ID")
+			return nil, fmt.Errorf("got a nil Transaction ID")
 		}
 		// retry until != 0
 		// TODO add retry limit

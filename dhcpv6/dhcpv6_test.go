@@ -1,18 +1,46 @@
 package dhcpv6
 
 import (
+	"encoding/binary"
 	"net"
 	"testing"
 
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 func TestBytesToTransactionID(t *testing.T) {
-	// only the first three bytes should be used
-	tid, err := BytesToTransactionID([]byte{0x11, 0x22, 0x33, 0xaa})
+	// Check if the function transforms the bytes for the exact length input
+	b := make([]byte, 4)
+	binary.LittleEndian.PutUint32(b, 0x01020304)
+	tid, err := BytesToTransactionID(b)
 	require.NoError(t, err)
-	require.Equal(t, uint32(0x112233), *tid)
+	require.NotNil(t, tid)
+	assert.Equal(t, *tid, uint32(0x000040302))
+
+	binary.BigEndian.PutUint32(b, 0x01020304)
+	tid, err = BytesToTransactionID(b)
+	require.NoError(t, err)
+	require.NotNil(t, tid)
+	assert.Equal(t, *tid, uint32(0x00010203))
+
+	// Check if the function transforms only the first bytes for a longer input
+	b = make([]byte, 8)
+	binary.LittleEndian.PutUint32(b, 0x01020304)
+	binary.LittleEndian.PutUint32(b[4:], 0x11121314)
+	tid, err = BytesToTransactionID(b)
+	require.NoError(t, err)
+	require.NotNil(t, tid)
+	assert.Equal(t, *tid, uint32(0x000040302))
+
+	binary.BigEndian.PutUint32(b, 0x01020304)
+	binary.BigEndian.PutUint32(b[4:], 0x11121314)
+	tid, err = BytesToTransactionID(b)
+	require.NoError(t, err)
+	require.NotNil(t, tid)
+	assert.Equal(t, *tid, uint32(0x00010203))
 }
 
 func TestBytesToTransactionIDShortData(t *testing.T) {
@@ -25,7 +53,7 @@ func TestBytesToTransactionIDShortData(t *testing.T) {
 func TestGenerateTransactionID(t *testing.T) {
 	tid, err := GenerateTransactionID()
 	require.NoError(t, err)
-	require.NotNil(t, *tid)
+	require.NotNil(t, tid)
 	require.True(t, *tid <= 0xffffff, "transaction ID should be smaller than 0xffffff")
 }
 
