@@ -1,12 +1,15 @@
 package dhcpv6
 
 import (
+	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
 	"github.com/insomniacslk/dhcp/iana"
 )
@@ -50,11 +53,50 @@ func TestBytesToTransactionIDShortData(t *testing.T) {
 	require.Nil(t, tid)
 }
 
-func TestGenerateTransactionID(t *testing.T) {
+func randomReadMock(value []byte, n int, err error) func([]byte) (int, error) {
+	return func(b []byte) (int, error) {
+		copy(b, value)
+		return n, err
+	}
+}
+
+type GenerateTransactionIDTestSuite struct {
+	suite.Suite
+	random []byte
+}
+
+func (s *GenerateTransactionIDTestSuite) SetupTest() {
+	s.random = make([]byte, 16)
+}
+
+func (s *GenerateTransactionIDTestSuite) TearDown() {
+	randomRead = rand.Read
+}
+
+func (s *GenerateTransactionIDTestSuite) TestErrors() {
+	// Error is returned from random number generator
+	e := errors.New("mocked error")
+	randomRead = randomReadMock(s.random, 0, e)
 	tid, err := GenerateTransactionID()
-	require.NoError(t, err)
-	require.NotNil(t, tid)
-	require.True(t, *tid <= 0xffffff, "transaction ID should be smaller than 0xffffff")
+	s.Assert().Equal(e, err)
+	s.Assert().Nil(tid)
+
+	// Less than 4 bytes are generated
+	randomRead = randomReadMock(s.random, 3, nil)
+	tid, err = GenerateTransactionID()
+	s.Assert().EqualError(err, "invalid random sequence: shorter than 4 bytes")
+}
+
+func (s *GenerateTransactionIDTestSuite) TestSuccess() {
+	binary.BigEndian.PutUint32(s.random, 0x01020304)
+	randomRead = randomReadMock(s.random, 4, nil)
+	tid, err := GenerateTransactionID()
+	s.Require().NoError(err)
+	s.Assert().Equal(*tid, uint32(0x00010203))
+}
+
+func TestGenerateTransactionIDTestSuite(t *testing.T) {
+	suite.Run(t, new(GenerateTransactionIDTestSuite))
 }
 
 func TestNewMessage(t *testing.T) {
@@ -248,7 +290,6 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 	require.Contains(t, opts, OptionDomainSearchList)
 	require.Equal(t, len(opts), 2)
 }
-
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
 	msg := DHCPv6Message{}
