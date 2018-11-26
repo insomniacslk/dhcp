@@ -34,11 +34,13 @@ func BytesToTransactionID(data []byte) (*uint32, error) {
 	return &tid, nil
 }
 
+var randomRead = rand.Read
+
 func GenerateTransactionID() (*uint32, error) {
 	var tid *uint32
 	for {
 		tidBytes := make([]byte, 4)
-		n, err := rand.Read(tidBytes)
+		n, err := randomRead(tidBytes)
 		if err != nil {
 			return nil, err
 		}
