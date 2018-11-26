@@ -1,4 +1,7 @@
 # dhcp
+[![Build Status](https://travis-ci.org/insomniacslk/dhcp.svg?branch=master)](https://travis-ci.org/insomniacslk/dhcp)
+[![codecov](https://codecov.io/gh/insomniacslk/dhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/insomniacslk/dhcp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/insomniacslk/dhcp)](https://goreportcard.com/report/github.com/insomniacslk/dhcp)
 
 DHCPv4 and DHCPv6 decoding/encoding library with client and server code, written in Go.
 
@@ -49,7 +52,7 @@ func main() {
 	// for read and write timeouts, for destination address and listening
 	// address
 	client := dhcpv6.NewClient()
-	
+
 	// Exchange runs a Solicit-Advertise-Request-Reply transaction on the
 	// specified network interface, and returns a list of DHCPv6 packets
 	// (a "conversation") and an error if any. Notice that Exchange may
@@ -59,7 +62,7 @@ func main() {
 	// The `nil` argument indicates that we want to use a default Solicit
 	// packet, instead of specifying a custom one ourselves.
 	conversation, err := client.Exchange("eth0", nil)
-	
+
 	// Summary() prints a verbose representation of the exchanged packets.
 	for _, packet := range conversation {
 		log.Print(packet.Summary())
@@ -152,7 +155,7 @@ func main() {
 
 The output (slightly modified for readability) is
 ```
-$ go run main.go 
+$ go run main.go
 2018/11/08 13:56:31 DHCPv6Relay
   messageType=RELAY-FORW
   hopcount=0
@@ -225,7 +228,7 @@ TODO
 # Public projects that use it
 
 * Facebook's DHCP load balancer, `dhcplb`, https://github.com/facebookincubator/dhcplb
-* Systemboot, a LinuxBoot distribution that runs as system firmware, https://github.com/systemboot/systemboot 
+* Systemboot, a LinuxBoot distribution that runs as system firmware, https://github.com/systemboot/systemboot
 * Router7, a pure-Go router implementation for fiber7 connections, https://github.com/rtr7/router7
 * Beats from ElasticSearch, https://github.com/elastic/beats
 * Bender from Pinterest, a library for load-testing, https://github.com/pinterest/bender
