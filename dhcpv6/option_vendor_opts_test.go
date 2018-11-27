@@ -1,14 +1,14 @@
 package dhcpv6
 
 import (
-	"bytes"
-	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptVendorOpts(t *testing.T) {
 	optData := []byte("Arista;DCS-7304;01.00;HSH14425148")
+	// NOTE: this should be aware of endianness
 	expected := []byte{0xaa, 0xbb, 0xcc, 0xdd}
 	expected = append(expected, []byte{0, 1, //code
 		0, byte(len(optData)), //length
@@ -18,26 +18,14 @@ func TestOptVendorOpts(t *testing.T) {
 	var vendorOpts []Option
 	expectedOpts.VendorOpts = append(vendorOpts, &OptionGeneric{OptionCode: 1, OptionData: optData})
 	opt, err := ParseOptVendorOpts(expected)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if optLen := opt.Length(); optLen != len(expected) {
-		t.Fatalf("Invalid length. Expected %v, got %v", len(expected), optLen)
-	}
-	if en := opt.EnterpriseNumber; en != 0xaabbccdd {
-		t.Fatalf("Invalid Enterprise Number. Expected 0xaabbccdd, got %v", en)
-	}
-	if !reflect.DeepEqual(opt.VendorOpts, expectedOpts.VendorOpts) {
-		t.Fatalf("Invalid Vendor Option Data. Expected %v, got %v", expected, expectedOpts.VendorOpts)
-	}
+	require.NoError(t, err)
+	require.Equal(t, len(expected), opt.Length())
+	require.Equal(t, uint32(0xaabbccdd), opt.EnterpriseNumber)
+	require.Equal(t, expectedOpts.VendorOpts, opt.VendorOpts)
 
 	shortData := make([]byte, 1)
-	opt, err = ParseOptVendorOpts(shortData)
-	if err == nil {
-		t.Fatalf("Short data (<4 bytes) did not cause an error when it should have")
-	}
-
+	_, err = ParseOptVendorOpts(shortData)
+	require.Error(t, err)
 }
 
 func TestOptVendorOptsToBytes(t *testing.T) {
@@ -58,9 +46,7 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 		VendorOpts:       opts,
 	}
 	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
-	}
+	require.Equal(t, expected, toBytes)
 }
 
 func TestVendParseOption(t *testing.T) {
@@ -70,32 +56,20 @@ func TestVendParseOption(t *testing.T) {
 
 	expected := &OptionGeneric{OptionCode: 1, OptionData: []byte("Arista;DCS-7304;01.00;HSH14425148")}
 	opt, err := vendParseOption(buf)
-	if err != nil {
-		fmt.Println(err)
-	}
-	if !reflect.DeepEqual(opt, expected) {
-		t.Fatalf("Invalid Vendor Parse Option result. Expected %v, got %v", expected, opt)
-	}
-
+	require.NoError(t, err)
+	require.Equal(t, expected, opt)
 
 	shortData := make([]byte, 1) // data length too small
-	opt, err = vendParseOption(shortData)
-	if err == nil {
-		t.Fatalf("Short data (<4 bytes) did not cause an error when it should have")
-	}
+	_, err = vendParseOption(shortData)
+	require.Error(t, err)
 
 	shortData = []byte{0, 0, 0, 0} // missing actual vendor data.
-	opt, err = vendParseOption(shortData)
-	if err == nil {
-		t.Fatalf("Missing VendorData option. An error should have been returned but wasn't")
-	}
+	_, err = vendParseOption(shortData)
+	require.Error(t, err)
 
 	shortData = []byte{0, 0,
 		0, 4, // declared length
 		0} // data starts here, length of 1
-	opt, err = vendParseOption(shortData)
-	if err == nil {
-		t.Fatalf("Declared length does not match actual data length. An error should have been returned but wasn't")
-	}
-
+	_, err = vendParseOption(shortData)
+	require.Error(t, err)
 }
