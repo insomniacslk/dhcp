@@ -185,7 +185,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	return adv, nil
 }
 
-// Solicit sends a Solicit, return the Solicit, an Advertise (if not nil), and
+// Solicit sends a Solicit, returns the Solicit, an Advertise (if not nil), and
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
