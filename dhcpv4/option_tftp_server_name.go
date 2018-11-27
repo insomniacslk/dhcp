@@ -31,7 +31,7 @@ func (op *OptTFTPServerName) String() string {
 	return fmt.Sprintf("TFTP Server Name -> %s", op.TFTPServerName)
 }
 
-// ParseOptTFTPServerName returns a new OptTFTPServerName fomr a byte stream or error if any
+// ParseOptTFTPServerName returns a new OptTFTPServerName from a byte stream or error if any
 func ParseOptTFTPServerName(data []byte) (*OptTFTPServerName, error) {
 	if len(data) < 3 {
 		return nil, ErrShortByteStream

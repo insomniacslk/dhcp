@@ -90,7 +90,7 @@ func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {
 }
 
 // vendParseOption builds a GenericOption from a slice of bytes
-// We cannot use the exisitng ParseOption function in options.go because the
+// We cannot use the existing ParseOption function in options.go because the
 // sub-options include codes specific to each vendor. There are overlaps in these
 // codes with RFC standard codes.
 func vendParseOption(dataStart []byte) (Option, error) {

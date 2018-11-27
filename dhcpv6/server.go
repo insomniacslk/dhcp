@@ -136,7 +136,6 @@ func (s *Server) ActivateAndServe() error {
 		}
 		go s.Handler(pc, peer, m)
 	}
-	return nil
 }
 
 // Close sends a termination request to the server, and closes the UDP listener

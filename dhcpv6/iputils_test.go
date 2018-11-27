@@ -52,7 +52,7 @@ func (s *MatchingAddressTestSuite) SetupTest() {
 }
 
 func (s *MatchingAddressTestSuite) TestGetMatchingAddr() {
-	// Check if error from InterfaceAddresses immidately returns error
+	// Check if error from InterfaceAddresses immediately returns error
 	s.m.On("InterfaceAddresses", "eth0").Return(nil, ErrDummy).Once()
 	_, err := getMatchingAddr("eth0", s.Match)
 	s.Assert().Equal(ErrDummy, err)
