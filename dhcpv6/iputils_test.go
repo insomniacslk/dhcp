@@ -142,6 +142,7 @@ func Test_ExtractMAC(t *testing.T) {
 	relay, err := EncapsulateRelay(solicit, MessageTypeRelayForward, net.IPv6zero, net.IPv6zero)
 	require.NoError(t, err)
 	mac, err = ExtractMAC(relay)
+	require.NoError(t, err)
 	require.Equal(t, mac.String(), "aa:aa:aa:aa:aa:aa")
 
 	// no client ID
