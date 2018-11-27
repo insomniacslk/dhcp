@@ -62,7 +62,7 @@ func main() {
 	// A default Solicit packet will be used during the "conversation",
 	// which can be manipulated by using modifiers.
 	conversation, err := client.Exchange("eth0")
-	
+
 	// Summary() prints a verbose representation of the exchanged packets.
 	for _, packet := range conversation {
 		log.Print(packet.Summary())
