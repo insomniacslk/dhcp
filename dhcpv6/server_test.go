@@ -88,6 +88,6 @@ func TestServerActivateAndServe(t *testing.T) {
 	iface, err := getLoopbackInterface()
 	require.NoError(t, err)
 
-	_, _, err = c.Solicit(iface, nil)
+	_, _, err = c.Solicit(iface)
 	require.NoError(t, err)
 }

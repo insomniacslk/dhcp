@@ -136,7 +136,7 @@ func TestServerActivateAndServe(t *testing.T) {
 		WithHwAddr(hwaddr[:]),
 	}
 
-	conv, err := c.Exchange(lo, nil, modifiers...)
+	conv, err := c.Exchange(lo, modifiers...)
 	require.NoError(t, err)
 	require.Equal(t, 4, len(conv))
 	for _, p := range conv {
