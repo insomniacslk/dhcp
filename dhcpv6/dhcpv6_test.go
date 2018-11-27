@@ -83,7 +83,7 @@ func (s *GenerateTransactionIDTestSuite) TestErrors() {
 
 	// Less than 4 bytes are generated
 	randomRead = randomReadMock(s.random, 3, nil)
-	tid, err = GenerateTransactionID()
+	_, err = GenerateTransactionID()
 	s.Assert().EqualError(err, "invalid random sequence: shorter than 4 bytes")
 }
 
