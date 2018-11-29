@@ -14,6 +14,7 @@ The library is split into several parts:
 * `iana`: several IANA constants, and helpers used by `dhcpv6` and `dhcpv4`
 * `rfc1035label`: simple implementation of RFC1035 labels, used by `dhcpv6` and
   `dhcpv4`
+* `interfaces`, a thin layer of wrappers around network interfaces
 
 You will probably only need `dhcpv6` and/or `dhcpv4` explicitly. The rest is
 pulled in automatically if necessary.
