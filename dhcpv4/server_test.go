@@ -3,13 +3,13 @@
 package dhcpv4
 
 import (
-	"errors"
 	"log"
 	"math/rand"
 	"net"
 	"testing"
 	"time"
 
+	"github.com/insomniacslk/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
@@ -91,22 +91,6 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	return c, s
 }
 
-// utility function to return the loopback interface name
-// TODO this is copied from dhcpv6/server_test.go , we should refactor common code in a separate package
-func getLoopbackInterface() (string, error) {
-	var ifaces []net.Interface
-	var err error
-	if ifaces, err = net.Interfaces(); err != nil {
-		return "", err
-	}
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagLoopback != 0 || iface.Name[:2] == "lo" {
-			return iface.Name, nil
-		}
-	}
-	return "", errors.New("No loopback interface found")
-}
-
 func TestNewServer(t *testing.T) {
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP("127.0.0.1"),
@@ -125,8 +109,9 @@ func TestServerActivateAndServe(t *testing.T) {
 	c, s := setUpClientAndServer(DORAHandler)
 	defer s.Close()
 
-	lo, err := getLoopbackInterface()
+	ifaces, err := interfaces.GetLoopbackInterfaces()
 	require.NoError(t, err)
+	require.NotEqual(t, 0, len(ifaces))
 
 	xid := uint32(0xaabbccdd)
 	hwaddr := [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
@@ -136,7 +121,7 @@ func TestServerActivateAndServe(t *testing.T) {
 		WithHwAddr(hwaddr[:]),
 	}
 
-	conv, err := c.Exchange(lo, modifiers...)
+	conv, err := c.Exchange(ifaces[0].Name, modifiers...)
 	require.NoError(t, err)
 	require.Equal(t, 4, len(conv))
 	for _, p := range conv {
