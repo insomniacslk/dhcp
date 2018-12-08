@@ -69,11 +69,7 @@ func WithArchType(at iana.ArchType) Modifier {
 // options
 func WithIANA(addrs ...OptIAAddress) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		opt := d.GetOneOption(OptionIANA)
-		if opt == nil {
-			opt = &OptIANA{}
-		}
-		iaNa := opt.(*OptIANA)
+		iaNa := &OptIANA{}
 		for _, addr := range addrs {
 			iaNa.AddOption(&addr)
 		}
@@ -85,13 +81,10 @@ func WithIANA(addrs ...OptIAAddress) Modifier {
 // WithDNS adds or updates an OptDNSRecursiveNameServer
 func WithDNS(dnses ...net.IP) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		opt := d.GetOneOption(OptionDNSRecursiveNameServer)
-		if opt == nil {
-			opt = &OptDNSRecursiveNameServer{}
+		odns := OptDNSRecursiveNameServer{
+			NameServers: append([]net.IP{}, dnses[:]...),
 		}
-		odns := opt.(*OptDNSRecursiveNameServer)
-		odns.NameServers = append(odns.NameServers, dnses[:]...)
-		d.UpdateOption(odns)
+		d.UpdateOption(&odns)
 		return d
 	}
 }
@@ -99,16 +92,12 @@ func WithDNS(dnses ...net.IP) Modifier {
 // WithDomainSearchList adds or updates an OptDomainSearchList
 func WithDomainSearchList(searchlist ...string) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		opt := d.GetOneOption(OptionDomainSearchList)
-		if opt == nil {
-			opt = &OptDomainSearchList{}
+		osl := OptDomainSearchList{
+			DomainSearchList: &rfc1035label.Labels{
+				Labels: searchlist,
+			},
 		}
-		osl := opt.(*OptDomainSearchList)
-		labels := rfc1035label.Labels{
-			Labels: searchlist,
-		}
-		osl.DomainSearchList = &labels
-		d.UpdateOption(osl)
+		d.UpdateOption(&osl)
 		return d
 	}
 }
