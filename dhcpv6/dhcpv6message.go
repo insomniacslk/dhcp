@@ -280,6 +280,8 @@ func (d *DHCPv6Message) AddOption(option Option) {
 	d.options = append(d.options, option)
 }
 
+// UpdateOption updates the existing options with the passed option, adding it
+// at the end if not present already
 func (d *DHCPv6Message) UpdateOption(option Option) {
 	for idx, opt := range d.options {
 		if opt.Code() == option.Code() {

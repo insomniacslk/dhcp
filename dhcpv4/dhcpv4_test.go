@@ -347,9 +347,7 @@ func TestGetOption(t *testing.T) {
 
 func TestAddOption(t *testing.T) {
 	d, err := New()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
 	bootFileOpt1 := &OptionGeneric{OptionCode: OptionBootfileName, Data: []byte("boot.img")}
@@ -361,6 +359,23 @@ func TestAddOption(t *testing.T) {
 	options := d.Options()
 	require.Equal(t, len(options), 4)
 	require.Equal(t, options[3].Code(), OptionEnd)
+}
+
+func TestUpdateOption(t *testing.T) {
+	d, err := New()
+	require.NoError(t, err)
+	require.Equal(t, 1, len(d.options))
+	require.Equal(t, OptionEnd, d.options[0].Code())
+	// test that it will add the option since it's missing
+	d.UpdateOption(&OptDomainName{DomainName: "slackware.it"})
+	require.Equal(t, 2, len(d.options))
+	require.Equal(t, OptionDomainName, d.options[0].Code())
+	require.Equal(t, OptionEnd, d.options[1].Code())
+	// test that it won't add another option of the same type
+	d.UpdateOption(&OptDomainName{DomainName: "slackware.it"})
+	require.Equal(t, 2, len(d.options))
+	require.Equal(t, OptionDomainName, d.options[0].Code())
+	require.Equal(t, OptionEnd, d.options[1].Code())
 }
 
 func TestStrippedOptions(t *testing.T) {

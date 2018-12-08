@@ -136,3 +136,56 @@ func TestWithRelay(t *testing.T) {
 	require.Equal(t, ip, d.GatewayIPAddr())
 	require.Equal(t, uint8(1), d.HopCount())
 }
+
+func TestWithNetmask(t *testing.T) {
+	d := &DHCPv4{}
+	d = WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
+	require.Equal(t, 1, len(d.options))
+	require.Equal(t, OptionSubnetMask, d.options[0].Code())
+	osm := d.options[0].(*OptSubnetMask)
+	require.Equal(t, net.IPv4Mask(255, 255, 255, 0), osm.SubnetMask)
+}
+
+func TestWithLeaseTime(t *testing.T) {
+	d := &DHCPv4{}
+	d = WithLeaseTime(uint32(3600))(d)
+	require.Equal(t, 1, len(d.options))
+	require.Equal(t, OptionIPAddressLeaseTime, d.options[0].Code())
+	olt := d.options[0].(*OptIPAddressLeaseTime)
+	require.Equal(t, uint32(3600), olt.LeaseTime)
+}
+
+func TestWithDNS(t *testing.T) {
+	d := &DHCPv4{}
+	d = WithDNS(net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2"))(d)
+	require.Equal(t, 1, len(d.options))
+	require.Equal(t, OptionDomainNameServer, d.options[0].Code())
+	olt := d.options[0].(*OptDomainNameServer)
+	require.Equal(t, 2, len(olt.NameServers))
+	require.Equal(t, net.ParseIP("10.0.0.1"), olt.NameServers[0])
+	require.Equal(t, net.ParseIP("10.0.0.2"), olt.NameServers[1])
+	require.NotEqual(t, net.ParseIP("10.0.0.1"), olt.NameServers[1])
+}
+
+func TestWithDomainSearchList(t *testing.T) {
+	d := &DHCPv4{}
+	d = WithDomainSearchList("slackware.it", "dhcp.slackware.it")(d)
+	require.Equal(t, 1, len(d.options))
+	osl := d.options[0].(*OptDomainSearch)
+	require.Equal(t, OptionDNSDomainSearchList, osl.Code())
+	require.NotNil(t, osl.DomainSearch)
+	require.Equal(t, 2, len(osl.DomainSearch.Labels))
+	require.Equal(t, "slackware.it", osl.DomainSearch.Labels[0])
+	require.Equal(t, "dhcp.slackware.it", osl.DomainSearch.Labels[1])
+}
+
+func TestWithRouter(t *testing.T) {
+	d := &DHCPv4{}
+	rtr := net.ParseIP("10.0.0.254")
+	d = WithRouter(rtr)(d)
+	require.Equal(t, 1, len(d.options))
+	ortr := d.options[0].(*OptRouter)
+	require.Equal(t, OptionRouter, ortr.Code())
+	require.Equal(t, 1, len(ortr.Routers))
+	require.Equal(t, rtr, ortr.Routers[0])
+}
