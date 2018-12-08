@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"log"
 	"net"
 	"testing"
 
@@ -50,4 +51,44 @@ func TestWithRequestedOptions(t *testing.T) {
 	require.NotNil(t, opt)
 	oro = opt.(*OptRequestedOption)
 	require.ElementsMatch(t, oro.RequestedOptions(), []OptionCode{OptionClientID, OptionServerID})
+}
+
+func TestWithIANA(t *testing.T) {
+	d := WithIANA(OptIAAddress{
+		IPv6Addr:          net.ParseIP("::1"),
+		PreferredLifetime: 3600,
+		ValidLifetime:     5200,
+	})(&DHCPv6Message{})
+	require.Equal(t, 1, len(d.Options()))
+	require.Equal(t, OptionIANA, d.Options()[0].Code())
+}
+
+func TestWithDNS(t *testing.T) {
+	d := WithDNS([]net.IP{
+		net.ParseIP("fe80::1"),
+		net.ParseIP("fe80::2"),
+	}...)(&DHCPv6Message{})
+	require.Equal(t, 1, len(d.Options()))
+	dns := d.Options()[0].(*OptDNSRecursiveNameServer)
+	log.Printf("DNS %+v", dns)
+	require.Equal(t, OptionDNSRecursiveNameServer, dns.Code())
+	require.Equal(t, 2, len(dns.NameServers))
+	require.Equal(t, net.ParseIP("fe80::1"), dns.NameServers[0])
+	require.Equal(t, net.ParseIP("fe80::2"), dns.NameServers[1])
+	require.NotEqual(t, net.ParseIP("fe80::1"), dns.NameServers[1])
+}
+
+func TestWithDomainSearchList(t *testing.T) {
+	d := WithDomainSearchList([]string{
+		"slackware.it",
+		"dhcp.slackware.it",
+	}...)(&DHCPv6Message{})
+	require.Equal(t, 1, len(d.Options()))
+	osl := d.Options()[0].(*OptDomainSearchList)
+	require.Equal(t, OptionDomainSearchList, osl.Code())
+	require.NotNil(t, osl.DomainSearchList)
+	labels := osl.DomainSearchList.Labels
+	require.Equal(t, 2, len(labels))
+	require.Equal(t, "slackware.it", labels[0])
+	require.Equal(t, "dhcp.slackware.it", labels[1])
 }
