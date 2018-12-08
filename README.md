@@ -38,7 +38,7 @@ See more example code at https://github.com/insomniacslk/exdhcp
 
 To run a DHCPv6 transaction on the interface "eth0":
 
-```
+```go
 package main
 
 import (
@@ -79,7 +79,7 @@ func main() {
 
 ## DHCPv6 packet crafting and manipulation
 
-```
+```go
 package main
 
 import (
@@ -182,7 +182,7 @@ available.
 An example server that will print (but not reply to) the client's request is
 shown below:
 
-```
+```go
 package main
 
 import (
