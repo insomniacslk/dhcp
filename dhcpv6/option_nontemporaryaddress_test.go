@@ -51,6 +51,13 @@ func TestOptIANAGetOneOption(t *testing.T) {
 	require.Equal(t, oaddr, opt.GetOneOption(OptionIAAddr))
 }
 
+func TestOptIANAAddOption(t *testing.T) {
+	opt := OptIANA{}
+	opt.AddOption(&OptElapsedTime{})
+	require.Equal(t, 1, len(opt.Options))
+	require.Equal(t, OptionElapsedTime, opt.Options[0].Code())
+}
+
 func TestOptIANAGetOneOptionMissingOpt(t *testing.T) {
 	oaddr := &OptIAAddress{
 		IPv6Addr: net.ParseIP("::1"),

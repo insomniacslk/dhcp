@@ -2,8 +2,10 @@ package dhcpv6
 
 import (
 	"log"
+	"net"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
 // WithClientID adds a client ID option to a DHCPv6 packet
@@ -59,6 +61,54 @@ func WithArchType(at iana.ArchType) Modifier {
 	return func(d DHCPv6) DHCPv6 {
 		ao := OptClientArchType{ArchTypes: []iana.ArchType{at}}
 		d.AddOption(&ao)
+		return d
+	}
+}
+
+// WithIANA adds or updates an OptIANA option with the provided IAAddress
+// options
+func WithIANA(addrs ...OptIAAddress) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		opt := d.GetOneOption(OptionIANA)
+		if opt == nil {
+			opt = &OptIANA{}
+		}
+		iaNa := opt.(*OptIANA)
+		for _, addr := range addrs {
+			iaNa.AddOption(&addr)
+		}
+		d.UpdateOption(iaNa)
+		return d
+	}
+}
+
+// WithDNS adds or updates an OptDNSRecursiveNameServer
+func WithDNS(dnses ...net.IP) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		opt := d.GetOneOption(OptionDNSRecursiveNameServer)
+		if opt == nil {
+			opt = &OptDNSRecursiveNameServer{}
+		}
+		odns := opt.(*OptDNSRecursiveNameServer)
+		odns.NameServers = append(odns.NameServers, dnses[:]...)
+		d.UpdateOption(odns)
+		return d
+	}
+}
+
+// WithDomainSearchList adds or updates an OptDomainSearchList
+func WithDomainSearchList(searchlist ...string) Modifier {
+	return func(d DHCPv6) DHCPv6 {
+		opt := d.GetOneOption(OptionDomainSearchList)
+		if opt == nil {
+			opt = &OptDomainSearchList{}
+		}
+		osl := opt.(*OptDomainSearchList)
+		labels := rfc1035label.Labels{
+			Labels: searchlist,
+		}
+		osl.DomainSearchList = &labels
+		d.UpdateOption(osl)
 		return d
 	}
 }
