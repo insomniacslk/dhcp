@@ -69,7 +69,11 @@ func WithArchType(at iana.ArchType) Modifier {
 // options
 func WithIANA(addrs ...OptIAAddress) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		iaNa := &OptIANA{}
+		opt := d.GetOneOption(OptionIANA)
+		if opt == nil {
+			opt = &OptIANA{}
+		}
+		iaNa := opt.(*OptIANA)
 		for _, addr := range addrs {
 			iaNa.AddOption(&addr)
 		}
