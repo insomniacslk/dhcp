@@ -612,6 +612,20 @@ func (d *DHCPv4) AddOption(option Option) {
 	}
 }
 
+// UpdateOption updates the existing options with the passed option, adding it
+// at the end if not present already
+func (d *DHCPv4) UpdateOption(option Option) {
+	for idx, opt := range d.options {
+		if opt.Code() == option.Code() {
+			d.options[idx] = option
+			// don't look further
+			return
+		}
+	}
+	// if not found, add it
+	d.AddOption(option)
+}
+
 // MessageType returns the message type, trying to extract it from the
 // OptMessageType option. It returns nil if the message type cannot be extracted
 func (d *DHCPv4) MessageType() *MessageType {

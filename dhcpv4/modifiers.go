@@ -2,6 +2,8 @@ package dhcpv4
 
 import (
 	"net"
+
+	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
 // WithTransactionID sets the Transaction ID for the DHCPv4 packet
@@ -111,6 +113,58 @@ func WithRelay(ip net.IP) Modifier {
 		d.SetUnicast()
 		d.SetGatewayIPAddr(ip)
 		d.SetHopCount(1)
+		return d
+	}
+}
+
+// WithNetmask adds or updates an OptSubnetMask
+func WithNetmask(mask net.IPMask) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		osm := OptSubnetMask{
+			SubnetMask: mask,
+		}
+		d.UpdateOption(&osm)
+		return d
+	}
+}
+
+// WithLeaseTime adds or updates an OptIPAddressLeaseTime
+func WithLeaseTime(leaseTime uint32) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		olt := OptIPAddressLeaseTime{
+			LeaseTime: leaseTime,
+		}
+		d.UpdateOption(&olt)
+		return d
+	}
+}
+
+// WithDNS adds or updates an OptionDomainNameServer
+func WithDNS(dnses ...net.IP) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		odns := OptDomainNameServer{NameServers: dnses}
+		d.UpdateOption(&odns)
+		return d
+	}
+}
+
+// WithDomainSearchList adds or updates an OptionDomainSearch
+func WithDomainSearchList(searchList ...string) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		labels := rfc1035label.Labels{
+			Labels: searchList,
+		}
+		odsl := OptDomainSearch{DomainSearch: &labels}
+		d.UpdateOption(&odsl)
+		return d
+	}
+}
+
+// WithRouter adds or updates an OptionRouter
+func WithRouter(routers ...net.IP) Modifier {
+	return func(d *DHCPv4) *DHCPv4 {
+		ortr := OptRouter{Routers: routers}
+		d.UpdateOption(&ortr)
 		return d
 	}
 }

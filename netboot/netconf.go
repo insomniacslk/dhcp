@@ -106,10 +106,6 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 		leaseTime = leaseTimeOption.(*dhcpv4.OptIPAddressLeaseTime).LeaseTime
 	}
 
-	if int(leaseTime) < 0 {
-		return nil, fmt.Errorf("lease time overflow, Original lease time: %d", leaseTime)
-	}
-
 	netconf.Addresses = append(netconf.Addresses, AddrConf{
 		IPNet: net.IPNet{
 			IP:   ipAddr,
