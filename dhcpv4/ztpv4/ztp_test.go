@@ -53,9 +53,11 @@ func TestParseV4VendorClass(t *testing.T) {
 				t.Fatalf("failed to creat dhcpv4 packet object: %v", err)
 			}
 
-			packet.AddOption(&dhcpv4.OptClassIdentifier{
-				Identifier: tc.vc,
-			})
+			if tc.vc != "" {
+				packet.AddOption(&dhcpv4.OptClassIdentifier{
+					Identifier: tc.vc,
+				})
+			}
 
 			if tc.hostname != "" {
 				packet.AddOption(&dhcpv4.OptHostName{
