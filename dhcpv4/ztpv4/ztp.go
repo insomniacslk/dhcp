@@ -10,9 +10,7 @@ import (
 // VendorData is optional data a particular vendor may or may not include
 // in the Vendor Class options.
 type VendorData struct {
-	VendorName string
-	Model      string
-	Serial     string
+	VendorName, Model, Serial string
 }
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
@@ -22,7 +20,7 @@ var errVendorOptionMalformed = errors.New("malformed vendor option")
 func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	opt := packet.GetOneOption(dhcpv4.OptionClassIdentifier)
 	if opt == nil {
-		return nil, nil
+		return nil, errors.New("vendor options not found")
 	}
 	vc := opt.(*dhcpv4.OptClassIdentifier).Identifier
 	vd := &VendorData{}
@@ -76,5 +74,5 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	}
 
 	// We didn't match anything.
-	return nil, nil
+	return nil, errors.New("failed to parse vendor option data")
 }

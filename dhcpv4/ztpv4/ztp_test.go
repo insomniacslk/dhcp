@@ -14,8 +14,8 @@ func TestParseV4VendorClass(t *testing.T) {
 		want         *VendorData
 		fail         bool
 	}{
-		{name: "empty"},
-		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345"},
+		{name: "empty", fail: true},
+		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true},
 		{name: "truncatedVendor", vc: "Arista;1234", fail: true},
 		{
 			name: "arista",
