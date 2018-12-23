@@ -14,8 +14,8 @@ func TestParseV4VendorClass(t *testing.T) {
 		want         *VendorData
 		fail         bool
 	}{
-		{name: "empty"},
-		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345"},
+		{name: "empty", fail: true},
+		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true},
 		{name: "truncatedVendor", vc: "Arista;1234", fail: true},
 		{
 			name: "arista",
@@ -53,9 +53,11 @@ func TestParseV4VendorClass(t *testing.T) {
 				t.Fatalf("failed to creat dhcpv4 packet object: %v", err)
 			}
 
-			packet.AddOption(&dhcpv4.OptClassIdentifier{
-				Identifier: tc.vc,
-			})
+			if tc.vc != "" {
+				packet.AddOption(&dhcpv4.OptClassIdentifier{
+					Identifier: tc.vc,
+				})
+			}
 
 			if tc.hostname != "" {
 				packet.AddOption(&dhcpv4.OptHostName{
