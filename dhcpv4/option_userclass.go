@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the User Class option
@@ -12,7 +14,7 @@ import (
 // OptUserClass represents an option encapsulating User Classes.
 type OptUserClass struct {
 	UserClasses [][]byte
-	Rfc3004 bool
+	Rfc3004     bool
 }
 
 // Code returns the option code
@@ -61,21 +63,7 @@ func (op *OptUserClass) String() string {
 // error if any
 func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	opt := OptUserClass{}
-
-	if len(data) < 3 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionUserClassInformation {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionUserClassInformation, code)
-	}
-
-	totalLength := int(data[1])
-	data = data[2:]
-	if len(data) < totalLength {
-		return nil, fmt.Errorf("ParseOptUserClass: short data: length is %d but got %d bytes",
-			totalLength, len(data))
-	}
+	buf := uio.NewBigEndianBuffer(data)
 
 	// Check if option is Microsoft style instead of RFC compliant, issue #113
 
@@ -85,29 +73,24 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 	// option length. If the lengths don't add up, we assume that the option
 	// is a single string and non RFC3004 compliant
 	var counting int
-	for counting < totalLength {
+	for counting < buf.Len() {
 		// UC_Len_i does not include itself so add 1
 		counting += int(data[counting]) + 1
 	}
-	if counting != totalLength {
-		opt.UserClasses = append(opt.UserClasses, data[:totalLength])
+	if counting != buf.Len() {
+		opt.UserClasses = append(opt.UserClasses, data)
 		return &opt, nil
 	}
 	opt.Rfc3004 = true
-	for i := 0; i < totalLength; {
-		ucLen := int(data[i])
+	for buf.Has(1) {
+		ucLen := buf.Read8()
 		if ucLen == 0 {
-			return nil, errors.New("User Class value has invalid length of 0")
+			return nil, fmt.Errorf("DHCP user class must have length greater than 0")
 		}
-		base := i + 1
-		if len(data) < base+ucLen {
-			return nil, fmt.Errorf("ParseOptUserClass: short data: %d bytes; want: %d", len(data), base+ucLen)
-		}
-		opt.UserClasses = append(opt.UserClasses, data[base:base+ucLen])
-		i += base + ucLen
+		opt.UserClasses = append(opt.UserClasses, buf.CopyN(int(ucLen)))
 	}
-	if len(opt.UserClasses) < 1 {
+	if len(opt.UserClasses) == 0 {
 		return nil, errors.New("ParseOptUserClass: at least one user class is required")
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

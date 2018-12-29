@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the requested IP address option
@@ -17,21 +19,8 @@ type OptRequestedIPAddress struct {
 // ParseOptRequestedIPAddress returns a new OptServerIdentifier from a byte
 // stream, or error if any.
 func ParseOptRequestedIPAddress(data []byte) (*OptRequestedIPAddress, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionRequestedIPAddress {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionRequestedIPAddress, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
-	}
-	if len(data) < 6 {
-		return nil, ErrShortByteStream
-	}
-	return &OptRequestedIPAddress{RequestedAddr: net.IP(data[2 : 2+length])}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptRequestedIPAddress{RequestedAddr: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
 }
 
 // Code returns the option code.

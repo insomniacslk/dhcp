@@ -26,9 +26,9 @@ const (
 	OptionMachineName                   dhcpv4.OptionCode = 130
 )
 
-// OptionCodeToString maps BSDP OptionCodes to human-readable strings
+// optionCodeToString maps BSDP OptionCodes to human-readable strings
 // describing what they are.
-var OptionCodeToString = map[dhcpv4.OptionCode]string{
+var optionCodeToString = map[dhcpv4.OptionCode]string{
 	OptionMessageType:                   "BSDP Message Type",
 	OptionVersion:                       "BSDP Version",
 	OptionServerIdentifier:              "BSDP Server Identifier",

@@ -1,15 +1,13 @@
 package bsdp
 
 import (
-	"fmt"
-
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
+// OptMachineName represents a BSDP message type.
+//
 // Implements the BSDP option machine name, which gives the Netboot server's
 // machine name.
-
-// OptMachineName represents a BSDP message type.
 type OptMachineName struct {
 	Name string
 }
@@ -17,18 +15,7 @@ type OptMachineName struct {
 // ParseOptMachineName constructs an OptMachineName struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptMachineName(data []byte) (*OptMachineName, error) {
-	if len(data) < 2 {
-		return nil, dhcpv4.ErrShortByteStream
-	}
-	code := dhcpv4.OptionCode(data[0])
-	if code != OptionMachineName {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionMachineName, code)
-	}
-	length := int(data[1])
-	if len(data) < length+2 {
-		return nil, fmt.Errorf("expected length %d, got %d instead", length, len(data))
-	}
-	return &OptMachineName{Name: string(data[2 : length+2])}, nil
+	return &OptMachineName{Name: string(data)}, nil
 }
 
 // Code returns the option code.

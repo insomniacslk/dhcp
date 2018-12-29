@@ -14,23 +14,18 @@ func TestOptReplyPortInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptReplyPort(t *testing.T) {
-	data := []byte{byte(OptionReplyPort), 2, 0, 1}
+	data := []byte{0, 1}
 	o, err := ParseOptReplyPort(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptReplyPort{1}, o)
 
 	// Short byte stream
-	data = []byte{byte(OptionReplyPort), 2}
+	data = []byte{}
 	_, err = ParseOptReplyPort(data)
 	require.Error(t, err, "should get error from short byte stream")
 
-	// Wrong code
-	data = []byte{54, 2, 1, 0}
-	_, err = ParseOptReplyPort(data)
-	require.Error(t, err, "should get error from wrong code")
-
 	// Bad length
-	data = []byte{byte(OptionReplyPort), 4, 1, 0}
+	data = []byte{1}
 	_, err = ParseOptReplyPort(data)
 	require.Error(t, err, "should get error from bad length")
 }

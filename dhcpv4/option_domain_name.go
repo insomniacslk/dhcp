@@ -13,18 +13,7 @@ type OptDomainName struct {
 // ParseOptDomainName returns a new OptDomainName from a byte
 // stream, or error if any.
 func ParseOptDomainName(data []byte) (*OptDomainName, error) {
-	if len(data) < 3 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionDomainName {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionDomainName, code)
-	}
-	length := int(data[1])
-	if len(data) < 2+length {
-		return nil, ErrShortByteStream
-	}
-	return &OptDomainName{DomainName: string(data[2 : 2+length])}, nil
+	return &OptDomainName{DomainName: string(data)}, nil
 }
 
 // Code returns the option code.

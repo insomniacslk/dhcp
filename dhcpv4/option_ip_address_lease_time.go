@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the IP Address Lease Time option
@@ -16,20 +18,9 @@ type OptIPAddressLeaseTime struct {
 // ParseOptIPAddressLeaseTime constructs an OptIPAddressLeaseTime struct from a
 // sequence of bytes and returns it, or an error.
 func ParseOptIPAddressLeaseTime(data []byte) (*OptIPAddressLeaseTime, error) {
-	// Should at least have code, length, and lease time.
-	if len(data) < 6 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionIPAddressLeaseTime {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionIPAddressLeaseTime, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("expected length 4, got %v instead", length)
-	}
-	leaseTime := binary.BigEndian.Uint32(data[2:6])
-	return &OptIPAddressLeaseTime{LeaseTime: leaseTime}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	leaseTime := buf.Read32()
+	return &OptIPAddressLeaseTime{LeaseTime: leaseTime}, buf.FinError()
 }
 
 // Code returns the option code.

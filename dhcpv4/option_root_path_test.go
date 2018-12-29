@@ -20,24 +20,9 @@ func TestOptRootPathInterfaceMethods(t *testing.T) {
 
 func TestParseOptRootPath(t *testing.T) {
 	data := []byte{byte(OptionRootPath), 4, '/', 'f', 'o', 'o'}
-	o, err := ParseOptRootPath(data)
+	o, err := ParseOptRootPath(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, &OptRootPath{Path: "/foo"}, o)
-
-	// Short byte stream
-	data = []byte{byte(OptionRootPath)}
-	_, err = ParseOptRootPath(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{43, 2, 1, 1}
-	_, err = ParseOptRootPath(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{byte(OptionRootPath), 6, 1, 1, 1}
-	_, err = ParseOptRootPath(data)
-	require.Error(t, err, "should get error from bad length")
 }
 
 func TestOptRootPathString(t *testing.T) {

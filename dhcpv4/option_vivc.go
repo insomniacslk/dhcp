@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the Vendor-Identifying Vendor Class Option
@@ -23,39 +25,16 @@ type OptVIVC struct {
 // ParseOptVIVC contructs an OptVIVC tsruct from a sequence of bytes and returns
 // it, or an error.
 func ParseOptVIVC(data []byte) (*OptVIVC, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionVendorIdentifyingVendorClass {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionVendorIdentifyingVendorClass, code)
-	}
+	buf := uio.NewBigEndianBuffer(data)
 
-	length := int(data[1])
-	if len(data) < 2+length {
-		return nil, ErrShortByteStream
-	}
-	data = data[2:length+2]
-
-	ids := []VIVCIdentifier{}
-	for len(data) > 5 {
-		entID := binary.BigEndian.Uint32(data[0:4])
-		idLen := int(data[4])
-		data = data[5:]
-
-		if idLen > len(data) {
-			return nil, ErrShortByteStream
-		}
-
-		ids = append(ids, VIVCIdentifier{EntID: entID, Data: data[:idLen]})
-		data = data[idLen:]
+	var ids []VIVCIdentifier
+	for buf.Has(5) {
+		entID := buf.Read32()
+		idLen := int(buf.Read8())
+		ids = append(ids, VIVCIdentifier{EntID: entID, Data: buf.CopyN(idLen)})
 	}
 
-	if len(data) != 0 {
-		return nil, ErrShortByteStream
-	}
-
-	return &OptVIVC{Identifiers: ids}, nil
+	return &OptVIVC{Identifiers: ids}, buf.FinError()
 }
 
 // Code returns the option code.

@@ -16,21 +16,8 @@ type OptGeneric struct {
 
 // ParseOptGeneric parses a bytestream and creates a new OptGeneric from it,
 // or an error.
-func ParseOptGeneric(data []byte) (*OptGeneric, error) {
-	if len(data) == 0 {
-		return nil, dhcpv4.ErrZeroLengthByteStream
-	}
-	var (
-		length     int
-		optionData []byte
-	)
-	code := dhcpv4.OptionCode(data[0])
-	length = int(data[1])
-	if len(data) < length+2 {
-		return nil, fmt.Errorf("invalid data length: declared %v, actual %v", length, len(data))
-	}
-	optionData = data[2 : length+2]
-	return &OptGeneric{OptionCode: code, Data: optionData}, nil
+func ParseOptGeneric(code dhcpv4.OptionCode, data []byte) (*OptGeneric, error) {
+	return &OptGeneric{OptionCode: code, Data: data}, nil
 }
 
 // Code returns the generic option code.
@@ -45,7 +32,7 @@ func (o OptGeneric) ToBytes() []byte {
 
 // String returns a human-readable representation of a generic option.
 func (o OptGeneric) String() string {
-	code, ok := OptionCodeToString[o.Code()]
+	code, ok := optionCodeToString[o.Code()]
 	if !ok {
 		code = "Unknown"
 	}

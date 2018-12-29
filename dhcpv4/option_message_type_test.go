@@ -20,23 +20,13 @@ func TestOptMessageTypeNew(t *testing.T) {
 }
 
 func TestParseOptMessageType(t *testing.T) {
-	data := []byte{53, 1, 1} // DISCOVER
+	data := []byte{1} // DISCOVER
 	o, err := ParseOptMessageType(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptMessageType{MessageType: MessageTypeDiscover}, o)
 
-	// Short byte stream
-	data = []byte{53, 1}
-	_, err = ParseOptMessageType(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 1, 1}
-	_, err = ParseOptMessageType(data)
-	require.Error(t, err, "should get error from wrong code")
-
 	// Bad length
-	data = []byte{53, 5, 1}
+	data = []byte{1, 2}
 	_, err = ParseOptMessageType(data)
 	require.Error(t, err, "should get error from bad length")
 }

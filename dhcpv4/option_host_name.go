@@ -13,18 +13,7 @@ type OptHostName struct {
 // ParseOptHostName returns a new OptHostName from a byte stream, or error if
 // any.
 func ParseOptHostName(data []byte) (*OptHostName, error) {
-	if len(data) < 3 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionHostName {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionHostName, code)
-	}
-	length := int(data[1])
-	if len(data) < 2+length {
-		return nil, ErrShortByteStream
-	}
-	return &OptHostName{HostName: string(data[2 : 2+length])}, nil
+	return &OptHostName{HostName: string(data)}, nil
 }
 
 // Code returns the option code.

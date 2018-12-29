@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 func TestBootImageIDToBytes(t *testing.T) {
@@ -28,25 +29,23 @@ func TestBootImageIDFromBytes(t *testing.T) {
 		ImageType: BootImageTypeMacOSX,
 		Index:     0x1000,
 	}
-	newBootImage, err := BootImageIDFromBytes(b.ToBytes())
-	require.NoError(t, err)
-	require.Equal(t, b, *newBootImage)
+	var newBootImage BootImageID
+	require.NoError(t, uio.FromBigEndian(&newBootImage, b.ToBytes()))
+	require.Equal(t, b, newBootImage)
 
 	b = BootImageID{
 		IsInstall: true,
 		ImageType: BootImageTypeMacOSX,
 		Index:     0x1011,
 	}
-	newBootImage, err = BootImageIDFromBytes(b.ToBytes())
-	require.NoError(t, err)
-	require.Equal(t, b, *newBootImage)
+	require.NoError(t, uio.FromBigEndian(&newBootImage, b.ToBytes()))
+	require.Equal(t, b, newBootImage)
 }
 
 func TestBootImageIDFromBytesFail(t *testing.T) {
 	serialized := []byte{0x81, 0, 0x10} // intentionally left short
-	deserialized, err := BootImageIDFromBytes(serialized)
-	require.Nil(t, deserialized)
-	require.Error(t, err)
+	var deserialized BootImageID
+	require.Error(t, uio.FromBigEndian(&deserialized, serialized))
 }
 
 func TestBootImageIDString(t *testing.T) {
@@ -97,8 +96,8 @@ func TestBootImageFromBytes(t *testing.T) {
 		7,                             // len(Name)
 		98, 115, 100, 112, 45, 50, 49, // byte-encoding of Name
 	}
-	b, err := BootImageFromBytes(input)
-	require.NoError(t, err)
+	var b BootImage
+	require.NoError(t, uio.FromBigEndian(&b, input))
 	expectedBootImage := BootImage{
 		ID: BootImageID{
 			IsInstall: false,
@@ -107,15 +106,14 @@ func TestBootImageFromBytes(t *testing.T) {
 		},
 		Name: "bsdp-21",
 	}
-	require.Equal(t, expectedBootImage, *b)
+	require.Equal(t, expectedBootImage, b)
 }
 
 func TestBootImageFromBytesOnlyBootImageID(t *testing.T) {
 	// Only a BootImageID, nothing else.
 	input := []byte{0x1, 0, 0x10, 0x10}
-	b, err := BootImageFromBytes(input)
-	require.Nil(t, b)
-	require.Error(t, err)
+	var b BootImage
+	require.Error(t, uio.FromBigEndian(&b, input))
 }
 
 func TestBootImageFromBytesShortBootImage(t *testing.T) {
@@ -124,9 +122,8 @@ func TestBootImageFromBytesShortBootImage(t *testing.T) {
 		7,                         // len(Name)
 		98, 115, 100, 112, 45, 50, // Name bytes (intentionally off-by-one)
 	}
-	b, err := BootImageFromBytes(input)
-	require.Nil(t, b)
-	require.Error(t, err)
+	var b BootImage
+	require.Error(t, uio.FromBigEndian(&b, input))
 }
 
 func TestBootImageString(t *testing.T) {

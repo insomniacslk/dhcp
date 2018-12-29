@@ -5,31 +5,19 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/u-root/u-root/pkg/uio"
 )
-
-// This option implements the server identifier option
-// https://tools.ietf.org/html/rfc2132
 
 // OptServerPriority represents an option encapsulating the server priority.
 type OptServerPriority struct {
-	Priority int
+	Priority uint16
 }
 
 // ParseOptServerPriority returns a new OptServerPriority from a byte stream, or
 // error if any.
 func ParseOptServerPriority(data []byte) (*OptServerPriority, error) {
-	if len(data) < 4 {
-		return nil, dhcpv4.ErrShortByteStream
-	}
-	code := dhcpv4.OptionCode(data[0])
-	if code != OptionServerPriority {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionServerPriority, code)
-	}
-	length := int(data[1])
-	if length != 2 {
-		return nil, fmt.Errorf("unexpected length: expected 2, got %v", length)
-	}
-	return &OptServerPriority{Priority: int(binary.BigEndian.Uint16(data[2:4]))}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptServerPriority{Priority: buf.Read16()}, buf.FinError()
 }
 
 // Code returns the option code.

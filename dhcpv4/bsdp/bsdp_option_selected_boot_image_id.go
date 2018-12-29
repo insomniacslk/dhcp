@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptSelectedBootImageID contains the selected boot image ID.
+//
 // Implements the BSDP option selected boot image ID, which tells the server
 // which boot image has been selected by the client.
-
-// OptSelectedBootImageID contains the selected boot image ID.
 type OptSelectedBootImageID struct {
 	ID BootImageID
 }
@@ -17,22 +18,12 @@ type OptSelectedBootImageID struct {
 // ParseOptSelectedBootImageID constructs an OptSelectedBootImageID struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptSelectedBootImageID(data []byte) (*OptSelectedBootImageID, error) {
-	if len(data) < 6 {
-		return nil, dhcpv4.ErrShortByteStream
-	}
-	code := dhcpv4.OptionCode(data[0])
-	if code != OptionSelectedBootImageID {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionSelectedBootImageID, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("expected length 4, got %d instead", length)
-	}
-	id, err := BootImageIDFromBytes(data[2:6])
-	if err != nil {
+	var o OptSelectedBootImageID
+	buf := uio.NewBigEndianBuffer(data)
+	if err := o.ID.Unmarshal(buf); err != nil {
 		return nil, err
 	}
-	return &OptSelectedBootImageID{*id}, nil
+	return &o, buf.FinError()
 }
 
 // Code returns the option code.

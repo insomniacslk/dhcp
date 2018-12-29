@@ -43,18 +43,7 @@ func (op *OptDomainSearch) String() string {
 // ParseOptDomainSearch returns a new OptDomainSearch from a byte stream, or
 // error if any.
 func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionDNSDomainSearchList {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionDNSDomainSearchList, code)
-	}
-	length := int(data[1])
-	if len(data) < 2+length {
-		return nil, ErrShortByteStream
-	}
-	labels, err := rfc1035label.FromBytes(data[2 : length+2])
+	labels, err := rfc1035label.FromBytes(data)
 	if err != nil {
 		return nil, err
 	}

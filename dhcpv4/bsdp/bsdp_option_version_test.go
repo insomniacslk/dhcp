@@ -14,25 +14,15 @@ func TestOptVersionInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptVersion(t *testing.T) {
-	data := []byte{2, 2, 1, 1}
+	data := []byte{1, 1}
 	o, err := ParseOptVersion(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptVersion{Version1_1}, o)
 
 	// Short byte stream
-	data = []byte{2, 2}
+	data = []byte{2}
 	_, err = ParseOptVersion(data)
 	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 2, 1, 0}
-	_, err = ParseOptVersion(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{2, 4, 1, 0}
-	_, err = ParseOptVersion(data)
-	require.Error(t, err, "should get error from bad length")
 }
 
 func TestOptVersionString(t *testing.T) {

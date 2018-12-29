@@ -22,16 +22,10 @@ func TestParseOptServerPriority(t *testing.T) {
 	o, err = ParseOptServerPriority([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptServerPriority([]byte{4, 2, 1})
+	o, err = ParseOptServerPriority([]byte{1})
 	require.Error(t, err, "short byte stream")
 
-	o, err = ParseOptServerPriority([]byte{4, 3, 1, 1})
-	require.Error(t, err, "wrong priority length")
-
-	o, err = ParseOptServerPriority([]byte{53, 2, 168, 1})
-	require.Error(t, err, "wrong option code")
-
-	o, err = ParseOptServerPriority([]byte{4, 2, 0, 100})
+	o, err = ParseOptServerPriority([]byte{0, 100})
 	require.NoError(t, err)
-	require.Equal(t, 100, o.Priority)
+	require.Equal(t, uint16(100), o.Priority)
 }

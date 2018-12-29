@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"fmt"
 	"strings"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the parameter request list option
@@ -16,23 +18,12 @@ type OptParameterRequestList struct {
 // ParseOptParameterRequestList returns a new OptParameterRequestList from a
 // byte stream, or error if any.
 func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error) {
-	// Should at least have code + length byte.
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
+	buf := uio.NewBigEndianBuffer(data)
+	requestedOpts := make([]OptionCode, 0, buf.Len())
+	for buf.Len() > 0 {
+		requestedOpts = append(requestedOpts, OptionCode(buf.Read8()))
 	}
-	code := OptionCode(data[0])
-	if code != OptionParameterRequestList {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionParameterRequestList, code)
-	}
-	length := int(data[1])
-	if len(data) < length+2 {
-		return nil, ErrShortByteStream
-	}
-	var requestedOpts []OptionCode
-	for _, opt := range data[2 : length+2] {
-		requestedOpts = append(requestedOpts, OptionCode(opt))
-	}
-	return &OptParameterRequestList{RequestedOpts: requestedOpts}, nil
+	return &OptParameterRequestList{RequestedOpts: requestedOpts}, buf.Error()
 }
 
 // Code returns the option code.

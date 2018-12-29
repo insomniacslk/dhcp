@@ -14,7 +14,7 @@ func TestParseOptDomainSearch(t *testing.T) {
 		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'o', 'r', 'g', 0,
 	}
-	opt, err := ParseOptDomainSearch(data)
+	opt, err := ParseOptDomainSearch(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, 2, len(opt.DomainSearch.Labels))
 	require.Equal(t, data[2:], opt.DomainSearch.ToBytes())

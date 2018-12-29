@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptClientArchType represents an option encapsulating the Client System
@@ -35,7 +36,7 @@ func (o *OptClientArchType) ToBytes() []byte {
 // Length returns the length of the data portion (excluding option code an byte
 // length).
 func (o *OptClientArchType) Length() int {
-	return 2*len(o.ArchTypes)
+	return 2 * len(o.ArchTypes)
 }
 
 // String returns a human-readable string.
@@ -53,24 +54,14 @@ func (o *OptClientArchType) String() string {
 // ParseOptClientArchType returns a new OptClientArchType from a byte stream,
 // or error if any.
 func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
+	buf := uio.NewBigEndianBuffer(data)
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("must have at least one archtype if option is present")
 	}
-	code := OptionCode(data[0])
-	if code != OptionClientSystemArchitectureType {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionClientSystemArchitectureType, code)
+
+	archTypes := make([]iana.ArchType, 0, buf.Len()/2)
+	for buf.Has(2) {
+		archTypes = append(archTypes, iana.ArchType(buf.Read16()))
 	}
-	length := int(data[1])
-	if length == 0 || length%2 != 0 {
-		return nil, fmt.Errorf("Invalid length: expected multiple of 2 larger than 2, got %v", length)
-	}
-	if len(data) < 2+length {
-		return nil, ErrShortByteStream
-	}
-	archTypes := make([]iana.ArchType, 0, length%2)
-	for idx := 0; idx < length; idx += 2 {
-		b := data[2+idx : 2+idx+2]
-		archTypes = append(archTypes, iana.ArchType(binary.BigEndian.Uint16(b)))
-	}
-	return &OptClientArchType{ArchTypes: archTypes}, nil
+	return &OptClientArchType{ArchTypes: archTypes}, buf.FinError()
 }
