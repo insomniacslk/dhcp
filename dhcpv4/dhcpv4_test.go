@@ -44,6 +44,7 @@ func TestFromBytes(t *testing.T) {
 		0, 0, 0, 0, // gateway IP address
 		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // client MAC address + padding
 	}
+
 	// server host name
 	expectedHostname := []byte{}
 	for i := 0; i < 64; i++ {
@@ -57,7 +58,7 @@ func TestFromBytes(t *testing.T) {
 	}
 	data = append(data, expectedBootfilename...)
 	// magic cookie, then no options
-	data = append(data, []byte{99, 130, 83, 99}...)
+	data = append(data, magicCookie[:]...)
 
 	d, err := FromBytes(data)
 	require.NoError(t, err)
@@ -179,11 +180,11 @@ func TestGetOption(t *testing.T) {
 	}
 
 	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
-	bootFileOpt1 := &OptBootfileName{[]byte("boot.img")}
-	bootFileOpt2 := &OptBootfileName{[]byte("boot2.img")}
+	bootFileOpt1 := &OptBootfileName{"boot.img"}
+	bootFileOpt2 := &OptBootfileName{"boot2.img"}
 	d.AddOption(hostnameOpt)
-	d.AddOption(&OptBootfileName{[]byte("boot.img")})
-	d.AddOption(&OptBootfileName{[]byte("boot2.img")})
+	d.AddOption(&OptBootfileName{"boot.img"})
+	d.AddOption(&OptBootfileName{"boot2.img"})
 
 	require.Equal(t, d.GetOption(OptionHostName), []Option{hostnameOpt})
 	require.Equal(t, d.GetOption(OptionBootfileName), []Option{bootFileOpt1, bootFileOpt2})
@@ -225,32 +226,6 @@ func TestUpdateOption(t *testing.T) {
 	require.Equal(t, 2, len(d.Options))
 	require.Equal(t, OptionDomainName, d.Options[0].Code())
 	require.Equal(t, OptionEnd, d.Options[1].Code())
-}
-
-func TestStrippedOptions(t *testing.T) {
-	// Normal set of options that terminate with OptionEnd.
-	d, err := New()
-	require.NoError(t, err)
-	opts := []Option{
-		&OptBootfileName{[]byte("boot.img")},
-		&OptClassIdentifier{"something"},
-		&OptionGeneric{OptionCode: OptionEnd},
-	}
-	d.Options = opts
-	stripped := d.StrippedOptions()
-	require.Equal(t, len(opts), len(stripped))
-	for i := range stripped {
-		require.Equal(t, opts[i], stripped[i])
-	}
-
-	// Set of options with additional options after OptionEnd
-	opts = append(opts, &OptMaximumDHCPMessageSize{uint16(1234)})
-	d.Options = opts
-	stripped = d.StrippedOptions()
-	require.Equal(t, len(opts)-1, len(stripped))
-	for i := range stripped {
-		require.Equal(t, opts[i], stripped[i])
-	}
 }
 
 func TestDHCPv4NewRequestFromOffer(t *testing.T) {

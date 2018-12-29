@@ -8,7 +8,7 @@ import (
 
 func TestParseOptionGeneric(t *testing.T) {
 	// Empty bytestream produces error
-	_, err := ParseOptionGeneric([]byte{})
+	_, err := ParseOptionGeneric(OptionHostName, []byte{})
 	require.Error(t, err, "error from empty bytestream")
 }
 
@@ -18,14 +18,6 @@ func TestOptionGenericCode(t *testing.T) {
 		Data:       []byte{byte(MessageTypeDiscover)},
 	}
 	require.Equal(t, OptionDHCPMessageType, o.Code())
-}
-
-func TestOptionGenericData(t *testing.T) {
-	o := OptionGeneric{
-		OptionCode: OptionNameServer,
-		Data:       []byte{192, 168, 0, 1},
-	}
-	require.Equal(t, []byte{192, 168, 0, 1}, o.Data)
 }
 
 func TestOptionGenericToBytes(t *testing.T) {

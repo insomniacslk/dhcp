@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the Maximum DHCP Message size option
@@ -16,20 +18,8 @@ type OptMaximumDHCPMessageSize struct {
 // ParseOptMaximumDHCPMessageSize constructs an OptMaximumDHCPMessageSize struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptMaximumDHCPMessageSize(data []byte) (*OptMaximumDHCPMessageSize, error) {
-	// Should at least have code, length, and message size.
-	if len(data) < 4 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionMaximumDHCPMessageSize {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionMaximumDHCPMessageSize, code)
-	}
-	length := int(data[1])
-	if length != 2 {
-		return nil, fmt.Errorf("expected length 2, got %v instead", length)
-	}
-	msgSize := binary.BigEndian.Uint16(data[2:4])
-	return &OptMaximumDHCPMessageSize{Size: msgSize}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptMaximumDHCPMessageSize{Size: buf.Read16()}, buf.FinError()
 }
 
 // Code returns the option code.

@@ -2,6 +2,8 @@ package dhcpv4
 
 import (
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the message type option
@@ -15,20 +17,8 @@ type OptMessageType struct {
 // ParseOptMessageType constructs an OptMessageType struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptMessageType(data []byte) (*OptMessageType, error) {
-	// Should at least have code, length, and message type.
-	if len(data) < 3 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionDHCPMessageType {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionDHCPMessageType, code)
-	}
-	length := int(data[1])
-	if length != 1 {
-		return nil, ErrShortByteStream
-	}
-	messageType := MessageType(data[2])
-	return &OptMessageType{MessageType: messageType}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptMessageType{MessageType: MessageType(buf.Read8())}, buf.FinError()
 }
 
 // Code returns the option code.

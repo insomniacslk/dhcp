@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // This option implements the server identifier option
@@ -16,21 +18,8 @@ type OptBroadcastAddress struct {
 // ParseOptBroadcastAddress returns a new OptBroadcastAddress from a byte
 // stream, or error if any.
 func ParseOptBroadcastAddress(data []byte) (*OptBroadcastAddress, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionBroadcastAddress {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionBroadcastAddress, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
-	}
-	if len(data) < 6 {
-		return nil, ErrShortByteStream
-	}
-	return &OptBroadcastAddress{BroadcastAddress: net.IP(data[2 : 2+length])}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptBroadcastAddress{BroadcastAddress: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
 }
 
 // Code returns the option code.

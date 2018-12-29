@@ -2,15 +2,26 @@ package dhcpv4
 
 import (
 	"errors"
+	"fmt"
+	"io"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
-// ErrShortByteStream is an error that is thrown any time a short byte stream is
-// detected during option parsing.
-var ErrShortByteStream = errors.New("short byte stream")
+var (
+	// ErrShortByteStream is an error that is thrown any time a short byte stream is
+	// detected during option parsing.
+	ErrShortByteStream = errors.New("short byte stream")
 
-// ErrZeroLengthByteStream is an error that is thrown any time a zero-length
-// byte stream is encountered.
-var ErrZeroLengthByteStream = errors.New("zero-length byte stream")
+	// ErrZeroLengthByteStream is an error that is thrown any time a zero-length
+	// byte stream is encountered.
+	ErrZeroLengthByteStream = errors.New("zero-length byte stream")
+
+	// ErrInvalidOptions is returned when invalid options data is
+	// encountered during parsing. The data could report an incorrect
+	// length or have trailing bytes which are not part of the option.
+	ErrInvalidOptions = errors.New("invalid options data")
+)
 
 // magicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
@@ -29,15 +40,10 @@ type Option interface {
 
 // ParseOption parses a sequence of bytes as a single DHCPv4 option, returning
 // the specific option structure or error, if any.
-func ParseOption(data []byte) (Option, error) {
-	if len(data) == 0 {
-		return nil, errors.New("invalid zero-length DHCPv4 option")
-	}
-	var (
-		opt Option
-		err error
-	)
-	switch OptionCode(data[0]) {
+func ParseOption(code OptionCode, data []byte) (Option, error) {
+	var opt Option
+	var err error
+	switch code {
 	case OptionSubnetMask:
 		opt, err = ParseOptSubnetMask(data)
 	case OptionRouter:
@@ -83,7 +89,7 @@ func ParseOption(data []byte) (Option, error) {
 	case OptionVendorIdentifyingVendorClass:
 		opt, err = ParseOptVIVC(data)
 	default:
-		opt, err = ParseOptionGeneric(data)
+		opt, err = ParseOptionGeneric(code, data)
 	}
 	if err != nil {
 		return nil, err
@@ -95,41 +101,70 @@ func ParseOption(data []byte) (Option, error) {
 // and builds a list of options from it. The sequence should not contain the
 // DHCP magic cookie. Returns an error if any invalid option or length is found.
 func OptionsFromBytesWithoutMagicCookie(data []byte) ([]Option, error) {
-	return OptionsFromBytesWithParser(data, ParseOption)
+	return OptionsFromBytesWithParser(data, ParseOption, true)
 }
 
 // OptionParser is a function signature for option parsing
-type OptionParser func(data []byte) (Option, error)
+type OptionParser func(code OptionCode, data []byte) (Option, error)
 
 // OptionsFromBytesWithParser parses Options from byte sequences using the
 // parsing function that is passed in as a paremeter
-func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, error) {
-	options := make([]Option, 0, 10)
-	idx := 0
-	for {
-		if idx == len(data) {
-			break
-		}
-		// This should never happen.
-		if idx > len(data) {
-			return nil, errors.New("read past the end of options")
-		}
-		opt, err := parser(data[idx:])
-		idx++
-		if err != nil {
-			return nil, err
-		}
-		options = append(options, opt)
-		if opt.Code() == OptionEnd {
-			break
-		}
-
-		// Options with zero length have no length byte, so here we handle the
-		// ones with nonzero length
-		if opt.Code() != OptionPad {
-			idx++
-		}
-		idx += opt.Length()
+func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption bool) (Options, error) {
+	if len(data) == 0 {
+		return nil, nil
 	}
-	return options, nil
+	buf := uio.NewBigEndianBuffer(data)
+	options := make(map[OptionCode][]byte, 10)
+
+	// Due to RFC 3396 allowing an option to be specified multiple times,
+	// we have to collect all option data first, and then parse it.
+	var end bool
+	for buf.Len() >= 1 {
+		// 1 byte: option code
+		// 1 byte: option length n
+		// n bytes: data
+		code := OptionCode(buf.Read8())
+
+		if code == OptionPad {
+			continue
+		} else if code == OptionEnd {
+			end = true
+			break
+		}
+		length := int(buf.Read8())
+
+		// N bytes: option data
+		data := buf.Consume(length)
+		if data == nil {
+			return nil, fmt.Errorf("error collecting options: %v", buf.Error())
+		}
+		data = data[:length:length]
+
+		// RFC 3396: Just concatenate the data if the option code was
+		// specified multiple times.
+		options[code] = append(options[code], data...)
+	}
+
+	// If we never read the End option, the sender of this packet screwed
+	// up.
+	if !end && checkEndOption {
+		return nil, io.ErrUnexpectedEOF
+	}
+
+	// Any bytes left must be padding.
+	for buf.Len() >= 1 {
+		if OptionCode(buf.Read8()) != OptionPad {
+			return nil, ErrInvalidOptions
+		}
+	}
+
+	opts := make(Options, 0, 10)
+	for code, data := range options {
+		parsedOpt, err := parser(code, data)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing option code %s: %v", code, err)
+		}
+		opts = append(opts, parsedOpt)
+	}
+	return opts, nil
 }

@@ -16,21 +16,10 @@ type OptServerIdentifier struct {
 // ParseOptServerIdentifier returns a new OptServerIdentifier from a byte
 // stream, or error if any.
 func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
+	if len(data) != 4 {
+		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", len(data))
 	}
-	code := OptionCode(data[0])
-	if code != OptionServerIdentifier {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionServerIdentifier, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
-	}
-	if len(data) < 6 {
-		return nil, ErrShortByteStream
-	}
-	return &OptServerIdentifier{ServerID: net.IP(data[2 : 2+length])}, nil
+	return &OptServerIdentifier{ServerID: net.IP(data)}, nil
 }
 
 // Code returns the option code.

@@ -15,23 +15,11 @@ type OptionGeneric struct {
 
 // ParseOptionGeneric parses a bytestream and creates a new OptionGeneric from
 // it, or an error.
-func ParseOptionGeneric(data []byte) (*OptionGeneric, error) {
+func ParseOptionGeneric(code OptionCode, data []byte) (Option, error) {
 	if len(data) == 0 {
 		return nil, errors.New("invalid zero-length bytestream")
 	}
-	var (
-		length     int
-		optionData []byte
-	)
-	code := OptionCode(data[0])
-	if code != OptionPad && code != OptionEnd {
-		length = int(data[1])
-		if len(data) < length+2 {
-			return nil, fmt.Errorf("invalid data length: declared %v, actual %v", length, len(data))
-		}
-		optionData = data[2 : length+2]
-	}
-	return &OptionGeneric{OptionCode: code, Data: optionData}, nil
+	return &OptionGeneric{OptionCode: code, Data: data}, nil
 }
 
 // Code returns the generic option code.
