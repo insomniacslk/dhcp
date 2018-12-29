@@ -143,12 +143,10 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
 		return nil, errors.New("replyPort must be a privileged port")
 	}
-	d.SetOpcode(dhcpv4.OpcodeBootRequest)
-	d.SetHwType(ack.HwType())
-	d.SetHwAddrLen(ack.HwAddrLen())
-	clientHwAddr := ack.ClientHwAddr()
-	d.SetClientHwAddr(clientHwAddr[:])
-	d.SetTransactionID(ack.TransactionID())
+	d.OpCode = dhcpv4.OpcodeBootRequest
+	d.HWType = ack.HWType
+	d.ClientHWAddr = ack.ClientHWAddr
+	d.TransactionID = ack.TransactionID
 	if ack.IsBroadcast() {
 		d.SetBroadcast()
 	} else {
@@ -209,11 +207,10 @@ func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.D
 	if err != nil {
 		return nil, err
 	}
-	reply.SetClientIPAddr(inform.ClientIPAddr())
-	reply.SetYourIPAddr(net.IPv4zero)
-	reply.SetGatewayIPAddr(inform.GatewayIPAddr())
-	reply.SetServerIPAddr(config.ServerIP)
-	reply.SetServerHostName([]byte(config.ServerHostname))
+	reply.ClientIPAddr = inform.ClientIPAddr
+	reply.GatewayIPAddr = inform.GatewayIPAddr
+	reply.ServerIPAddr = config.ServerIP
+	reply.ServerHostName = config.ServerHostname
 
 	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
 	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
@@ -249,12 +246,11 @@ func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4
 		return nil, err
 	}
 
-	reply.SetClientIPAddr(inform.ClientIPAddr())
-	reply.SetYourIPAddr(net.IPv4zero)
-	reply.SetGatewayIPAddr(inform.GatewayIPAddr())
-	reply.SetServerIPAddr(config.ServerIP)
-	reply.SetServerHostName([]byte(config.ServerHostname))
-	reply.SetBootFileName([]byte(config.BootFileName))
+	reply.ClientIPAddr = inform.ClientIPAddr
+	reply.GatewayIPAddr = inform.GatewayIPAddr
+	reply.ServerIPAddr = config.ServerIP
+	reply.ServerHostName = config.ServerHostname
+	reply.BootFileName = config.BootFileName
 
 	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
 	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})

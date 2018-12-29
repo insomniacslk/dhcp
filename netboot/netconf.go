@@ -79,8 +79,8 @@ func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
 // Reply packet and returns a populated NetConf structure
 func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	// extract the address from the DHCPv4 address
-	ipAddr := d.YourIPAddr()
-	if ipAddr.Equal(net.IPv4zero) {
+	ipAddr := d.YourIPAddr
+	if ipAddr == nil || ipAddr.Equal(net.IPv4zero) {
 		return nil, errors.New("ip address is null (0.0.0.0)")
 	}
 	netconf := NetConf{}

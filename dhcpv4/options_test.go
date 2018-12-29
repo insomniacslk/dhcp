@@ -189,38 +189,3 @@ func TestParseOptionShortOption(t *testing.T) {
 	_, err := ParseOption(option)
 	require.Error(t, err, "should get error from short options")
 }
-
-func TestOptionsFromBytes(t *testing.T) {
-	options := []byte{
-		99, 130, 83, 99, // Magic Cookie
-		5, 4, 192, 168, 1, 1, // DNS
-		255,     // end
-		0, 0, 0, //padding
-	}
-	opts, err := OptionsFromBytes(options)
-	require.NoError(t, err)
-	require.Equal(t, 2, len(opts))
-	require.Equal(t, opts[0].(*OptionGeneric), &OptionGeneric{OptionCode: OptionNameServer, Data: []byte{192, 168, 1, 1}})
-	require.Equal(t, opts[1].(*OptionGeneric), &OptionGeneric{OptionCode: OptionEnd})
-}
-
-func TestOptionsFromBytesZeroLength(t *testing.T) {
-	options := []byte{}
-	_, err := OptionsFromBytes(options)
-	require.Error(t, err)
-}
-
-func TestOptionsFromBytesBadMagicCookie(t *testing.T) {
-	options := []byte{1, 2, 3, 4}
-	_, err := OptionsFromBytes(options)
-	require.Error(t, err)
-}
-
-func TestOptionsFromBytesShortOption(t *testing.T) {
-	options := []byte{
-		99, 130, 83, 99, // Magic Cookie
-		5, 4, 192, 168, // DNS
-	}
-	_, err := OptionsFromBytes(options)
-	require.Error(t, err)
-}

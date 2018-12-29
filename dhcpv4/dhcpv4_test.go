@@ -61,22 +61,18 @@ func TestFromBytes(t *testing.T) {
 
 	d, err := FromBytes(data)
 	require.NoError(t, err)
-	require.Equal(t, d.Opcode(), OpcodeBootRequest)
-	require.Equal(t, d.HwType(), iana.HwTypeEthernet)
-	require.Equal(t, d.HwAddrLen(), byte(6))
-	require.Equal(t, d.HopCount(), byte(3))
-	require.Equal(t, d.TransactionID(), uint32(0xaabbccdd))
-	require.Equal(t, d.NumSeconds(), uint16(3))
-	require.Equal(t, d.Flags(), uint16(1))
-	require.True(t, d.ClientIPAddr().Equal(net.IPv4zero))
-	require.True(t, d.YourIPAddr().Equal(net.IPv4zero))
-	require.True(t, d.GatewayIPAddr().Equal(net.IPv4zero))
-	clientHwAddr := d.ClientHwAddr()
-	require.Equal(t, clientHwAddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
-	hostname := d.ServerHostName()
-	require.Equal(t, hostname[:], expectedHostname)
-	bootfileName := d.BootFileName()
-	require.Equal(t, bootfileName[:], expectedBootfilename)
+	require.Equal(t, d.OpCode, OpcodeBootRequest)
+	require.Equal(t, d.HWType, iana.HwTypeEthernet)
+	require.Equal(t, d.HopCount, byte(3))
+	require.Equal(t, d.TransactionID, [4]byte{0xaa, 0xbb, 0xcc, 0xdd})
+	require.Equal(t, d.NumSeconds, uint16(3))
+	require.Equal(t, d.Flags, uint16(1))
+	require.True(t, d.ClientIPAddr.Equal(net.IPv4zero))
+	require.True(t, d.YourIPAddr.Equal(net.IPv4zero))
+	require.True(t, d.GatewayIPAddr.Equal(net.IPv4zero))
+	require.Equal(t, d.ClientHWAddr, net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff})
+	require.Equal(t, d.ServerHostName, "")
+	require.Equal(t, d.BootFileName, "")
 	// no need to check Magic Cookie as it is already validated in FromBytes
 	// above
 }
@@ -122,166 +118,19 @@ func TestFromBytesInvalidOptions(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestSettersAndGetters(t *testing.T) {
-	data := []byte{
-		1,                      // dhcp request
-		1,                      // ethernet hw type
-		6,                      // hw addr length
-		3,                      // hop count
-		0xaa, 0xbb, 0xcc, 0xdd, // transaction ID, big endian (network)
-		0, 3, // number of seconds
-		0, 1, // broadcast
-		1, 2, 3, 4, // client IP address
-		5, 6, 7, 8, // your IP address
-		9, 10, 11, 12, // server IP address
-		13, 14, 15, 16, // gateway IP address
-		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // client MAC address + padding
-	}
-	// server host name
-	expectedHostname := []byte{}
-	for i := 0; i < 64; i++ {
-		expectedHostname = append(expectedHostname, 0)
-	}
-	data = append(data, expectedHostname...)
-	// boot file name
-	expectedBootfilename := []byte{}
-	for i := 0; i < 128; i++ {
-		expectedBootfilename = append(expectedBootfilename, 0)
-	}
-	data = append(data, expectedBootfilename...)
-	// magic cookie, then no options
-	data = append(data, []byte{99, 130, 83, 99}...)
-	d, err := FromBytes(data)
-	require.NoError(t, err)
-
-	// getter/setter for Opcode
-	require.Equal(t, OpcodeBootRequest, d.Opcode())
-	d.SetOpcode(OpcodeBootReply)
-	require.Equal(t, OpcodeBootReply, d.Opcode())
-
-	// getter/setter for HwType
-	require.Equal(t, iana.HwTypeEthernet, d.HwType())
-	d.SetHwType(iana.HwTypeARCNET)
-	require.Equal(t, iana.HwTypeARCNET, d.HwType())
-
-	// getter/setter for HwAddrLen
-	require.Equal(t, uint8(6), d.HwAddrLen())
-	d.SetHwAddrLen(12)
-	require.Equal(t, uint8(12), d.HwAddrLen())
-	d.SetHwAddrLen(22)
-	require.Equal(t, uint8(16), d.HwAddrLen())
-
-	// getter/setter for HopCount
-	require.Equal(t, uint8(3), d.HopCount())
-	d.SetHopCount(1)
-	require.Equal(t, uint8(1), d.HopCount())
-
-	// getter/setter for TransactionID
-	require.Equal(t, uint32(0xaabbccdd), d.TransactionID())
-	d.SetTransactionID(0xeeff0011)
-	require.Equal(t, uint32(0xeeff0011), d.TransactionID())
-
-	// getter/setter for TransactionID
-	require.Equal(t, uint16(3), d.NumSeconds())
-	d.SetNumSeconds(15)
-	require.Equal(t, uint16(15), d.NumSeconds())
-
-	// getter/setter for Flags
-	require.Equal(t, uint16(1), d.Flags())
-	d.SetFlags(0)
-	require.Equal(t, uint16(0), d.Flags())
-
-	// getter/setter for ClientIPAddr
-	require.True(t, d.ClientIPAddr().Equal(net.IPv4(1, 2, 3, 4)))
-	d.SetClientIPAddr(net.IPv4(4, 3, 2, 1))
-	require.True(t, d.ClientIPAddr().Equal(net.IPv4(4, 3, 2, 1)))
-
-	// getter/setter for YourIPAddr
-	require.True(t, d.YourIPAddr().Equal(net.IPv4(5, 6, 7, 8)))
-	d.SetYourIPAddr(net.IPv4(8, 7, 6, 5))
-	require.True(t, d.YourIPAddr().Equal(net.IPv4(8, 7, 6, 5)))
-
-	// getter/setter for ServerIPAddr
-	require.True(t, d.ServerIPAddr().Equal(net.IPv4(9, 10, 11, 12)))
-	d.SetServerIPAddr(net.IPv4(12, 11, 10, 9))
-	require.True(t, d.ServerIPAddr().Equal(net.IPv4(12, 11, 10, 9)))
-
-	// getter/setter for GatewayIPAddr
-	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(13, 14, 15, 16)))
-	d.SetGatewayIPAddr(net.IPv4(16, 15, 14, 13))
-	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(16, 15, 14, 13)))
-
-	// getter/setter for ClientHwAddr
-	hwaddr := d.ClientHwAddr()
-	require.Equal(t, []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, hwaddr[:])
-	d.SetFlags(0)
-
-	// getter/setter for ServerHostName
-	serverhostname := d.ServerHostName()
-	require.Equal(t, expectedHostname, serverhostname[:])
-	newHostname := []byte{'t', 'e', 's', 't'}
-	for i := 0; i < 60; i++ {
-		newHostname = append(newHostname, 0)
-	}
-	d.SetServerHostName(newHostname)
-	serverhostname = d.ServerHostName()
-	require.Equal(t, newHostname, serverhostname[:])
-
-	// getter/setter for BootFileName
-	bootfilename := d.BootFileName()
-	require.Equal(t, expectedBootfilename, bootfilename[:])
-	newBootfilename := []byte{'t', 'e', 's', 't'}
-	for i := 0; i < 124; i++ {
-		newBootfilename = append(newBootfilename, 0)
-	}
-	d.SetBootFileName(newBootfilename)
-	bootfilename = d.BootFileName()
-	require.Equal(t, newBootfilename, bootfilename[:])
-}
-
 func TestToStringMethods(t *testing.T) {
 	d, err := New()
 	if err != nil {
 		t.Fatal(err)
 	}
-	// OpcodeToString
-	d.SetOpcode(OpcodeBootRequest)
-	require.Equal(t, "BootRequest", d.OpcodeToString())
-	d.SetOpcode(OpcodeBootReply)
-	require.Equal(t, "BootReply", d.OpcodeToString())
-	d.SetOpcode(OpcodeType(0))
-	require.Equal(t, "Unknown", d.OpcodeToString())
-
-	// HwTypeToString
-	d.SetHwType(iana.HwTypeEthernet)
-	require.Equal(t, "Ethernet", d.HwTypeToString())
-	d.SetHwType(iana.HwTypeARCNET)
-	require.Equal(t, "ARCNET", d.HwTypeToString())
-	d.SetHwType(iana.HwTypeType(0))
-	require.Equal(t, "Invalid", d.HwTypeToString())
 
 	// FlagsToString
 	d.SetUnicast()
 	require.Equal(t, "Unicast", d.FlagsToString())
 	d.SetBroadcast()
 	require.Equal(t, "Broadcast", d.FlagsToString())
-	d.SetFlags(0xffff)
+	d.Flags = 0xffff
 	require.Equal(t, "Broadcast (reserved bits not zeroed)", d.FlagsToString())
-
-	// ClientHwAddrToString
-	d.SetHwAddrLen(6)
-	d.SetClientHwAddr([]byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
-	require.Equal(t, "aa:bb:cc:dd:ee:ff", d.ClientHwAddrToString())
-	d.SetClientHwAddr([]byte{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}) // 20 bytes
-	require.Equal(t, "01:02:03:04:01:02", d.ClientHwAddrToString())
-
-	// ServerHostNameToString
-	d.SetServerHostName([]byte("my.host.local"))
-	require.Equal(t, "my.host.local", d.ServerHostNameToString())
-
-	// BootFileNameToString
-	d.SetBootFileName([]byte("/my/boot/file"))
-	require.Equal(t, "/my/boot/file", d.BootFileNameToString())
 }
 
 func TestNewToBytes(t *testing.T) {
@@ -310,7 +159,7 @@ func TestNewToBytes(t *testing.T) {
 		expected = append(expected, 0)
 	}
 	// Magic Cookie
-	expected = append(expected, MagicCookie...)
+	expected = append(expected, magicCookie[:]...)
 	// End
 	expected = append(expected, 0xff)
 
@@ -318,7 +167,7 @@ func TestNewToBytes(t *testing.T) {
 	require.NoError(t, err)
 	// fix TransactionID to match the expected one, since it's randomly
 	// generated in New()
-	d.SetTransactionID(0x11223344)
+	d.TransactionID = [4]byte{0x11, 0x22, 0x33, 0x44}
 	got := d.ToBytes()
 	require.Equal(t, expected, got)
 }
@@ -356,7 +205,7 @@ func TestAddOption(t *testing.T) {
 	d.AddOption(bootFileOpt1)
 	d.AddOption(bootFileOpt2)
 
-	options := d.Options()
+	options := d.Options
 	require.Equal(t, len(options), 4)
 	require.Equal(t, options[3].Code(), OptionEnd)
 }
@@ -364,18 +213,18 @@ func TestAddOption(t *testing.T) {
 func TestUpdateOption(t *testing.T) {
 	d, err := New()
 	require.NoError(t, err)
-	require.Equal(t, 1, len(d.options))
-	require.Equal(t, OptionEnd, d.options[0].Code())
+	require.Equal(t, 1, len(d.Options))
+	require.Equal(t, OptionEnd, d.Options[0].Code())
 	// test that it will add the option since it's missing
 	d.UpdateOption(&OptDomainName{DomainName: "slackware.it"})
-	require.Equal(t, 2, len(d.options))
-	require.Equal(t, OptionDomainName, d.options[0].Code())
-	require.Equal(t, OptionEnd, d.options[1].Code())
+	require.Equal(t, 2, len(d.Options))
+	require.Equal(t, OptionDomainName, d.Options[0].Code())
+	require.Equal(t, OptionEnd, d.Options[1].Code())
 	// test that it won't add another option of the same type
 	d.UpdateOption(&OptDomainName{DomainName: "slackware.it"})
-	require.Equal(t, 2, len(d.options))
-	require.Equal(t, OptionDomainName, d.options[0].Code())
-	require.Equal(t, OptionEnd, d.options[1].Code())
+	require.Equal(t, 2, len(d.Options))
+	require.Equal(t, OptionDomainName, d.Options[0].Code())
+	require.Equal(t, OptionEnd, d.Options[1].Code())
 }
 
 func TestStrippedOptions(t *testing.T) {
@@ -387,7 +236,7 @@ func TestStrippedOptions(t *testing.T) {
 		&OptClassIdentifier{"something"},
 		&OptionGeneric{OptionCode: OptionEnd},
 	}
-	d.SetOptions(opts)
+	d.Options = opts
 	stripped := d.StrippedOptions()
 	require.Equal(t, len(opts), len(stripped))
 	for i := range stripped {
@@ -396,7 +245,7 @@ func TestStrippedOptions(t *testing.T) {
 
 	// Set of options with additional options after OptionEnd
 	opts = append(opts, &OptMaximumDHCPMessageSize{uint16(1234)})
-	d.SetOptions(opts)
+	d.Options = opts
 	stripped = d.StrippedOptions()
 	require.Equal(t, len(opts)-1, len(stripped))
 	for i := range stripped {
@@ -418,8 +267,7 @@ func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	// Broadcast request
 	req, err = NewRequestFromOffer(offer)
 	require.NoError(t, err)
-	require.NotNil(t, req.MessageType())
-	require.Equal(t, MessageTypeRequest, *req.MessageType())
+	require.Equal(t, MessageTypeRequest, req.MessageType())
 	require.False(t, req.IsUnicast())
 	require.True(t, req.IsBroadcast())
 
@@ -439,53 +287,48 @@ func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
 	userClass := WithUserClass([]byte("linuxboot"), false)
 	req, err := NewRequestFromOffer(offer, userClass)
 	require.NoError(t, err)
-	require.NotEqual(t, (*MessageType)(nil), *req.MessageType())
-	require.Equal(t, MessageTypeRequest, *req.MessageType())
-	require.Equal(t, "User Class Information -> linuxboot", req.options[3].String())
+	require.Equal(t, MessageTypeRequest, req.MessageType())
+	require.Equal(t, "User Class Information -> linuxboot", req.Options[3].String())
 }
 
 func TestNewReplyFromRequest(t *testing.T) {
 	discover, err := New()
 	require.NoError(t, err)
-	discover.SetGatewayIPAddr(net.IPv4(192, 168, 0, 1))
+	discover.GatewayIPAddr = net.IPv4(192, 168, 0, 1)
 	reply, err := NewReplyFromRequest(discover)
 	require.NoError(t, err)
-	require.Equal(t, discover.TransactionID(), reply.TransactionID())
-	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
+	require.Equal(t, discover.TransactionID, reply.TransactionID)
+	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
 }
 
 func TestNewReplyFromRequestWithModifier(t *testing.T) {
 	discover, err := New()
 	require.NoError(t, err)
-	discover.SetGatewayIPAddr(net.IPv4(192, 168, 0, 1))
+	discover.GatewayIPAddr = net.IPv4(192, 168, 0, 1)
 	userClass := WithUserClass([]byte("linuxboot"), false)
 	reply, err := NewReplyFromRequest(discover, userClass)
 	require.NoError(t, err)
-	require.Equal(t, discover.TransactionID(), reply.TransactionID())
-	require.Equal(t, discover.GatewayIPAddr(), reply.GatewayIPAddr())
-	require.Equal(t, "User Class Information -> linuxboot", reply.options[0].String())
+	require.Equal(t, discover.TransactionID, reply.TransactionID)
+	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
+	require.Equal(t, "User Class Information -> linuxboot", reply.Options[0].String())
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {
 	m, err := New()
 	require.NoError(t, err)
-	require.Nil(t, m.MessageType())
+	require.Equal(t, MessageTypeNone, m.MessageType())
 }
 
 func TestNewDiscovery(t *testing.T) {
 	hwAddr := net.HardwareAddr{1, 2, 3, 4, 5, 6}
 	m, err := NewDiscovery(hwAddr)
 	require.NoError(t, err)
-	require.NotNil(t, m.MessageType())
-	require.Equal(t, MessageTypeDiscover, *m.MessageType())
+	require.Equal(t, MessageTypeDiscover, m.MessageType())
 
 	// Validate fields of DISCOVER packet.
-	require.Equal(t, OpcodeBootRequest, m.Opcode())
-	require.Equal(t, iana.HwTypeEthernet, m.HwType())
-	var expectedHwAddr [16]byte
-	copy(expectedHwAddr[:], hwAddr)
-	require.Equal(t, expectedHwAddr, m.ClientHwAddr())
-	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
+	require.Equal(t, OpcodeBootRequest, m.OpCode)
+	require.Equal(t, iana.HwTypeEthernet, m.HWType)
+	require.Equal(t, hwAddr, m.ClientHWAddr)
 	require.True(t, m.IsBroadcast())
 	require.True(t, HasOption(m, OptionParameterRequestList))
 	require.True(t, HasOption(m, OptionEnd))
@@ -497,15 +340,11 @@ func TestNewInform(t *testing.T) {
 	m, err := NewInform(hwAddr, localIP)
 
 	require.NoError(t, err)
-	require.Equal(t, OpcodeBootRequest, m.Opcode())
-	require.Equal(t, iana.HwTypeEthernet, m.HwType())
-	var expectedHwAddr [16]byte
-	copy(expectedHwAddr[:], hwAddr)
-	require.Equal(t, expectedHwAddr, m.ClientHwAddr())
-	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
-	require.NotNil(t, m.MessageType())
-	require.Equal(t, MessageTypeInform, *m.MessageType())
-	require.True(t, m.ClientIPAddr().Equal(localIP))
+	require.Equal(t, OpcodeBootRequest, m.OpCode)
+	require.Equal(t, iana.HwTypeEthernet, m.HWType)
+	require.Equal(t, hwAddr, m.ClientHWAddr)
+	require.Equal(t, MessageTypeInform, m.MessageType())
+	require.True(t, m.ClientIPAddr.Equal(localIP))
 }
 
 func TestIsOptionRequested(t *testing.T) {

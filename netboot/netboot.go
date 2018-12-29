@@ -19,7 +19,7 @@ var sleeper = func(d time.Duration) {
 func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifiers ...dhcpv6.Modifier) ([]dhcpv6.DHCPv6, error) {
 	var (
 		conversation []dhcpv6.DHCPv6
-		err error
+		err          error
 	)
 	modifiers = append(modifiers, dhcpv6.WithNetboot)
 	delay := 2 * time.Second
@@ -136,8 +136,8 @@ func ConversationToNetconfv4(conversation []*dhcpv4.DHCPv4) (*NetConf, string, e
 		// look for a BootReply packet of type Offer containing the bootfile URL.
 		// Normally both packets with Message Type OFFER or ACK do contain
 		// the bootfile URL.
-		if m.Opcode() == dhcpv4.OpcodeBootReply && *m.MessageType() == dhcpv4.MessageTypeOffer {
-			bootFileUrl = m.BootFileNameToString()
+		if m.OpCode == dhcpv4.OpcodeBootReply && m.MessageType() == dhcpv4.MessageTypeOffer {
+			bootFileUrl = m.BootFileName
 			reply = m
 			break
 		}

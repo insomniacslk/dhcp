@@ -34,7 +34,7 @@ type Client struct {
 	receiveQueue chan *dhcpv4.DHCPv4
 	sendQueue    chan *dhcpv4.DHCPv4
 	packetsLock  sync.Mutex
-	packets      map[uint32]*promise.Promise
+	packets      map[[4]byte]*promise.Promise
 	errors       chan error
 }
 
@@ -69,7 +69,7 @@ func (c *Client) Open(bufferSize int) error {
 	c.stopping = new(sync.WaitGroup)
 	c.sendQueue = make(chan *dhcpv4.DHCPv4, bufferSize)
 	c.receiveQueue = make(chan *dhcpv4.DHCPv4, bufferSize)
-	c.packets = make(map[uint32]*promise.Promise)
+	c.packets = make(map[[4]byte]*promise.Promise)
 	c.packetsLock = sync.Mutex{}
 	c.errors = make(chan error)
 
@@ -132,7 +132,7 @@ func (c *Client) senderLoop(ctx context.Context) {
 
 func (c *Client) send(packet *dhcpv4.DHCPv4) {
 	c.packetsLock.Lock()
-	p := c.packets[packet.TransactionID()]
+	p := c.packets[packet.TransactionID]
 	c.packetsLock.Unlock()
 
 	raddr, err := c.remoteAddr()
@@ -174,8 +174,8 @@ func (c *Client) receive(_ *dhcpv4.DHCPv4) {
 	}
 
 	c.packetsLock.Lock()
-	if p, ok := c.packets[received.TransactionID()]; ok {
-		delete(c.packets, received.TransactionID())
+	if p, ok := c.packets[received.TransactionID]; ok {
+		delete(c.packets, received.TransactionID)
 		p.Resolve(received)
 	}
 	c.packetsLock.Unlock()
@@ -201,7 +201,7 @@ func (c *Client) Send(message *dhcpv4.DHCPv4, modifiers ...dhcpv4.Modifier) *pro
 
 	p := promise.NewPromise()
 	c.packetsLock.Lock()
-	c.packets[message.TransactionID()] = p
+	c.packets[message.TransactionID] = p
 	c.packetsLock.Unlock()
 	c.sendQueue <- message
 	return p.Future

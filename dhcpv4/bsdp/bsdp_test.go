@@ -103,20 +103,19 @@ func TestNewInformList_ReplyPort(t *testing.T) {
 	require.Equal(t, replyPort, opt.(*OptReplyPort).Port)
 }
 
-func newAck(hwAddr []byte, transactionID uint32) *dhcpv4.DHCPv4 {
+func newAck(hwAddr net.HardwareAddr, transactionID [4]byte) *dhcpv4.DHCPv4 {
 	ack, _ := dhcpv4.New()
-	ack.SetTransactionID(transactionID)
-	ack.SetHwType(iana.HwTypeEthernet)
-	ack.SetClientHwAddr(hwAddr)
-	ack.SetHwAddrLen(uint8(len(hwAddr)))
+	ack.TransactionID = transactionID
+	ack.HWType = iana.HwTypeEthernet
+	ack.ClientHWAddr = hwAddr
 	ack.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
 	ack.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return ack
 }
 
 func TestInformSelectForAck_Broadcast(t *testing.T) {
-	hwAddr := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-	tid := uint32(22)
+	hwAddr := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
+	tid := [4]byte{0x22, 0, 0, 0}
 	serverID := net.IPv4(1, 2, 3, 4)
 	bootImage := BootImage{
 		ID: BootImageID{
@@ -132,10 +131,10 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 
 	m, err := InformSelectForAck(*ack, 0, bootImage)
 	require.NoError(t, err)
-	require.Equal(t, dhcpv4.OpcodeBootRequest, m.Opcode())
-	require.Equal(t, ack.HwType(), m.HwType())
-	require.Equal(t, ack.ClientHwAddr(), m.ClientHwAddr())
-	require.Equal(t, ack.TransactionID(), m.TransactionID())
+	require.Equal(t, dhcpv4.OpcodeBootRequest, m.OpCode)
+	require.Equal(t, ack.HWType, m.HWType)
+	require.Equal(t, ack.ClientHWAddr, m.ClientHWAddr)
+	require.Equal(t, ack.TransactionID, m.TransactionID)
 	require.True(t, m.IsBroadcast())
 
 	// Validate options.
@@ -157,8 +156,8 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 }
 
 func TestInformSelectForAck_NoServerID(t *testing.T) {
-	hwAddr := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-	tid := uint32(22)
+	hwAddr := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
+	tid := [4]byte{0x22, 0, 0, 0}
 	bootImage := BootImage{
 		ID: BootImageID{
 			IsInstall: true,
@@ -174,8 +173,8 @@ func TestInformSelectForAck_NoServerID(t *testing.T) {
 }
 
 func TestInformSelectForAck_BadReplyPort(t *testing.T) {
-	hwAddr := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-	tid := uint32(22)
+	hwAddr := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
+	tid := [4]byte{0x22, 0, 0, 0}
 	serverID := net.IPv4(1, 2, 3, 4)
 	bootImage := BootImage{
 		ID: BootImageID{
@@ -194,8 +193,8 @@ func TestInformSelectForAck_BadReplyPort(t *testing.T) {
 }
 
 func TestInformSelectForAck_ReplyPort(t *testing.T) {
-	hwAddr := []byte{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
-	tid := uint32(22)
+	hwAddr := net.HardwareAddr{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}
+	tid := [4]byte{0x22, 0, 0, 0}
 	serverID := net.IPv4(1, 2, 3, 4)
 	bootImage := BootImage{
 		ID: BootImageID{
@@ -272,9 +271,9 @@ func TestNewReplyForInformList(t *testing.T) {
 	}
 	ack, err := NewReplyForInformList(inform, config)
 	require.NoError(t, err)
-	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
-	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
-	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr)
+	require.Equal(t, net.IPv4zero, ack.YourIPAddr)
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostName)
 
 	// Validate options.
 	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
@@ -283,7 +282,7 @@ func TestNewReplyForInformList(t *testing.T) {
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
 
 	// Ensure options terminated with End option.
-	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options()[len(ack.Options())-1])
+	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options[len(ack.Options)-1])
 
 	// Vendor-specific options.
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
@@ -353,9 +352,9 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	}
 	ack, err := NewReplyForInformSelect(inform, config)
 	require.NoError(t, err)
-	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
-	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
-	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr)
+	require.Equal(t, net.IPv4zero, ack.YourIPAddr)
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostName)
 
 	// Validate options.
 	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
@@ -365,7 +364,7 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
 
 	// Ensure options are terminated with End option.
-	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options()[len(ack.Options())-1])
+	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options[len(ack.Options)-1])
 
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
 	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeSelect})

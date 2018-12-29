@@ -7,9 +7,9 @@ import (
 )
 
 // WithTransactionID sets the Transaction ID for the DHCPv4 packet
-func WithTransactionID(xid uint32) Modifier {
+func WithTransactionID(xid [4]byte) Modifier {
 	return func(d *DHCPv4) *DHCPv4 {
-		d.SetTransactionID(xid)
+		d.TransactionID = xid
 		return d
 	}
 }
@@ -27,9 +27,9 @@ func WithBroadcast(broadcast bool) Modifier {
 }
 
 // WithHwAddr sets the hardware address for a packet
-func WithHwAddr(hwaddr []byte) Modifier {
+func WithHwAddr(hwaddr net.HardwareAddr) Modifier {
 	return func(d *DHCPv4) *DHCPv4 {
-		d.SetClientHwAddr(hwaddr)
+		d.ClientHWAddr = hwaddr
 		return d
 	}
 }
@@ -111,8 +111,8 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 func WithRelay(ip net.IP) Modifier {
 	return func(d *DHCPv4) *DHCPv4 {
 		d.SetUnicast()
-		d.SetGatewayIPAddr(ip)
-		d.SetHopCount(1)
+		d.GatewayIPAddr = ip
+		d.HopCount = 1
 		return d
 	}
 }

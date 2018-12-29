@@ -1,9 +1,7 @@
 package dhcpv4
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 )
 
 // ErrShortByteStream is an error that is thrown any time a short byte stream is
@@ -14,9 +12,9 @@ var ErrShortByteStream = errors.New("short byte stream")
 // byte stream is encountered.
 var ErrZeroLengthByteStream = errors.New("zero-length byte stream")
 
-// MagicCookie is the magic 4-byte value at the beginning of the list of options
+// magicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
-var MagicCookie = []byte{99, 130, 83, 99}
+var magicCookie = [4]byte{99, 130, 83, 99}
 
 // OptionCode is a single byte representing the code for a given Option.
 type OptionCode byte
@@ -91,23 +89,6 @@ func ParseOption(data []byte) (Option, error) {
 		return nil, err
 	}
 	return opt, nil
-}
-
-// OptionsFromBytes parses a sequence of bytes until the end and builds a list
-// of options from it. The sequence must contain the Magic Cookie. Returns an
-// error if any invalid option or length is found.
-func OptionsFromBytes(data []byte) ([]Option, error) {
-	if len(data) < len(MagicCookie) {
-		return nil, errors.New("invalid options: shorter than 4 bytes")
-	}
-	if !bytes.Equal(data[:len(MagicCookie)], MagicCookie) {
-		return nil, fmt.Errorf("invalid magic cookie: %v", data[:len(MagicCookie)])
-	}
-	opts, err := OptionsFromBytesWithoutMagicCookie(data[len(MagicCookie):])
-	if err != nil {
-		return nil, err
-	}
-	return opts, nil
 }
 
 // OptionsFromBytesWithoutMagicCookie parses a sequence of bytes until the end
