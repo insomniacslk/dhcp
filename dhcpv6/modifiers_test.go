@@ -12,7 +12,7 @@ import (
 func TestWithClientID(t *testing.T) {
 	duid := Duid{
 		Type:          DUID_LL,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		LinkLayerAddr: net.HardwareAddr([]byte{0xfa, 0xce, 0xb0, 0x00, 0x00, 0x0c}),
 	}
 	m, err := NewMessage(WithClientID(duid))
@@ -26,7 +26,7 @@ func TestWithClientID(t *testing.T) {
 func TestWithServerID(t *testing.T) {
 	duid := Duid{
 		Type:          DUID_LL,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		LinkLayerAddr: net.HardwareAddr([]byte{0xfa, 0xce, 0xb0, 0x00, 0x00, 0x0c}),
 	}
 	m, err := NewMessage(WithServerID(duid))

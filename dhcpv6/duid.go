@@ -34,7 +34,7 @@ func (d DuidType) String() string {
 
 type Duid struct {
 	Type                 DuidType
-	HwType               iana.HwTypeType // for DUID-LLT and DUID-LL. Ignored otherwise. RFC 826
+	HwType               iana.HWType // for DUID-LLT and DUID-LL. Ignored otherwise. RFC 826
 	Time                 uint32          // for DUID-LLT. Ignored otherwise
 	LinkLayerAddr        net.HardwareAddr
 	EnterpriseNumber     uint32 // for DUID-EN. Ignored otherwise
@@ -87,7 +87,7 @@ func (d *Duid) ToBytes() []byte {
 
 func (d *Duid) String() string {
 	var hwaddr string
-	if d.HwType == iana.HwTypeEthernet {
+	if d.HwType == iana.HWTypeEthernet {
 		for _, b := range d.LinkLayerAddr {
 			hwaddr += fmt.Sprintf("%02x:", b)
 		}
@@ -108,14 +108,14 @@ func DuidFromBytes(data []byte) (*Duid, error) {
 		if len(data) < 8 {
 			return nil, fmt.Errorf("Invalid DUID-LLT: shorter than 8 bytes")
 		}
-		d.HwType = iana.HwTypeType(binary.BigEndian.Uint16(data[2:4]))
+		d.HwType = iana.HWType(binary.BigEndian.Uint16(data[2:4]))
 		d.Time = binary.BigEndian.Uint32(data[4:8])
 		d.LinkLayerAddr = data[8:]
 	} else if d.Type == DUID_LL {
 		if len(data) < 4 {
 			return nil, fmt.Errorf("Invalid DUID-LL: shorter than 4 bytes")
 		}
-		d.HwType = iana.HwTypeType(binary.BigEndian.Uint16(data[2:4]))
+		d.HwType = iana.HWType(binary.BigEndian.Uint16(data[2:4]))
 		d.LinkLayerAddr = data[4:]
 	} else if d.Type == DUID_EN {
 		if len(data) < 6 {

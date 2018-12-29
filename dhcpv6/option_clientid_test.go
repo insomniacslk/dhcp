@@ -17,7 +17,7 @@ func TestParseOptClientId(t *testing.T) {
 	opt, err := ParseOptClientId(data)
 	require.NoError(t, err)
 	require.Equal(t, DUID_LL, opt.Cid.Type)
-	require.Equal(t, iana.HwTypeEthernet, opt.Cid.HwType)
+	require.Equal(t, iana.HWTypeEthernet, opt.Cid.HwType)
 	require.Equal(t, net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}), opt.Cid.LinkLayerAddr)
 }
 
@@ -25,7 +25,7 @@ func TestOptClientIdToBytes(t *testing.T) {
 	opt := OptClientId{
 		Cid: Duid{
 			Type:          DUID_LL,
-			HwType:        iana.HwTypeEthernet,
+			HwType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{5, 4, 3, 2, 1, 0}),
 		},
 	}
@@ -58,7 +58,7 @@ func TestOptionClientId(t *testing.T) {
 	opt := OptClientId{
 		Cid: Duid{
 			Type:          DUID_LL,
-			HwType:        iana.HwTypeEthernet,
+			HwType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{0xde, 0xad, 0, 0, 0xbe, 0xef}),
 		},
 	}

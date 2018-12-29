@@ -134,7 +134,7 @@ func Test_ExtractMAC(t *testing.T) {
 	// MAC extracted from DUID
 	duid := Duid{
 		Type:          DUID_LL,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		LinkLayerAddr: []byte{0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa},
 	}
 	solicit, err := NewMessage(WithClientID(duid))
