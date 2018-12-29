@@ -37,12 +37,11 @@ func (o *OptBootImageList) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptBootImageList) ToBytes() []byte {
-	bs := make([]byte, 0, 2+o.Length())
-	bs = append(bs, []byte{byte(o.Code()), byte(o.Length())}...)
+	buf := uio.NewBigEndianBuffer(nil)
 	for _, image := range o.Images {
-		bs = append(bs, image.ToBytes()...)
+		image.Marshal(buf)
 	}
-	return bs
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

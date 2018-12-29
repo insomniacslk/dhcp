@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 func TestOptSelectedBootImageIDInterfaceMethods(t *testing.T) {
@@ -11,19 +12,17 @@ func TestOptSelectedBootImageIDInterfaceMethods(t *testing.T) {
 	o := OptSelectedBootImageID{b}
 	require.Equal(t, OptionSelectedBootImageID, o.Code(), "Code")
 	require.Equal(t, 4, o.Length(), "Length")
-	expectedBytes := []byte{byte(OptionSelectedBootImageID), 4}
-	require.Equal(t, append(expectedBytes, b.ToBytes()...), o.ToBytes(), "ToBytes")
+	require.Equal(t, uio.ToBigEndian(b), o.ToBytes(), "ToBytes")
 }
 
 func TestParseOptSelectedBootImageID(t *testing.T) {
 	b := BootImageID{IsInstall: true, ImageType: BootImageTypeMacOSX, Index: 1001}
-	data := b.ToBytes()
-	o, err := ParseOptSelectedBootImageID(data)
+	o, err := ParseOptSelectedBootImageID(uio.ToBigEndian(b))
 	require.NoError(t, err)
 	require.Equal(t, &OptSelectedBootImageID{b}, o)
 
 	// Short byte stream
-	data = []byte{}
+	data := []byte{}
 	_, err = ParseOptSelectedBootImageID(data)
 	require.Error(t, err, "should get error from short byte stream")
 

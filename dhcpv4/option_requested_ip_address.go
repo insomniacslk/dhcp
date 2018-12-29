@@ -30,8 +30,7 @@ func (o *OptRequestedIPAddress) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptRequestedIPAddress) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	return append(ret, o.RequestedAddr.To4()...)
+	return o.RequestedAddr.To4()
 }
 
 // String returns a human-readable string.

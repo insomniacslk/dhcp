@@ -29,13 +29,7 @@ func (o OptionGeneric) Code() OptionCode {
 
 // ToBytes returns a serialized generic option as a slice of bytes.
 func (o OptionGeneric) ToBytes() []byte {
-	ret := []byte{byte(o.OptionCode)}
-	if o.OptionCode == OptionEnd || o.OptionCode == OptionPad {
-		return ret
-	}
-	ret = append(ret, byte(o.Length()))
-	ret = append(ret, o.Data...)
-	return ret
+	return o.Data
 }
 
 // String returns a human-readable representation of a generic option.

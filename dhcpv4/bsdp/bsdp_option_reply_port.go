@@ -1,7 +1,6 @@
 package bsdp
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
@@ -32,9 +31,9 @@ func (o *OptReplyPort) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptReplyPort) ToBytes() []byte {
-	serialized := make([]byte, 2)
-	binary.BigEndian.PutUint16(serialized, o.Port)
-	return append([]byte{byte(o.Code()), 2}, serialized...)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(o.Port)
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

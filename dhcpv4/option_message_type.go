@@ -28,7 +28,7 @@ func (o *OptMessageType) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptMessageType) ToBytes() []byte {
-	return []byte{byte(o.Code()), byte(o.Length()), byte(o.MessageType)}
+	return []byte{byte(o.MessageType)}
 }
 
 // String returns a human-readable string for this option.

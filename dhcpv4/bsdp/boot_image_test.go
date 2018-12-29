@@ -13,12 +13,12 @@ func TestBootImageIDToBytes(t *testing.T) {
 		ImageType: BootImageTypeMacOSX,
 		Index:     0x1000,
 	}
-	actual := b.ToBytes()
+	actual := uio.ToBigEndian(b)
 	expected := []byte{0x81, 0, 0x10, 0}
 	require.Equal(t, expected, actual)
 
 	b.IsInstall = false
-	actual = b.ToBytes()
+	actual = uio.ToBigEndian(b)
 	expected = []byte{0x01, 0, 0x10, 0}
 	require.Equal(t, expected, actual)
 }
@@ -30,7 +30,7 @@ func TestBootImageIDFromBytes(t *testing.T) {
 		Index:     0x1000,
 	}
 	var newBootImage BootImageID
-	require.NoError(t, uio.FromBigEndian(&newBootImage, b.ToBytes()))
+	require.NoError(t, uio.FromBigEndian(&newBootImage, uio.ToBigEndian(b)))
 	require.Equal(t, b, newBootImage)
 
 	b = BootImageID{
@@ -38,7 +38,7 @@ func TestBootImageIDFromBytes(t *testing.T) {
 		ImageType: BootImageTypeMacOSX,
 		Index:     0x1011,
 	}
-	require.NoError(t, uio.FromBigEndian(&newBootImage, b.ToBytes()))
+	require.NoError(t, uio.FromBigEndian(&newBootImage, uio.ToBigEndian(b)))
 	require.Equal(t, b, newBootImage)
 }
 
@@ -70,7 +70,7 @@ func TestBootImageToBytes(t *testing.T) {
 		6,                         // len(Name)
 		98, 115, 100, 112, 45, 49, // byte-encoding of Name
 	}
-	actual := b.ToBytes()
+	actual := uio.ToBigEndian(b)
 	require.Equal(t, expected, actual)
 
 	b = BootImage{
@@ -86,7 +86,7 @@ func TestBootImageToBytes(t *testing.T) {
 		7,                             // len(Name)
 		98, 115, 100, 112, 45, 50, 49, // byte-encoding of Name
 	}
-	actual = b.ToBytes()
+	actual = uio.ToBigEndian(b)
 	require.Equal(t, expected, actual)
 }
 

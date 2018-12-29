@@ -1,7 +1,6 @@
 package bsdp
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
@@ -27,9 +26,9 @@ func (o *OptServerPriority) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptServerPriority) ToBytes() []byte {
-	serialized := make([]byte, 2)
-	binary.BigEndian.PutUint16(serialized, uint16(o.Priority))
-	return append([]byte{byte(o.Code()), byte(o.Length())}, serialized...)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(o.Priority)
+	return buf.Data()
 }
 
 // String returns a human-readable string.

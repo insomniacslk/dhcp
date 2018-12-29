@@ -27,7 +27,7 @@ func (o OptGeneric) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized generic option as a slice of bytes.
 func (o OptGeneric) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, o.Data...)
+	return o.Data
 }
 
 // String returns a human-readable representation of a generic option.

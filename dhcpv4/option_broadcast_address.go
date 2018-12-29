@@ -29,8 +29,7 @@ func (o *OptBroadcastAddress) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptBroadcastAddress) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	return append(ret, o.BroadcastAddress.To4()...)
+	return []byte(o.BroadcastAddress.To4())
 }
 
 // String returns a human-readable string.

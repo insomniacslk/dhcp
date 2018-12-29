@@ -3,6 +3,7 @@ package dhcpv4
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
@@ -32,6 +33,26 @@ func ParseIPs(data []byte) ([]net.IP, error) {
 	return ips, buf.FinError()
 }
 
+// IPsToBytes marshals an IPv4 address to a DHCP packet as specified by RFC
+// 2132, Section 3.5 et al.
+func IPsToBytes(i []net.IP) []byte {
+	buf := uio.NewBigEndianBuffer(nil)
+
+	for _, ip := range i {
+		buf.WriteBytes(ip.To4())
+	}
+	return buf.Data()
+}
+
+// IPsToString returns a human-readable representation of a list of IPs.
+func IPsToString(i []net.IP) string {
+	s := make([]string, 0, len(i))
+	for _, ip := range i {
+		s = append(s, ip.String())
+	}
+	return strings.Join(s, ", ")
+}
+
 // ParseOptRouter returns a new OptRouter from a byte stream, or error if any.
 func ParseOptRouter(data []byte) (*OptRouter, error) {
 	ips, err := ParseIPs(data)
@@ -48,23 +69,12 @@ func (o *OptRouter) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptRouter) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	for _, router := range o.Routers {
-		ret = append(ret, router.To4()...)
-	}
-	return ret
+	return IPsToBytes(o.Routers)
 }
 
 // String returns a human-readable string.
 func (o *OptRouter) String() string {
-	var routers string
-	for idx, router := range o.Routers {
-		routers += router.String()
-		if idx < len(o.Routers)-1 {
-			routers += ", "
-		}
-	}
-	return fmt.Sprintf("Routers -> %v", routers)
+	return fmt.Sprintf("Routers -> %s", IPsToString(o.Routers))
 }
 
 // Length returns the length of the data portion (excluding option code an byte

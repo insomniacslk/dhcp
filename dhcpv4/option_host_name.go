@@ -23,7 +23,7 @@ func (o *OptHostName) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptHostName) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, []byte(o.HostName)...)
+	return []byte(o.HostName)
 }
 
 // String returns a human-readable string.

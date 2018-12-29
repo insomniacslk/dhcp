@@ -25,7 +25,7 @@ func (o *OptClassIdentifier) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptClassIdentifier) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, []byte(o.Identifier)...)
+	return []byte(o.Identifier)
 }
 
 // String returns a human-readable string for this option.

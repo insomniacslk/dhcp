@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 func TestOptDefaultBootImageIDInterfaceMethods(t *testing.T) {
@@ -11,13 +12,12 @@ func TestOptDefaultBootImageIDInterfaceMethods(t *testing.T) {
 	o := OptDefaultBootImageID{b}
 	require.Equal(t, OptionDefaultBootImageID, o.Code(), "Code")
 	require.Equal(t, 4, o.Length(), "Length")
-	expectedBytes := []byte{byte(OptionDefaultBootImageID), 4}
-	require.Equal(t, append(expectedBytes, b.ToBytes()...), o.ToBytes(), "ToBytes")
+	require.Equal(t, uio.ToBigEndian(b), o.ToBytes(), "ToBytes")
 }
 
 func TestParseOptDefaultBootImageID(t *testing.T) {
 	b := BootImageID{IsInstall: true, ImageType: BootImageTypeMacOSX, Index: 1001}
-	o, err := ParseOptDefaultBootImageID(b.ToBytes())
+	o, err := ParseOptDefaultBootImageID(uio.ToBigEndian(b))
 	require.NoError(t, err)
 	require.Equal(t, &OptDefaultBootImageID{b}, o)
 

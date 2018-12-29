@@ -25,7 +25,7 @@ func (o *OptMachineName) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptMachineName) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, []byte(o.Name)...)
+	return []byte(o.Name)
 }
 
 // String returns a human-readable string for this option.

@@ -24,9 +24,7 @@ func (op *OptDomainSearch) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (op *OptDomainSearch) ToBytes() []byte {
-	buf := []byte{byte(op.Code()), byte(op.Length())}
-	buf = append(buf, op.DomainSearch.ToBytes()...)
-	return buf
+	return op.DomainSearch.ToBytes()
 }
 
 // Length returns the length of the data portion (excluding option code an byte

@@ -1,7 +1,6 @@
 package dhcpv4
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/u-root/u-root/pkg/uio"
@@ -29,10 +28,9 @@ func (o *OptMaximumDHCPMessageSize) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptMaximumDHCPMessageSize) ToBytes() []byte {
-	serializedSize := make([]byte, 2)
-	binary.BigEndian.PutUint16(serializedSize, o.Size)
-	serializedOpt := []byte{byte(o.Code()), byte(o.Length())}
-	return append(serializedOpt, serializedSize...)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(o.Size)
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

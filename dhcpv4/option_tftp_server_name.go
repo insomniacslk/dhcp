@@ -19,7 +19,7 @@ func (op *OptTFTPServerName) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptTFTPServerName) ToBytes() []byte {
-	return append([]byte{byte(op.Code()), byte(op.Length())}, []byte(op.TFTPServerName)...)
+	return []byte(op.TFTPServerName)
 }
 
 // Length returns the option length in bytes

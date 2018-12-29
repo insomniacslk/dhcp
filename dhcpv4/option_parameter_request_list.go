@@ -33,11 +33,11 @@ func (o *OptParameterRequestList) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptParameterRequestList) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
+	buf := uio.NewBigEndianBuffer(nil)
 	for _, req := range o.RequestedOpts {
-		ret = append(ret, byte(req))
+		buf.Write8(uint8(req))
 	}
-	return ret
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

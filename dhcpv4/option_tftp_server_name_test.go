@@ -17,8 +17,6 @@ func TestOptTFTPServerNameToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		66, // OptionTFTPServerName
-		9,  // length
 		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, expected, data)

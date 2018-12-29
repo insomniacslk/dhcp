@@ -8,8 +8,6 @@ import (
 
 func TestParseOptRelayAgentInformation(t *testing.T) {
 	data := []byte{
-		byte(OptionRelayAgentInformation),
-		13,
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}
@@ -22,7 +20,7 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 	opt, err = ParseOptRelayAgentInformation([]byte{1, 1})
 	require.Error(t, err)
 
-	opt, err = ParseOptRelayAgentInformation(data[2:])
+	opt, err = ParseOptRelayAgentInformation(data)
 	require.NoError(t, err)
 	require.Equal(t, len(opt.Options), 2)
 	circuit := opt.Options.GetOne(1).(*OptionGeneric)
@@ -34,15 +32,14 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 }
 
 func TestParseOptRelayAgentInformationToBytes(t *testing.T) {
-	opt := OptRelayAgentInformation{}
-	opt1 := &OptionGeneric{OptionCode: 1, Data: []byte("linux")}
-	opt.Options = append(opt.Options, opt1)
-	opt2 := &OptionGeneric{OptionCode: 2, Data: []byte("boot")}
-	opt.Options = append(opt.Options, opt2)
+	opt := OptRelayAgentInformation{
+		Options: Options{
+			&OptionGeneric{OptionCode: 1, Data: []byte("linux")},
+			&OptionGeneric{OptionCode: 2, Data: []byte("boot")},
+		},
+	}
 	data := opt.ToBytes()
 	expected := []byte{
-		byte(OptionRelayAgentInformation),
-		13,
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}

@@ -10,7 +10,7 @@ func TestOptMessageTypeInterfaceMethods(t *testing.T) {
 	o := OptMessageType{MessageTypeList}
 	require.Equal(t, OptionMessageType, o.Code(), "Code")
 	require.Equal(t, 1, o.Length(), "Length")
-	require.Equal(t, []byte{1, 1, 1}, o.ToBytes(), "ToBytes")
+	require.Equal(t, []byte{1}, o.ToBytes(), "ToBytes")
 }
 
 func TestParseOptMessageType(t *testing.T) {

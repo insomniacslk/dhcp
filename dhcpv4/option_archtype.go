@@ -4,7 +4,6 @@ package dhcpv4
 // https://tools.ietf.org/html/rfc4578
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -24,13 +23,11 @@ func (o *OptClientArchType) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptClientArchType) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
+	buf := uio.NewBigEndianBuffer(nil)
 	for _, at := range o.ArchTypes {
-		buf := make([]byte, 2)
-		binary.BigEndian.PutUint16(buf[0:2], uint16(at))
-		ret = append(ret, buf...)
+		buf.Write16(uint16(at))
 	}
-	return ret
+	return buf.Data()
 }
 
 // Length returns the length of the data portion (excluding option code an byte

@@ -2,7 +2,6 @@ package dhcpv4
 
 import (
 	"bytes"
-	"encoding/binary"
 	"fmt"
 
 	"github.com/u-root/u-root/pkg/uio"
@@ -44,17 +43,13 @@ func (o *OptVIVC) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptVIVC) ToBytes() []byte {
-	buf := make([]byte, o.Length()+2)
-	copy(buf[0:], []byte{byte(o.Code()), byte(o.Length())})
-
-	b := buf[2:]
+	buf := uio.NewBigEndianBuffer(nil)
 	for _, id := range o.Identifiers {
-		binary.BigEndian.PutUint32(b[0:4], id.EntID)
-		b[4] = byte(len(id.Data))
-		copy(b[5:], id.Data)
-		b = b[len(id.Data)+5:]
+		buf.Write32(id.EntID)
+		buf.Write8(uint8(len(id.Data)))
+		buf.WriteBytes(id.Data)
 	}
-	return buf
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

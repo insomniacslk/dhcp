@@ -24,15 +24,16 @@ func (op *OptUserClass) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
-	buf := []byte{byte(op.Code()), byte(op.Length())}
+	buf := uio.NewBigEndianBuffer(nil)
 	if !op.Rfc3004 {
-		return append(buf, op.UserClasses[0]...)
+		buf.WriteBytes(op.UserClasses[0])
+	} else {
+		for _, uc := range op.UserClasses {
+			buf.Write8(uint8(len(uc)))
+			buf.WriteBytes(uc)
+		}
 	}
-	for _, uc := range op.UserClasses {
-		buf = append(buf, byte(len(uc)))
-		buf = append(buf, uc...)
-	}
-	return buf
+	return buf.Data()
 }
 
 // Length returns the option length

@@ -15,8 +15,6 @@ func TestOptVendorSpecificInformationInterfaceMethods(t *testing.T) {
 	require.Equal(t, 2+messageTypeOpt.Length()+2+versionOpt.Length(), o.Length(), "Length")
 
 	expectedBytes := []byte{
-		43,      // code
-		7,       // length
 		1, 1, 1, // List option
 		2, 2, 1, 1, // Version option
 	}

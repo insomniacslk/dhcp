@@ -13,8 +13,6 @@ func TestOptUserClassToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OptionUserClass
-		10, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, expected, data)
@@ -26,8 +24,6 @@ func TestOptUserClassMicrosoftToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OptionUserClass
-		9,  // length
 		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, expected, data)
@@ -91,8 +87,6 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		77, // OptionUserClass
-		15, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		4, 't', 'e', 's', 't',
 	}

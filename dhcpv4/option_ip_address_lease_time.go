@@ -1,7 +1,6 @@
 package dhcpv4
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/u-root/u-root/pkg/uio"
@@ -30,10 +29,9 @@ func (o *OptIPAddressLeaseTime) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptIPAddressLeaseTime) ToBytes() []byte {
-	serializedTime := make([]byte, 4)
-	binary.BigEndian.PutUint32(serializedTime, o.LeaseTime)
-	serializedOpt := []byte{byte(o.Code()), byte(o.Length())}
-	return append(serializedOpt, serializedTime...)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write32(o.LeaseTime)
+	return buf.Data()
 }
 
 // String returns a human-readable string for this option.

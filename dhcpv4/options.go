@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
@@ -207,4 +208,43 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption
 		opts = append(opts, parsedOpt)
 	}
 	return opts, nil
+}
+
+// Marshal writes options binary representations to b.
+func (o Options) Marshal(b *uio.Lexer) {
+	for _, opt := range o {
+		code := opt.Code()
+
+		// Even if the End option is in there, don't marshal it until
+		// the end.
+		if code == OptionEnd {
+			continue
+		} else if code == OptionPad {
+			// Some DHCPv4 options have fixed length and do not put
+			// length on the wire.
+			b.Write8(uint8(code))
+			continue
+		}
+
+		data := opt.ToBytes()
+
+		// RFC 3396: If more than 256 bytes of data are given, the
+		// option is simply listed multiple times.
+		for len(data) > 0 {
+			// 1 byte: option code
+			b.Write8(uint8(code))
+
+			n := len(data)
+			if n > math.MaxUint8 {
+				n = math.MaxUint8
+			}
+
+			// 1 byte: option length
+			b.Write8(uint8(n))
+
+			// N bytes: option data
+			b.WriteBytes(data[:n])
+			data = data[n:]
+		}
+	}
 }
