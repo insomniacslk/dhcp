@@ -13,7 +13,7 @@ import (
 
 // OptClientArchType represents an option CLIENT_ARCH_TYPE
 type OptClientArchType struct {
-	ArchTypes []iana.ArchType
+	ArchTypes []iana.Arch
 }
 
 func (op *OptClientArchType) Code() OptionCode {
@@ -54,7 +54,7 @@ func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 	}
 	for idx := 0; idx < len(data); idx += 2 {
 		b := data[idx : idx+2]
-		opt.ArchTypes = append(opt.ArchTypes, iana.ArchType(binary.BigEndian.Uint16(b)))
+		opt.ArchTypes = append(opt.ArchTypes, iana.Arch(binary.BigEndian.Uint16(b)))
 	}
 	return &opt, nil
 }

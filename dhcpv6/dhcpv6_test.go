@@ -293,14 +293,14 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
 	msg := DHCPv6Message{}
-	opt := OptClientArchType{ArchTypes: []iana.ArchType{iana.EFI_BC}}
+	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.EFI_BC}}
 	msg.AddOption(&opt)
 	require.True(t, IsUsingUEFI(&msg))
 }
 
 func TestIsUsingUEFIArchTypeFalse(t *testing.T) {
 	msg := DHCPv6Message{}
-	opt := OptClientArchType{ArchTypes: []iana.ArchType{iana.INTEL_X86PC}}
+	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.INTEL_X86PC}}
 	msg.AddOption(&opt)
 	require.False(t, IsUsingUEFI(&msg))
 }
