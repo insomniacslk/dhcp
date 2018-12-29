@@ -3,6 +3,9 @@ package dhcpv4
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
 // http://www.networksorcery.com/enp/protocol/bootp/options.htm
 
+// TransactionID represents a 4-byte DHCP transaction ID.
+type TransactionID [4]byte
+
 // MessageType represents the possible DHCP message types - DISCOVER, OFFER, etc
 type MessageType byte
 

@@ -10,8 +10,8 @@ import (
 func TestTransactionIDModifier(t *testing.T) {
 	d, err := New()
 	require.NoError(t, err)
-	d = WithTransactionID([4]byte{0xdd, 0xcc, 0xbb, 0xaa})(d)
-	require.Equal(t, [4]byte{0xdd, 0xcc, 0xbb, 0xaa}, d.TransactionID)
+	d = WithTransactionID(TransactionID{0xdd, 0xcc, 0xbb, 0xaa})(d)
+	require.Equal(t, TransactionID{0xdd, 0xcc, 0xbb, 0xaa}, d.TransactionID)
 }
 
 func TestBroadcastModifier(t *testing.T) {

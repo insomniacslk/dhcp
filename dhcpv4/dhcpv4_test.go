@@ -65,7 +65,7 @@ func TestFromBytes(t *testing.T) {
 	require.Equal(t, d.OpCode, OpcodeBootRequest)
 	require.Equal(t, d.HWType, iana.HwTypeEthernet)
 	require.Equal(t, d.HopCount, byte(3))
-	require.Equal(t, d.TransactionID, [4]byte{0xaa, 0xbb, 0xcc, 0xdd})
+	require.Equal(t, d.TransactionID, TransactionID{0xaa, 0xbb, 0xcc, 0xdd})
 	require.Equal(t, d.NumSeconds, uint16(3))
 	require.Equal(t, d.Flags, uint16(1))
 	require.True(t, d.ClientIPAddr.Equal(net.IPv4zero))
@@ -168,7 +168,7 @@ func TestNewToBytes(t *testing.T) {
 	require.NoError(t, err)
 	// fix TransactionID to match the expected one, since it's randomly
 	// generated in New()
-	d.TransactionID = [4]byte{0x11, 0x22, 0x33, 0x44}
+	d.TransactionID = TransactionID{0x11, 0x22, 0x33, 0x44}
 	got := d.ToBytes()
 	require.Equal(t, expected, got)
 }

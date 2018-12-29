@@ -113,7 +113,7 @@ func TestServerActivateAndServe(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, len(ifaces))
 
-	xid := [4]byte{0xaa, 0xbb, 0xcc, 0xdd}
+	xid := TransactionID{0xaa, 0xbb, 0xcc, 0xdd}
 	hwaddr := net.HardwareAddr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
 
 	modifiers := []Modifier{

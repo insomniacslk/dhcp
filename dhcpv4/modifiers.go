@@ -7,7 +7,7 @@ import (
 )
 
 // WithTransactionID sets the Transaction ID for the DHCPv4 packet
-func WithTransactionID(xid [4]byte) Modifier {
+func WithTransactionID(xid TransactionID) Modifier {
 	return func(d *DHCPv4) *DHCPv4 {
 		d.TransactionID = xid
 		return d

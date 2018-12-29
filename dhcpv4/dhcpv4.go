@@ -38,7 +38,7 @@ type DHCPv4 struct {
 	OpCode         OpcodeType
 	HWType         iana.HwTypeType
 	HopCount       uint8
-	TransactionID  [4]byte
+	TransactionID  TransactionID
 	NumSeconds     uint16
 	Flags          uint16
 	ClientIPAddr   net.IP
@@ -96,8 +96,8 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 
 // GenerateTransactionID generates a random 32-bits number suitable for use as
 // TransactionID
-func GenerateTransactionID() (*[4]byte, error) {
-	var b [4]byte
+func GenerateTransactionID() (*TransactionID, error) {
+	var b TransactionID
 	n, err := rand.Read(b[:])
 	if n != 4 {
 		return nil, fmt.Errorf("invalid random sequence: smaller than 32 bits")
