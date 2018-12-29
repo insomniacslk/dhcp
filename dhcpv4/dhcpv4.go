@@ -1,3 +1,18 @@
+// Package dhcpv4 provides encoding and decoding of DHCPv4 packets and options.
+//
+// Example Usage:
+//
+//   p, err := dhcpv4.New(
+//     dhcpv4.WithClientIP(net.IP{192, 168, 0, 1}),
+//     dhcpv4.WithMessageType(dhcpv4.MessageTypeInform),
+//   )
+//   p.UpdateOption(dhcpv4.OptServerIdentifier(net.IP{192, 110, 110, 110}))
+//
+//   // Retrieve the DHCP Message Type option.
+//   m := dhcpv4.GetMessageType(p.Options)
+//
+//   bytesOnTheWire := p.ToBytes()
+//   longSummary := p.Summary()
 package dhcpv4
 
 import (
@@ -121,7 +136,7 @@ func New(modifiers ...Modifier) (*DHCPv4, error) {
 		YourIPAddr:    net.IPv4zero,
 		ServerIPAddr:  net.IPv4zero,
 		GatewayIPAddr: net.IPv4zero,
-		Options:       make([]Option, 0, 10),
+		Options:       make(Options),
 	}
 	for _, mod := range modifiers {
 		mod(&d)
@@ -203,11 +218,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (
 // NewRequestFromOffer builds a DHCPv4 request from an offer.
 func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	// find server IP address
-	var serverIP net.IP
-	serverID := offer.GetOneOption(OptionServerIdentifier)
-	if serverID != nil {
-		serverIP = serverID.(*OptServerIdentifier).ServerID
-	}
+	serverIP := GetServerIdentifier(offer.Options)
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
@@ -216,8 +227,8 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 		WithReply(offer),
 		WithMessageType(MessageTypeRequest),
 		WithServerIP(serverIP),
-		WithOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr}),
-		WithOption(&OptServerIdentifier{ServerID: serverIP}),
+		WithOption(OptRequestedIPAddress(offer.YourIPAddr)),
+		WithOption(OptServerIdentifier(serverIP)),
 	)...)
 }
 
@@ -281,11 +292,10 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 		return nil, fmt.Errorf("malformed DHCP packet: got magic cookie %v, want %v", cookie[:], magicCookie[:])
 	}
 
-	opts, err := OptionsFromBytes(buf.Data())
-	if err != nil {
+	p.Options = make(Options)
+	if err := p.Options.fromBytesCheckEnd(buf.Data(), true); err != nil {
 		return nil, err
 	}
-	p.Options = opts
 	return &p, nil
 }
 
@@ -325,25 +335,25 @@ func (d *DHCPv4) SetUnicast() {
 
 // GetOneOption returns the option that matches the given option code.
 //
-// If no matching option is found, nil is returned.
-func (d *DHCPv4) GetOneOption(code OptionCode) Option {
-	return d.Options.GetOne(code)
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option.
+func (d *DHCPv4) GetOneOption(code OptionCode) []byte {
+	return d.Options.Get(code)
 }
 
 // UpdateOption replaces an existing option with the same option code with the
 // given one, adding it if not already present.
-func (d *DHCPv4) UpdateOption(option Option) {
-	d.Options.Update(option)
+func (d *DHCPv4) UpdateOption(opt Option) {
+	if d.Options == nil {
+		d.Options = make(Options)
+	}
+	d.Options.Update(opt)
 }
 
 // MessageType returns the message type, trying to extract it from the
 // OptMessageType option. It returns nil if the message type cannot be extracted
 func (d *DHCPv4) MessageType() MessageType {
-	opt := d.GetOneOption(OptionDHCPMessageType)
-	if opt == nil {
-		return MessageTypeNone
-	}
-	return opt.(*OptMessageType).MessageType
+	return GetMessageType(d.Options)
 }
 
 // String implements fmt.Stringer.
@@ -352,23 +362,24 @@ func (d *DHCPv4) String() string {
 		d.OpCode, d.TransactionID, d.HWType, d.ClientHWAddr)
 }
 
-// Summary prints detailed information about the packet.
-func (d *DHCPv4) Summary() string {
+// SummaryWithVendor prints a summary of the packet, interpreting the
+// vendor-specific info option using the given parser (can be nil).
+func (d *DHCPv4) SummaryWithVendor(vendorDecoder OptionDecoder) string {
 	ret := fmt.Sprintf(
-		"DHCPv4\n"+
-			"  opcode=%s\n"+
-			"  hwtype=%s\n"+
-			"  hopcount=%v\n"+
-			"  transactionid=%s\n"+
-			"  numseconds=%v\n"+
-			"  flags=%v (0x%02x)\n"+
-			"  clientipaddr=%s\n"+
-			"  youripaddr=%s\n"+
-			"  serveripaddr=%s\n"+
-			"  gatewayipaddr=%s\n"+
-			"  clienthwaddr=%s\n"+
-			"  serverhostname=%s\n"+
-			"  bootfilename=%s\n",
+		"DHCPv4 Message\n"+
+			"  opcode: %s\n"+
+			"  hwtype: %s\n"+
+			"  hopcount: %v\n"+
+			"  transaction ID: %s\n"+
+			"  num seconds: %v\n"+
+			"  flags: %v (0x%02x)\n"+
+			"  client IP: %s\n"+
+			"  your IP: %s\n"+
+			"  server IP: %s\n"+
+			"  gateway IP: %s\n"+
+			"  client MAC: %s\n"+
+			"  server hostname: %s\n"+
+			"  bootfile name: %s\n",
 		d.OpCode,
 		d.HWType,
 		d.HopCount,
@@ -384,29 +395,20 @@ func (d *DHCPv4) Summary() string {
 		d.ServerHostName,
 		d.BootFileName,
 	)
-	ret += "  options=\n"
-	for _, opt := range d.Options {
-		optString := opt.String()
-		// If this option has sub structures, offset them accordingly.
-		if strings.Contains(optString, "\n") {
-			optString = strings.Replace(optString, "\n  ", "\n      ", -1)
-		}
-		ret += fmt.Sprintf("    %v\n", optString)
-		if opt.Code() == OptionEnd {
-			break
-		}
-	}
+	ret += "  options:\n"
+	ret += d.Options.Summary(vendorDecoder)
 	return ret
+}
+
+// Summary prints detailed information about the packet.
+func (d *DHCPv4) Summary() string {
+	return d.SummaryWithVendor(nil)
 }
 
 // IsOptionRequested returns true if that option is within the requested
 // options of the DHCPv4 message.
 func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
-	optprl := d.GetOneOption(OptionParameterRequestList)
-	if optprl == nil {
-		return false
-	}
-	for _, o := range optprl.(*OptParameterRequestList).RequestedOpts {
+	for _, o := range GetParameterRequestList(d.Options) {
 		if o == requested {
 			return true
 		}
@@ -459,7 +461,12 @@ func (d *DHCPv4) ToBytes() []byte {
 
 	// The magic cookie.
 	buf.WriteBytes(magicCookie[:])
+
+	// Write all options.
 	d.Options.Marshal(buf)
+
+	// Finish the packet.
 	buf.Write8(uint8(OptionEnd))
+
 	return buf.Data()
 }

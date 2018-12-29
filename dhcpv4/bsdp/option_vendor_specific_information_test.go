@@ -1,6 +1,7 @@
 package bsdp
 
 import (
+	"net"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
@@ -8,182 +9,71 @@ import (
 )
 
 func TestOptVendorSpecificInformationInterfaceMethods(t *testing.T) {
-	messageTypeOpt := &OptMessageType{MessageTypeList}
-	versionOpt := Version1_1
-	o := &OptVendorSpecificInformation{[]dhcpv4.Option{messageTypeOpt, versionOpt}}
-	require.Equal(t, dhcpv4.OptionVendorSpecificInformation, o.Code(), "Code")
+	o := OptVendorOptions(
+		OptVersion(Version1_1),
+		OptMessageType(MessageTypeList),
+	)
+	require.Equal(t, dhcpv4.OptionVendorSpecificInformation, o.Code, "Code")
 
 	expectedBytes := []byte{
 		1, 1, 1, // List option
 		2, 2, 1, 1, // Version option
 	}
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
-}
-
-func TestParseOptVendorSpecificInformation(t *testing.T) {
-	var (
-		o   *OptVendorSpecificInformation
-		err error
-	)
-	o, err = ParseOptVendorSpecificInformation([]byte{1, 2})
-	require.Error(t, err, "short byte stream")
-
-	// Good byte stream
-	data := []byte{
-		1, 1, 1, // List option
-		2, 2, 1, 1, // Version option
-	}
-	o, err = ParseOptVendorSpecificInformation(data)
-	require.NoError(t, err)
-	expected := &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	require.Equal(t, 2, len(o.Options), "number of parsed suboptions")
-	typ := o.GetOneOption(OptionMessageType)
-	version := o.GetOneOption(OptionVersion)
-	require.Equal(t, expected.Options[0].Code(), typ.Code())
-	require.Equal(t, expected.Options[1].Code(), version.Code())
-
-	// Short byte stream (length and data mismatch)
-	data = []byte{
-		1, 1, 1, // List option
-		2, 2, 1, // Version option
-	}
-	o, err = ParseOptVendorSpecificInformation(data)
-	require.Error(t, err)
-
-	// Bad option
-	data = []byte{
-		1, 1, 1, // List option
-		2, 2, 1, // Version option
-		5, 3, 1, 1, 1, // Reply port option
-	}
-	o, err = ParseOptVendorSpecificInformation(data)
-	require.Error(t, err)
-
-	// Boot images + default.
-	data = []byte{
-		1, 1, 1, // List option
-		2, 2, 1, 1, // Version option
-		5, 2, 1, 1, // Reply port option
-
-		// Boot image list
-		9, 22,
-		0x1, 0x0, 0x03, 0xe9, // ID
-		6, // name length
-		'b', 's', 'd', 'p', '-', '1',
-		0x80, 0x0, 0x23, 0x31, // ID
-		6, // name length
-		'b', 's', 'd', 'p', '-', '2',
-
-		// Default Boot Image ID
-		7, 4, 0x1, 0x0, 0x03, 0xe9,
-	}
-	o, err = ParseOptVendorSpecificInformation(data)
-	require.NoError(t, err)
-	require.Equal(t, 5, len(o.Options))
-	for _, opt := range []dhcpv4.OptionCode{
-		OptionMessageType,
-		OptionVersion,
-		OptionReplyPort,
-		OptionBootImageList,
-		OptionDefaultBootImageID,
-	} {
-		require.True(t, o.Options.Has(opt))
-	}
-	optBootImage := o.GetOneOption(OptionBootImageList).(*OptBootImageList)
-	expectedBootImages := []BootImage{
-		BootImage{
-			ID: BootImageID{
-				IsInstall: false,
-				ImageType: BootImageTypeMacOSX,
-				Index:     1001,
-			},
-			Name: "bsdp-1",
-		},
-		BootImage{
-			ID: BootImageID{
-				IsInstall: true,
-				ImageType: BootImageTypeMacOS9,
-				Index:     9009,
-			},
-			Name: "bsdp-2",
-		},
-	}
-	require.Equal(t, expectedBootImages, optBootImage.Images)
+	require.Equal(t, expectedBytes, o.Value.ToBytes(), "ToBytes")
 }
 
 func TestOptVendorSpecificInformationString(t *testing.T) {
-	o := &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	expectedString := "Vendor Specific Information ->\n  BSDP Message Type -> LIST\n  BSDP Version -> 1.1"
+	o := OptVendorOptions(
+		OptMessageType(MessageTypeList),
+		OptVersion(Version1_1),
+	)
+	expectedString := "Vendor Specific Information:\n    BSDP Message Type: LIST\n    BSDP Version: 1.1\n"
 	require.Equal(t, expectedString, o.String())
 
 	// Test more complicated string - sub options of sub options.
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			&OptBootImageList{
-				[]BootImage{
-					BootImage{
-						ID: BootImageID{
-							IsInstall: false,
-							ImageType: BootImageTypeMacOSX,
-							Index:     1001,
-						},
-						Name: "bsdp-1",
-					},
-					BootImage{
-						ID: BootImageID{
-							IsInstall: true,
-							ImageType: BootImageTypeMacOS9,
-							Index:     9009,
-						},
-						Name: "bsdp-2",
-					},
+	o = OptVendorOptions(
+		OptMessageType(MessageTypeList),
+		OptBootImageList(
+			BootImage{
+				ID: BootImageID{
+					IsInstall: false,
+					ImageType: BootImageTypeMacOSX,
+					Index:     1001,
 				},
+				Name: "bsdp-1",
 			},
-		},
-	}
-	expectedString = "Vendor Specific Information ->\n" +
-		"  BSDP Message Type -> LIST\n" +
-		"  BSDP Boot Image List ->\n" +
-		"    bsdp-1 [1001] uninstallable macOS image\n" +
-		"    bsdp-2 [9009] installable macOS 9 image"
+			BootImage{
+				ID: BootImageID{
+					IsInstall: true,
+					ImageType: BootImageTypeMacOS9,
+					Index:     9009,
+				},
+				Name: "bsdp-2",
+			},
+		),
+		OptMachineName("foo"),
+		OptServerIdentifier(net.IP{1, 1, 1, 1}),
+		OptServerPriority(1234),
+		OptReplyPort(1235),
+		OptDefaultBootImageID(BootImageID{
+			IsInstall: true,
+			ImageType: BootImageTypeMacOS9,
+			Index:     9009,
+		}),
+		OptSelectedBootImageID(BootImageID{
+			IsInstall: true,
+			ImageType: BootImageTypeMacOS9,
+			Index:     9009,
+		}),
+	)
+	expectedString = "Vendor Specific Information:\n" +
+		"    BSDP Message Type: LIST\n" +
+		"    BSDP Server Identifier: 1.1.1.1\n" +
+		"    BSDP Server Priority: 1234\n" +
+		"    BSDP Reply Port: 1235\n" +
+		"    BSDP Default Boot Image ID: [9009] installable macOS 9 image\n" +
+		"    BSDP Selected Boot Image ID: [9009] installable macOS 9 image\n" +
+		"    BSDP Boot Image List: bsdp-1 [1001] uninstallable macOS image, bsdp-2 [9009] installable macOS 9 image\n" +
+		"    BSDP Machine Name: foo\n"
 	require.Equal(t, expectedString, o.String())
-}
-
-func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
-	// No option
-	o := &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	foundOpt := o.GetOneOption(OptionBootImageList)
-	require.Nil(t, foundOpt, "should not get options")
-
-	// One option
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	foundOpt = o.GetOneOption(OptionMessageType)
-	require.Equal(t, MessageTypeList, foundOpt.(*OptMessageType).Type)
 }

@@ -1,5 +1,9 @@
 package bsdp
 
+import (
+	"fmt"
+)
+
 // DefaultMacOSVendorClassIdentifier is a default vendor class identifier used
 // on non-darwin hosts where the vendor class identifier cannot be determined.
 // It should mostly be used for debugging if testing BSDP on a non-darwin
@@ -19,7 +23,7 @@ func (o optionCode) String() string {
 	if s, ok := optionCodeToString[o]; ok {
 		return s
 	}
-	return "unknown"
+	return fmt.Sprintf("unknown (%d)", o)
 }
 
 // Options (occur as sub-options of DHCP option 43).

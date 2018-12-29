@@ -2,34 +2,33 @@ package dhcpv4
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptIPAddressLeaseTimeInterfaceMethods(t *testing.T) {
-	o := OptIPAddressLeaseTime{LeaseTime: 43200}
-	require.Equal(t, OptionIPAddressLeaseTime, o.Code(), "Code")
-	require.Equal(t, []byte{0, 0, 168, 192}, o.ToBytes(), "ToBytes")
+func TestOptIPAddressLeaseTime(t *testing.T) {
+	o := OptIPAddressLeaseTime(43200 * time.Second)
+	require.Equal(t, OptionIPAddressLeaseTime, o.Code, "Code")
+	require.Equal(t, []byte{0, 0, 168, 192}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "IP Addresses Lease Time: 12h0m0s", o.String(), "String")
 }
 
-func TestParseOptIPAddressLeaseTime(t *testing.T) {
-	data := []byte{0, 0, 168, 192}
-	o, err := ParseOptIPAddressLeaseTime(data)
-	require.NoError(t, err)
-	require.Equal(t, &OptIPAddressLeaseTime{LeaseTime: 43200}, o)
+func TestGetIPAddressLeaseTime(t *testing.T) {
+	o := Options{OptionIPAddressLeaseTime.Code(): []byte{0, 0, 168, 192}}
+	leaseTime := GetIPAddressLeaseTime(o, 0)
+	require.Equal(t, 43200*time.Second, leaseTime)
 
-	// Short byte stream
-	data = []byte{168, 192}
-	_, err = ParseOptIPAddressLeaseTime(data)
-	require.Error(t, err, "should get error from short byte stream")
+	// Too short.
+	o = Options{OptionIPAddressLeaseTime.Code(): []byte{168, 192}}
+	leaseTime = GetIPAddressLeaseTime(o, 0)
+	require.Equal(t, time.Duration(0), leaseTime)
 
-	// Bad length
-	data = []byte{1, 1, 1, 1, 1}
-	_, err = ParseOptIPAddressLeaseTime(data)
-	require.Error(t, err, "should get error from bad length")
-}
+	// Too long.
+	o = Options{OptionIPAddressLeaseTime.Code(): []byte{1, 1, 1, 1, 1}}
+	leaseTime = GetIPAddressLeaseTime(o, 0)
+	require.Equal(t, time.Duration(0), leaseTime)
 
-func TestOptIPAddressLeaseTimeString(t *testing.T) {
-	o := OptIPAddressLeaseTime{LeaseTime: 43200}
-	require.Equal(t, "IP Addresses Lease Time -> 43200", o.String())
+	// Empty.
+	require.Equal(t, time.Duration(10), GetIPAddressLeaseTime(Options{}, 10))
 }

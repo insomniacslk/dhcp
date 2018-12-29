@@ -2,13 +2,14 @@ package rfc1035label
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
+// Labels represents RFC1035 labels
+//
 // This implements RFC 1035 labels, including compression.
 // https://tools.ietf.org/html/rfc1035#section-4.1.4
-
-// Labels represents RFC1035 labels
 type Labels struct {
 	// original contains the original bytes if the object was parsed from a byte
 	// sequence, or nil otherwise. The `original` field is necessary to deal
@@ -31,6 +32,11 @@ func same(a, b []string) bool {
 		}
 	}
 	return true
+}
+
+// String prints labels.
+func (l *Labels) String() string {
+	return fmt.Sprintf("%v", l.Labels)
 }
 
 // ToBytes returns a byte sequence representing the labels. If the original
@@ -62,17 +68,25 @@ func NewLabels() *Labels {
 	}
 }
 
+// FromBytes reads labels from a bytes stream according to RFC 1035.
+func (l *Labels) FromBytes(data []byte) error {
+	labs, err := labelsFromBytes(data)
+	if err != nil {
+		return err
+	}
+	l.original = data
+	l.Labels = labs
+	return nil
+}
+
 // FromBytes returns a Labels object from the given byte sequence, or an error if
 // any.
 func FromBytes(data []byte) (*Labels, error) {
-	lab := NewLabels()
-	l, err := labelsFromBytes(data)
-	if err != nil {
+	var l Labels
+	if err := l.FromBytes(data); err != nil {
 		return nil, err
 	}
-	lab.original = data
-	lab.Labels = l
-	return lab, nil
+	return &l, nil
 }
 
 // fromBytes decodes a serialized stream and returns a list of labels

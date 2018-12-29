@@ -1,92 +1,83 @@
 package dhcpv4
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptBroadcastAddress implements the broadcast address option described in RFC
-// 2132, Section 5.3.
-type OptBroadcastAddress struct {
-	BroadcastAddress net.IP
-}
+// IP implements DHCPv4 IP option marshaling and unmarshaling as described by
+// RFC 2132, Sections 5.3, 9.1, 9.7, and others.
+type IP net.IP
 
-// ParseOptBroadcastAddress returns a new OptBroadcastAddress from a byte
-// stream, or error if any.
-func ParseOptBroadcastAddress(data []byte) (*OptBroadcastAddress, error) {
+// FromBytes parses an IP from data in binary form.
+func (i *IP) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	return &OptBroadcastAddress{BroadcastAddress: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
-}
-
-// Code returns the option code.
-func (o *OptBroadcastAddress) Code() OptionCode {
-	return OptionBroadcastAddress
+	*i = IP(buf.CopyN(net.IPv4len))
+	return buf.FinError()
 }
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptBroadcastAddress) ToBytes() []byte {
-	return []byte(o.BroadcastAddress.To4())
+func (i IP) ToBytes() []byte {
+	return []byte(net.IP(i).To4())
 }
 
-// String returns a human-readable string.
-func (o *OptBroadcastAddress) String() string {
-	return fmt.Sprintf("Broadcast Address -> %v", o.BroadcastAddress.String())
+// String returns a human-readable IP.
+func (i IP) String() string {
+	return net.IP(i).String()
 }
 
-// OptRequestedIPAddress implements the requested IP address option described
-// by RFC 2132, Section 9.1.
-type OptRequestedIPAddress struct {
-	RequestedAddr net.IP
+// GetIP returns code out of o parsed as an IP.
+func GetIP(code OptionCode, o Options) net.IP {
+	v := o.Get(code)
+	if v == nil {
+		return nil
+	}
+	var ip IP
+	if err := ip.FromBytes(v); err != nil {
+		return nil
+	}
+	return net.IP(ip)
 }
 
-// ParseOptRequestedIPAddress returns a new OptRequestedIPAddress from a byte
-// stream, or error if any.
-func ParseOptRequestedIPAddress(data []byte) (*OptRequestedIPAddress, error) {
-	buf := uio.NewBigEndianBuffer(data)
-	return &OptRequestedIPAddress{RequestedAddr: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
+// GetBroadcastAddress returns the DHCPv4 Broadcast Address value in o.
+//
+// The broadcast address option is described in RFC 2132, Section 5.3.
+func GetBroadcastAddress(o Options) net.IP {
+	return GetIP(OptionBroadcastAddress, o)
 }
 
-// Code returns the option code.
-func (o *OptRequestedIPAddress) Code() OptionCode {
-	return OptionRequestedIPAddress
+// OptBroadcastAddress returns a new DHCPv4 Broadcast Address option.
+//
+// The broadcast address option is described in RFC 2132, Section 5.3.
+func OptBroadcastAddress(ip net.IP) Option {
+	return Option{Code: OptionBroadcastAddress, Value: IP(ip)}
 }
 
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptRequestedIPAddress) ToBytes() []byte {
-	return o.RequestedAddr.To4()
+// GetRequestedIPAddress returns the DHCPv4 Requested IP Address value in o.
+//
+// The requested IP address option is described by RFC 2132, Section 9.1.
+func GetRequestedIPAddress(o Options) net.IP {
+	return GetIP(OptionRequestedIPAddress, o)
 }
 
-// String returns a human-readable string.
-func (o *OptRequestedIPAddress) String() string {
-	return fmt.Sprintf("Requested IP Address -> %v", o.RequestedAddr.String())
+// OptRequestedIPAddress returns a new DHCPv4 Requested IP Address option.
+//
+// The requested IP address option is described by RFC 2132, Section 9.1.
+func OptRequestedIPAddress(ip net.IP) Option {
+	return Option{Code: OptionRequestedIPAddress, Value: IP(ip)}
 }
 
-// OptServerIdentifier implements the server identifier option described by RFC
-// 2132, Section 9.7.
-type OptServerIdentifier struct {
-	ServerID net.IP
+// GetServerIdentifier returns the DHCPv4 Server Identifier value in o.
+//
+// The server identifier option is described by RFC 2132, Section 9.7.
+func GetServerIdentifier(o Options) net.IP {
+	return GetIP(OptionServerIdentifier, o)
 }
 
-// ParseOptServerIdentifier returns a new OptServerIdentifier from a byte
-// stream, or error if any.
-func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
-	buf := uio.NewBigEndianBuffer(data)
-	return &OptServerIdentifier{ServerID: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
-}
-
-// Code returns the option code.
-func (o *OptServerIdentifier) Code() OptionCode {
-	return OptionServerIdentifier
-}
-
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptServerIdentifier) ToBytes() []byte {
-	return o.ServerID.To4()
-}
-
-// String returns a human-readable string.
-func (o *OptServerIdentifier) String() string {
-	return fmt.Sprintf("Server Identifier -> %v", o.ServerID.String())
+// OptServerIdentifier returns a new DHCPv4 Server Identifier option.
+//
+// The server identifier option is described by RFC 2132, Section 9.7.
+func OptServerIdentifier(ip net.IP) Option {
+	return Option{Code: OptionServerIdentifier, Value: IP(ip)}
 }

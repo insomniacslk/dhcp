@@ -18,24 +18,10 @@ func NewClient() *Client {
 	return &Client{Client: dhcpv4.Client{}}
 }
 
-func castVendorOpt(ack *dhcpv4.DHCPv4) {
-	opts := ack.Options
-	for i := 0; i < len(opts); i++ {
-		if opts[i].Code() == dhcpv4.OptionVendorSpecificInformation {
-			vendorOpt, err := ParseOptVendorSpecificInformation(opts[i].ToBytes())
-			// Oh well, we tried
-			if err != nil {
-				return
-			}
-			opts[i] = vendorOpt
-		}
-	}
-}
-
 // Exchange runs a full BSDP exchange (Inform[list], Ack, Inform[select],
 // Ack). Returns a list of DHCPv4 structures representing the exchange.
-func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
-	conversation := make([]*dhcpv4.DHCPv4, 0)
+func (c *Client) Exchange(ifname string) ([]*Packet, error) {
+	conversation := make([]*Packet, 0)
 
 	// Get our file descriptor for the broadcast socket.
 	sendFd, err := dhcpv4.MakeBroadcastSocket(ifname)
@@ -55,17 +41,16 @@ func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	conversation = append(conversation, informList)
 
 	// ACK[LIST]
-	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList, dhcpv4.MessageTypeAck)
+	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList.v4(), dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
 
 	// Rewrite vendor-specific option for pretty printing.
-	castVendorOpt(ackForList)
-	conversation = append(conversation, ackForList)
+	conversation = append(conversation, PacketFor(ackForList))
 
 	// Parse boot images sent back by server
-	bootImages, err := ParseBootImageListFromAck(*ackForList)
+	bootImages, err := ParseBootImageListFromAck(ackForList)
 	if err != nil {
 		return conversation, err
 	}
@@ -74,17 +59,16 @@ func (c *Client) Exchange(ifname string) ([]*dhcpv4.DHCPv4, error) {
 	}
 
 	// INFORM[SELECT]
-	informSelect, err := InformSelectForAck(*ackForList, dhcpv4.ClientPort, bootImages[0])
+	informSelect, err := InformSelectForAck(PacketFor(ackForList), dhcpv4.ClientPort, bootImages[0])
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informSelect, dhcpv4.MessageTypeAck)
-	castVendorOpt(ackForSelect)
+	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informSelect.v4(), dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
-	return append(conversation, ackForSelect), nil
+	return append(conversation, PacketFor(ackForSelect)), nil
 }

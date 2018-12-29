@@ -6,47 +6,46 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseOptRelayAgentInformation(t *testing.T) {
-	data := []byte{
-		1, 5, 'l', 'i', 'n', 'u', 'x',
-		2, 4, 'b', 'o', 'o', 't',
-	}
-
-	// short sub-option bytes
-	opt, err := ParseOptRelayAgentInformation([]byte{1, 0, 1})
-	require.Error(t, err)
-
-	// short sub-option length
-	opt, err = ParseOptRelayAgentInformation([]byte{1, 1})
-	require.Error(t, err)
-
-	opt, err = ParseOptRelayAgentInformation(data)
-	require.NoError(t, err)
-	require.Equal(t, len(opt.Options), 2)
-	circuit := opt.Options.GetOne(optionCode(1)).(*OptionGeneric)
-	require.NoError(t, err)
-	remote := opt.Options.GetOne(optionCode(2)).(*OptionGeneric)
-	require.NoError(t, err)
-	require.Equal(t, circuit.Data, []byte("linux"))
-	require.Equal(t, remote.Data, []byte("boot"))
-}
-
-func TestParseOptRelayAgentInformationToBytes(t *testing.T) {
-	opt := OptRelayAgentInformation{
-		Options: Options{
-			&OptionGeneric{OptionCode: optionCode(1), Data: []byte("linux")},
-			&OptionGeneric{OptionCode: optionCode(2), Data: []byte("boot")},
+func TestGetRelayAgentInformation(t *testing.T) {
+	o := Options{
+		OptionRelayAgentInformation.Code(): []byte{
+			1, 5, 'l', 'i', 'n', 'u', 'x',
+			2, 4, 'b', 'o', 'o', 't',
 		},
 	}
-	data := opt.ToBytes()
-	expected := []byte{
+
+	opt := GetRelayAgentInfo(o)
+	require.NotNil(t, opt)
+	require.Equal(t, len(opt.Options), 2)
+
+	circuit := opt.Get(GenericOptionCode(1))
+	remote := opt.Get(GenericOptionCode(2))
+	require.Equal(t, circuit, []byte("linux"))
+	require.Equal(t, remote, []byte("boot"))
+
+	// Empty.
+	require.Nil(t, GetRelayAgentInfo(Options{}))
+
+	// Invalid contents.
+	o = Options{
+		OptionRelayAgentInformation.Code(): []byte{
+			1, 7, 'l', 'i', 'n', 'u', 'x',
+		},
+	}
+	require.Nil(t, GetRelayAgentInfo(o))
+}
+
+func TestOptRelayAgentInfo(t *testing.T) {
+	opt := OptRelayAgentInfo(
+		OptGeneric(GenericOptionCode(1), []byte("linux")),
+		OptGeneric(GenericOptionCode(2), []byte("boot")),
+	)
+	wantBytes := []byte{
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}
-	require.Equal(t, expected, data)
-}
-
-func TestOptRelayAgentInformationToBytesString(t *testing.T) {
-	o := OptRelayAgentInformation{}
-	require.Equal(t, "Relay Agent Information -> []", o.String())
+	wantString := "Relay Agent Information:\n    unknown (1): [108 105 110 117 120]\n    unknown (2): [98 111 111 116]\n"
+	require.Equal(t, wantBytes, opt.Value.ToBytes())
+	require.Equal(t, OptionRelayAgentInformation, opt.Code)
+	require.Equal(t, wantString, opt.String())
 }
