@@ -13,7 +13,7 @@ func TestParseOptClientArchType(t *testing.T) {
 		2,    // Length
 		0, 6, // EFI_IA32
 	}
-	opt, err := ParseOptClientArchType(data)
+	opt, err := ParseOptClientArchType(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
 }
@@ -25,7 +25,7 @@ func TestParseOptClientArchTypeMultiple(t *testing.T) {
 		0, 6, // EFI_IA32
 		0, 2, // EFI_ITANIUM
 	}
-	opt, err := ParseOptClientArchType(data)
+	opt, err := ParseOptClientArchType(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
 	require.Equal(t, opt.ArchTypes[1], iana.EFI_ITANIUM)
@@ -43,7 +43,7 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 		2,    // Length
 		0, 8, // EFI_XSCALE
 	}
-	opt, err := ParseOptClientArchType(data)
+	opt, err := ParseOptClientArchType(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, opt.ToBytes(), data)
 }
@@ -55,7 +55,7 @@ func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {
 		0, 8, // EFI_XSCALE
 		0, 6, // EFI_IA32
 	}
-	opt, err := ParseOptClientArchType(data)
+	opt, err := ParseOptClientArchType(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, opt.ToBytes(), data)
 }

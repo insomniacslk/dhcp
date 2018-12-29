@@ -14,23 +14,18 @@ func TestOptMaximumDHCPMessageSizeInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptMaximumDHCPMessageSize(t *testing.T) {
-	data := []byte{57, 2, 5, 220}
+	data := []byte{5, 220}
 	o, err := ParseOptMaximumDHCPMessageSize(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptMaximumDHCPMessageSize{Size: 1500}, o)
 
 	// Short byte stream
-	data = []byte{57, 2}
+	data = []byte{2}
 	_, err = ParseOptMaximumDHCPMessageSize(data)
 	require.Error(t, err, "should get error from short byte stream")
 
-	// Wrong code
-	data = []byte{54, 2, 1, 1}
-	_, err = ParseOptMaximumDHCPMessageSize(data)
-	require.Error(t, err, "should get error from wrong code")
-
 	// Bad length
-	data = []byte{57, 3, 1, 1, 1}
+	data = []byte{1, 1, 1}
 	_, err = ParseOptMaximumDHCPMessageSize(data)
 	require.Error(t, err, "should get error from bad length")
 }

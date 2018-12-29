@@ -14,25 +14,10 @@ func TestOptDomainNameInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptDomainName(t *testing.T) {
-	data := []byte{byte(OptionDomainName), 4, 't', 'e', 's', 't'} // DISCOVER
+	data := []byte{'t', 'e', 's', 't'}
 	o, err := ParseOptDomainName(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptDomainName{DomainName: "test"}, o)
-
-	// Short byte stream
-	data = []byte{byte(OptionDomainName)}
-	_, err = ParseOptDomainName(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 2, 1, 1}
-	_, err = ParseOptDomainName(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{byte(OptionDomainName), 6, 1, 1, 1}
-	_, err = ParseOptDomainName(data)
-	require.Error(t, err, "should get error from bad length")
 }
 
 func TestOptDomainNameString(t *testing.T) {

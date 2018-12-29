@@ -23,7 +23,7 @@ const AppleVendorID = "AAPLBSDPC"
 type ReplyConfig struct {
 	ServerIP                     net.IP
 	ServerHostname, BootFileName string
-	ServerPriority               int
+	ServerPriority               uint16
 	Images                       []BootImage
 	DefaultImage, SelectedImage  *BootImage
 }
@@ -36,7 +36,7 @@ func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	if opt == nil {
 		return nil, errors.New("ParseBootImageListFromAck: could not find vendor-specific option")
 	}
-	vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes())
+	vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes()[2:])
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) *MessageType {
 		err        error
 	)
 	for _, opt := range packet.GetOption(dhcpv4.OptionVendorSpecificInformation) {
-		if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err == nil {
+		if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()[2:]); err == nil {
 			if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
 				if optMessageType, ok := o.(*OptMessageType); ok {
 					return &optMessageType.Type

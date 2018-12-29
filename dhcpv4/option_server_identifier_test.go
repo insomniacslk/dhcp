@@ -29,16 +29,10 @@ func TestParseOptServerIdentifier(t *testing.T) {
 	o, err = ParseOptServerIdentifier([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptServerIdentifier([]byte{54, 4, 192})
-	require.Error(t, err, "short byte stream")
-
-	o, err = ParseOptServerIdentifier([]byte{54, 3, 192, 168, 0, 1})
+	o, err = ParseOptServerIdentifier([]byte{192, 168, 0})
 	require.Error(t, err, "wrong IP length")
 
-	o, err = ParseOptServerIdentifier([]byte{53, 4, 192, 168, 1})
-	require.Error(t, err, "wrong option code")
-
-	o, err = ParseOptServerIdentifier([]byte{54, 4, 192, 168, 0, 1})
+	o, err = ParseOptServerIdentifier([]byte{192, 168, 0, 1})
 	require.NoError(t, err)
 	require.Equal(t, net.IP{192, 168, 0, 1}, o.ServerID)
 }

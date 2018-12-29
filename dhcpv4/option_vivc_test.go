@@ -31,36 +31,20 @@ func TestOptVIVCInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptVICO(t *testing.T) {
-	o, err := ParseOptVIVC(sampleVIVCOptRaw)
+	o, err := ParseOptVIVC(sampleVIVCOptRaw[2:])
 	require.NoError(t, err)
 	require.Equal(t, &sampleVIVCOpt, o)
 
-	// Short byte stream
-	data := []byte{byte(OptionVendorIdentifyingVendorClass)}
-	_, err = ParseOptVIVC(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 2, 1, 1}
-	_, err = ParseOptVIVC(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{byte(OptionVendorIdentifyingVendorClass), 6, 1, 1, 1}
-	_, err = ParseOptVIVC(data)
-	require.Error(t, err, "should get error from bad length")
-
 	// Identifier len too long
-	data = make([]byte, len(sampleVIVCOptRaw))
-	copy(data, sampleVIVCOptRaw)
-	data[6] = 40
+	data := make([]byte, len(sampleVIVCOptRaw[2:]))
+	copy(data, sampleVIVCOptRaw[2:])
+	data[4] = 40
 	_, err = ParseOptVIVC(data)
 	require.Error(t, err, "should get error from bad length")
 
 	// Longer than length
-	data[1] = 10
-	data[6] = 5
-	o, err = ParseOptVIVC(data)
+	data[4] = 5
+	o, err = ParseOptVIVC(data[:10])
 	require.NoError(t, err)
 	require.Equal(t, o.Identifiers[0].Data, []byte("Cisco"))
 }

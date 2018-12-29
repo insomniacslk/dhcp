@@ -29,16 +29,10 @@ func TestParseOptSubnetMask(t *testing.T) {
 	o, err = ParseOptSubnetMask([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptSubnetMask([]byte{1, 4, 255})
+	o, err = ParseOptSubnetMask([]byte{255})
 	require.Error(t, err, "short byte stream")
 
-	o, err = ParseOptSubnetMask([]byte{1, 3, 255, 255, 255, 0})
-	require.Error(t, err, "wrong IP length")
-
-	o, err = ParseOptSubnetMask([]byte{2, 4, 255, 255, 255})
-	require.Error(t, err, "wrong option code")
-
-	o, err = ParseOptSubnetMask([]byte{1, 4, 255, 255, 255, 0})
+	o, err = ParseOptSubnetMask([]byte{255, 255, 255, 0})
 	require.NoError(t, err)
 	require.Equal(t, net.IPMask{255, 255, 255, 0}, o.SubnetMask)
 }

@@ -29,16 +29,10 @@ func TestParseOptBroadcastAddress(t *testing.T) {
 	o, err = ParseOptBroadcastAddress([]byte{})
 	require.Error(t, err, "empty byte stream")
 
-	o, err = ParseOptBroadcastAddress([]byte{byte(OptionBroadcastAddress), 4, 192})
-	require.Error(t, err, "short byte stream")
-
-	o, err = ParseOptBroadcastAddress([]byte{byte(OptionBroadcastAddress), 3, 192, 168, 0, 1})
+	o, err = ParseOptBroadcastAddress([]byte{192, 168, 0})
 	require.Error(t, err, "wrong IP length")
 
-	o, err = ParseOptBroadcastAddress([]byte{53, 4, 192, 168, 1})
-	require.Error(t, err, "wrong option code")
-
-	o, err = ParseOptBroadcastAddress([]byte{byte(OptionBroadcastAddress), 4, 192, 168, 0, 1})
+	o, err = ParseOptBroadcastAddress([]byte{192, 168, 0, 1})
 	require.NoError(t, err)
 	require.Equal(t, net.IP{192, 168, 0, 1}, o.BroadcastAddress)
 }

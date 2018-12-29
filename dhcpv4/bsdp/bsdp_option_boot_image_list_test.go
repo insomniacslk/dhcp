@@ -45,8 +45,6 @@ func TestOptBootImageListInterfaceMethods(t *testing.T) {
 
 func TestParseOptBootImageList(t *testing.T) {
 	data := []byte{
-		9,  // code
-		22, // length
 		// boot image 1
 		0x1, 0x0, 0x03, 0xe9, // ID
 		6, // name length
@@ -78,25 +76,8 @@ func TestParseOptBootImageList(t *testing.T) {
 	}
 	require.Equal(t, &OptBootImageList{expectedBootImages}, o)
 
-	// Short byte stream
-	data = []byte{9}
-	_, err = ParseOptBootImageList(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 1, 1}
-	_, err = ParseOptBootImageList(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{9, 10, 1, 1, 1}
-	_, err = ParseOptBootImageList(data)
-	require.Error(t, err, "should get error from bad length")
-
 	// Error parsing boot image (malformed)
 	data = []byte{
-		9,  // code
-		22, // length
 		// boot image 1
 		0x1, 0x0, 0x03, 0xe9, // ID
 		4, // name length
@@ -108,25 +89,6 @@ func TestParseOptBootImageList(t *testing.T) {
 	}
 	_, err = ParseOptBootImageList(data)
 	require.Error(t, err, "should get error from bad boot image")
-
-	// Should not get error parsing boot image with excess length.
-	data = []byte{
-		9,  // code
-		22, // length
-		// boot image 1
-		0x1, 0x0, 0x03, 0xe9, // ID
-		6, // name length
-		'b', 's', 'd', 'p', '-', '1',
-		// boot image 2
-		0x80, 0x0, 0x23, 0x31, // ID
-		6, // name length
-		'b', 's', 'd', 'p', '-', '2',
-
-		// Simulate another option after boot image list
-		7, 4, 0x80, 0x0, 0x23, 0x32,
-	}
-	_, err = ParseOptBootImageList(data)
-	require.NoError(t, err, "should not get error from options after boot image list")
 }
 
 func TestOptBootImageListString(t *testing.T) {

@@ -14,33 +14,21 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 		2, 4, 'b', 'o', 'o', 't',
 	}
 
-	// short option bytes
-	opt, err := ParseOptRelayAgentInformation([]byte{})
-	require.Error(t, err)
-
-	// wrong code
-	opt, err = ParseOptRelayAgentInformation([]byte{1, 2, 1, 0})
-	require.Error(t, err)
-
-	// wrong option length
-	opt, err = ParseOptRelayAgentInformation([]byte{82, 3, 1, 0})
-	require.Error(t, err)
-
 	// short sub-option bytes
-	opt, err = ParseOptRelayAgentInformation([]byte{82, 3, 1, 0, 1})
+	opt, err := ParseOptRelayAgentInformation([]byte{1, 0, 1})
 	require.Error(t, err)
 
 	// short sub-option length
-	opt, err = ParseOptRelayAgentInformation([]byte{82, 2, 1, 1})
+	opt, err = ParseOptRelayAgentInformation([]byte{1, 1})
 	require.Error(t, err)
 
-	opt, err = ParseOptRelayAgentInformation(data)
+	opt, err = ParseOptRelayAgentInformation(data[2:])
 	require.NoError(t, err)
 	require.Equal(t, len(opt.Options), 2)
-	circuit, ok := opt.Options[0].(*OptionGeneric)
-	require.True(t, ok)
-	remote, ok := opt.Options[1].(*OptionGeneric)
-	require.True(t, ok)
+	circuit := opt.Options.GetOneOption(1).(*OptionGeneric)
+	require.NoError(t, err)
+	remote := opt.Options.GetOneOption(2).(*OptionGeneric)
+	require.NoError(t, err)
 	require.Equal(t, circuit.Data, []byte("linux"))
 	require.Equal(t, remote.Data, []byte("boot"))
 }

@@ -15,25 +15,10 @@ func TestOptMachineNameInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptMachineName(t *testing.T) {
-	data := []byte{130, 7, 's', 'o', 'm', 'e', 'b', 'o', 'x'}
+	data := []byte{'s', 'o', 'm', 'e', 'b', 'o', 'x'}
 	o, err := ParseOptMachineName(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptMachineName{"somebox"}, o)
-
-	// Short byte stream
-	data = []byte{130}
-	_, err = ParseOptMachineName(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 1, 1}
-	_, err = ParseOptMachineName(data)
-	require.Error(t, err, "should get error from wrong code")
-
-	// Bad length
-	data = []byte{130, 5, 1}
-	_, err = ParseOptMachineName(data)
-	require.Error(t, err, "should get error from bad length")
 }
 
 func TestOptMachineNameString(t *testing.T) {

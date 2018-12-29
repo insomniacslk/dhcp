@@ -3,12 +3,14 @@ package dhcpv4
 import (
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptServerIdentifier represents an option encapsulating the server identifier.
+//
 // This option implements the server identifier option
 // https://tools.ietf.org/html/rfc2132
-
-// OptServerIdentifier represents an option encapsulating the server identifier.
 type OptServerIdentifier struct {
 	ServerID net.IP
 }
@@ -16,21 +18,8 @@ type OptServerIdentifier struct {
 // ParseOptServerIdentifier returns a new OptServerIdentifier from a byte
 // stream, or error if any.
 func ParseOptServerIdentifier(data []byte) (*OptServerIdentifier, error) {
-	if len(data) < 2 {
-		return nil, ErrShortByteStream
-	}
-	code := OptionCode(data[0])
-	if code != OptionServerIdentifier {
-		return nil, fmt.Errorf("expected code %v, got %v", OptionServerIdentifier, code)
-	}
-	length := int(data[1])
-	if length != 4 {
-		return nil, fmt.Errorf("unexepcted length: expected 4, got %v", length)
-	}
-	if len(data) < 6 {
-		return nil, ErrShortByteStream
-	}
-	return &OptServerIdentifier{ServerID: net.IP(data[2 : 2+length])}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptServerIdentifier{ServerID: net.IP(buf.CopyN(net.IPv4len))}, buf.FinError()
 }
 
 // Code returns the option code.

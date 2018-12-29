@@ -23,16 +23,7 @@ func TestParseOptParameterRequestList(t *testing.T) {
 		o   *OptParameterRequestList
 		err error
 	)
-	o, err = ParseOptParameterRequestList([]byte{})
-	require.Error(t, err, "empty byte stream")
-
-	o, err = ParseOptParameterRequestList([]byte{55, 2})
-	require.Error(t, err, "short byte stream")
-
-	o, err = ParseOptParameterRequestList([]byte{53, 2, 1, 1})
-	require.Error(t, err, "wrong option code")
-
-	o, err = ParseOptParameterRequestList([]byte{55, 2, 67, 5})
+	o, err = ParseOptParameterRequestList([]byte{67, 5})
 	require.NoError(t, err)
 	expectedOpts := []OptionCode{OptionBootfileName, OptionNameServer}
 	require.Equal(t, expectedOpts, o.RequestedOpts)

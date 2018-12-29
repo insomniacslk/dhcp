@@ -46,7 +46,7 @@ type DHCPv4 struct {
 	ClientHWAddr   net.HardwareAddr
 	ServerHostName string
 	BootFileName   string
-	Options        []Option
+	Options        Options
 }
 
 // Modifier defines the signature for functions that can modify DHCPv4
@@ -363,9 +363,32 @@ func (d *DHCPv4) SetUnicast() {
 // GetOption will attempt to get all options that match a DHCPv4 option
 // from its OptionCode.  If the option was not found it will return an
 // empty list.
+//
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option.
 func (d *DHCPv4) GetOption(code OptionCode) []Option {
+	return d.Options.GetOption(code)
+}
+
+// GetOneOption will attempt to get an  option that match a Option code.
+// If there are multiple options with the same OptionCode it will only return
+// the first one found.  If no matching option is found nil will be returned.
+func (d *DHCPv4) GetOneOption(code OptionCode) Option {
+	return d.Options.GetOneOption(code)
+}
+
+// Options is a collection of options.
+type Options []Option
+
+// GetOption will attempt to get all options that match a DHCPv4 option
+// from its OptionCode.  If the option was not found it will return an
+// empty list.
+//
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option.
+func (o Options) GetOption(code OptionCode) []Option {
 	opts := []Option{}
-	for _, opt := range d.Options {
+	for _, opt := range o {
 		if opt.Code() == code {
 			opts = append(opts, opt)
 		}
@@ -376,28 +399,13 @@ func (d *DHCPv4) GetOption(code OptionCode) []Option {
 // GetOneOption will attempt to get an  option that match a Option code.
 // If there are multiple options with the same OptionCode it will only return
 // the first one found.  If no matching option is found nil will be returned.
-func (d *DHCPv4) GetOneOption(code OptionCode) Option {
-	for _, opt := range d.Options {
+func (o Options) GetOneOption(code OptionCode) Option {
+	for _, opt := range o {
 		if opt.Code() == code {
 			return opt
 		}
 	}
 	return nil
-}
-
-// StrippedOptions works like Options, but it does not return anything after the
-// End option.
-func (d *DHCPv4) StrippedOptions() []Option {
-	// differently from Options() this function strips away anything coming
-	// after the End option (normally just Pad options).
-	strippedOptions := []Option{}
-	for _, opt := range d.Options {
-		strippedOptions = append(strippedOptions, opt)
-		if opt.Code() == OptionEnd {
-			break
-		}
-	}
-	return strippedOptions
 }
 
 // AddOption appends an option to the existing ones. If the last option is an

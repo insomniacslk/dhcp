@@ -34,19 +34,11 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 		o   *OptVendorSpecificInformation
 		err error
 	)
-	o, err = ParseOptVendorSpecificInformation([]byte{})
-	require.Error(t, err, "empty byte stream")
-
 	o, err = ParseOptVendorSpecificInformation([]byte{1, 2})
 	require.Error(t, err, "short byte stream")
 
-	o, err = ParseOptVendorSpecificInformation([]byte{53, 2, 1, 1})
-	require.Error(t, err, "wrong option code")
-
 	// Good byte stream
 	data := []byte{
-		43,      // code
-		7,       // length
 		1, 1, 1, // List option
 		2, 2, 1, 1, // Version option
 	}
@@ -59,13 +51,13 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 		},
 	}
 	require.Equal(t, 2, len(o.Options), "number of parsed suboptions")
-	require.Equal(t, expected.Options[0].Code(), o.Options[0].Code())
-	require.Equal(t, expected.Options[1].Code(), o.Options[1].Code())
+	typ := o.GetOneOption(OptionMessageType)
+	version := o.GetOneOption(OptionVersion)
+	require.Equal(t, expected.Options[0].Code(), typ.Code())
+	require.Equal(t, expected.Options[1].Code(), version.Code())
 
 	// Short byte stream (length and data mismatch)
 	data = []byte{
-		43,      // code
-		7,       // length
 		1, 1, 1, // List option
 		2, 2, 1, // Version option
 	}
@@ -74,8 +66,6 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 
 	// Bad option
 	data = []byte{
-		43,      // code
-		7,       // length
 		1, 1, 1, // List option
 		2, 2, 1, // Version option
 		5, 3, 1, 1, 1, // Reply port option
@@ -85,8 +75,6 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 
 	// Boot images + default.
 	data = []byte{
-		43,      // code
-		7,       // length
 		1, 1, 1, // List option
 		2, 2, 1, 1, // Version option
 		5, 2, 1, 1, // Reply port option

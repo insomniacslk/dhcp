@@ -25,37 +25,23 @@ func TestParseOptDomainNameServer(t *testing.T) {
 		192, 168, 0, 10, // DNS #1
 		192, 168, 0, 20, // DNS #2
 	}
-	o, err := ParseOptDomainNameServer(data)
+	o, err := ParseOptDomainNameServer(data[2:])
 	require.NoError(t, err)
 	servers := []net.IP{
-		net.IPv4(192, 168, 0, 10),
-		net.IPv4(192, 168, 0, 20),
+		net.IP{192, 168, 0, 10},
+		net.IP{192, 168, 0, 20},
 	}
 	require.Equal(t, &OptDomainNameServer{NameServers: servers}, o)
 
-	// Short byte stream
-	data = []byte{byte(OptionDomainNameServer)}
-	_, err = ParseOptDomainNameServer(data)
-	require.Error(t, err, "should get error from short byte stream")
-
-	// Wrong code
-	data = []byte{54, 2, 1, 1}
-	_, err = ParseOptDomainNameServer(data)
-	require.Error(t, err, "should get error from wrong code")
-
 	// Bad length
-	data = []byte{byte(OptionDomainNameServer), 6, 1, 1, 1}
+	data = []byte{1, 1, 1}
 	_, err = ParseOptDomainNameServer(data)
 	require.Error(t, err, "should get error from bad length")
 }
 
 func TestParseOptDomainNameServerNoServers(t *testing.T) {
 	// RFC2132 requires that at least one DNS server IP is specified
-	data := []byte{
-		byte(OptionDomainNameServer),
-		0, // Length
-	}
-	_, err := ParseOptDomainNameServer(data)
+	_, err := ParseOptDomainNameServer([]byte{})
 	require.Error(t, err)
 }
 

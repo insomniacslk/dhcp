@@ -17,24 +17,18 @@ func TestOptSelectedBootImageIDInterfaceMethods(t *testing.T) {
 
 func TestParseOptSelectedBootImageID(t *testing.T) {
 	b := BootImageID{IsInstall: true, ImageType: BootImageTypeMacOSX, Index: 1001}
-	bootImageBytes := b.ToBytes()
-	data := append([]byte{byte(OptionSelectedBootImageID), 4}, bootImageBytes...)
+	data := b.ToBytes()
 	o, err := ParseOptSelectedBootImageID(data)
 	require.NoError(t, err)
 	require.Equal(t, &OptSelectedBootImageID{b}, o)
 
 	// Short byte stream
-	data = []byte{byte(OptionSelectedBootImageID), 4}
+	data = []byte{}
 	_, err = ParseOptSelectedBootImageID(data)
 	require.Error(t, err, "should get error from short byte stream")
 
-	// Wrong code
-	data = []byte{54, 2, 1, 0, 0, 0}
-	_, err = ParseOptSelectedBootImageID(data)
-	require.Error(t, err, "should get error from wrong code")
-
 	// Bad length
-	data = []byte{byte(OptionSelectedBootImageID), 5, 1, 0, 0, 0, 0}
+	data = []byte{1, 0, 0, 0, 0}
 	_, err = ParseOptSelectedBootImageID(data)
 	require.Error(t, err, "should get error from bad length")
 }

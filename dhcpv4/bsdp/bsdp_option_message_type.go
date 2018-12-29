@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// MessageType represents the different BSDP message types.
+//
 // Implements the BSDP option message type. Can be one of LIST, SELECT, or
 // FAILED.
-
-// MessageType represents the different BSDP message types.
 type MessageType byte
 
 // BSDP Message types - e.g. LIST, SELECT, FAILED
@@ -20,14 +21,14 @@ const (
 )
 
 func (m MessageType) String() string {
-	if s, ok := MessageTypeToString[m]; ok {
+	if s, ok := messageTypeToString[m]; ok {
 		return s
 	}
 	return "Unknown"
 }
 
-// MessageTypeToString maps each BSDP message type to a human-readable string.
-var MessageTypeToString = map[MessageType]string{
+// messageTypeToString maps each BSDP message type to a human-readable string.
+var messageTypeToString = map[MessageType]string{
 	MessageTypeList:   "LIST",
 	MessageTypeSelect: "SELECT",
 	MessageTypeFailed: "FAILED",
@@ -41,18 +42,8 @@ type OptMessageType struct {
 // ParseOptMessageType constructs an OptMessageType struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptMessageType(data []byte) (*OptMessageType, error) {
-	if len(data) < 3 {
-		return nil, dhcpv4.ErrShortByteStream
-	}
-	code := dhcpv4.OptionCode(data[0])
-	if code != OptionMessageType {
-		return nil, fmt.Errorf("expected option %v, got %v instead", OptionMessageType, code)
-	}
-	length := int(data[1])
-	if length != 1 {
-		return nil, fmt.Errorf("expected length 1, got %d instead", length)
-	}
-	return &OptMessageType{Type: MessageType(data[2])}, nil
+	buf := uio.NewBigEndianBuffer(data)
+	return &OptMessageType{Type: MessageType(buf.Read8())}, buf.FinError()
 }
 
 // Code returns the option code.
