@@ -32,8 +32,3 @@ func (o *OptMachineName) ToBytes() []byte {
 func (o *OptMachineName) String() string {
 	return "BSDP Machine Name -> " + o.Name
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptMachineName) Length() int {
-	return len(o.Name)
-}

@@ -76,9 +76,3 @@ func (o *OptRouter) ToBytes() []byte {
 func (o *OptRouter) String() string {
 	return fmt.Sprintf("Routers -> %s", IPsToString(o.Routers))
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptRouter) Length() int {
-	return len(o.Routers) * 4
-}

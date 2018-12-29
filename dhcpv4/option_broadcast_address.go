@@ -36,9 +36,3 @@ func (o *OptBroadcastAddress) ToBytes() []byte {
 func (o *OptBroadcastAddress) String() string {
 	return fmt.Sprintf("Broadcast Address -> %v", o.BroadcastAddress.String())
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptBroadcastAddress) Length() int {
-	return len(o.BroadcastAddress.To4())
-}

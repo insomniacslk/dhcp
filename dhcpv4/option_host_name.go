@@ -30,9 +30,3 @@ func (o *OptHostName) ToBytes() []byte {
 func (o *OptHostName) String() string {
 	return fmt.Sprintf("Host Name -> %v", o.HostName)
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptHostName) Length() int {
-	return len(o.HostName)
-}

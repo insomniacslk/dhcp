@@ -35,9 +35,3 @@ func (o *OptMessageType) ToBytes() []byte {
 func (o *OptMessageType) String() string {
 	return fmt.Sprintf("DHCP Message Type -> %s", o.MessageType.String())
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptMessageType) Length() int {
-	return 1
-}

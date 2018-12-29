@@ -9,7 +9,6 @@ import (
 func TestOptMachineNameInterfaceMethods(t *testing.T) {
 	o := OptMachineName{"somebox"}
 	require.Equal(t, OptionMachineName, o.Code(), "Code")
-	require.Equal(t, 7, o.Length(), "Length")
 	expectedBytes := []byte{'s', 'o', 'm', 'e', 'b', 'o', 'x'}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 }

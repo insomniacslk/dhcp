@@ -22,11 +22,6 @@ func (op *OptTFTPServerName) ToBytes() []byte {
 	return []byte(op.TFTPServerName)
 }
 
-// Length returns the option length in bytes
-func (op *OptTFTPServerName) Length() int {
-	return len(op.TFTPServerName)
-}
-
 func (op *OptTFTPServerName) String() string {
 	return fmt.Sprintf("TFTP Server Name -> %s", op.TFTPServerName)
 }

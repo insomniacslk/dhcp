@@ -16,8 +16,6 @@ func TestOptSubnetMaskInterfaceMethods(t *testing.T) {
 	expectedBytes := []byte{255, 255, 255, 0}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
-	require.Equal(t, 4, o.Length(), "Length")
-
 	require.Equal(t, "Subnet Mask -> ffffff00", o.String(), "String")
 }
 

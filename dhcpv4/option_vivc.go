@@ -63,14 +63,3 @@ func (o *OptVIVC) String() string {
 
 	return buf.String()[:buf.Len()-1]
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptVIVC) Length() int {
-	n := 0
-	for _, id := range o.Identifiers {
-		// each class has a header of endID (4 bytes) and length (1 byte)
-		n += 5 + len(id.Data)
-	}
-	return n
-}

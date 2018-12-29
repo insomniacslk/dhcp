@@ -11,7 +11,6 @@ func TestOptDefaultBootImageIDInterfaceMethods(t *testing.T) {
 	b := BootImageID{IsInstall: true, ImageType: BootImageTypeMacOSX, Index: 1001}
 	o := OptDefaultBootImageID{b}
 	require.Equal(t, OptionDefaultBootImageID, o.Code(), "Code")
-	require.Equal(t, 4, o.Length(), "Length")
 	require.Equal(t, uio.ToBigEndian(b), o.ToBytes(), "ToBytes")
 }
 

@@ -38,9 +38,3 @@ func (o *OptDomainNameServer) ToBytes() []byte {
 func (o *OptDomainNameServer) String() string {
 	return fmt.Sprintf("Domain Name Servers -> %s", IPsToString(o.NameServers))
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptDomainNameServer) Length() int {
-	return len(o.NameServers) * 4
-}

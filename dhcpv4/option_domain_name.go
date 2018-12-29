@@ -30,9 +30,3 @@ func (o *OptDomainName) ToBytes() []byte {
 func (o *OptDomainName) String() string {
 	return fmt.Sprintf("Domain Name -> %v", o.DomainName)
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptDomainName) Length() int {
-	return len(o.DomainName)
-}

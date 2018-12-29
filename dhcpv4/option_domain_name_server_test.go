@@ -14,7 +14,6 @@ func TestOptDomainNameServerInterfaceMethods(t *testing.T) {
 	}
 	o := OptDomainNameServer{NameServers: servers}
 	require.Equal(t, OptionDomainNameServer, o.Code(), "Code")
-	require.Equal(t, net.IPv4len*len(servers), o.Length(), "Length")
 	require.Equal(t, servers, o.NameServers, "NameServers")
 }
 

@@ -32,9 +32,3 @@ func (o *OptClassIdentifier) ToBytes() []byte {
 func (o *OptClassIdentifier) String() string {
 	return fmt.Sprintf("Class Identifier -> %v", o.Identifier)
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptClassIdentifier) Length() int {
-	return len(o.Identifier)
-}

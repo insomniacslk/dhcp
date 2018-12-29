@@ -36,9 +36,3 @@ func (o *OptNTPServers) ToBytes() []byte {
 func (o *OptNTPServers) String() string {
 	return fmt.Sprintf("NTP Servers -> %v", IPsToString(o.NTPServers))
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptNTPServers) Length() int {
-	return len(o.NTPServers) * 4
-}

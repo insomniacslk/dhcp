@@ -9,7 +9,6 @@ import (
 func TestOptMaximumDHCPMessageSizeInterfaceMethods(t *testing.T) {
 	o := OptMaximumDHCPMessageSize{Size: 1500}
 	require.Equal(t, OptionMaximumDHCPMessageSize, o.Code(), "Code")
-	require.Equal(t, 2, o.Length(), "Length")
 	require.Equal(t, []byte{5, 220}, o.ToBytes(), "ToBytes")
 }
 

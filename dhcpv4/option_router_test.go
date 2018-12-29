@@ -14,7 +14,6 @@ func TestOptRoutersInterfaceMethods(t *testing.T) {
 	}
 	o := OptRouter{Routers: routers}
 	require.Equal(t, OptionRouter, o.Code(), "Code")
-	require.Equal(t, net.IPv4len*len(routers), o.Length(), "Length")
 	require.Equal(t, routers, o.Routers, "Routers")
 }
 

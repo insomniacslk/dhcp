@@ -9,7 +9,6 @@ import (
 func TestOptIPAddressLeaseTimeInterfaceMethods(t *testing.T) {
 	o := OptIPAddressLeaseTime{LeaseTime: 43200}
 	require.Equal(t, OptionIPAddressLeaseTime, o.Code(), "Code")
-	require.Equal(t, 4, o.Length(), "Length")
 	require.Equal(t, []byte{0, 0, 168, 192}, o.ToBytes(), "ToBytes")
 }
 

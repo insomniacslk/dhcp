@@ -35,9 +35,3 @@ func (o *OptServerPriority) ToBytes() []byte {
 func (o *OptServerPriority) String() string {
 	return fmt.Sprintf("BSDP Server Priority -> %v", o.Priority)
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptServerPriority) Length() int {
-	return 2
-}

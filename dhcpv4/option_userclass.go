@@ -36,18 +36,6 @@ func (op *OptUserClass) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptUserClass) Length() int {
-	ret := 0
-	if !op.Rfc3004 {
-		return len(op.UserClasses[0])
-	}
-	for _, uc := range op.UserClasses {
-		ret += 1 + len(uc)
-	}
-	return ret
-}
-
 func (op *OptUserClass) String() string {
 	ucStrings := make([]string, 0, len(op.UserClasses))
 	if !op.Rfc3004 {

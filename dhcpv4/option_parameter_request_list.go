@@ -52,9 +52,3 @@ func (o *OptParameterRequestList) String() string {
 	}
 	return fmt.Sprintf("Parameter Request List -> [%v]", strings.Join(optNames, ", "))
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptParameterRequestList) Length() int {
-	return len(o.RequestedOpts)
-}

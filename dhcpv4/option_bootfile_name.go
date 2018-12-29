@@ -22,14 +22,8 @@ func (op *OptBootfileName) ToBytes() []byte {
 	return []byte(op.BootfileName)
 }
 
-// Length returns the option length in bytes
-func (op *OptBootfileName) Length() int {
-	return len(op.BootfileName)
-}
-
 func (op *OptBootfileName) String() string {
 	return fmt.Sprintf("Bootfile Name -> %s", op.BootfileName)
-
 }
 
 // ParseOptBootfileName returns a new OptBootfile from a byte stream or error if any

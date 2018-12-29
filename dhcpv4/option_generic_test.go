@@ -45,12 +45,3 @@ func TestOptionGenericStringUnknown(t *testing.T) {
 	}
 	require.Equal(t, "Unknown -> [1]", o.String())
 }
-
-func TestOptionGenericLength(t *testing.T) {
-	filename := "/path/to/file"
-	o := OptionGeneric{
-		OptionCode: OptionBootfileName,
-		Data:       []byte(filename),
-	}
-	require.Equal(t, len(filename), o.Length())
-}

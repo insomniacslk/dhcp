@@ -9,7 +9,6 @@ import (
 func TestOptRootPathInterfaceMethods(t *testing.T) {
 	o := OptRootPath{Path: "/foo/bar/baz"}
 	require.Equal(t, OptionRootPath, o.Code(), "Code")
-	require.Equal(t, 12, o.Length(), "Length")
 	wantBytes := []byte{
 		'/', 'f', 'o', 'o', '/', 'b', 'a', 'r', '/', 'b', 'a', 'z',
 	}

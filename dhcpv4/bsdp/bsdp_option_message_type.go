@@ -60,8 +60,3 @@ func (o *OptMessageType) ToBytes() []byte {
 func (o *OptMessageType) String() string {
 	return fmt.Sprintf("BSDP Message Type -> %s", o.Type.String())
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptMessageType) Length() int {
-	return 1
-}

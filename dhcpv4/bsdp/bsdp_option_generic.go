@@ -38,8 +38,3 @@ func (o OptGeneric) String() string {
 	}
 	return fmt.Sprintf("%v -> %v", code, o.Data)
 }
-
-// Length returns the number of bytes comprising the data section of the option.
-func (o OptGeneric) Length() int {
-	return len(o.Data)
-}

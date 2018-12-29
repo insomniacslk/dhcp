@@ -16,7 +16,6 @@ func TestParseOptDomainSearch(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 2, len(opt.DomainSearch.Labels))
 	require.Equal(t, data, opt.DomainSearch.ToBytes())
-	require.Equal(t, len(data), opt.DomainSearch.Length())
 	require.Equal(t, opt.DomainSearch.Labels[0], "example.com")
 	require.Equal(t, opt.DomainSearch.Labels[1], "subnet.example.org")
 }

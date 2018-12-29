@@ -12,7 +12,6 @@ func TestOptVendorSpecificInformationInterfaceMethods(t *testing.T) {
 	versionOpt := &OptVersion{Version1_1}
 	o := &OptVendorSpecificInformation{[]dhcpv4.Option{messageTypeOpt, versionOpt}}
 	require.Equal(t, dhcpv4.OptionVendorSpecificInformation, o.Code(), "Code")
-	require.Equal(t, 2+messageTypeOpt.Length()+2+versionOpt.Length(), o.Length(), "Length")
 
 	expectedBytes := []byte{
 		1, 1, 1, // List option

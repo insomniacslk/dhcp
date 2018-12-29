@@ -9,7 +9,6 @@ import (
 func TestOptHostNameInterfaceMethods(t *testing.T) {
 	o := OptHostName{HostName: "foo"}
 	require.Equal(t, OptionHostName, o.Code(), "Code")
-	require.Equal(t, 3, o.Length(), "Length")
 	require.Equal(t, []byte{'f', 'o', 'o'}, o.ToBytes(), "ToBytes")
 }
 

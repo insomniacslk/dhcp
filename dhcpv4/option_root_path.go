@@ -32,9 +32,3 @@ func (o *OptRootPath) ToBytes() []byte {
 func (o *OptRootPath) String() string {
 	return fmt.Sprintf("Root Path -> %v", o.Path)
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptRootPath) Length() int {
-	return len(o.Path)
-}

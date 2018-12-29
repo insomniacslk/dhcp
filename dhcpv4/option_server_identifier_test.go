@@ -16,8 +16,6 @@ func TestOptServerIdentifierInterfaceMethods(t *testing.T) {
 	expectedBytes := []byte{192, 168, 0, 1}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
-	require.Equal(t, 4, o.Length(), "Length")
-
 	require.Equal(t, "Server Identifier -> 192.168.0.1", o.String(), "String")
 }
 
