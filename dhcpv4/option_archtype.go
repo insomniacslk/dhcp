@@ -55,6 +55,9 @@ func (o *OptClientArchType) String() string {
 // or error if any.
 func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 	buf := uio.NewBigEndianBuffer(data)
+	if buf.Len() == 0 {
+		return nil, fmt.Errorf("must have at least one archtype if option is present")
+	}
 
 	archTypes := make([]iana.ArchType, 0, buf.Len()/2)
 	for buf.Has(2) {

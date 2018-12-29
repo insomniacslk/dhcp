@@ -100,7 +100,7 @@ func GenerateTransactionID() (*TransactionID, error) {
 	var b TransactionID
 	n, err := rand.Read(b[:])
 	if n != 4 {
-		return nil, fmt.Errorf("invalid random sequence: smaller than 32 bits")
+		return nil, errors.New("invalid random sequence: smaller than 32 bits")
 	}
 	if err != nil {
 		return nil, err
