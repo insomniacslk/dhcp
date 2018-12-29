@@ -179,43 +179,43 @@ func TestGetOption(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
-	bootFileOpt := &OptBootfileName{"boot.img"}
+	hostnameOpt := OptGeneric(OptionHostName, []byte("darkstar"))
+	bootFileOpt := OptBootFileName("boot.img")
 	d.UpdateOption(hostnameOpt)
 	d.UpdateOption(bootFileOpt)
 
-	require.Equal(t, d.GetOneOption(OptionHostName), hostnameOpt)
-	require.Equal(t, d.GetOneOption(OptionBootfileName), bootFileOpt)
-	require.Equal(t, d.GetOneOption(OptionRouter), nil)
+	require.Equal(t, d.GetOneOption(OptionHostName), []byte("darkstar"))
+	require.Equal(t, d.GetOneOption(OptionBootfileName), []byte("boot.img"))
+	require.Equal(t, d.GetOneOption(OptionRouter), []byte(nil))
 }
 
 func TestUpdateOption(t *testing.T) {
 	d, err := New()
 	require.NoError(t, err)
 
-	hostnameOpt := &OptionGeneric{OptionCode: OptionHostName, Data: []byte("darkstar")}
-	bootFileOpt1 := &OptBootfileName{"boot.img"}
-	bootFileOpt2 := &OptBootfileName{"boot2.img"}
+	hostnameOpt := OptGeneric(OptionHostName, []byte("darkstar"))
+	bootFileOpt1 := OptBootFileName("boot.img")
+	bootFileOpt2 := OptBootFileName("boot2.img")
 	d.UpdateOption(hostnameOpt)
 	d.UpdateOption(bootFileOpt1)
 	d.UpdateOption(bootFileOpt2)
 
 	options := d.Options
 	require.Equal(t, len(options), 2)
-	require.Equal(t, d.Options.GetOne(OptionBootfileName), bootFileOpt2)
-	require.Equal(t, d.Options.GetOne(OptionHostName), hostnameOpt)
+	require.Equal(t, d.GetOneOption(OptionHostName), []byte("darkstar"))
+	require.Equal(t, d.GetOneOption(OptionBootfileName), []byte("boot2.img"))
 }
 
 func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
 	offer.SetBroadcast()
-	offer.UpdateOption(&OptMessageType{MessageType: MessageTypeOffer})
+	offer.UpdateOption(OptMessageType(MessageTypeOffer))
 	req, err := NewRequestFromOffer(offer)
 	require.Error(t, err)
 
 	// Now add the option so it doesn't error out.
-	offer.UpdateOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
+	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
 
 	// Broadcast request
 	req, err = NewRequestFromOffer(offer)
@@ -235,13 +235,12 @@ func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
 	offer, err := New()
 	require.NoError(t, err)
-	offer.UpdateOption(&OptMessageType{MessageType: MessageTypeOffer})
-	offer.UpdateOption(&OptServerIdentifier{ServerID: net.IPv4(192, 168, 0, 1)})
+	offer.UpdateOption(OptMessageType(MessageTypeOffer))
+	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
 	userClass := WithUserClass([]byte("linuxboot"), false)
 	req, err := NewRequestFromOffer(offer, userClass)
 	require.NoError(t, err)
 	require.Equal(t, MessageTypeRequest, req.MessageType())
-	require.Equal(t, "User Class Information -> linuxboot", req.Options[3].String())
 }
 
 func TestNewReplyFromRequest(t *testing.T) {
@@ -263,7 +262,6 @@ func TestNewReplyFromRequestWithModifier(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID, reply.TransactionID)
 	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
-	require.Equal(t, "User Class Information -> linuxboot", reply.Options[0].String())
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {
@@ -304,10 +302,33 @@ func TestIsOptionRequested(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, pkt.IsOptionRequested(OptionDomainNameServer))
 
-	optprl := OptParameterRequestList{RequestedOpts: []OptionCode{OptionDomainNameServer}}
-	pkt.UpdateOption(&optprl)
+	optprl := OptParameterRequestList(OptionDomainNameServer)
+	pkt.UpdateOption(optprl)
 	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
 }
 
 // TODO
 //      test Summary() and String()
+func TestSummary(t *testing.T) {
+	packet, err := New(WithMessageType(MessageTypeInform))
+	packet.TransactionID = [4]byte{1, 1, 1, 1}
+	require.NoError(t, err)
+
+	want := "DHCPv4 Message\n" +
+		"  opcode: BootRequest\n" +
+		"  hwtype: Ethernet\n" +
+		"  hopcount: 0\n" +
+		"  transaction ID: 0x01010101\n" +
+		"  num seconds: 0\n" +
+		"  flags: Unicast (0x00)\n" +
+		"  client IP: 0.0.0.0\n" +
+		"  your IP: 0.0.0.0\n" +
+		"  server IP: 0.0.0.0\n" +
+		"  gateway IP: 0.0.0.0\n" +
+		"  client MAC: \n" +
+		"  server hostname: \n" +
+		"  bootfile name: \n" +
+		"  options:\n" +
+		"    DHCP Message Type: INFORM\n"
+	require.Equal(t, want, packet.Summary())
+}

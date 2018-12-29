@@ -7,96 +7,83 @@ import (
 )
 
 func TestOptDomainName(t *testing.T) {
-	o := OptDomainName{DomainName: "foo"}
-	require.Equal(t, OptionDomainName, o.Code(), "Code")
-	require.Equal(t, []byte{'f', 'o', 'o'}, o.ToBytes(), "ToBytes")
-	require.Equal(t, "Domain Name -> foo", o.String())
+	o := OptDomainName("foo")
+	require.Equal(t, OptionDomainName, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Domain Name: foo", o.String())
 }
 
 func TestParseOptDomainName(t *testing.T) {
-	data := []byte{'t', 'e', 's', 't'}
-	o, err := ParseOptDomainName(data)
-	require.NoError(t, err)
-	require.Equal(t, &OptDomainName{DomainName: "test"}, o)
+	o := Options{
+		OptionDomainName.Code(): []byte{'t', 'e', 's', 't'},
+	}
+	require.Equal(t, "test", GetDomainName(o))
+	require.Equal(t, "", GetDomainName(Options{}))
 }
 
 func TestOptHostName(t *testing.T) {
-	o := OptHostName{HostName: "foo"}
-	require.Equal(t, OptionHostName, o.Code(), "Code")
-	require.Equal(t, []byte{'f', 'o', 'o'}, o.ToBytes(), "ToBytes")
-	require.Equal(t, "Host Name -> foo", o.String())
+	o := OptHostName("foo")
+	require.Equal(t, OptionHostName, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Host Name: foo", o.String())
 }
 
 func TestParseOptHostName(t *testing.T) {
-	data := []byte{'t', 'e', 's', 't'}
-	o, err := ParseOptHostName(data)
-	require.NoError(t, err)
-	require.Equal(t, &OptHostName{HostName: "test"}, o)
+	o := Options{
+		OptionHostName.Code(): []byte{'t', 'e', 's', 't'},
+	}
+	require.Equal(t, "test", GetHostName(o))
+	require.Equal(t, "", GetHostName(Options{}))
 }
 
 func TestOptRootPath(t *testing.T) {
-	o := OptRootPath{Path: "/foo/bar/baz"}
-	require.Equal(t, OptionRootPath, o.Code(), "Code")
-	wantBytes := []byte{
-		'/', 'f', 'o', 'o', '/', 'b', 'a', 'r', '/', 'b', 'a', 'z',
-	}
-	require.Equal(t, wantBytes, o.ToBytes(), "ToBytes")
-	require.Equal(t, "Root Path -> /foo/bar/baz", o.String())
+	o := OptRootPath("foo")
+	require.Equal(t, OptionRootPath, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Root Path: foo", o.String())
 }
 
 func TestParseOptRootPath(t *testing.T) {
-	data := []byte{byte(OptionRootPath), 4, '/', 'f', 'o', 'o'}
-	o, err := ParseOptRootPath(data[2:])
-	require.NoError(t, err)
-	require.Equal(t, &OptRootPath{Path: "/foo"}, o)
+	o := OptionsFromList(OptRootPath("test"))
+	require.Equal(t, "test", GetRootPath(o))
+	require.Equal(t, "", GetRootPath(Options{}))
 }
 
-func TestOptBootfileName(t *testing.T) {
-	opt := OptBootfileName{
-		BootfileName: "linuxboot",
-	}
-	require.Equal(t, OptionBootfileName, opt.Code())
-	require.Equal(t, []byte{'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't'}, opt.ToBytes())
-	require.Equal(t, "Bootfile Name -> linuxboot", opt.String())
+func TestOptBootFileName(t *testing.T) {
+	o := OptBootFileName("foo")
+	require.Equal(t, OptionBootfileName, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Bootfile Name: foo", o.String())
 }
 
-func TestParseOptBootfileName(t *testing.T) {
-	expected := []byte{
-		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	opt, err := ParseOptBootfileName(expected)
-	require.NoError(t, err)
-	require.Equal(t, "linuxboot", opt.BootfileName)
+func TestParseOptBootFileName(t *testing.T) {
+	o := OptionsFromList(OptBootFileName("test"))
+	require.Equal(t, "test", GetBootFileName(o))
+	require.Equal(t, "", GetBootFileName(Options{}))
 }
 
-func TestOptTFTPServer(t *testing.T) {
-	opt := OptTFTPServerName{
-		TFTPServerName: "linuxboot",
-	}
-	require.Equal(t, OptionTFTPServerName, opt.Code())
-	require.Equal(t, []byte("linuxboot"), opt.ToBytes())
-	require.Equal(t, "TFTP Server Name -> linuxboot", opt.String())
+func TestOptTFTPServerName(t *testing.T) {
+	o := OptTFTPServerName("foo")
+	require.Equal(t, OptionTFTPServerName, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "TFTP Server Name: foo", o.String())
 }
 
 func TestParseOptTFTPServerName(t *testing.T) {
-	expected := []byte{
-		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	opt, err := ParseOptTFTPServerName(expected)
-	require.NoError(t, err)
-	require.Equal(t, "linuxboot", string(opt.TFTPServerName))
+	o := OptionsFromList(OptTFTPServerName("test"))
+	require.Equal(t, "test", GetTFTPServerName(o))
+	require.Equal(t, "", GetTFTPServerName(Options{}))
 }
 
 func TestOptClassIdentifier(t *testing.T) {
-	o := OptClassIdentifier{Identifier: "foo"}
-	require.Equal(t, OptionClassIdentifier, o.Code(), "Code")
-	require.Equal(t, []byte("foo"), o.ToBytes(), "ToBytes")
-	require.Equal(t, "Class Identifier -> foo", o.String())
+	o := OptClassIdentifier("foo")
+	require.Equal(t, OptionClassIdentifier, o.Code, "Code")
+	require.Equal(t, []byte{'f', 'o', 'o'}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Class Identifier: foo", o.String())
 }
 
 func TestParseOptClassIdentifier(t *testing.T) {
-	data := []byte("test")
-	o, err := ParseOptClassIdentifier(data)
-	require.NoError(t, err)
-	require.Equal(t, &OptClassIdentifier{Identifier: "test"}, o)
+	o := OptionsFromList(OptClassIdentifier("test"))
+	require.Equal(t, "test", GetClassIdentifier(o))
+	require.Equal(t, "", GetClassIdentifier(Options{}))
 }

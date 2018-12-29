@@ -30,20 +30,12 @@ type ReplyConfig struct {
 
 // ParseBootImageListFromAck parses the list of boot images presented in the
 // ACK[LIST] packet and returns them as a list of BootImages.
-func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
-	opt := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
-	if opt == nil {
+func ParseBootImageListFromAck(ack *dhcpv4.DHCPv4) ([]BootImage, error) {
+	vendorOpts := GetVendorOptions(ack.Options)
+	if vendorOpts == nil {
 		return nil, errors.New("ParseBootImageListFromAck: could not find vendor-specific option")
 	}
-	vendorOpt, err := ParseOptVendorSpecificInformation(opt.ToBytes())
-	if err != nil {
-		return nil, err
-	}
-	bootImageOpts := vendorOpt.GetOneOption(OptionBootImageList)
-	if bootImageOpts == nil {
-		return nil, fmt.Errorf("boot image option not found")
-	}
-	return bootImageOpts.(*OptBootImageList).Images, nil
+	return GetBootImageList(vendorOpts.Options), nil
 }
 
 func needsReplyPort(replyPort uint16) bool {
@@ -53,28 +45,41 @@ func needsReplyPort(replyPort uint16) bool {
 // MessageTypeFromPacket extracts the BSDP message type (LIST, SELECT) from the
 // vendor-specific options and returns it. If the message type option cannot be
 // found, returns false.
-func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) *MessageType {
-	var (
-		vendorOpts *OptVendorSpecificInformation
-		err        error
-	)
-	opt := packet.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
-	if opt == nil {
-		return nil
+func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) MessageType {
+	vendorOpts := GetVendorOptions(packet.Options)
+	if vendorOpts == nil {
+		return MessageTypeNone
 	}
-	if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err == nil {
-		if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
-			if optMessageType, ok := o.(*OptMessageType); ok {
-				return &optMessageType.Type
-			}
-		}
-	}
-	return nil
+	return GetMessageType(vendorOpts.Options)
+}
+
+// Packet is a BSDP packet wrapper around a DHCPv4 packet in order to print the
+// correct vendor-specific BSDP information in String().
+type Packet struct {
+	dhcpv4.DHCPv4
+}
+
+// PacketFor returns a wrapped BSDP Packet given a DHCPv4 packet.
+func PacketFor(d *dhcpv4.DHCPv4) *Packet {
+	return &Packet{*d}
+}
+
+func (p Packet) v4() *dhcpv4.DHCPv4 {
+	return &p.DHCPv4
+}
+
+func (p Packet) String() string {
+	return p.DHCPv4.String()
+}
+
+// Summary prints the BSDP packet with the correct vendor-specific options.
+func (p Packet) Summary() string {
+	return p.DHCPv4.SummaryWithVendor(&VendorOptions{})
 }
 
 // NewInformListForInterface creates a new INFORM packet for interface ifname
 // with configuration options specified by config.
-func NewInformListForInterface(ifname string, replyPort uint16) (*dhcpv4.DHCPv4, error) {
+func NewInformListForInterface(ifname string, replyPort uint16) (*Packet, error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
@@ -96,7 +101,7 @@ func NewInformListForInterface(ifname string, replyPort uint16) (*dhcpv4.DHCPv4,
 
 // NewInformList creates a new INFORM packet for interface with hardware address
 // `hwaddr` and IP `localIP`. Packet will be sent out on port `replyPort`.
-func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16, modifiers ...dhcpv4.Modifier) (*dhcpv4.DHCPv4, error) {
+func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16, modifiers ...dhcpv4.Modifier) (*Packet, error) {
 	// Validate replyPort first
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
 		return nil, errors.New("replyPort must be a privileged port")
@@ -109,60 +114,61 @@ func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16, mo
 
 	// These are vendor-specific options used to pass along BSDP information.
 	vendorOpts := []dhcpv4.Option{
-		&OptMessageType{MessageTypeList},
-		Version1_1,
+		OptMessageType(MessageTypeList),
+		OptVersion(Version1_1),
 	}
 	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
+		vendorOpts = append(vendorOpts, OptReplyPort(replyPort))
 	}
 
-	return dhcpv4.NewInform(hwaddr, localIP,
+	d, err := dhcpv4.NewInform(hwaddr, localIP,
 		dhcpv4.PrependModifiers(modifiers, dhcpv4.WithRequestedOptions(
 			dhcpv4.OptionVendorSpecificInformation,
 			dhcpv4.OptionClassIdentifier,
 		),
-			dhcpv4.WithOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize}),
-			dhcpv4.WithOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID}),
-			dhcpv4.WithOption(&OptVendorSpecificInformation{vendorOpts}),
+			dhcpv4.WithOption(dhcpv4.OptMaxMessageSize(MaxDHCPMessageSize)),
+			dhcpv4.WithOption(dhcpv4.OptClassIdentifier(vendorClassID)),
+			dhcpv4.WithOption(OptVendorOptions(vendorOpts...)),
 		)...)
+	if err != nil {
+		return nil, err
+	}
+	return PacketFor(d), nil
 }
 
 // InformSelectForAck constructs an INFORM[SELECT] packet given an ACK to the
 // previously-sent INFORM[LIST].
-func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootImage) (*dhcpv4.DHCPv4, error) {
+func InformSelectForAck(ack *Packet, replyPort uint16, selectedImage BootImage) (*Packet, error) {
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
 		return nil, errors.New("replyPort must be a privileged port")
 	}
 
 	// Data for OptionSelectedBootImageID
 	vendorOpts := []dhcpv4.Option{
-		&OptMessageType{MessageTypeSelect},
-		Version1_1,
-		&OptSelectedBootImageID{selectedImage.ID},
+		OptMessageType(MessageTypeSelect),
+		OptVersion(Version1_1),
+		OptSelectedBootImageID(selectedImage.ID),
 	}
 
 	// Validate replyPort if requested.
 	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
+		vendorOpts = append(vendorOpts, OptReplyPort(replyPort))
 	}
 
 	// Find server IP address
-	var serverIP net.IP
-	if opt := ack.GetOneOption(dhcpv4.OptionServerIdentifier); opt != nil {
-		serverIP = opt.(*dhcpv4.OptServerIdentifier).ServerID
-	}
+	serverIP := dhcpv4.GetServerIdentifier(ack.Options)
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
 	}
-	vendorOpts = append(vendorOpts, &OptServerIdentifier{serverIP})
+	vendorOpts = append(vendorOpts, OptServerIdentifier(serverIP))
 
 	vendorClassID, err := MakeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
 
-	return dhcpv4.New(dhcpv4.WithReply(&ack),
-		dhcpv4.WithOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID}),
+	d, err := dhcpv4.New(dhcpv4.WithReply(ack.v4()),
+		dhcpv4.WithOption(dhcpv4.OptClassIdentifier(vendorClassID)),
 		dhcpv4.WithRequestedOptions(
 			dhcpv4.OptionSubnetMask,
 			dhcpv4.OptionRouter,
@@ -171,20 +177,24 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			dhcpv4.OptionClassIdentifier,
 		),
 		dhcpv4.WithMessageType(dhcpv4.MessageTypeInform),
-		dhcpv4.WithOption(&OptVendorSpecificInformation{vendorOpts}),
+		dhcpv4.WithOption(OptVendorOptions(vendorOpts...)),
 	)
+	if err != nil {
+		return nil, err
+	}
+	return PacketFor(d), nil
 }
 
 // NewReplyForInformList constructs an ACK for the INFORM[LIST] packet `inform`
 // with additional options in `config`.
-func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.DHCPv4, error) {
+func NewReplyForInformList(inform *Packet, config ReplyConfig) (*Packet, error) {
 	if config.DefaultImage == nil {
 		return nil, errors.New("NewReplyForInformList: no default boot image ID set")
 	}
 	if config.Images == nil || len(config.Images) == 0 {
 		return nil, errors.New("NewReplyForInformList: no boot images provided")
 	}
-	reply, err := dhcpv4.NewReplyFromRequest(inform)
+	reply, err := dhcpv4.NewReplyFromRequest(&inform.DHCPv4)
 	if err != nil {
 		return nil, err
 	}
@@ -193,34 +203,34 @@ func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.D
 	reply.ServerIPAddr = config.ServerIP
 	reply.ServerHostName = config.ServerHostname
 
-	reply.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	reply.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
-	reply.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	reply.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeAck))
+	reply.UpdateOption(dhcpv4.OptServerIdentifier(config.ServerIP))
+	reply.UpdateOption(dhcpv4.OptClassIdentifier(AppleVendorID))
 
 	// BSDP opts.
 	vendorOpts := []dhcpv4.Option{
-		&OptMessageType{Type: MessageTypeList},
-		&OptServerPriority{Priority: config.ServerPriority},
-		&OptDefaultBootImageID{ID: config.DefaultImage.ID},
-		&OptBootImageList{Images: config.Images},
+		OptMessageType(MessageTypeList),
+		OptServerPriority(config.ServerPriority),
+		OptDefaultBootImageID(config.DefaultImage.ID),
+		OptBootImageList(config.Images...),
 	}
 	if config.SelectedImage != nil {
-		vendorOpts = append(vendorOpts, &OptSelectedBootImageID{ID: config.SelectedImage.ID})
+		vendorOpts = append(vendorOpts, OptSelectedBootImageID(config.SelectedImage.ID))
 	}
-	reply.UpdateOption(&OptVendorSpecificInformation{Options: vendorOpts})
-	return reply, nil
+	reply.UpdateOption(OptVendorOptions(vendorOpts...))
+	return PacketFor(reply), nil
 }
 
 // NewReplyForInformSelect constructs an ACK for the INFORM[Select] packet
 // `inform` with additional options in `config`.
-func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.DHCPv4, error) {
+func NewReplyForInformSelect(inform *Packet, config ReplyConfig) (*Packet, error) {
 	if config.SelectedImage == nil {
 		return nil, errors.New("NewReplyForInformSelect: no selected boot image ID set")
 	}
 	if config.Images == nil || len(config.Images) == 0 {
 		return nil, errors.New("NewReplyForInformSelect: no boot images provided")
 	}
-	reply, err := dhcpv4.NewReplyFromRequest(inform)
+	reply, err := dhcpv4.NewReplyFromRequest(&inform.DHCPv4)
 	if err != nil {
 		return nil, err
 	}
@@ -231,16 +241,14 @@ func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4
 	reply.ServerHostName = config.ServerHostname
 	reply.BootFileName = config.BootFileName
 
-	reply.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	reply.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
-	reply.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	reply.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeAck))
+	reply.UpdateOption(dhcpv4.OptServerIdentifier(config.ServerIP))
+	reply.UpdateOption(dhcpv4.OptClassIdentifier(AppleVendorID))
 
 	// BSDP opts.
-	reply.UpdateOption(&OptVendorSpecificInformation{
-		Options: []dhcpv4.Option{
-			&OptMessageType{Type: MessageTypeSelect},
-			&OptSelectedBootImageID{ID: config.SelectedImage.ID},
-		},
-	})
-	return reply, nil
+	reply.UpdateOption(OptVendorOptions(
+		OptMessageType(MessageTypeSelect),
+		OptSelectedBootImageID(config.SelectedImage.ID),
+	))
+	return PacketFor(reply), nil
 }

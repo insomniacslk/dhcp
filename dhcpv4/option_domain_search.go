@@ -1,41 +1,27 @@
 package dhcpv4
 
 import (
-	"fmt"
-
 	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
-// OptDomainSearch implements the domain search list option described by RFC
-// 3397, Section 2.
+// OptDomainSearch returns a new domain search option.
 //
-// FIXME: rename OptDomainSearch to OptDomainSearchList, and DomainSearch to
-// SearchList, for consistency with the equivalent v6 option
-type OptDomainSearch struct {
-	DomainSearch *rfc1035label.Labels
+// The domain search option is described by RFC 3397, Section 2.
+func OptDomainSearch(labels *rfc1035label.Labels) Option {
+	return Option{Code: OptionDNSDomainSearchList, Value: labels}
 }
 
-// Code returns the option code.
-func (op *OptDomainSearch) Code() OptionCode {
-	return OptionDNSDomainSearchList
-}
-
-// ToBytes returns a serialized stream of bytes for this option.
-func (op *OptDomainSearch) ToBytes() []byte {
-	return op.DomainSearch.ToBytes()
-}
-
-// String returns a human-readable string.
-func (op *OptDomainSearch) String() string {
-	return fmt.Sprintf("DNS Domain Search List -> %v", op.DomainSearch.Labels)
-}
-
-// ParseOptDomainSearch returns a new OptDomainSearch from a byte stream, or
-// error if any.
-func ParseOptDomainSearch(data []byte) (*OptDomainSearch, error) {
-	labels, err := rfc1035label.FromBytes(data)
-	if err != nil {
-		return nil, err
+// GetDomainSearch returns the domain search list in o, if present.
+//
+// The domain search option is described by RFC 3397, Section 2.
+func GetDomainSearch(o Options) *rfc1035label.Labels {
+	v := o.Get(OptionDNSDomainSearchList)
+	if v == nil {
+		return nil
 	}
-	return &OptDomainSearch{DomainSearch: labels}, nil
+	labels, err := rfc1035label.FromBytes(v)
+	if err != nil {
+		return nil
+	}
+	return labels
 }

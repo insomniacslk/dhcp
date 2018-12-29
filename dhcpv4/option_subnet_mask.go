@@ -1,36 +1,55 @@
 package dhcpv4
 
 import (
-	"fmt"
 	"net"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptSubnetMask implements the subnet mask option described by RFC 2132,
-// Section 3.3.
-type OptSubnetMask struct {
-	SubnetMask net.IPMask
-}
-
-// ParseOptSubnetMask returns a new OptSubnetMask from a byte
-// stream, or error if any.
-func ParseOptSubnetMask(data []byte) (*OptSubnetMask, error) {
-	buf := uio.NewBigEndianBuffer(data)
-	return &OptSubnetMask{SubnetMask: net.IPMask(buf.CopyN(net.IPv4len))}, buf.FinError()
-}
-
-// Code returns the option code.
-func (o *OptSubnetMask) Code() OptionCode {
-	return OptionSubnetMask
-}
+// IPMask represents an option encapsulating the subnet mask.
+//
+// This option implements the subnet mask option in RFC 2132, Section 3.3.
+type IPMask net.IPMask
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptSubnetMask) ToBytes() []byte {
-	return o.SubnetMask[:net.IPv4len]
+func (im IPMask) ToBytes() []byte {
+	if len(im) > net.IPv4len {
+		return im[:net.IPv4len]
+	}
+	return im
 }
 
 // String returns a human-readable string.
-func (o *OptSubnetMask) String() string {
-	return fmt.Sprintf("Subnet Mask -> %v", o.SubnetMask.String())
+func (im IPMask) String() string {
+	return net.IPMask(im).String()
+}
+
+// FromBytes parses im from data per RFC 2132.
+func (im *IPMask) FromBytes(data []byte) error {
+	buf := uio.NewBigEndianBuffer(data)
+	*im = IPMask(buf.CopyN(net.IPv4len))
+	return buf.FinError()
+}
+
+// GetSubnetMask returns a subnet mask option contained in o, if there is one.
+//
+// The subnet mask option is described by RFC 2132, Section 3.3.
+func GetSubnetMask(o Options) net.IPMask {
+	v := o.Get(OptionSubnetMask)
+	if v == nil {
+		return nil
+	}
+	var im IPMask
+	if err := im.FromBytes(v); err != nil {
+		return nil
+	}
+	return net.IPMask(im)
+}
+
+// OptSubnetMask returns a new DHCPv4 SubnetMask option per RFC 2132, Section 3.3.
+func OptSubnetMask(mask net.IPMask) Option {
+	return Option{
+		Code:  OptionSubnetMask,
+		Value: IPMask(mask),
+	}
 }

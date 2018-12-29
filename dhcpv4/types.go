@@ -2,6 +2,8 @@ package dhcpv4
 
 import (
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
@@ -36,11 +38,26 @@ const (
 	MessageTypeInform   MessageType = 8
 )
 
+// ToBytes returns the serialized version of this option described by RFC 2132,
+// Section 9.6.
+func (m MessageType) ToBytes() []byte {
+	return []byte{byte(m)}
+}
+
+// String prints a human-readable message type name.
 func (m MessageType) String() string {
 	if s, ok := messageTypeToString[m]; ok {
 		return s
 	}
 	return fmt.Sprintf("unknown (%d)", byte(m))
+}
+
+// FromBytes reads a message type from data as described by RFC 2132, Section
+// 9.6.
+func (m *MessageType) FromBytes(data []byte) error {
+	buf := uio.NewBigEndianBuffer(data)
+	*m = MessageType(buf.Read8())
+	return buf.FinError()
 }
 
 var messageTypeToString = map[MessageType]string{
@@ -81,22 +98,40 @@ var opcodeToString = map[OpcodeType]string{
 // with the same Code value, as vendor-specific options use option codes that
 // have the same value, but mean a different thing.
 type OptionCode interface {
+	// Code is the 1 byte option code for the wire.
 	Code() uint8
+
+	// String returns the option's name.
 	String() string
 }
 
 // optionCode is a DHCP option code.
 type optionCode uint8
 
+// Code implements OptionCode.Code.
 func (o optionCode) Code() uint8 {
 	return uint8(o)
 }
 
+// String returns an option name.
 func (o optionCode) String() string {
 	if s, ok := optionCodeToString[o]; ok {
 		return s
 	}
-	return fmt.Sprintf("unknown (%d)", o)
+	return fmt.Sprintf("unknown (%d)", uint8(o))
+}
+
+// GenericOptionCode is an unnamed option code.
+type GenericOptionCode uint8
+
+// Code implements OptionCode.Code.
+func (o GenericOptionCode) Code() uint8 {
+	return uint8(o)
+}
+
+// String returns the option's name.
+func (o GenericOptionCode) String() string {
+	return fmt.Sprintf("unknown (%d)", uint8(o))
 }
 
 // DHCPv4 Options
@@ -263,7 +298,7 @@ const (
 	OptionEnd optionCode = 255
 )
 
-var optionCodeToString = map[optionCode]string{
+var optionCodeToString = map[OptionCode]string{
 	OptionPad:                                        "Pad",
 	OptionSubnetMask:                                 "Subnet Mask",
 	OptionTimeOffset:                                 "Time Offset",

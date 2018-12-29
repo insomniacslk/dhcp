@@ -2,6 +2,7 @@ package dhcpv4
 
 import (
 	"net"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/insomniacslk/dhcp/rfc1035label"
@@ -89,10 +90,13 @@ func WithOption(opt Option) Modifier {
 // rfc compliant or not. More details in issue #113
 func WithUserClass(uc []byte, rfc bool) Modifier {
 	// TODO let the user specify multiple user classes
-	return WithOption(&OptUserClass{
-		UserClasses: [][]byte{uc},
-		Rfc3004:     rfc,
-	})
+	return func(d *DHCPv4) {
+		if rfc {
+			d.UpdateOption(OptRFC3004UserClass([][]byte{uc}))
+		} else {
+			d.UpdateOption(OptUserClass(uc))
+		}
+	}
 }
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv4 packet.
@@ -102,7 +106,7 @@ func WithNetboot(d *DHCPv4) {
 
 // WithMessageType adds the DHCPv4 message type m to a packet.
 func WithMessageType(m MessageType) Modifier {
-	return WithOption(&OptMessageType{m})
+	return WithOption(OptMessageType(m))
 }
 
 // WithRequestedOptions adds requested options to the packet.
@@ -110,10 +114,11 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 	return func(d *DHCPv4) {
 		params := d.GetOneOption(OptionParameterRequestList)
 		if params == nil {
-			d.UpdateOption(&OptParameterRequestList{OptionCodeList(optionCodes)})
+			d.UpdateOption(OptParameterRequestList(optionCodes...))
 		} else {
-			opts := params.(*OptParameterRequestList)
-			opts.RequestedOpts.Add(optionCodes...)
+			cl := OptionCodeList(GetParameterRequestList(d.Options))
+			cl.Add(optionCodes...)
+			d.UpdateOption(OptParameterRequestList(cl...))
 		}
 	}
 }
@@ -124,33 +129,23 @@ func WithRelay(ip net.IP) Modifier {
 	return func(d *DHCPv4) {
 		d.SetUnicast()
 		d.GatewayIPAddr = ip
-		d.HopCount += 1
+		d.HopCount++
 	}
 }
 
 // WithNetmask adds or updates an OptSubnetMask
 func WithNetmask(mask net.IPMask) Modifier {
-	return WithOption(&OptSubnetMask{SubnetMask: mask})
+	return WithOption(OptSubnetMask(mask))
 }
 
 // WithLeaseTime adds or updates an OptIPAddressLeaseTime
 func WithLeaseTime(leaseTime uint32) Modifier {
-	return WithOption(&OptIPAddressLeaseTime{LeaseTime: leaseTime})
-}
-
-// WithDNS adds or updates an OptionDomainNameServer
-func WithDNS(dnses ...net.IP) Modifier {
-	return WithOption(&OptDomainNameServer{NameServers: dnses})
+	return WithOption(OptIPAddressLeaseTime(time.Duration(leaseTime) * time.Second))
 }
 
 // WithDomainSearchList adds or updates an OptionDomainSearch
 func WithDomainSearchList(searchList ...string) Modifier {
-	return WithOption(&OptDomainSearch{DomainSearch: &rfc1035label.Labels{
+	return WithOption(OptDomainSearch(&rfc1035label.Labels{
 		Labels: searchList,
-	}})
-}
-
-// WithRouter adds or updates an OptionRouter
-func WithRouter(routers ...net.IP) Modifier {
-	return WithOption(&OptRouter{Routers: routers})
+	}))
 }
