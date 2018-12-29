@@ -121,5 +121,5 @@ func TestSend(t *testing.T) {
 	require.True(t, ok)
 	require.False(t, timeout)
 	require.NoError(t, err)
-	require.Equal(t, m.TransactionID(), r.TransactionID())
+	require.Equal(t, m.TransactionID, r.TransactionID)
 }

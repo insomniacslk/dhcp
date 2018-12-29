@@ -32,7 +32,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 		log.Printf("Packet is nil!")
 		return
 	}
-	if m.Opcode() != OpcodeBootRequest {
+	if m.OpCode != OpcodeBootRequest {
 		log.Printf("Not a BootRequest!")
 		return
 	}
@@ -114,18 +114,18 @@ func TestServerActivateAndServe(t *testing.T) {
 	require.NotEqual(t, 0, len(ifaces))
 
 	xid := TransactionID{0xaa, 0xbb, 0xcc, 0xdd}
-	hwaddr := [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
+	hwaddr := net.HardwareAddr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
 
 	modifiers := []Modifier{
 		WithTransactionID(xid),
-		WithHwAddr(hwaddr[:]),
+		WithHwAddr(hwaddr),
 	}
 
 	conv, err := c.Exchange(ifaces[0].Name, modifiers...)
 	require.NoError(t, err)
 	require.Equal(t, 4, len(conv))
 	for _, p := range conv {
-		require.Equal(t, xid, p.TransactionID())
-		require.Equal(t, [16]byte(hwaddr), p.ClientHwAddr())
+		require.Equal(t, xid, p.TransactionID)
+		require.Equal(t, hwaddr, p.ClientHWAddr)
 	}
 }

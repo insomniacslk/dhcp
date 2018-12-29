@@ -28,14 +28,13 @@ const (
 )
 
 func (m MessageType) String() string {
-	if s, ok := MessageTypeToString[m]; ok {
+	if s, ok := messageTypeToString[m]; ok {
 		return s
 	}
 	return "Unknown"
 }
 
-// MessageTypeToString maps DHCP message types to human-readable strings.
-var MessageTypeToString = map[MessageType]string{
+var messageTypeToString = map[MessageType]string{
 	MessageTypeDiscover: "DISCOVER",
 	MessageTypeOffer:    "OFFER",
 	MessageTypeRequest:  "REQUEST",
@@ -56,14 +55,13 @@ const (
 )
 
 func (o OpcodeType) String() string {
-	if s, ok := OpcodeToString[o]; ok {
+	if s, ok := opcodeToString[o]; ok {
 		return s
 	}
 	return "Unknown"
 }
 
-// OpcodeToString maps an OpcodeType to its mnemonic name
-var OpcodeToString = map[OpcodeType]string{
+var opcodeToString = map[OpcodeType]string{
 	OpcodeBootRequest: "BootRequest",
 	OpcodeBootReply:   "BootReply",
 }
@@ -233,14 +231,13 @@ const (
 )
 
 func (o OptionCode) String() string {
-	if s, ok := OptionCodeToString[o]; ok {
+	if s, ok := optionCodeToString[o]; ok {
 		return s
 	}
 	return "Unknown"
 }
 
-// OptionCodeToString maps an OptionCode to its mnemonic name
-var OptionCodeToString = map[OptionCode]string{
+var optionCodeToString = map[OptionCode]string{
 	OptionPad:                                        "Pad",
 	OptionSubnetMask:                                 "Subnet Mask",
 	OptionTimeOffset:                                 "Time Offset",

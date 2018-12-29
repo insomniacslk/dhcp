@@ -331,11 +331,11 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 				return
 			}
 			// check that this is a response to our message
-			if response.TransactionID() != packet.TransactionID() {
+			if response.TransactionID != packet.TransactionID {
 				continue
 			}
 			// wait for a response message
-			if response.Opcode() != OpcodeBootReply {
+			if response.OpCode != OpcodeBootReply {
 				continue
 			}
 			// if we are not requested to wait for a specific message type,
@@ -344,7 +344,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 				break
 			}
 			// break if it's a reply of the desired type, continue otherwise
-			if response.MessageType() != nil && *response.MessageType() == messageType {
+			if response.MessageType() == messageType {
 				break
 			}
 		}
