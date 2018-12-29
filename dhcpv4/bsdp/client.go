@@ -19,7 +19,7 @@ func NewClient() *Client {
 }
 
 func castVendorOpt(ack *dhcpv4.DHCPv4) {
-	opts := ack.Options()
+	opts := ack.Options
 	for i := 0; i < len(opts); i++ {
 		if opts[i].Code() == dhcpv4.OptionVendorSpecificInformation {
 			vendorOpt, err := ParseOptVendorSpecificInformation(opts[i].ToBytes())

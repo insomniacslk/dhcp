@@ -2,6 +2,7 @@ package dhcpv4
 
 import (
 	"crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
@@ -32,20 +33,20 @@ var magicCookie = [4]byte{99, 130, 83, 99}
 // DHCPv4 represents a DHCPv4 packet header and options. See the New* functions
 // to build DHCPv4 packets.
 type DHCPv4 struct {
-	opcode         OpcodeType
-	hwType         iana.HwTypeType
-	hopCount       uint8
-	transactionID  TransactionID
-	numSeconds     uint16
-	flags          uint16
-	clientIPAddr   net.IP
-	yourIPAddr     net.IP
-	serverIPAddr   net.IP
-	gatewayIPAddr  net.IP
-	clientHwAddr   net.HardwareAddr
-	serverHostName string
-	bootFileName   string
-	options        []Option
+	OpCode         OpcodeType
+	HWType         iana.HwTypeType
+	HopCount       uint8
+	TransactionID  TransactionID
+	NumSeconds     uint16
+	Flags          uint16
+	ClientIPAddr   net.IP
+	YourIPAddr     net.IP
+	ServerIPAddr   net.IP
+	GatewayIPAddr  net.IP
+	ClientHWAddr   net.HardwareAddr
+	ServerHostName string
+	BootFileName   string
+	Options        []Option
 }
 
 // Modifier defines the signature for functions that can modify DHCPv4
@@ -112,18 +113,17 @@ func New() (*DHCPv4, error) {
 		return nil, err
 	}
 	d := DHCPv4{
-		opcode:        OpcodeBootRequest,
-		hwType:        iana.HwTypeEthernet,
-		hopCount:      0,
-		transactionID: xid,
-		numSeconds:    0,
-		flags:         0,
-		clientHwAddr:  net.HardwareAddr{0, 0, 0, 0, 0, 0},
-		clientIPAddr:  net.IPv4zero,
-		yourIPAddr:    net.IPv4zero,
-		serverIPAddr:  net.IPv4zero,
-		gatewayIPAddr: net.IPv4zero,
-		options:       make([]Option, 0, 10),
+		OpCode:        OpcodeBootRequest,
+		HWType:        iana.HwTypeEthernet,
+		HopCount:      0,
+		TransactionID: xid,
+		NumSeconds:    0,
+		Flags:         0,
+		ClientIPAddr:  net.IPv4zero,
+		YourIPAddr:    net.IPv4zero,
+		ServerIPAddr:  net.IPv4zero,
+		GatewayIPAddr: net.IPv4zero,
+		Options:       make([]Option, 0, 10),
 	}
 	// the End option has to be added explicitly
 	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
@@ -149,9 +149,9 @@ func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 		return nil, err
 	}
 	// get hw addr
-	d.SetOpcode(OpcodeBootRequest)
-	d.SetHwType(iana.HwTypeEthernet)
-	d.SetClientHwAddr(hwaddr)
+	d.OpCode = OpcodeBootRequest
+	d.HWType = iana.HwTypeEthernet
+	d.ClientHWAddr = hwaddr
 	d.SetBroadcast()
 	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
 	d.AddOption(&OptParameterRequestList{
@@ -202,10 +202,10 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
 		return nil, err
 	}
 
-	d.SetOpcode(OpcodeBootRequest)
-	d.SetHwType(iana.HwTypeEthernet)
-	d.SetClientHwAddr(hwaddr)
-	d.SetClientIPAddr(localIP)
+	d.OpCode = OpcodeBootRequest
+	d.HWType = iana.HwTypeEthernet
+	d.ClientHWAddr = hwaddr
+	d.ClientIPAddr = localIP
 	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
 	return d, nil
 }
@@ -216,10 +216,10 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 	if err != nil {
 		return nil, err
 	}
-	d.SetOpcode(OpcodeBootRequest)
-	d.SetHwType(offer.HwType())
-	d.SetClientHwAddr(offer.ClientHwAddr())
-	d.SetTransactionID(offer.TransactionID())
+	d.OpCode = OpcodeBootRequest
+	d.HWType = offer.HWType
+	d.ClientHWAddr = offer.ClientHWAddr
+	d.TransactionID = offer.TransactionID
 	if offer.IsBroadcast() {
 		d.SetBroadcast()
 	} else {
@@ -227,7 +227,7 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 	}
 	// find server IP address
 	var serverIP []byte
-	for _, opt := range offer.options {
+	for _, opt := range offer.Options {
 		if opt.Code() == OptionServerIdentifier {
 			serverIP = opt.(*OptServerIdentifier).ServerID
 		}
@@ -235,9 +235,9 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
-	d.SetServerIPAddr(serverIP)
+	d.ServerIPAddr = serverIP
 	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
-	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr()})
+	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr})
 	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
 	for _, mod := range modifiers {
 		d = mod(d)
@@ -251,12 +251,12 @@ func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error
 	if err != nil {
 		return nil, err
 	}
-	reply.SetOpcode(OpcodeBootReply)
-	reply.SetHwType(request.HwType())
-	reply.SetClientHwAddr(request.ClientHwAddr())
-	reply.SetTransactionID(request.TransactionID())
-	reply.SetFlags(request.Flags())
-	reply.SetGatewayIPAddr(request.GatewayIPAddr())
+	reply.OpCode = OpcodeBootReply
+	reply.HWType = request.HWType
+	reply.ClientHWAddr = request.ClientHWAddr
+	reply.TransactionID = request.TransactionID
+	reply.Flags = request.Flags
+	reply.GatewayIPAddr = request.GatewayIPAddr
 	for _, mod := range modifiers {
 		reply = mod(reply)
 	}
@@ -269,28 +269,28 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	var p DHCPv4
 	buf := uio.NewBigEndianBuffer(q)
 
-	p.opcode = OpcodeType(buf.Read8())
-	p.hwType = iana.HwTypeType(buf.Read8())
+	p.OpCode = OpcodeType(buf.Read8())
+	p.HWType = iana.HwTypeType(buf.Read8())
+
 	hwAddrLen := buf.Read8()
-	p.hopCount = buf.Read8()
 
-	buf.ReadBytes(p.transactionID[:])
+	p.HopCount = buf.Read8()
+	buf.ReadBytes(p.TransactionID[:])
+	p.NumSeconds = buf.Read16()
+	p.Flags = buf.Read16()
 
-	p.numSeconds = buf.Read16()
-	p.flags = buf.Read16()
+	p.ClientIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.YourIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.ServerIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.GatewayIPAddr = net.IP(buf.CopyN(net.IPv4len))
 
-	p.clientIPAddr = net.IP(buf.CopyN(net.IPv4len))
-	p.yourIPAddr = net.IP(buf.CopyN(net.IPv4len))
-	p.serverIPAddr = net.IP(buf.CopyN(net.IPv4len))
-	p.gatewayIPAddr = net.IP(buf.CopyN(net.IPv4len))
-
-	if hwAddrLen > maxHWAddrLen {
-		hwAddrLen = maxHWAddrLen
+	if hwAddrLen > 16 {
+		hwAddrLen = 16
 	}
-	// Always read 16 bytes, but only use hwAddrLen of them.
-	p.clientHwAddr = make(net.HardwareAddr, maxHWAddrLen)
-	buf.ReadBytes(p.clientHwAddr)
-	p.clientHwAddr = p.clientHwAddr[:hwAddrLen]
+	// Always read 16 bytes, but only use hwaddrlen of them.
+	p.ClientHWAddr = make(net.HardwareAddr, 16)
+	buf.ReadBytes(p.ClientHWAddr)
+	p.ClientHWAddr = p.ClientHWAddr[:hwAddrLen]
 
 	var sname [64]byte
 	buf.ReadBytes(sname[:])
@@ -298,7 +298,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	if length == -1 {
 		length = 64
 	}
-	p.serverHostName = string(sname[:length])
+	p.ServerHostName = string(sname[:length])
 
 	var file [128]byte
 	buf.ReadBytes(file[:])
@@ -306,7 +306,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	if length == -1 {
 		length = 128
 	}
-	p.bootFileName = string(file[:length])
+	p.BootFileName = string(file[:length])
 
 	var cookie [4]byte
 	buf.ReadBytes(cookie[:])
@@ -322,86 +322,8 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.options = opts
+	p.Options = opts
 	return &p, nil
-}
-
-// Opcode returns the OpcodeType for the packet,
-func (d *DHCPv4) Opcode() OpcodeType {
-	return d.opcode
-}
-
-// OpcodeToString returns the mnemonic name for the packet's opcode.
-func (d *DHCPv4) OpcodeToString() string {
-	return d.opcode.String()
-}
-
-// SetOpcode sets a new opcode for the packet. It prints a warning if the opcode
-// is unknown, but does not generate an error.
-func (d *DHCPv4) SetOpcode(opcode OpcodeType) {
-	if _, ok := OpcodeToString[opcode]; !ok {
-		log.Printf("Warning: unknown DHCPv4 opcode: %v", opcode)
-	}
-	d.opcode = opcode
-}
-
-// HwType returns the hardware type as defined by IANA.
-func (d *DHCPv4) HwType() iana.HwTypeType {
-	return d.hwType
-}
-
-// HwTypeToString returns the mnemonic name for the hardware type, e.g.
-// "Ethernet". If the type is unknown, it returns "Unknown".
-func (d *DHCPv4) HwTypeToString() string {
-	return d.hwType.String()
-}
-
-// SetHwType returns the hardware type as defined by IANA.
-func (d *DHCPv4) SetHwType(hwType iana.HwTypeType) {
-	if _, ok := iana.HwTypeToString[hwType]; !ok {
-		log.Printf("Warning: Invalid DHCPv4 hwtype: %v", hwType)
-	}
-	d.hwType = hwType
-}
-
-// HopCount returns the hop count field.
-func (d *DHCPv4) HopCount() uint8 {
-	return d.hopCount
-}
-
-// SetHopCount sets the hop count value.
-func (d *DHCPv4) SetHopCount(hopCount uint8) {
-	d.hopCount = hopCount
-}
-
-// TransactionID returns the transaction ID as 32 bit unsigned integer.
-func (d *DHCPv4) TransactionID() TransactionID {
-	return d.transactionID
-}
-
-// SetTransactionID sets the value for the transaction ID.
-func (d *DHCPv4) SetTransactionID(xid TransactionID) {
-	d.transactionID = xid
-}
-
-// NumSeconds returns the number of seconds.
-func (d *DHCPv4) NumSeconds() uint16 {
-	return d.numSeconds
-}
-
-// SetNumSeconds sets the seconds field.
-func (d *DHCPv4) SetNumSeconds(numSeconds uint16) {
-	d.numSeconds = numSeconds
-}
-
-// Flags returns the DHCP flags portion of the packet.
-func (d *DHCPv4) Flags() uint16 {
-	return d.flags
-}
-
-// SetFlags sets the flags field in the packet.
-func (d *DHCPv4) SetFlags(flags uint16) {
-	d.flags = flags
 }
 
 // FlagsToString returns a human-readable representation of the flags field.
@@ -412,7 +334,7 @@ func (d *DHCPv4) FlagsToString() string {
 	} else {
 		flags += "Unicast"
 	}
-	if d.flags&0xfe != 0 {
+	if d.Flags&0xfe != 0 {
 		flags += " (reserved bits not zeroed)"
 	}
 	return flags
@@ -420,108 +342,22 @@ func (d *DHCPv4) FlagsToString() string {
 
 // IsBroadcast indicates whether the packet is a broadcast packet.
 func (d *DHCPv4) IsBroadcast() bool {
-	return d.flags&0x8000 == 0x8000
+	return d.Flags&0x8000 == 0x8000
 }
 
 // SetBroadcast sets the packet to be a broadcast packet.
 func (d *DHCPv4) SetBroadcast() {
-	d.flags |= 0x8000
+	d.Flags |= 0x8000
 }
 
 // IsUnicast indicates whether the packet is a unicast packet.
 func (d *DHCPv4) IsUnicast() bool {
-	return d.flags&0x8000 == 0
+	return d.Flags&0x8000 == 0
 }
 
 // SetUnicast sets the packet to be a unicast packet.
 func (d *DHCPv4) SetUnicast() {
-	d.flags &= ^uint16(0x8000)
-}
-
-// ClientIPAddr returns the client IP address.
-func (d *DHCPv4) ClientIPAddr() net.IP {
-	return d.clientIPAddr
-}
-
-// SetClientIPAddr sets the client IP address.
-func (d *DHCPv4) SetClientIPAddr(clientIPAddr net.IP) {
-	d.clientIPAddr = clientIPAddr
-}
-
-// YourIPAddr returns the "your IP address" field.
-func (d *DHCPv4) YourIPAddr() net.IP {
-	return d.yourIPAddr
-}
-
-// SetYourIPAddr sets the "your IP address" field.
-func (d *DHCPv4) SetYourIPAddr(yourIPAddr net.IP) {
-	d.yourIPAddr = yourIPAddr
-}
-
-// ServerIPAddr returns the server IP address.
-func (d *DHCPv4) ServerIPAddr() net.IP {
-	return d.serverIPAddr
-}
-
-// SetServerIPAddr sets the server IP address.
-func (d *DHCPv4) SetServerIPAddr(serverIPAddr net.IP) {
-	d.serverIPAddr = serverIPAddr
-}
-
-// GatewayIPAddr returns the gateway IP address.
-func (d *DHCPv4) GatewayIPAddr() net.IP {
-	return d.gatewayIPAddr
-}
-
-// SetGatewayIPAddr sets the gateway IP address.
-func (d *DHCPv4) SetGatewayIPAddr(gatewayIPAddr net.IP) {
-	d.gatewayIPAddr = gatewayIPAddr
-}
-
-// ClientHwAddr returns the client hardware (MAC) address.
-func (d *DHCPv4) ClientHwAddr() net.HardwareAddr {
-	return d.clientHwAddr
-}
-
-// ClientHwAddrToString converts the hardware address field to a string.
-func (d *DHCPv4) ClientHwAddrToString() string {
-	return d.clientHwAddr.String()
-}
-
-// SetClientHwAddr sets the client hardware address.
-func (d *DHCPv4) SetClientHwAddr(clientHwAddr net.HardwareAddr) {
-	if len(clientHwAddr) > maxHWAddrLen {
-		log.Printf("Warning: too long HW Address (%d bytes), truncating to 16 bytes", len(clientHwAddr))
-		clientHwAddr = clientHwAddr[:maxHWAddrLen]
-	}
-	d.clientHwAddr = clientHwAddr
-}
-
-// ServerHostName returns the server host name as a sequence of bytes.
-func (d *DHCPv4) ServerHostName() string {
-	return d.serverHostName
-}
-
-// SetServerHostName replaces the server host name, from a sequence of bytes,
-// truncating it to the maximum length of 64.
-func (d *DHCPv4) SetServerHostName(serverHostName string) {
-	d.serverHostName = serverHostName
-}
-
-// BootFileName returns the boot file name as a sequence of bytes.
-func (d *DHCPv4) BootFileName() string {
-	return d.bootFileName
-}
-
-// SetBootFileName replaces the boot file name, from a sequence of bytes,
-// truncating it to the maximum length oh 128.
-func (d *DHCPv4) SetBootFileName(bootFileName string) {
-	d.bootFileName = bootFileName
-}
-
-// Options returns the DHCPv4 options defined for the packet.
-func (d *DHCPv4) Options() []Option {
-	return d.options
+	d.Flags &= ^uint16(0x8000)
 }
 
 // GetOption will attempt to get all options that match a DHCPv4 option
@@ -529,7 +365,7 @@ func (d *DHCPv4) Options() []Option {
 // empty list.
 func (d *DHCPv4) GetOption(code OptionCode) []Option {
 	opts := []Option{}
-	for _, opt := range d.Options() {
+	for _, opt := range d.Options {
 		if opt.Code() == code {
 			opts = append(opts, opt)
 		}
@@ -541,7 +377,7 @@ func (d *DHCPv4) GetOption(code OptionCode) []Option {
 // If there are multiple options with the same OptionCode it will only return
 // the first one found.  If no matching option is found nil will be returned.
 func (d *DHCPv4) GetOneOption(code OptionCode) Option {
-	for _, opt := range d.Options() {
+	for _, opt := range d.Options {
 		if opt.Code() == code {
 			return opt
 		}
@@ -555,7 +391,7 @@ func (d *DHCPv4) StrippedOptions() []Option {
 	// differently from Options() this function strips away anything coming
 	// after the End option (normally just Pad options).
 	strippedOptions := []Option{}
-	for _, opt := range d.options {
+	for _, opt := range d.Options {
 		strippedOptions = append(strippedOptions, opt)
 		if opt.Code() == OptionEnd {
 			break
@@ -564,30 +400,25 @@ func (d *DHCPv4) StrippedOptions() []Option {
 	return strippedOptions
 }
 
-// SetOptions replaces the current options with the provided ones.
-func (d *DHCPv4) SetOptions(options []Option) {
-	d.options = options
-}
-
 // AddOption appends an option to the existing ones. If the last option is an
 // OptionEnd, it will be inserted before that. It does not deal with End
 // options that appead before the end, like in malformed packets.
 func (d *DHCPv4) AddOption(option Option) {
-	if len(d.options) == 0 || d.options[len(d.options)-1].Code() != OptionEnd {
-		d.options = append(d.options, option)
+	if len(d.Options) == 0 || d.Options[len(d.Options)-1].Code() != OptionEnd {
+		d.Options = append(d.Options, option)
 	} else {
-		end := d.options[len(d.options)-1]
-		d.options[len(d.options)-1] = option
-		d.options = append(d.options, end)
+		end := d.Options[len(d.Options)-1]
+		d.Options[len(d.Options)-1] = option
+		d.Options = append(d.Options, end)
 	}
 }
 
 // UpdateOption updates the existing options with the passed option, adding it
 // at the end if not present already
 func (d *DHCPv4) UpdateOption(option Option) {
-	for idx, opt := range d.options {
+	for idx, opt := range d.Options {
 		if opt.Code() == option.Code() {
-			d.options[idx] = option
+			d.Options[idx] = option
 			// don't look further
 			return
 		}
@@ -598,17 +429,23 @@ func (d *DHCPv4) UpdateOption(option Option) {
 
 // MessageType returns the message type, trying to extract it from the
 // OptMessageType option. It returns nil if the message type cannot be extracted
-func (d *DHCPv4) MessageType() *MessageType {
+func (d *DHCPv4) MessageType() MessageType {
 	opt := d.GetOneOption(OptionDHCPMessageType)
 	if opt == nil {
-		return nil
+		return MessageTypeNone
 	}
-	return &(opt.(*OptMessageType).MessageType)
+	return opt.(*OptMessageType).MessageType
 }
 
+// HumanXID returns a human-readably integer transaction ID.
+func (d *DHCPv4) HumanXID() uint32 {
+	return binary.LittleEndian.Uint32(d.TransactionID[:])
+}
+
+// String implements fmt.Stringer.
 func (d *DHCPv4) String() string {
-	return fmt.Sprintf("DHCPv4(opcode=%v xid=%d hwtype=%v hwaddr=%v)",
-		d.OpcodeToString(), d.TransactionID(), d.HwTypeToString(), d.ClientHwAddr())
+	return fmt.Sprintf("DHCPv4(opcode=%s xid=%v hwtype=%s hwaddr=%s)",
+		d.OpCode.String(), d.HumanXID(), d.HWType, d.ClientHWAddr)
 }
 
 // Summary prints detailed information about the packet.
@@ -628,23 +465,23 @@ func (d *DHCPv4) Summary() string {
 			"  clienthwaddr=%v\n"+
 			"  serverhostname=%v\n"+
 			"  bootfilename=%v\n",
-		d.OpcodeToString(),
-		d.HwTypeToString(),
-		d.HopCount(),
-		d.TransactionID(),
-		d.NumSeconds(),
+		d.OpCode,
+		d.HWType,
+		d.HopCount,
+		d.HumanXID(),
+		d.NumSeconds,
 		d.FlagsToString(),
-		d.Flags(),
-		d.ClientIPAddr(),
-		d.YourIPAddr(),
-		d.ServerIPAddr(),
-		d.GatewayIPAddr(),
-		d.ClientHwAddrToString(),
-		d.ServerHostName(),
-		d.BootFileName(),
+		d.Flags,
+		d.ClientIPAddr,
+		d.YourIPAddr,
+		d.ServerIPAddr,
+		d.GatewayIPAddr,
+		d.ClientHWAddr,
+		d.ServerHostName,
+		d.BootFileName,
 	)
 	ret += "  options=\n"
-	for _, opt := range d.options {
+	for _, opt := range d.Options {
 		optString := opt.String()
 		// If this option has sub structures, offset them accordingly.
 		if strings.Contains(optString, "\n") {
@@ -663,7 +500,7 @@ func (d *DHCPv4) Summary() string {
 func (d *DHCPv4) ValidateOptions() {
 	// TODO find duplicate options
 	foundOptionEnd := false
-	for _, opt := range d.options {
+	for _, opt := range d.Options {
 		if foundOptionEnd {
 			if opt.Code() == OptionEnd {
 				log.Print("Warning: found duplicate End option")
@@ -704,44 +541,43 @@ func writeIP(b *uio.Lexer, ip net.IP) {
 	}
 }
 
-// ToBytes encodes a DHCPv4 structure into a sequence of bytes in its wire
-// format.
+// ToBytes writes the packet to binary.
 func (d *DHCPv4) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(make([]byte, 0, minPacketLen))
-	buf.Write8(uint8(d.opcode))
-	buf.Write8(uint8(d.hwType))
+	buf.Write8(uint8(d.OpCode))
+	buf.Write8(uint8(d.HWType))
 
 	// HwAddrLen
-	hlen := uint8(len(d.clientHwAddr))
-	if hlen == 0 && d.hwType == iana.HwTypeEthernet {
+	hlen := uint8(len(d.ClientHWAddr))
+	if hlen == 0 && d.HWType == iana.HwTypeEthernet {
 		hlen = 6
 	}
 	buf.Write8(hlen)
+	buf.Write8(d.HopCount)
+	buf.WriteBytes(d.TransactionID[:])
+	buf.Write16(d.NumSeconds)
+	buf.Write16(d.Flags)
 
-	buf.Write8(d.hopCount)
-	buf.WriteBytes(d.transactionID[:])
-	buf.Write16(d.numSeconds)
-	buf.Write16(d.flags)
-
-	writeIP(buf, d.clientIPAddr[:])
-	writeIP(buf, d.yourIPAddr[:])
-	writeIP(buf, d.serverIPAddr[:])
-	writeIP(buf, d.gatewayIPAddr[:])
-
-	copy(buf.WriteN(maxHWAddrLen), d.clientHwAddr)
+	writeIP(buf, d.ClientIPAddr)
+	writeIP(buf, d.YourIPAddr)
+	writeIP(buf, d.ServerIPAddr)
+	writeIP(buf, d.GatewayIPAddr)
+	copy(buf.WriteN(16), d.ClientHWAddr)
 
 	var sname [64]byte
-	copy(sname[:], []byte(d.serverHostName))
+	copy(sname[:], []byte(d.ServerHostName))
+	sname[len(d.ServerHostName)] = 0
 	buf.WriteBytes(sname[:])
 
 	var file [128]byte
-	copy(file[:], []byte(d.bootFileName))
+	copy(file[:], []byte(d.BootFileName))
+	file[len(d.BootFileName)] = 0
 	buf.WriteBytes(file[:])
 
 	// The magic cookie.
 	buf.WriteBytes(magicCookie[:])
 
-	for _, opt := range d.options {
+	for _, opt := range d.Options {
 		buf.WriteBytes(opt.ToBytes())
 	}
 	return buf.Data()

@@ -108,21 +108,21 @@ func TestGetNetConfFromPacketv6(t *testing.T) {
 
 func TestGetNetConfFromPacketv4AddrZero(t *testing.T) {
 	d := dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.IPv4zero)
+	d.YourIPAddr = net.IPv4zero
 	_, err := GetNetConfFromPacketv4(&d)
 	require.Error(t, err)
 }
 
 func TestGetNetConfFromPacketv4NoMask(t *testing.T) {
 	d := dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	_, err := GetNetConfFromPacketv4(&d)
 	require.Error(t, err)
 }
 
 func TestGetNetConfFromPacketv4NullMask(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(0, 0, 0, 0))(d)
 	_, err := GetNetConfFromPacketv4(d)
 	require.Error(t, err)
@@ -130,7 +130,7 @@ func TestGetNetConfFromPacketv4NullMask(t *testing.T) {
 
 func TestGetNetConfFromPacketv4NoLeaseTime(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	_, err := GetNetConfFromPacketv4(d)
 	require.Error(t, err)
@@ -138,7 +138,7 @@ func TestGetNetConfFromPacketv4NoLeaseTime(t *testing.T) {
 
 func TestGetNetConfFromPacketv4NoDNS(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	_, err := GetNetConfFromPacketv4(d)
@@ -147,7 +147,7 @@ func TestGetNetConfFromPacketv4NoDNS(t *testing.T) {
 
 func TestGetNetConfFromPacketv4EmptyDNSList(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	d = dhcpv4.WithDNS()(d)
@@ -157,7 +157,7 @@ func TestGetNetConfFromPacketv4EmptyDNSList(t *testing.T) {
 
 func TestGetNetConfFromPacketv4NoSearchList(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	d = dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2"))(d)
@@ -167,7 +167,7 @@ func TestGetNetConfFromPacketv4NoSearchList(t *testing.T) {
 
 func TestGetNetConfFromPacketv4EmptySearchList(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	d = dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2"))(d)
@@ -178,7 +178,7 @@ func TestGetNetConfFromPacketv4EmptySearchList(t *testing.T) {
 
 func TestGetNetConfFromPacketv4NoRouter(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	d = dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2"))(d)
@@ -189,7 +189,7 @@ func TestGetNetConfFromPacketv4NoRouter(t *testing.T) {
 
 func TestGetNetConfFromPacketv4EmptyRouter(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(0))(d)
 	d = dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2"))(d)
@@ -201,7 +201,7 @@ func TestGetNetConfFromPacketv4EmptyRouter(t *testing.T) {
 
 func TestGetNetConfFromPacketv4(t *testing.T) {
 	d := &dhcpv4.DHCPv4{}
-	d.SetYourIPAddr(net.ParseIP("10.0.0.1"))
+	d.YourIPAddr = net.ParseIP("10.0.0.1")
 	d = dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0))(d)
 	d = dhcpv4.WithLeaseTime(uint32(5200))(d)
 	d = dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2"))(d)
