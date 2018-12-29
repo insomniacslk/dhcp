@@ -36,7 +36,7 @@ func TestOptGenericToBytes(t *testing.T) {
 		Data:       []byte{192, 168, 0, 1},
 	}
 	serialized := o.ToBytes()
-	expected := []byte{3, 4, 192, 168, 0, 1}
+	expected := []byte{192, 168, 0, 1}
 	require.Equal(t, expected, serialized)
 }
 

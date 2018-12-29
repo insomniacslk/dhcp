@@ -11,8 +11,6 @@ func TestOptRootPathInterfaceMethods(t *testing.T) {
 	require.Equal(t, OptionRootPath, o.Code(), "Code")
 	require.Equal(t, 12, o.Length(), "Length")
 	wantBytes := []byte{
-		byte(OptionRootPath),
-		12,
 		'/', 'f', 'o', 'o', '/', 'b', 'a', 'r', '/', 'b', 'a', 'z',
 	}
 	require.Equal(t, wantBytes, o.ToBytes(), "ToBytes")

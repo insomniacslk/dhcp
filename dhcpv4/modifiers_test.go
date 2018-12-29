@@ -49,8 +49,6 @@ func TestUserClassModifier(t *testing.T) {
 	userClass := WithUserClass([]byte("linuxboot"), false)
 	d = userClass(d)
 	expected := []byte{
-		77, // OptionUserClass
-		9,  // length
 		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, "User Class Information -> linuxboot", d.Options[0].String())
@@ -62,8 +60,6 @@ func TestUserClassModifierRFC(t *testing.T) {
 	userClass := WithUserClass([]byte("linuxboot"), true)
 	d = userClass(d)
 	expected := []byte{
-		77, // OptionUserClass
-		10, // length
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, "User Class Information -> linuxboot", d.Options[0].String())

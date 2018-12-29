@@ -29,23 +29,12 @@ func (o *OptNTPServers) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptNTPServers) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	for _, ntp := range o.NTPServers {
-		ret = append(ret, ntp.To4()...)
-	}
-	return ret
+	return IPsToBytes(o.NTPServers)
 }
 
 // String returns a human-readable string.
 func (o *OptNTPServers) String() string {
-	var ntpServers string
-	for idx, ntp := range o.NTPServers {
-		ntpServers += ntp.String()
-		if idx < len(o.NTPServers)-1 {
-			ntpServers += ", "
-		}
-	}
-	return fmt.Sprintf("NTP Servers -> %v", ntpServers)
+	return fmt.Sprintf("NTP Servers -> %v", IPsToString(o.NTPServers))
 }
 
 // Length returns the length of the data portion (excluding option code an byte

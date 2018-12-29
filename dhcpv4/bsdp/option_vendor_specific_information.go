@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptVendorSpecificInformation encapsulates the BSDP-specific options used for
@@ -64,13 +65,7 @@ func (o *OptVendorSpecificInformation) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptVendorSpecificInformation) ToBytes() []byte {
-	bs := []byte{byte(o.Code()), byte(o.Length())}
-
-	// Append data section
-	for _, opt := range o.Options {
-		bs = append(bs, opt.ToBytes()...)
-	}
-	return bs
+	return uio.ToBigEndian(o.Options)
 }
 
 // String returns a human-readable string for this option.

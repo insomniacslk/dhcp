@@ -29,8 +29,7 @@ func (o *OptSubnetMask) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptSubnetMask) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	return append(ret, o.SubnetMask[:4]...)
+	return o.SubnetMask[:net.IPv4len]
 }
 
 // String returns a human-readable string.

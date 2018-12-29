@@ -1,7 +1,6 @@
 package bsdp
 
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/u-root/u-root/pkg/uio"
@@ -36,15 +35,16 @@ type BootImageID struct {
 	Index     uint16
 }
 
-// ToBytes serializes a BootImageID to network-order bytes.
-func (b BootImageID) ToBytes() []byte {
-	bytes := make([]byte, 4)
+// Marshal writes the binary representation to buf.
+func (b BootImageID) Marshal(buf *uio.Lexer) {
+	var byte0 byte
 	if b.IsInstall {
-		bytes[0] |= 0x80
+		byte0 |= 0x80
 	}
-	bytes[0] |= byte(b.ImageType)
-	binary.BigEndian.PutUint16(bytes[2:], b.Index)
-	return bytes
+	byte0 |= byte(b.ImageType)
+	buf.Write8(byte0)
+	buf.Write8(byte(0))
+	buf.Write16(b.Index)
 }
 
 // String converts a BootImageID to a human-readable representation.
@@ -78,12 +78,11 @@ type BootImage struct {
 	Name string
 }
 
-// ToBytes converts a BootImage to a slice of bytes.
-func (b *BootImage) ToBytes() []byte {
-	bytes := b.ID.ToBytes()
-	bytes = append(bytes, byte(len(b.Name)))
-	bytes = append(bytes, []byte(b.Name)...)
-	return bytes
+// Marshal write a BootImage to buf.
+func (b BootImage) Marshal(buf *uio.Lexer) {
+	b.ID.Marshal(buf)
+	buf.Write8(uint8(len(b.Name)))
+	buf.WriteBytes([]byte(b.Name))
 }
 
 // String converts a BootImage to a human-readable representation.

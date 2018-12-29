@@ -29,8 +29,6 @@ func TestOptBootImageListInterfaceMethods(t *testing.T) {
 	require.Equal(t, OptionBootImageList, o.Code(), "Code")
 	require.Equal(t, 22, o.Length(), "Length")
 	expectedBytes := []byte{
-		9,  // code
-		22, // length
 		// boot image 1
 		0x1, 0x0, 0x03, 0xe9, // ID
 		6, // name length

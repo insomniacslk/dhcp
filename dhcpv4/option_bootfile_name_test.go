@@ -17,8 +17,6 @@ func TestOptBootfileNameToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		67, // OptionBootfileName
-		9,  // length
 		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
 	require.Equal(t, expected, data)

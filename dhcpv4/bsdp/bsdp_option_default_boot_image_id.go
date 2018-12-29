@@ -33,8 +33,7 @@ func (o *OptDefaultBootImageID) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptDefaultBootImageID) ToBytes() []byte {
-	serializedID := o.ID.ToBytes()
-	return append([]byte{byte(o.Code()), byte(len(serializedID))}, serializedID...)
+	return uio.ToBigEndian(o.ID)
 }
 
 // String returns a human-readable string for this option.

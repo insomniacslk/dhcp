@@ -14,7 +14,6 @@ var (
 		},
 	}
 	sampleVIVCOptRaw = []byte{
-		byte(OptionVendorIdentifyingVendorClass), 44, // option header
 		0x0, 0x0, 0x0, 0x9, // enterprise id 9
 		0xf, // length
 		'C', 'i', 's', 'c', 'o', 'I', 'd', 'e', 'n', 't', 'i', 'f', 'i', 'e', 'r',
@@ -31,13 +30,13 @@ func TestOptVIVCInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptVICO(t *testing.T) {
-	o, err := ParseOptVIVC(sampleVIVCOptRaw[2:])
+	o, err := ParseOptVIVC(sampleVIVCOptRaw)
 	require.NoError(t, err)
 	require.Equal(t, &sampleVIVCOpt, o)
 
 	// Identifier len too long
-	data := make([]byte, len(sampleVIVCOptRaw[2:]))
-	copy(data, sampleVIVCOptRaw[2:])
+	data := make([]byte, len(sampleVIVCOptRaw))
+	copy(data, sampleVIVCOptRaw)
 	data[4] = 40
 	_, err = ParseOptVIVC(data)
 	require.Error(t, err, "should get error from bad length")

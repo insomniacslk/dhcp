@@ -26,19 +26,7 @@ func TestOptionGenericToBytes(t *testing.T) {
 		Data:       []byte{byte(MessageTypeDiscover)},
 	}
 	serialized := o.ToBytes()
-	expected := []byte{53, 1, 1}
-	require.Equal(t, expected, serialized)
-}
-
-func TestOptionGenericToBytesZeroOptions(t *testing.T) {
-	o := OptionGeneric{OptionCode: OptionEnd}
-	serialized := o.ToBytes()
-	expected := []byte{255}
-	require.Equal(t, expected, serialized)
-
-	o = OptionGeneric{OptionCode: OptionPad}
-	serialized = o.ToBytes()
-	expected = []byte{0}
+	expected := []byte{1}
 	require.Equal(t, expected, serialized)
 }
 

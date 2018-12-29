@@ -23,7 +23,7 @@ func (o *OptDomainName) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptDomainName) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, []byte(o.DomainName)...)
+	return []byte(o.DomainName)
 }
 
 // String returns a human-readable string.

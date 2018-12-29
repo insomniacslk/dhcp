@@ -1,6 +1,10 @@
 package dhcpv4
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
+)
 
 // This option implements the relay agent information option
 // https://tools.ietf.org/html/rfc3046
@@ -28,11 +32,7 @@ func (o *OptRelayAgentInformation) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptRelayAgentInformation) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	for _, opt := range o.Options {
-		ret = append(ret, opt.ToBytes()...)
-	}
-	return ret
+	return uio.ToBigEndian(o.Options)
 }
 
 // String returns a human-readable string for this option.

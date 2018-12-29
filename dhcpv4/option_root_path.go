@@ -25,7 +25,7 @@ func (o *OptRootPath) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptRootPath) ToBytes() []byte {
-	return append([]byte{byte(o.Code()), byte(o.Length())}, []byte(o.Path)...)
+	return []byte(o.Path)
 }
 
 // String returns a human-readable string for this option.

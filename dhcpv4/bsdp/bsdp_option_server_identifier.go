@@ -27,8 +27,7 @@ func (o *OptServerIdentifier) Code() dhcpv4.OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptServerIdentifier) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	return append(ret, o.ServerID.To4()...)
+	return o.ServerID.To4()
 }
 
 // String returns a human-readable string.

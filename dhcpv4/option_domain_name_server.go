@@ -31,23 +31,12 @@ func (o *OptDomainNameServer) Code() OptionCode {
 
 // ToBytes returns a serialized stream of bytes for this option.
 func (o *OptDomainNameServer) ToBytes() []byte {
-	ret := []byte{byte(o.Code()), byte(o.Length())}
-	for _, ns := range o.NameServers {
-		ret = append(ret, ns.To4()...)
-	}
-	return ret
+	return IPsToBytes(o.NameServers)
 }
 
 // String returns a human-readable string.
 func (o *OptDomainNameServer) String() string {
-	var servers string
-	for idx, ns := range o.NameServers {
-		servers += ns.String()
-		if idx < len(o.NameServers)-1 {
-			servers += ", "
-		}
-	}
-	return fmt.Sprintf("Domain Name Servers -> %v", servers)
+	return fmt.Sprintf("Domain Name Servers -> %s", IPsToString(o.NameServers))
 }
 
 // Length returns the length of the data portion (excluding option code an byte

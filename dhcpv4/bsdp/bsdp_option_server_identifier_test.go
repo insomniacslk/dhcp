@@ -11,7 +11,7 @@ func TestOptServerIdentifierInterfaceMethods(t *testing.T) {
 	ip := net.IP{192, 168, 0, 1}
 	o := OptServerIdentifier{ServerID: ip}
 	require.Equal(t, OptionServerIdentifier, o.Code(), "Code")
-	expectedBytes := []byte{3, 4, 192, 168, 0, 1}
+	expectedBytes := []byte{192, 168, 0, 1}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 	require.Equal(t, 4, o.Length(), "Length")
 	require.Equal(t, "BSDP Server Identifier -> 192.168.0.1", o.String(), "String")

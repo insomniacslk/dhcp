@@ -13,7 +13,7 @@ func TestOptRequestedIPAddressInterfaceMethods(t *testing.T) {
 
 	require.Equal(t, OptionRequestedIPAddress, o.Code(), "Code")
 
-	expectedBytes := []byte{byte(OptionRequestedIPAddress), 4, 192, 168, 0, 1}
+	expectedBytes := []byte{192, 168, 0, 1}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
 	require.Equal(t, 4, o.Length(), "Length")

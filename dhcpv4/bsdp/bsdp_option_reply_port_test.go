@@ -10,7 +10,7 @@ func TestOptReplyPortInterfaceMethods(t *testing.T) {
 	o := OptReplyPort{1234}
 	require.Equal(t, OptionReplyPort, o.Code(), "Code")
 	require.Equal(t, 2, o.Length(), "Length")
-	require.Equal(t, []byte{byte(OptionReplyPort), 2, 4, 210}, o.ToBytes(), "ToBytes")
+	require.Equal(t, []byte{4, 210}, o.ToBytes(), "ToBytes")
 }
 
 func TestParseOptReplyPort(t *testing.T) {

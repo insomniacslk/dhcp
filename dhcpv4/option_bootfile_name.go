@@ -19,7 +19,7 @@ func (op *OptBootfileName) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptBootfileName) ToBytes() []byte {
-	return append([]byte{byte(op.Code()), byte(op.Length())}, []byte(op.BootfileName)...)
+	return []byte(op.BootfileName)
 }
 
 // Length returns the option length in bytes

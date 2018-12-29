@@ -10,7 +10,7 @@ func TestOptVersionInterfaceMethods(t *testing.T) {
 	o := OptVersion{Version1_1}
 	require.Equal(t, OptionVersion, o.Code(), "Code")
 	require.Equal(t, 2, o.Length(), "Length")
-	require.Equal(t, []byte{2, 2, 1, 1}, o.ToBytes(), "ToBytes")
+	require.Equal(t, []byte{1, 1}, o.ToBytes(), "ToBytes")
 }
 
 func TestParseOptVersion(t *testing.T) {
