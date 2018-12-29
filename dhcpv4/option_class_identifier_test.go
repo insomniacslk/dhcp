@@ -9,7 +9,6 @@ import (
 func TestOptClassIdentifierInterfaceMethods(t *testing.T) {
 	o := OptClassIdentifier{Identifier: "foo"}
 	require.Equal(t, OptionClassIdentifier, o.Code(), "Code")
-	require.Equal(t, 3, o.Length(), "Length")
 	require.Equal(t, []byte{'f', 'o', 'o'}, o.ToBytes(), "ToBytes")
 }
 

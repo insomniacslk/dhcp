@@ -56,6 +56,5 @@ func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
 		ArchTypes: []iana.ArchType{iana.EFI_ITANIUM},
 	}
-	require.Equal(t, opt.Length(), 2)
 	require.Equal(t, opt.Code(), OptionClientSystemArchitectureType)
 }

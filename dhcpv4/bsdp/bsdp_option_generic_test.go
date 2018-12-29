@@ -55,12 +55,3 @@ func TestOptGenericStringUnknown(t *testing.T) {
 	}
 	require.Equal(t, "Unknown -> [5]", o.String())
 }
-
-func TestOptGenericLength(t *testing.T) {
-	filename := "some_machine_name"
-	o := OptGeneric{
-		OptionCode: OptionMachineName,
-		Data:       []byte(filename),
-	}
-	require.Equal(t, len(filename), o.Length())
-}

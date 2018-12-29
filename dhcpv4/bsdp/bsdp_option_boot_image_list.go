@@ -52,12 +52,3 @@ func (o *OptBootImageList) String() string {
 	}
 	return s
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptBootImageList) Length() int {
-	length := 0
-	for _, image := range o.Images {
-		length += 4 + 1 + len(image.Name)
-	}
-	return length
-}

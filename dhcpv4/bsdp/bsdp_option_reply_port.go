@@ -40,8 +40,3 @@ func (o *OptReplyPort) ToBytes() []byte {
 func (o *OptReplyPort) String() string {
 	return fmt.Sprintf("BSDP Reply Port -> %v", o.Port)
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptReplyPort) Length() int {
-	return 2
-}

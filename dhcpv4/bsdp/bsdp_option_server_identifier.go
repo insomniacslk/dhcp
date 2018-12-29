@@ -34,9 +34,3 @@ func (o *OptServerIdentifier) ToBytes() []byte {
 func (o *OptServerIdentifier) String() string {
 	return fmt.Sprintf("BSDP Server Identifier -> %v", o.ServerID.String())
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptServerIdentifier) Length() int {
-	return len(o.ServerID.To4())
-}

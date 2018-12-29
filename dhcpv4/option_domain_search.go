@@ -27,12 +27,6 @@ func (op *OptDomainSearch) ToBytes() []byte {
 	return op.DomainSearch.ToBytes()
 }
 
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (op *OptDomainSearch) Length() int {
-	return op.DomainSearch.Length()
-}
-
 // String returns a human-readable string.
 func (op *OptDomainSearch) String() string {
 	return fmt.Sprintf("DNS Domain Search List -> %v", op.DomainSearch.Labels)

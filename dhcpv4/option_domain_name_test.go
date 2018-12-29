@@ -9,7 +9,6 @@ import (
 func TestOptDomainNameInterfaceMethods(t *testing.T) {
 	o := OptDomainName{DomainName: "foo"}
 	require.Equal(t, OptionDomainName, o.Code(), "Code")
-	require.Equal(t, 3, o.Length(), "Length")
 	require.Equal(t, []byte{'f', 'o', 'o'}, o.ToBytes(), "ToBytes")
 }
 

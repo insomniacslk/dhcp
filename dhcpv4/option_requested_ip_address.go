@@ -37,9 +37,3 @@ func (o *OptRequestedIPAddress) ToBytes() []byte {
 func (o *OptRequestedIPAddress) String() string {
 	return fmt.Sprintf("Requested IP Address -> %v", o.RequestedAddr.String())
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptRequestedIPAddress) Length() int {
-	return len(o.RequestedAddr.To4())
-}

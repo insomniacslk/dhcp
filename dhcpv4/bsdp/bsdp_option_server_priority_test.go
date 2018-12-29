@@ -10,7 +10,6 @@ func TestOptServerPriorityInterfaceMethods(t *testing.T) {
 	o := OptServerPriority{Priority: 100}
 	require.Equal(t, OptionServerPriority, o.Code(), "Code")
 	require.Equal(t, []byte{0, 100}, o.ToBytes(), "ToBytes")
-	require.Equal(t, 2, o.Length(), "Length")
 	require.Equal(t, "BSDP Server Priority -> 100", o.String(), "String")
 }
 

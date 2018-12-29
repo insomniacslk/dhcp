@@ -40,8 +40,3 @@ func (o *OptDefaultBootImageID) ToBytes() []byte {
 func (o *OptDefaultBootImageID) String() string {
 	return fmt.Sprintf("BSDP Default Boot Image ID -> %s", o.ID.String())
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptDefaultBootImageID) Length() int {
-	return 4
-}

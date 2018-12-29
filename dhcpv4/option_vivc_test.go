@@ -25,7 +25,6 @@ var (
 
 func TestOptVIVCInterfaceMethods(t *testing.T) {
 	require.Equal(t, OptionVendorIdentifyingVendorClass, sampleVIVCOpt.Code(), "Code")
-	require.Equal(t, 44, sampleVIVCOpt.Length(), "Length")
 	require.Equal(t, sampleVIVCOptRaw, sampleVIVCOpt.ToBytes(), "ToBytes")
 }
 

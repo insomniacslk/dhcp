@@ -14,7 +14,6 @@ func TestOptNTPServersInterfaceMethods(t *testing.T) {
 	}
 	o := OptNTPServers{NTPServers: ntpServers}
 	require.Equal(t, OptionNTPServers, o.Code(), "Code")
-	require.Equal(t, net.IPv4len*len(ntpServers), o.Length(), "Length")
 	require.Equal(t, ntpServers, o.NTPServers, "NTPServers")
 }
 

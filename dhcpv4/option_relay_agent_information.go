@@ -39,13 +39,3 @@ func (o *OptRelayAgentInformation) ToBytes() []byte {
 func (o *OptRelayAgentInformation) String() string {
 	return fmt.Sprintf("Relay Agent Information -> %v", o.Options)
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptRelayAgentInformation) Length() int {
-	l := 0
-	for _, opt := range o.Options {
-		l += 2 + opt.Length()
-	}
-	return l
-}

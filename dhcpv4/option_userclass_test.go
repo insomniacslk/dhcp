@@ -93,15 +93,6 @@ func TestOptUserClassToBytesMultiple(t *testing.T) {
 	require.Equal(t, expected, data)
 }
 
-func TestOptUserClassLength(t *testing.T) {
-	expected := []byte{
-		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't', 'X',
-	}
-	opt, err := ParseOptUserClass(expected)
-	require.NoError(t, err)
-	require.Equal(t, 11, opt.Length())
-}
-
 func TestParseOptUserClassZeroLength(t *testing.T) {
 	expected := []byte{
 		0, 0,

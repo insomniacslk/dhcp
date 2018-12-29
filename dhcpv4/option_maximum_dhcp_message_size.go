@@ -37,9 +37,3 @@ func (o *OptMaximumDHCPMessageSize) ToBytes() []byte {
 func (o *OptMaximumDHCPMessageSize) String() string {
 	return fmt.Sprintf("Maximum DHCP Message Size -> %v", o.Size)
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptMaximumDHCPMessageSize) Length() int {
-	return 2
-}

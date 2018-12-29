@@ -28,7 +28,6 @@ func TestParseOptTFTPServerName(t *testing.T) {
 	}
 	opt, err := ParseOptTFTPServerName(expected)
 	require.NoError(t, err)
-	require.Equal(t, 9, opt.Length())
 	require.Equal(t, "linuxboot", string(opt.TFTPServerName))
 }
 

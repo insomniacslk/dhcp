@@ -41,8 +41,3 @@ func (o *OptVersion) ToBytes() []byte {
 func (o *OptVersion) String() string {
 	return fmt.Sprintf("BSDP Version -> %v.%v", o.Version[0], o.Version[1])
 }
-
-// Length returns the length of the data portion of this option.
-func (o *OptVersion) Length() int {
-	return 2
-}

@@ -36,9 +36,3 @@ func (o *OptSubnetMask) ToBytes() []byte {
 func (o *OptSubnetMask) String() string {
 	return fmt.Sprintf("Subnet Mask -> %v", o.SubnetMask.String())
 }
-
-// Length returns the length of the data portion (excluding option code an byte
-// length).
-func (o *OptSubnetMask) Length() int {
-	return 4
-}

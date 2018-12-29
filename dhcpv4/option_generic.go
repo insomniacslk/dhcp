@@ -36,8 +36,3 @@ func (o OptionGeneric) ToBytes() []byte {
 func (o OptionGeneric) String() string {
 	return fmt.Sprintf("%v -> %v", o.OptionCode.String(), o.Data)
 }
-
-// Length returns the number of bytes comprising the data section of the option.
-func (o OptionGeneric) Length() int {
-	return len(o.Data)
-}

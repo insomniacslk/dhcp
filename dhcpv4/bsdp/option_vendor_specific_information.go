@@ -82,16 +82,6 @@ func (o *OptVendorSpecificInformation) String() string {
 	return s
 }
 
-// Length returns the length of the data portion of this option. Take into
-// account code + data length bytes for each sub option.
-func (o *OptVendorSpecificInformation) Length() int {
-	var length int
-	for _, opt := range o.Options {
-		length += 2 + opt.Length()
-	}
-	return length
-}
-
 // GetOption returns all suboptions that match the given OptionCode code.
 func (o *OptVendorSpecificInformation) GetOption(code dhcpv4.OptionCode) []dhcpv4.Option {
 	return o.Options.Get(code)

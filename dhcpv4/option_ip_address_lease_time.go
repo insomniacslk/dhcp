@@ -38,9 +38,3 @@ func (o *OptIPAddressLeaseTime) ToBytes() []byte {
 func (o *OptIPAddressLeaseTime) String() string {
 	return fmt.Sprintf("IP Addresses Lease Time -> %v", o.LeaseTime)
 }
-
-// Length returns the length of the data portion (excluding option code and byte
-// for length, if any).
-func (o *OptIPAddressLeaseTime) Length() int {
-	return 4
-}
