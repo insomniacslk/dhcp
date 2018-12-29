@@ -13,7 +13,7 @@ import (
 // OptClientArchType represents an option encapsulating the Client System
 // Architecture Type option Definition.
 type OptClientArchType struct {
-	ArchTypes []iana.ArchType
+	ArchTypes []iana.Arch
 }
 
 // Code returns the option code.
@@ -50,9 +50,9 @@ func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
 		return nil, fmt.Errorf("must have at least one archtype if option is present")
 	}
 
-	archTypes := make([]iana.ArchType, 0, buf.Len()/2)
+	archTypes := make([]iana.Arch, 0, buf.Len()/2)
 	for buf.Has(2) {
-		archTypes = append(archTypes, iana.ArchType(buf.Read16()))
+		archTypes = append(archTypes, iana.Arch(buf.Read16()))
 	}
 	return &OptClientArchType{ArchTypes: archTypes}, buf.FinError()
 }

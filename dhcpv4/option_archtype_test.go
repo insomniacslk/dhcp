@@ -54,7 +54,7 @@ func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {
 
 func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
-		ArchTypes: []iana.ArchType{iana.EFI_ITANIUM},
+		ArchTypes: []iana.Arch{iana.EFI_ITANIUM},
 	}
 	require.Equal(t, opt.Code(), OptionClientSystemArchitectureType)
 }

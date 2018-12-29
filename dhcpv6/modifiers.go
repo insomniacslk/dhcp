@@ -57,9 +57,9 @@ func WithUserClass(uc []byte) Modifier {
 }
 
 // WithArchType adds an arch type option to the packet
-func WithArchType(at iana.ArchType) Modifier {
+func WithArchType(at iana.Arch) Modifier {
 	return func(d DHCPv6) DHCPv6 {
-		ao := OptClientArchType{ArchTypes: []iana.ArchType{at}}
+		ao := OptClientArchType{ArchTypes: []iana.Arch{at}}
 		d.AddOption(&ao)
 		return d
 	}
