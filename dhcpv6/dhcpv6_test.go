@@ -265,7 +265,7 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 
 	duid := Duid{
 		Type:          DUID_LL,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		LinkLayerAddr: hwAddr,
 	}
 

@@ -43,7 +43,7 @@ func TestDuidLLTFromBytes(t *testing.T) {
 	require.Equal(t, 14, duid.Length())
 	require.Equal(t, DUID_LLT, duid.Type)
 	require.Equal(t, uint32(0x01020304), duid.Time)
-	require.Equal(t, iana.HwTypeEthernet, duid.HwType)
+	require.Equal(t, iana.HWTypeEthernet, duid.HwType)
 	require.Equal(t, net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}, duid.LinkLayerAddr)
 }
 
@@ -57,7 +57,7 @@ func TestDuidLLFromBytes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 10, duid.Length())
 	require.Equal(t, DUID_LL, duid.Type)
-	require.Equal(t, iana.HwTypeEthernet, duid.HwType)
+	require.Equal(t, iana.HWTypeEthernet, duid.HwType)
 	require.Equal(t, net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}, duid.LinkLayerAddr)
 }
 
@@ -83,7 +83,7 @@ func TestDuidLLTToBytes(t *testing.T) {
 	}
 	duid := Duid{
 		Type:          DUID_LLT,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		Time:          uint32(0x01020304),
 		LinkLayerAddr: []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
 	}

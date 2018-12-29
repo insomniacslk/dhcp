@@ -19,7 +19,7 @@ func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.DHCPv6Message {
 
 	duid := dhcpv6.Duid{
 		Type:          dhcpv6.DUID_LLT,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		Time:          dhcpv6.GetTime(),
 		LinkLayerAddr: hwaddr,
 	}

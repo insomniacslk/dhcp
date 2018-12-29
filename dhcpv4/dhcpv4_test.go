@@ -63,7 +63,7 @@ func TestFromBytes(t *testing.T) {
 	d, err := FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, d.OpCode, OpcodeBootRequest)
-	require.Equal(t, d.HWType, iana.HwTypeEthernet)
+	require.Equal(t, d.HWType, iana.HWTypeEthernet)
 	require.Equal(t, d.HopCount, byte(3))
 	require.Equal(t, d.TransactionID, TransactionID{0xaa, 0xbb, 0xcc, 0xdd})
 	require.Equal(t, d.NumSeconds, uint16(3))
@@ -302,7 +302,7 @@ func TestNewDiscovery(t *testing.T) {
 
 	// Validate fields of DISCOVER packet.
 	require.Equal(t, OpcodeBootRequest, m.OpCode)
-	require.Equal(t, iana.HwTypeEthernet, m.HWType)
+	require.Equal(t, iana.HWTypeEthernet, m.HWType)
 	require.Equal(t, hwAddr, m.ClientHWAddr)
 	require.True(t, m.IsBroadcast())
 	require.True(t, m.Options.Has(OptionParameterRequestList))
@@ -316,7 +316,7 @@ func TestNewInform(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Equal(t, OpcodeBootRequest, m.OpCode)
-	require.Equal(t, iana.HwTypeEthernet, m.HWType)
+	require.Equal(t, iana.HWTypeEthernet, m.HWType)
 	require.Equal(t, hwAddr, m.ClientHWAddr)
 	require.Equal(t, MessageTypeInform, m.MessageType())
 	require.True(t, m.ClientIPAddr.Equal(localIP))

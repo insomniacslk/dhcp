@@ -21,7 +21,7 @@ func solicit(input string) (dhcpv6.DHCPv6, error) {
 	}
 	duid := dhcpv6.Duid{
 		Type:          dhcpv6.DUID_LLT,
-		HwType:        iana.HwTypeEthernet,
+		HwType:        iana.HWTypeEthernet,
 		Time:          dhcpv6.GetTime(),
 		LinkLayerAddr: mac,
 	}

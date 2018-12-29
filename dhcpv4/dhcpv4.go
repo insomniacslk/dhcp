@@ -33,7 +33,7 @@ var magicCookie = [4]byte{99, 130, 83, 99}
 // to build DHCPv4 packets.
 type DHCPv4 struct {
 	OpCode         OpcodeType
-	HWType         iana.HwTypeType
+	HWType         iana.HWType
 	HopCount       uint8
 	TransactionID  TransactionID
 	NumSeconds     uint16
@@ -113,7 +113,7 @@ func New() (*DHCPv4, error) {
 	}
 	d := DHCPv4{
 		OpCode:        OpcodeBootRequest,
-		HWType:        iana.HwTypeEthernet,
+		HWType:        iana.HWTypeEthernet,
 		HopCount:      0,
 		TransactionID: xid,
 		NumSeconds:    0,
@@ -149,7 +149,7 @@ func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 	}
 	// get hw addr
 	d.OpCode = OpcodeBootRequest
-	d.HWType = iana.HwTypeEthernet
+	d.HWType = iana.HWTypeEthernet
 	d.ClientHWAddr = hwaddr
 	d.SetBroadcast()
 	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
@@ -202,7 +202,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
 	}
 
 	d.OpCode = OpcodeBootRequest
-	d.HWType = iana.HwTypeEthernet
+	d.HWType = iana.HWTypeEthernet
 	d.ClientHWAddr = hwaddr
 	d.ClientIPAddr = localIP
 	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
@@ -269,7 +269,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	buf := uio.NewBigEndianBuffer(q)
 
 	p.OpCode = OpcodeType(buf.Read8())
-	p.HWType = iana.HwTypeType(buf.Read8())
+	p.HWType = iana.HWType(buf.Read8())
 
 	hwAddrLen := buf.Read8()
 
@@ -502,7 +502,7 @@ func (d *DHCPv4) ToBytes() []byte {
 
 	// HwAddrLen
 	hlen := uint8(len(d.ClientHWAddr))
-	if hlen == 0 && d.HWType == iana.HwTypeEthernet {
+	if hlen == 0 && d.HWType == iana.HWTypeEthernet {
 		hlen = 6
 	}
 	buf.Write8(hlen)

@@ -1,9 +1,9 @@
 package iana
 
+// StatusCode represents a IANA status code for DHCPv6
+//
 // IANA Status Codes for DHCPv6
 // https://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xhtml#dhcpv6-parameters-5
-
-// StatusCode represents a IANA status code for DHCPv6
 type StatusCode uint16
 
 // IANA status codes
@@ -40,14 +40,13 @@ const (
 
 // String returns a mnemonic name for a given status code
 func (s StatusCode) String() string {
-	if sc := StatusCodeToStringMap[s]; sc != "" {
+	if sc := statusCodeToStringMap[s]; sc != "" {
 		return sc
 	}
 	return "Unknown"
 }
 
-// StatusCodeToStringMap maps status codes to their names
-var StatusCodeToStringMap = map[StatusCode]string{
+var statusCodeToStringMap = map[StatusCode]string{
 	StatusSuccess:       "Success",
 	StatusUnspecFail:    "UnspecFail",
 	StatusNoAddrsAvail:  "NoAddrsAvail",
