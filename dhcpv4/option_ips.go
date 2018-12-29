@@ -11,11 +11,6 @@ import (
 // This option implements the router option
 // https://tools.ietf.org/html/rfc2132
 
-// OptRouter represents an option encapsulating the routers.
-type OptRouter struct {
-	Routers []net.IP
-}
-
 // ParseIPs parses an IPv4 address from a DHCP packet as used and specified by
 // options in RFC 2132, Sections 3.5 through 3.13, 8.2, 8.3, 8.5, 8.6, 8.9, and
 // 8.10.
@@ -53,6 +48,11 @@ func IPsToString(i []net.IP) string {
 	return strings.Join(s, ", ")
 }
 
+// OptRouter represents an option encapsulating the routers.
+type OptRouter struct {
+	Routers []net.IP
+}
+
 // ParseOptRouter returns a new OptRouter from a byte stream, or error if any.
 func ParseOptRouter(data []byte) (*OptRouter, error) {
 	ips, err := ParseIPs(data)
@@ -75,4 +75,64 @@ func (o *OptRouter) ToBytes() []byte {
 // String returns a human-readable string.
 func (o *OptRouter) String() string {
 	return fmt.Sprintf("Routers -> %s", IPsToString(o.Routers))
+}
+
+// OptNTPServers represents an option encapsulating the NTP servers.
+type OptNTPServers struct {
+	NTPServers []net.IP
+}
+
+// ParseOptNTPServers returns a new OptNTPServers from a byte stream, or error if any.
+func ParseOptNTPServers(data []byte) (*OptNTPServers, error) {
+	ips, err := ParseIPs(data)
+	if err != nil {
+		return nil, err
+	}
+	return &OptNTPServers{NTPServers: ips}, nil
+}
+
+// Code returns the option code.
+func (o *OptNTPServers) Code() OptionCode {
+	return OptionNTPServers
+}
+
+// ToBytes returns a serialized stream of bytes for this option.
+func (o *OptNTPServers) ToBytes() []byte {
+	return IPsToBytes(o.NTPServers)
+}
+
+// String returns a human-readable string.
+func (o *OptNTPServers) String() string {
+	return fmt.Sprintf("NTP Servers -> %v", IPsToString(o.NTPServers))
+}
+
+// OptDomainNameServer represents an option encapsulating the domain name
+// servers.
+type OptDomainNameServer struct {
+	NameServers []net.IP
+}
+
+// ParseOptDomainNameServer returns a new OptDomainNameServer from a byte
+// stream, or error if any.
+func ParseOptDomainNameServer(data []byte) (*OptDomainNameServer, error) {
+	ips, err := ParseIPs(data)
+	if err != nil {
+		return nil, err
+	}
+	return &OptDomainNameServer{NameServers: ips}, nil
+}
+
+// Code returns the option code.
+func (o *OptDomainNameServer) Code() OptionCode {
+	return OptionDomainNameServer
+}
+
+// ToBytes returns a serialized stream of bytes for this option.
+func (o *OptDomainNameServer) ToBytes() []byte {
+	return IPsToBytes(o.NameServers)
+}
+
+// String returns a human-readable string.
+func (o *OptDomainNameServer) String() string {
+	return fmt.Sprintf("Domain Name Servers -> %s", IPsToString(o.NameServers))
 }
