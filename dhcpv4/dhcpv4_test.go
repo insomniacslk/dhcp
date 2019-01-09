@@ -310,7 +310,7 @@ func TestNewToBytes(t *testing.T) {
 		expected = append(expected, 0)
 	}
 	// Magic Cookie
-	expected = append(expected, MagicCookie...)
+	expected = append(expected, magicCookie[:]...)
 	// End
 	expected = append(expected, 0xff)
 
