@@ -63,7 +63,6 @@ func TestFromBytes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, d.Opcode(), OpcodeBootRequest)
 	require.Equal(t, d.HwType(), iana.HwTypeEthernet)
-	require.Equal(t, d.HwAddrLen(), byte(6))
 	require.Equal(t, d.HopCount(), byte(3))
 	require.Equal(t, d.TransactionID(), TransactionID{0xaa, 0xbb, 0xcc, 0xdd})
 	require.Equal(t, d.NumSeconds(), uint16(3))
@@ -71,8 +70,7 @@ func TestFromBytes(t *testing.T) {
 	require.True(t, d.ClientIPAddr().Equal(net.IPv4zero))
 	require.True(t, d.YourIPAddr().Equal(net.IPv4zero))
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4zero))
-	clientHwAddr := d.ClientHwAddr()
-	require.Equal(t, clientHwAddr[:], []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	require.Equal(t, d.ClientHwAddr(), net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff})
 	hostname := d.ServerHostName()
 	require.Equal(t, hostname[:], expectedHostname)
 	bootfileName := d.BootFileName()
@@ -164,13 +162,6 @@ func TestSettersAndGetters(t *testing.T) {
 	d.SetHwType(iana.HwTypeARCNET)
 	require.Equal(t, iana.HwTypeARCNET, d.HwType())
 
-	// getter/setter for HwAddrLen
-	require.Equal(t, uint8(6), d.HwAddrLen())
-	d.SetHwAddrLen(12)
-	require.Equal(t, uint8(12), d.HwAddrLen())
-	d.SetHwAddrLen(22)
-	require.Equal(t, uint8(16), d.HwAddrLen())
-
 	// getter/setter for HopCount
 	require.Equal(t, uint8(3), d.HopCount())
 	d.SetHopCount(1)
@@ -212,8 +203,7 @@ func TestSettersAndGetters(t *testing.T) {
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4(16, 15, 14, 13)))
 
 	// getter/setter for ClientHwAddr
-	hwaddr := d.ClientHwAddr()
-	require.Equal(t, []byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, hwaddr[:])
+	require.Equal(t, net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}, d.ClientHwAddr())
 	d.SetFlags(0)
 
 	// getter/setter for ServerHostName
@@ -269,11 +259,8 @@ func TestToStringMethods(t *testing.T) {
 	require.Equal(t, "Broadcast (reserved bits not zeroed)", d.FlagsToString())
 
 	// ClientHwAddrToString
-	d.SetHwAddrLen(6)
-	d.SetClientHwAddr([]byte{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
+	d.SetClientHwAddr(net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff})
 	require.Equal(t, "aa:bb:cc:dd:ee:ff", d.ClientHwAddrToString())
-	d.SetClientHwAddr([]byte{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4}) // 20 bytes
-	require.Equal(t, "01:02:03:04:01:02", d.ClientHwAddrToString())
 
 	// ServerHostNameToString
 	d.SetServerHostName([]byte("my.host.local"))
@@ -482,10 +469,7 @@ func TestNewDiscovery(t *testing.T) {
 	// Validate fields of DISCOVER packet.
 	require.Equal(t, OpcodeBootRequest, m.Opcode())
 	require.Equal(t, iana.HwTypeEthernet, m.HwType())
-	var expectedHwAddr [16]byte
-	copy(expectedHwAddr[:], hwAddr)
-	require.Equal(t, expectedHwAddr, m.ClientHwAddr())
-	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
+	require.Equal(t, hwAddr, m.ClientHwAddr())
 	require.True(t, m.IsBroadcast())
 	require.True(t, HasOption(m, OptionParameterRequestList))
 	require.True(t, HasOption(m, OptionEnd))
@@ -499,10 +483,7 @@ func TestNewInform(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OpcodeBootRequest, m.Opcode())
 	require.Equal(t, iana.HwTypeEthernet, m.HwType())
-	var expectedHwAddr [16]byte
-	copy(expectedHwAddr[:], hwAddr)
-	require.Equal(t, expectedHwAddr, m.ClientHwAddr())
-	require.Equal(t, len(hwAddr), int(m.HwAddrLen()))
+	require.Equal(t, hwAddr, m.ClientHwAddr())
 	require.NotNil(t, m.MessageType())
 	require.Equal(t, MessageTypeInform, *m.MessageType())
 	require.True(t, m.ClientIPAddr().Equal(localIP))

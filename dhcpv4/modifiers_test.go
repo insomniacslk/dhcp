@@ -28,8 +28,8 @@ func TestBroadcastModifier(t *testing.T) {
 func TestHwAddrModifier(t *testing.T) {
 	d, err := New()
 	require.NoError(t, err)
-	hwaddr := [16]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
-	d = WithHwAddr(hwaddr[:])(d)
+	hwaddr := net.HardwareAddr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
+	d = WithHwAddr(hwaddr)(d)
 	require.Equal(t, hwaddr, d.ClientHwAddr())
 }
 
