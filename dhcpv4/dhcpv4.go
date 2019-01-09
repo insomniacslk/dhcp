@@ -25,7 +25,7 @@ type DHCPv4 struct {
 	hwType         iana.HwTypeType
 	hwAddrLen      uint8
 	hopCount       uint8
-	transactionID  uint32
+	transactionID  TransactionID
 	numSeconds     uint16
 	flags          uint16
 	clientIPAddr   net.IP
@@ -83,17 +83,13 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 
 // GenerateTransactionID generates a random 32-bits number suitable for use as
 // TransactionID
-func GenerateTransactionID() (*uint32, error) {
-	b := make([]byte, 4)
-	n, err := rand.Read(b)
+func GenerateTransactionID() (TransactionID, error) {
+	var xid TransactionID
+	n, err := rand.Read(xid[:])
 	if n != 4 {
-		return nil, errors.New("Invalid random sequence: smaller than 32 bits")
+		return xid, errors.New("invalid random sequence for transaction ID: smaller than 32 bits")
 	}
-	if err != nil {
-		return nil, err
-	}
-	tid := binary.LittleEndian.Uint32(b)
-	return &tid, nil
+	return xid, err
 }
 
 // New creates a new DHCPv4 structure and fill it up with default values. It
@@ -101,7 +97,7 @@ func GenerateTransactionID() (*uint32, error) {
 // See also NewDiscovery, NewOffer, NewRequest, NewAcknowledge, NewInform and
 // NewRelease .
 func New() (*DHCPv4, error) {
-	tid, err := GenerateTransactionID()
+	xid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +106,7 @@ func New() (*DHCPv4, error) {
 		hwType:        iana.HwTypeEthernet,
 		hwAddrLen:     6,
 		hopCount:      0,
-		transactionID: *tid,
+		transactionID: xid,
 		numSeconds:    0,
 		flags:         0,
 		clientIPAddr:  net.IPv4zero,
@@ -281,7 +277,6 @@ func FromBytes(data []byte) (*DHCPv4, error) {
 		hwType:        iana.HwTypeType(data[1]),
 		hwAddrLen:     data[2],
 		hopCount:      data[3],
-		transactionID: binary.BigEndian.Uint32(data[4:8]),
 		numSeconds:    binary.BigEndian.Uint16(data[8:10]),
 		flags:         binary.BigEndian.Uint16(data[10:12]),
 		clientIPAddr:  net.IP(data[12:16]),
@@ -289,6 +284,7 @@ func FromBytes(data []byte) (*DHCPv4, error) {
 		serverIPAddr:  net.IP(data[20:24]),
 		gatewayIPAddr: net.IP(data[24:28]),
 	}
+	copy(d.transactionID[:], data[4:8])
 	copy(d.clientHwAddr[:], data[28:44])
 	copy(d.serverHostName[:], data[44:108])
 	copy(d.bootFileName[:], data[108:236])
@@ -365,13 +361,13 @@ func (d *DHCPv4) SetHopCount(hopCount uint8) {
 }
 
 // TransactionID returns the transaction ID as 32 bit unsigned integer.
-func (d *DHCPv4) TransactionID() uint32 {
+func (d *DHCPv4) TransactionID() TransactionID {
 	return d.transactionID
 }
 
 // SetTransactionID sets the value for the transaction ID.
-func (d *DHCPv4) SetTransactionID(transactionID uint32) {
-	d.transactionID = transactionID
+func (d *DHCPv4) SetTransactionID(xid TransactionID) {
+	d.transactionID = xid
 }
 
 // NumSeconds returns the number of seconds.
@@ -731,15 +727,13 @@ func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
 func (d *DHCPv4) ToBytes() []byte {
 	// This won't check if the End option is present, you've been warned
 	var ret []byte
-	u32 := make([]byte, 4)
 	u16 := make([]byte, 2)
 
 	ret = append(ret, byte(d.opcode))
 	ret = append(ret, byte(d.hwType))
 	ret = append(ret, byte(d.hwAddrLen))
 	ret = append(ret, byte(d.hopCount))
-	binary.BigEndian.PutUint32(u32, d.transactionID)
-	ret = append(ret, u32...)
+	ret = append(ret, d.transactionID[:]...)
 	binary.BigEndian.PutUint16(u16, d.numSeconds)
 	ret = append(ret, u16...)
 	binary.BigEndian.PutUint16(u16, d.flags)

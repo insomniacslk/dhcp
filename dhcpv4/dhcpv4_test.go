@@ -65,7 +65,7 @@ func TestFromBytes(t *testing.T) {
 	require.Equal(t, d.HwType(), iana.HwTypeEthernet)
 	require.Equal(t, d.HwAddrLen(), byte(6))
 	require.Equal(t, d.HopCount(), byte(3))
-	require.Equal(t, d.TransactionID(), uint32(0xaabbccdd))
+	require.Equal(t, d.TransactionID(), TransactionID{0xaa, 0xbb, 0xcc, 0xdd})
 	require.Equal(t, d.NumSeconds(), uint16(3))
 	require.Equal(t, d.Flags(), uint16(1))
 	require.True(t, d.ClientIPAddr().Equal(net.IPv4zero))
@@ -177,9 +177,9 @@ func TestSettersAndGetters(t *testing.T) {
 	require.Equal(t, uint8(1), d.HopCount())
 
 	// getter/setter for TransactionID
-	require.Equal(t, uint32(0xaabbccdd), d.TransactionID())
-	d.SetTransactionID(0xeeff0011)
-	require.Equal(t, uint32(0xeeff0011), d.TransactionID())
+	require.Equal(t, TransactionID{0xaa, 0xbb, 0xcc, 0xdd}, d.TransactionID())
+	d.SetTransactionID(TransactionID{0xee, 0xff, 0x00, 0x11})
+	require.Equal(t, TransactionID{0xee, 0xff, 0x00, 0x11}, d.TransactionID())
 
 	// getter/setter for TransactionID
 	require.Equal(t, uint16(3), d.NumSeconds())
@@ -318,7 +318,7 @@ func TestNewToBytes(t *testing.T) {
 	require.NoError(t, err)
 	// fix TransactionID to match the expected one, since it's randomly
 	// generated in New()
-	d.SetTransactionID(0x11223344)
+	d.SetTransactionID(TransactionID{0x11, 0x22, 0x33, 0x44})
 	got := d.ToBytes()
 	require.Equal(t, expected, got)
 }
