@@ -43,8 +43,8 @@ type DHCPv4 struct {
 	serverIPAddr   net.IP
 	gatewayIPAddr  net.IP
 	clientHwAddr   net.HardwareAddr
-	serverHostName [64]byte
-	bootFileName   [128]byte
+	serverHostName string
+	bootFileName   string
 	options        []Option
 }
 
@@ -123,11 +123,8 @@ func New() (*DHCPv4, error) {
 		yourIPAddr:    net.IPv4zero,
 		serverIPAddr:  net.IPv4zero,
 		gatewayIPAddr: net.IPv4zero,
+		options:       make([]Option, 0, 10),
 	}
-	copy(d.serverHostName[:], []byte{})
-	copy(d.bootFileName[:], []byte{})
-
-	d.options = make([]Option, 0, 10)
 	// the End option has to be added explicitly
 	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return &d, nil
@@ -295,8 +292,21 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	buf.ReadBytes(p.clientHwAddr)
 	p.clientHwAddr = p.clientHwAddr[:hwAddrLen]
 
-	buf.ReadBytes(p.serverHostName[:])
-	buf.ReadBytes(p.bootFileName[:])
+	var sname [64]byte
+	buf.ReadBytes(sname[:])
+	length := strings.Index(string(sname[:]), "\x00")
+	if length == -1 {
+		length = 64
+	}
+	p.serverHostName = string(sname[:length])
+
+	var file [128]byte
+	buf.ReadBytes(file[:])
+	length = strings.Index(string(file[:]), "\x00")
+	if length == -1 {
+		length = 128
+	}
+	p.bootFileName = string(file[:length])
 
 	var cookie [4]byte
 	buf.ReadBytes(cookie[:])
@@ -488,57 +498,25 @@ func (d *DHCPv4) SetClientHwAddr(clientHwAddr net.HardwareAddr) {
 }
 
 // ServerHostName returns the server host name as a sequence of bytes.
-func (d *DHCPv4) ServerHostName() [64]byte {
+func (d *DHCPv4) ServerHostName() string {
 	return d.serverHostName
-}
-
-// ServerHostNameToString returns the server host name as a string, after
-// trimming the null bytes at the end.
-func (d *DHCPv4) ServerHostNameToString() string {
-	return strings.TrimRight(string(d.serverHostName[:]), "\x00")
 }
 
 // SetServerHostName replaces the server host name, from a sequence of bytes,
 // truncating it to the maximum length of 64.
-func (d *DHCPv4) SetServerHostName(serverHostName []byte) {
-	if len(serverHostName) > 64 {
-		serverHostName = serverHostName[:64]
-	} else if len(serverHostName) < 64 {
-		for i := len(serverHostName) - 1; i < 64; i++ {
-			serverHostName = append(serverHostName, 0)
-		}
-	}
-	// need an array, not a slice, so let's copy it
-	var newServerHostName [64]byte
-	copy(newServerHostName[:], serverHostName)
-	d.serverHostName = newServerHostName
+func (d *DHCPv4) SetServerHostName(serverHostName string) {
+	d.serverHostName = serverHostName
 }
 
 // BootFileName returns the boot file name as a sequence of bytes.
-func (d *DHCPv4) BootFileName() [128]byte {
+func (d *DHCPv4) BootFileName() string {
 	return d.bootFileName
-}
-
-// BootFileNameToString returns the boot file name as a string, after trimming
-// the null bytes at the end.
-func (d *DHCPv4) BootFileNameToString() string {
-	return strings.TrimRight(string(d.bootFileName[:]), "\x00")
 }
 
 // SetBootFileName replaces the boot file name, from a sequence of bytes,
 // truncating it to the maximum length oh 128.
-func (d *DHCPv4) SetBootFileName(bootFileName []byte) {
-	if len(bootFileName) > 128 {
-		bootFileName = bootFileName[:128]
-	} else if len(bootFileName) < 128 {
-		for i := len(bootFileName) - 1; i < 128; i++ {
-			bootFileName = append(bootFileName, 0)
-		}
-	}
-	// need an array, not a slice, so let's copy it
-	var newBootFileName [128]byte
-	copy(newBootFileName[:], bootFileName)
-	d.bootFileName = newBootFileName
+func (d *DHCPv4) SetBootFileName(bootFileName string) {
+	d.bootFileName = bootFileName
 }
 
 // Options returns the DHCPv4 options defined for the packet.
@@ -662,8 +640,8 @@ func (d *DHCPv4) Summary() string {
 		d.ServerIPAddr(),
 		d.GatewayIPAddr(),
 		d.ClientHwAddrToString(),
-		d.ServerHostNameToString(),
-		d.BootFileNameToString(),
+		d.ServerHostName(),
+		d.BootFileName(),
 	)
 	ret += "  options=\n"
 	for _, opt := range d.options {
@@ -752,8 +730,13 @@ func (d *DHCPv4) ToBytes() []byte {
 
 	copy(buf.WriteN(maxHWAddrLen), d.clientHwAddr)
 
-	buf.WriteBytes(d.serverHostName[:])
-	buf.WriteBytes(d.bootFileName[:])
+	var sname [64]byte
+	copy(sname[:], []byte(d.serverHostName))
+	buf.WriteBytes(sname[:])
+
+	var file [128]byte
+	copy(file[:], []byte(d.bootFileName))
+	buf.WriteBytes(file[:])
 
 	// The magic cookie.
 	buf.WriteBytes(magicCookie[:])

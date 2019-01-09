@@ -274,7 +274,7 @@ func TestNewReplyForInformList(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
 	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
-	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostName())
 
 	// Validate options.
 	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
@@ -355,7 +355,7 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, net.IP{1, 2, 3, 4}, ack.ClientIPAddr())
 	require.Equal(t, net.IPv4zero, ack.YourIPAddr())
-	require.Equal(t, "bsdp.foo.com", ack.ServerHostNameToString())
+	require.Equal(t, "bsdp.foo.com", ack.ServerHostName())
 
 	// Validate options.
 	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
