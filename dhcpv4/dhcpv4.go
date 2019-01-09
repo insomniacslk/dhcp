@@ -2,7 +2,6 @@ package dhcpv4
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
@@ -10,13 +9,20 @@ import (
 	"strings"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
-// HeaderSize is the DHCPv4 header size in bytes.
-const HeaderSize = 236
+const (
+	// minPacketLen is the minimum DHCP header length.
+	minPacketLen = 236
 
-// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
-const MaxMessageSize = 576
+	// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
+	MaxMessageSize = 576
+)
+
+// magicCookie is the magic 4-byte value at the beginning of the list of options
+// in a DHCPv4 packet.
+var magicCookie = [4]byte{99, 130, 83, 99}
 
 // DHCPv4 represents a DHCPv4 packet header and options. See the New* functions
 // to build DHCPv4 packets.
@@ -117,11 +123,8 @@ func New() (*DHCPv4, error) {
 	copy(d.clientHwAddr[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	copy(d.serverHostName[:], []byte{})
 	copy(d.bootFileName[:], []byte{})
-	options, err := OptionsFromBytes(MagicCookie)
-	if err != nil {
-		return nil, err
-	}
-	d.options = options
+
+	d.options = make([]Option, 0, 10)
 	// the End option has to be added explicitly
 	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return &d, nil
@@ -268,32 +271,45 @@ func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error
 
 // FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an
 // error if the packet is not valid.
-func FromBytes(data []byte) (*DHCPv4, error) {
-	if len(data) < HeaderSize {
-		return nil, fmt.Errorf("Invalid DHCPv4 header: shorter than %v bytes", HeaderSize)
+func FromBytes(q []byte) (*DHCPv4, error) {
+	var p DHCPv4
+	buf := uio.NewBigEndianBuffer(q)
+
+	p.opcode = OpcodeType(buf.Read8())
+	p.hwType = iana.HwTypeType(buf.Read8())
+	p.hwAddrLen = buf.Read8()
+	p.hopCount = buf.Read8()
+
+	buf.ReadBytes(p.transactionID[:])
+
+	p.numSeconds = buf.Read16()
+	p.flags = buf.Read16()
+
+	p.clientIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.yourIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.serverIPAddr = net.IP(buf.CopyN(net.IPv4len))
+	p.gatewayIPAddr = net.IP(buf.CopyN(net.IPv4len))
+
+	buf.ReadBytes(p.clientHwAddr[:])
+	buf.ReadBytes(p.serverHostName[:])
+	buf.ReadBytes(p.bootFileName[:])
+
+	var cookie [4]byte
+	buf.ReadBytes(cookie[:])
+
+	if err := buf.Error(); err != nil {
+		return nil, err
 	}
-	d := DHCPv4{
-		opcode:        OpcodeType(data[0]),
-		hwType:        iana.HwTypeType(data[1]),
-		hwAddrLen:     data[2],
-		hopCount:      data[3],
-		numSeconds:    binary.BigEndian.Uint16(data[8:10]),
-		flags:         binary.BigEndian.Uint16(data[10:12]),
-		clientIPAddr:  net.IP(data[12:16]),
-		yourIPAddr:    net.IP(data[16:20]),
-		serverIPAddr:  net.IP(data[20:24]),
-		gatewayIPAddr: net.IP(data[24:28]),
+	if cookie != magicCookie {
+		return nil, fmt.Errorf("malformed DHCP packet: got magic cookie %v, want %v", cookie[:], magicCookie[:])
 	}
-	copy(d.transactionID[:], data[4:8])
-	copy(d.clientHwAddr[:], data[28:44])
-	copy(d.serverHostName[:], data[44:108])
-	copy(d.bootFileName[:], data[108:236])
-	options, err := OptionsFromBytes(data[236:])
+
+	opts, err := OptionsFromBytes(buf.Data())
 	if err != nil {
 		return nil, err
 	}
-	d.options = options
-	return &d, nil
+	p.options = opts
+	return &p, nil
 }
 
 // Opcode returns the OpcodeType for the packet,
@@ -722,36 +738,46 @@ func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
 	return false
 }
 
+// In case somebody forgets to set an IP, just write 0s as default values.
+func writeIP(b *uio.Lexer, ip net.IP) {
+	var zeros [net.IPv4len]byte
+	if ip == nil {
+		b.WriteBytes(zeros[:])
+	} else {
+		b.WriteBytes(ip[:net.IPv4len])
+	}
+}
+
 // ToBytes encodes a DHCPv4 structure into a sequence of bytes in its wire
 // format.
 func (d *DHCPv4) ToBytes() []byte {
-	// This won't check if the End option is present, you've been warned
-	var ret []byte
-	u16 := make([]byte, 2)
+	buf := uio.NewBigEndianBuffer(make([]byte, 0, minPacketLen))
+	buf.Write8(uint8(d.opcode))
+	buf.Write8(uint8(d.hwType))
 
-	ret = append(ret, byte(d.opcode))
-	ret = append(ret, byte(d.hwType))
-	ret = append(ret, byte(d.hwAddrLen))
-	ret = append(ret, byte(d.hopCount))
-	ret = append(ret, d.transactionID[:]...)
-	binary.BigEndian.PutUint16(u16, d.numSeconds)
-	ret = append(ret, u16...)
-	binary.BigEndian.PutUint16(u16, d.flags)
-	ret = append(ret, u16...)
-	ret = append(ret, d.clientIPAddr.To4()...)
-	ret = append(ret, d.yourIPAddr.To4()...)
-	ret = append(ret, d.serverIPAddr.To4()...)
-	ret = append(ret, d.gatewayIPAddr.To4()...)
-	ret = append(ret, d.clientHwAddr[:16]...)
-	ret = append(ret, d.serverHostName[:64]...)
-	ret = append(ret, d.bootFileName[:128]...)
+	// HwAddrLen
+	buf.Write8(d.hwAddrLen)
+	buf.Write8(d.hopCount)
+	buf.WriteBytes(d.transactionID[:])
+	buf.Write16(d.numSeconds)
+	buf.Write16(d.flags)
 
-	d.ValidateOptions() // print warnings about broken options, if any
-	ret = append(ret, MagicCookie...)
+	writeIP(buf, d.clientIPAddr[:])
+	writeIP(buf, d.yourIPAddr[:])
+	writeIP(buf, d.serverIPAddr[:])
+	writeIP(buf, d.gatewayIPAddr[:])
+
+	buf.WriteBytes(d.clientHwAddr[:])
+	buf.WriteBytes(d.serverHostName[:])
+	buf.WriteBytes(d.bootFileName[:])
+
+	// The magic cookie.
+	buf.WriteBytes(magicCookie[:])
+
 	for _, opt := range d.options {
-		ret = append(ret, opt.ToBytes()...)
+		buf.WriteBytes(opt.ToBytes())
 	}
-	return ret
+	return buf.Data()
 }
 
 // OptionGetter is a interface that knows how to retrieve an option from a
