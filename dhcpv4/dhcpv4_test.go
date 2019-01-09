@@ -71,10 +71,8 @@ func TestFromBytes(t *testing.T) {
 	require.True(t, d.YourIPAddr().Equal(net.IPv4zero))
 	require.True(t, d.GatewayIPAddr().Equal(net.IPv4zero))
 	require.Equal(t, d.ClientHwAddr(), net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff})
-	hostname := d.ServerHostName()
-	require.Equal(t, hostname[:], expectedHostname)
-	bootfileName := d.BootFileName()
-	require.Equal(t, bootfileName[:], expectedBootfilename)
+	require.Equal(t, d.ServerHostName(), "")
+	require.Equal(t, d.BootFileName(), "")
 	// no need to check Magic Cookie as it is already validated in FromBytes
 	// above
 }
@@ -207,26 +205,14 @@ func TestSettersAndGetters(t *testing.T) {
 	d.SetFlags(0)
 
 	// getter/setter for ServerHostName
-	serverhostname := d.ServerHostName()
-	require.Equal(t, expectedHostname, serverhostname[:])
-	newHostname := []byte{'t', 'e', 's', 't'}
-	for i := 0; i < 60; i++ {
-		newHostname = append(newHostname, 0)
-	}
-	d.SetServerHostName(newHostname)
-	serverhostname = d.ServerHostName()
-	require.Equal(t, newHostname, serverhostname[:])
+	require.Equal(t, "", d.ServerHostName())
+	d.SetServerHostName("test")
+	require.Equal(t, "test", d.ServerHostName())
 
 	// getter/setter for BootFileName
-	bootfilename := d.BootFileName()
-	require.Equal(t, expectedBootfilename, bootfilename[:])
-	newBootfilename := []byte{'t', 'e', 's', 't'}
-	for i := 0; i < 124; i++ {
-		newBootfilename = append(newBootfilename, 0)
-	}
-	d.SetBootFileName(newBootfilename)
-	bootfilename = d.BootFileName()
-	require.Equal(t, newBootfilename, bootfilename[:])
+	require.Equal(t, "", d.BootFileName())
+	d.SetBootFileName("test")
+	require.Equal(t, "test", d.BootFileName())
 }
 
 func TestToStringMethods(t *testing.T) {
@@ -263,12 +249,12 @@ func TestToStringMethods(t *testing.T) {
 	require.Equal(t, "aa:bb:cc:dd:ee:ff", d.ClientHwAddrToString())
 
 	// ServerHostNameToString
-	d.SetServerHostName([]byte("my.host.local"))
-	require.Equal(t, "my.host.local", d.ServerHostNameToString())
+	d.SetServerHostName("my.host.local")
+	require.Equal(t, "my.host.local", d.ServerHostName())
 
 	// BootFileNameToString
-	d.SetBootFileName([]byte("/my/boot/file"))
-	require.Equal(t, "/my/boot/file", d.BootFileNameToString())
+	d.SetBootFileName("/my/boot/file")
+	require.Equal(t, "/my/boot/file", d.BootFileName())
 }
 
 func TestNewToBytes(t *testing.T) {
