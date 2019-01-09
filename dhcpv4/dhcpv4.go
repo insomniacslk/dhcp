@@ -16,6 +16,11 @@ const (
 	// minPacketLen is the minimum DHCP header length.
 	minPacketLen = 236
 
+	// Maximum length of the ClientHWAddr (client hardware address) according to
+	// RFC 2131, Section 2. This is the link-layer destination a server
+	// must send responses to.
+	maxHWAddrLen = 16
+
 	// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
 	MaxMessageSize = 576
 )
@@ -29,7 +34,6 @@ var magicCookie = [4]byte{99, 130, 83, 99}
 type DHCPv4 struct {
 	opcode         OpcodeType
 	hwType         iana.HwTypeType
-	hwAddrLen      uint8
 	hopCount       uint8
 	transactionID  TransactionID
 	numSeconds     uint16
@@ -38,7 +42,7 @@ type DHCPv4 struct {
 	yourIPAddr     net.IP
 	serverIPAddr   net.IP
 	gatewayIPAddr  net.IP
-	clientHwAddr   [16]byte
+	clientHwAddr   net.HardwareAddr
 	serverHostName [64]byte
 	bootFileName   [128]byte
 	options        []Option
@@ -110,17 +114,16 @@ func New() (*DHCPv4, error) {
 	d := DHCPv4{
 		opcode:        OpcodeBootRequest,
 		hwType:        iana.HwTypeEthernet,
-		hwAddrLen:     6,
 		hopCount:      0,
 		transactionID: xid,
 		numSeconds:    0,
 		flags:         0,
+		clientHwAddr:  net.HardwareAddr{0, 0, 0, 0, 0, 0},
 		clientIPAddr:  net.IPv4zero,
 		yourIPAddr:    net.IPv4zero,
 		serverIPAddr:  net.IPv4zero,
 		gatewayIPAddr: net.IPv4zero,
 	}
-	copy(d.clientHwAddr[:], []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0})
 	copy(d.serverHostName[:], []byte{})
 	copy(d.bootFileName[:], []byte{})
 
@@ -151,7 +154,6 @@ func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 	// get hw addr
 	d.SetOpcode(OpcodeBootRequest)
 	d.SetHwType(iana.HwTypeEthernet)
-	d.SetHwAddrLen(uint8(len(hwaddr)))
 	d.SetClientHwAddr(hwaddr)
 	d.SetBroadcast()
 	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
@@ -205,7 +207,6 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
 
 	d.SetOpcode(OpcodeBootRequest)
 	d.SetHwType(iana.HwTypeEthernet)
-	d.SetHwAddrLen(uint8(len(hwaddr)))
 	d.SetClientHwAddr(hwaddr)
 	d.SetClientIPAddr(localIP)
 	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
@@ -220,9 +221,7 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 	}
 	d.SetOpcode(OpcodeBootRequest)
 	d.SetHwType(offer.HwType())
-	d.SetHwAddrLen(offer.HwAddrLen())
-	hwaddr := offer.ClientHwAddr()
-	d.SetClientHwAddr(hwaddr[:])
+	d.SetClientHwAddr(offer.ClientHwAddr())
 	d.SetTransactionID(offer.TransactionID())
 	if offer.IsBroadcast() {
 		d.SetBroadcast()
@@ -257,9 +256,7 @@ func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error
 	}
 	reply.SetOpcode(OpcodeBootReply)
 	reply.SetHwType(request.HwType())
-	reply.SetHwAddrLen(request.HwAddrLen())
-	hwaddr := request.ClientHwAddr()
-	reply.SetClientHwAddr(hwaddr[:])
+	reply.SetClientHwAddr(request.ClientHwAddr())
 	reply.SetTransactionID(request.TransactionID())
 	reply.SetFlags(request.Flags())
 	reply.SetGatewayIPAddr(request.GatewayIPAddr())
@@ -277,7 +274,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 
 	p.opcode = OpcodeType(buf.Read8())
 	p.hwType = iana.HwTypeType(buf.Read8())
-	p.hwAddrLen = buf.Read8()
+	hwAddrLen := buf.Read8()
 	p.hopCount = buf.Read8()
 
 	buf.ReadBytes(p.transactionID[:])
@@ -290,7 +287,14 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	p.serverIPAddr = net.IP(buf.CopyN(net.IPv4len))
 	p.gatewayIPAddr = net.IP(buf.CopyN(net.IPv4len))
 
-	buf.ReadBytes(p.clientHwAddr[:])
+	if hwAddrLen > maxHWAddrLen {
+		hwAddrLen = maxHWAddrLen
+	}
+	// Always read 16 bytes, but only use hwAddrLen of them.
+	p.clientHwAddr = make(net.HardwareAddr, maxHWAddrLen)
+	buf.ReadBytes(p.clientHwAddr)
+	p.clientHwAddr = p.clientHwAddr[:hwAddrLen]
+
 	buf.ReadBytes(p.serverHostName[:])
 	buf.ReadBytes(p.bootFileName[:])
 
@@ -348,22 +352,6 @@ func (d *DHCPv4) SetHwType(hwType iana.HwTypeType) {
 		log.Printf("Warning: Invalid DHCPv4 hwtype: %v", hwType)
 	}
 	d.hwType = hwType
-}
-
-// HwAddrLen returns the hardware address length. E.g. for Ethernet it would
-// return 6.
-func (d *DHCPv4) HwAddrLen() uint8 {
-	return d.hwAddrLen
-}
-
-// SetHwAddrLen sets the hardware address length, limiting it to the maximum
-// size 16 that the standard allows.
-func (d *DHCPv4) SetHwAddrLen(hwAddrLen uint8) {
-	if hwAddrLen > 16 {
-		log.Printf("Warning: invalid HwAddrLen: %v > 16, using 16 instead", hwAddrLen)
-		hwAddrLen = 16
-	}
-	d.hwAddrLen = hwAddrLen
 }
 
 // HopCount returns the hop count field.
@@ -481,30 +469,22 @@ func (d *DHCPv4) SetGatewayIPAddr(gatewayIPAddr net.IP) {
 }
 
 // ClientHwAddr returns the client hardware (MAC) address.
-func (d *DHCPv4) ClientHwAddr() [16]byte {
+func (d *DHCPv4) ClientHwAddr() net.HardwareAddr {
 	return d.clientHwAddr
 }
 
 // ClientHwAddrToString converts the hardware address field to a string.
 func (d *DHCPv4) ClientHwAddrToString() string {
-	var ret []string
-	for _, b := range d.clientHwAddr[:d.hwAddrLen] {
-		ret = append(ret, fmt.Sprintf("%02x", b))
-	}
-	return strings.Join(ret, ":")
+	return d.clientHwAddr.String()
 }
 
 // SetClientHwAddr sets the client hardware address.
-func (d *DHCPv4) SetClientHwAddr(clientHwAddr []byte) {
-	if len(clientHwAddr) > 16 {
+func (d *DHCPv4) SetClientHwAddr(clientHwAddr net.HardwareAddr) {
+	if len(clientHwAddr) > maxHWAddrLen {
 		log.Printf("Warning: too long HW Address (%d bytes), truncating to 16 bytes", len(clientHwAddr))
-		clientHwAddr = clientHwAddr[:16]
+		clientHwAddr = clientHwAddr[:maxHWAddrLen]
 	}
-	copy(d.clientHwAddr[:len(clientHwAddr)], clientHwAddr)
-	// pad the remaining bytes, if any
-	for i := len(clientHwAddr); i < 16; i++ {
-		d.clientHwAddr[i] = 0
-	}
+	d.clientHwAddr = clientHwAddr
 }
 
 // ServerHostName returns the server host name as a sequence of bytes.
@@ -659,7 +639,6 @@ func (d *DHCPv4) Summary() string {
 		"DHCPv4\n"+
 			"  opcode=%v\n"+
 			"  hwtype=%v\n"+
-			"  hwaddrlen=%v\n"+
 			"  hopcount=%v\n"+
 			"  transactionid=0x%08x\n"+
 			"  numseconds=%v\n"+
@@ -673,7 +652,6 @@ func (d *DHCPv4) Summary() string {
 			"  bootfilename=%v\n",
 		d.OpcodeToString(),
 		d.HwTypeToString(),
-		d.HwAddrLen(),
 		d.HopCount(),
 		d.TransactionID(),
 		d.NumSeconds(),
@@ -756,7 +734,12 @@ func (d *DHCPv4) ToBytes() []byte {
 	buf.Write8(uint8(d.hwType))
 
 	// HwAddrLen
-	buf.Write8(d.hwAddrLen)
+	hlen := uint8(len(d.clientHwAddr))
+	if hlen == 0 && d.hwType == iana.HwTypeEthernet {
+		hlen = 6
+	}
+	buf.Write8(hlen)
+
 	buf.Write8(d.hopCount)
 	buf.WriteBytes(d.transactionID[:])
 	buf.Write16(d.numSeconds)
@@ -767,7 +750,8 @@ func (d *DHCPv4) ToBytes() []byte {
 	writeIP(buf, d.serverIPAddr[:])
 	writeIP(buf, d.gatewayIPAddr[:])
 
-	buf.WriteBytes(d.clientHwAddr[:])
+	copy(buf.WriteN(maxHWAddrLen), d.clientHwAddr)
+
 	buf.WriteBytes(d.serverHostName[:])
 	buf.WriteBytes(d.bootFileName[:])
 
