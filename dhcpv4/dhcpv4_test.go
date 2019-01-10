@@ -305,8 +305,8 @@ func TestNewDiscovery(t *testing.T) {
 	require.Equal(t, iana.HwTypeEthernet, m.HWType)
 	require.Equal(t, hwAddr, m.ClientHWAddr)
 	require.True(t, m.IsBroadcast())
-	require.True(t, HasOption(m, OptionParameterRequestList))
-	require.True(t, HasOption(m, OptionEnd))
+	require.True(t, m.Options.Has(OptionParameterRequestList))
+	require.True(t, m.Options.Has(OptionEnd))
 }
 
 func TestNewInform(t *testing.T) {

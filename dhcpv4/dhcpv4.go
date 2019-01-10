@@ -367,45 +367,14 @@ func (d *DHCPv4) SetUnicast() {
 // According to RFC 3396, options that are specified more than once are
 // concatenated, and hence this should always just return one option.
 func (d *DHCPv4) GetOption(code OptionCode) []Option {
-	return d.Options.GetOption(code)
+	return d.Options.Get(code)
 }
 
 // GetOneOption will attempt to get an  option that match a Option code.
 // If there are multiple options with the same OptionCode it will only return
 // the first one found.  If no matching option is found nil will be returned.
 func (d *DHCPv4) GetOneOption(code OptionCode) Option {
-	return d.Options.GetOneOption(code)
-}
-
-// Options is a collection of options.
-type Options []Option
-
-// GetOption will attempt to get all options that match a DHCPv4 option
-// from its OptionCode.  If the option was not found it will return an
-// empty list.
-//
-// According to RFC 3396, options that are specified more than once are
-// concatenated, and hence this should always just return one option.
-func (o Options) GetOption(code OptionCode) []Option {
-	opts := []Option{}
-	for _, opt := range o {
-		if opt.Code() == code {
-			opts = append(opts, opt)
-		}
-	}
-	return opts
-}
-
-// GetOneOption will attempt to get an  option that match a Option code.
-// If there are multiple options with the same OptionCode it will only return
-// the first one found.  If no matching option is found nil will be returned.
-func (o Options) GetOneOption(code OptionCode) Option {
-	for _, opt := range o {
-		if opt.Code() == code {
-			return opt
-		}
-	}
-	return nil
+	return d.Options.GetOne(code)
 }
 
 // AddOption appends an option to the existing ones. If the last option is an
@@ -589,16 +558,4 @@ func (d *DHCPv4) ToBytes() []byte {
 		buf.WriteBytes(opt.ToBytes())
 	}
 	return buf.Data()
-}
-
-// OptionGetter is a interface that knows how to retrieve an option from a
-// structure of options given an OptionCode.
-type OptionGetter interface {
-	GetOption(OptionCode) []Option
-	GetOneOption(OptionCode) Option
-}
-
-// HasOption checks whether the OptionGetter `o` has the given `opcode` Option.
-func HasOption(o OptionGetter, opcode OptionCode) bool {
-	return o.GetOneOption(opcode) != nil
 }

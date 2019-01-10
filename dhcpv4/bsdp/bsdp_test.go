@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func RequireHasOption(t *testing.T, opts dhcpv4.OptionGetter, opt dhcpv4.Option) {
+func RequireHasOption(t *testing.T, opts dhcpv4.Options, opt dhcpv4.Option) {
 	require.NotNil(t, opts, "must pass list of options")
 	require.NotNil(t, opt, "must pass option")
-	require.True(t, dhcpv4.HasOption(opts, opt.Code()))
-	actual := opts.GetOneOption(opt.Code())
+	require.True(t, opts.Has(opt.Code()))
+	actual := opts.GetOne(opt.Code())
 	require.Equal(t, opt, actual)
 }
 
@@ -66,16 +66,16 @@ func TestNewInformList_NoReplyPort(t *testing.T) {
 	m, err := NewInformList(hwAddr, localIP, 0)
 
 	require.NoError(t, err)
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionVendorSpecificInformation))
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionParameterRequestList))
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionMaximumDHCPMessageSize))
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionEnd))
+	require.True(t, m.Options.Has(dhcpv4.OptionVendorSpecificInformation))
+	require.True(t, m.Options.Has(dhcpv4.OptionParameterRequestList))
+	require.True(t, m.Options.Has(dhcpv4.OptionMaximumDHCPMessageSize))
+	require.True(t, m.Options.Has(dhcpv4.OptionEnd))
 
 	opt := m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	require.NotNil(t, opt, "vendor opts not present")
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionMessageType))
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionVersion))
+	require.True(t, vendorInfo.Options.Has(OptionMessageType))
+	require.True(t, vendorInfo.Options.Has(OptionVersion))
 
 	opt = vendorInfo.GetOneOption(OptionMessageType)
 	require.Equal(t, MessageTypeList, opt.(*OptMessageType).Type)
@@ -97,7 +97,7 @@ func TestNewInformList_ReplyPort(t *testing.T) {
 
 	opt := m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionReplyPort))
+	require.True(t, vendorInfo.Options.Has(OptionReplyPort))
 
 	opt = vendorInfo.GetOneOption(OptionReplyPort)
 	require.Equal(t, replyPort, opt.(*OptReplyPort).Port)
@@ -138,21 +138,21 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 	require.True(t, m.IsBroadcast())
 
 	// Validate options.
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionClassIdentifier))
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionParameterRequestList))
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionDHCPMessageType))
+	require.True(t, m.Options.Has(dhcpv4.OptionClassIdentifier))
+	require.True(t, m.Options.Has(dhcpv4.OptionParameterRequestList))
+	require.True(t, m.Options.Has(dhcpv4.OptionDHCPMessageType))
 	opt := m.GetOneOption(dhcpv4.OptionDHCPMessageType)
 	require.Equal(t, dhcpv4.MessageTypeInform, opt.(*dhcpv4.OptMessageType).MessageType)
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionEnd))
+	require.True(t, m.Options.Has(dhcpv4.OptionEnd))
 
 	// Validate vendor opts.
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionVendorSpecificInformation))
+	require.True(t, m.Options.Has(dhcpv4.OptionVendorSpecificInformation))
 	opt = m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	RequireHasOption(t, vendorInfo, &OptMessageType{Type: MessageTypeSelect})
-	require.True(t, dhcpv4.HasOption(vendorInfo, OptionVersion))
-	RequireHasOption(t, vendorInfo, &OptSelectedBootImageID{ID: bootImage.ID})
-	RequireHasOption(t, vendorInfo, &OptServerIdentifier{ServerID: serverID})
+	RequireHasOption(t, vendorInfo.Options, &OptMessageType{Type: MessageTypeSelect})
+	require.True(t, vendorInfo.Options.Has(OptionVersion))
+	RequireHasOption(t, vendorInfo.Options, &OptSelectedBootImageID{ID: bootImage.ID})
+	RequireHasOption(t, vendorInfo.Options, &OptServerIdentifier{ServerID: serverID})
 }
 
 func TestInformSelectForAck_NoServerID(t *testing.T) {
@@ -212,10 +212,10 @@ func TestInformSelectForAck_ReplyPort(t *testing.T) {
 	m, err := InformSelectForAck(*ack, replyPort, bootImage)
 	require.NoError(t, err)
 
-	require.True(t, dhcpv4.HasOption(m, dhcpv4.OptionVendorSpecificInformation))
+	require.True(t, m.Options.Has(dhcpv4.OptionVendorSpecificInformation))
 	opt := m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	vendorInfo := opt.(*OptVendorSpecificInformation)
-	RequireHasOption(t, vendorInfo, &OptReplyPort{Port: replyPort})
+	RequireHasOption(t, vendorInfo.Options, &OptReplyPort{Port: replyPort})
 }
 
 func TestNewReplyForInformList_NoDefaultImage(t *testing.T) {
@@ -276,9 +276,9 @@ func TestNewReplyForInformList(t *testing.T) {
 	require.Equal(t, "bsdp.foo.com", ack.ServerHostName)
 
 	// Validate options.
-	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
-	RequireHasOption(t, ack, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
 
 	// Ensure options terminated with End option.
@@ -286,17 +286,17 @@ func TestNewReplyForInformList(t *testing.T) {
 
 	// Vendor-specific options.
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
-	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeList})
-	RequireHasOption(t, vendorOpts, &OptDefaultBootImageID{ID: images[0].ID})
-	RequireHasOption(t, vendorOpts, &OptServerPriority{Priority: 0x7070})
-	RequireHasOption(t, vendorOpts, &OptBootImageList{Images: images})
+	RequireHasOption(t, vendorOpts.Options, &OptMessageType{Type: MessageTypeList})
+	RequireHasOption(t, vendorOpts.Options, &OptDefaultBootImageID{ID: images[0].ID})
+	RequireHasOption(t, vendorOpts.Options, &OptServerPriority{Priority: 0x7070})
+	RequireHasOption(t, vendorOpts.Options, &OptBootImageList{Images: images})
 
 	// Add in selected boot image, ensure it's in the generated ACK.
 	config.SelectedImage = &images[0]
 	ack, err = NewReplyForInformList(inform, config)
 	require.NoError(t, err)
 	vendorOpts = ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
-	RequireHasOption(t, vendorOpts, &OptSelectedBootImageID{ID: images[0].ID})
+	RequireHasOption(t, vendorOpts.Options, &OptSelectedBootImageID{ID: images[0].ID})
 }
 
 func TestNewReplyForInformSelect_NoSelectedImage(t *testing.T) {
@@ -357,18 +357,18 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	require.Equal(t, "bsdp.foo.com", ack.ServerHostName)
 
 	// Validate options.
-	RequireHasOption(t, ack, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
-	RequireHasOption(t, ack, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
-	RequireHasOption(t, ack, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
+	RequireHasOption(t, ack.Options, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
 
 	// Ensure options are terminated with End option.
 	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options[len(ack.Options)-1])
 
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
-	RequireHasOption(t, vendorOpts, &OptMessageType{Type: MessageTypeSelect})
-	RequireHasOption(t, vendorOpts, &OptSelectedBootImageID{ID: images[0].ID})
+	RequireHasOption(t, vendorOpts.Options, &OptMessageType{Type: MessageTypeSelect})
+	RequireHasOption(t, vendorOpts.Options, &OptSelectedBootImageID{ID: images[0].ID})
 }
 
 func TestMessageTypeForPacket(t *testing.T) {

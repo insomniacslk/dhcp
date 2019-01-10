@@ -101,7 +101,7 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 		OptionBootImageList,
 		OptionDefaultBootImageID,
 	} {
-		require.True(t, dhcpv4.HasOption(o, opt))
+		require.True(t, o.Options.Has(opt))
 	}
 	optBootImage := o.GetOneOption(OptionBootImageList).(*OptBootImageList)
 	expectedBootImages := []BootImage{

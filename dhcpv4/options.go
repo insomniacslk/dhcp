@@ -95,13 +95,48 @@ func ParseOption(code OptionCode, data []byte) (Option, error) {
 	return opt, nil
 }
 
+// Options is a collection of options.
+type Options []Option
+
+// Get will attempt to get all options that match a DHCPv4 option from its
+// OptionCode.  If the option was not found it will return an empty list.
+//
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option.
+func (o Options) Get(code OptionCode) []Option {
+	opts := []Option{}
+	for _, opt := range o {
+		if opt.Code() == code {
+			opts = append(opts, opt)
+		}
+	}
+	return opts
+}
+
+// GetOne will attempt to get an  option that match a Option code.  If there
+// are multiple options with the same OptionCode it will only return the first
+// one found.  If no matching option is found nil will be returned.
+func (o Options) GetOne(code OptionCode) Option {
+	for _, opt := range o {
+		if opt.Code() == code {
+			return opt
+		}
+	}
+	return nil
+}
+
+// Has checks whether o has the given `opcode` Option.
+func (o Options) Has(code OptionCode) bool {
+	return o.GetOne(code) != nil
+}
+
 // OptionsFromBytes parses a sequence of bytes until the end and builds a list
 // of options from it.
 //
 // The sequence should not contain the DHCP magic cookie.
 //
 // Returns an error if any invalid option or length is found.
-func OptionsFromBytes(data []byte) ([]Option, error) {
+func OptionsFromBytes(data []byte) (Options, error) {
 	return OptionsFromBytesWithParser(data, ParseOption, true)
 }
 
