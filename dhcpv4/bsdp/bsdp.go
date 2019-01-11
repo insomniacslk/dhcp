@@ -109,7 +109,7 @@ func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*
 	// These are vendor-specific options used to pass along BSDP information.
 	vendorOpts := []dhcpv4.Option{
 		&OptMessageType{MessageTypeList},
-		&OptVersion{Version1_1},
+		Version1_1,
 	}
 	if needsReplyPort(replyPort) {
 		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
@@ -156,7 +156,7 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	// Data for OptionSelectedBootImageID
 	vendorOpts := []dhcpv4.Option{
 		&OptMessageType{MessageTypeSelect},
-		&OptVersion{Version1_1},
+		Version1_1,
 		&OptSelectedBootImageID{selectedImage.ID},
 	}
 

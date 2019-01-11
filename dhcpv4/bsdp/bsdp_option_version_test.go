@@ -7,7 +7,7 @@ import (
 )
 
 func TestOptVersionInterfaceMethods(t *testing.T) {
-	o := OptVersion{Version1_1}
+	o := Version1_1
 	require.Equal(t, OptionVersion, o.Code(), "Code")
 	require.Equal(t, []byte{1, 1}, o.ToBytes(), "ToBytes")
 }
@@ -16,7 +16,7 @@ func TestParseOptVersion(t *testing.T) {
 	data := []byte{1, 1}
 	o, err := ParseOptVersion(data)
 	require.NoError(t, err)
-	require.Equal(t, &OptVersion{Version1_1}, o)
+	require.Equal(t, Version1_1, o)
 
 	// Short byte stream
 	data = []byte{2}
@@ -25,7 +25,5 @@ func TestParseOptVersion(t *testing.T) {
 }
 
 func TestOptVersionString(t *testing.T) {
-	// known
-	o := OptVersion{Version1_1}
-	require.Equal(t, "BSDP Version -> 1.1", o.String())
+	require.Equal(t, "BSDP Version -> 1.1", Version1_1.String())
 }
