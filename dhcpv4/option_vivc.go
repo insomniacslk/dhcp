@@ -7,10 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the Vendor-Identifying Vendor Class Option
-// https://tools.ietf.org/html/rfc3925
-
-// VIVCIdentifier represents one Vendor-Identifying vendor class option.
+// VIVCIdentifier implements the vendor-identifying vendor class option
+// described by RFC 3925.
 type VIVCIdentifier struct {
 	EntID uint32
 	Data  []byte

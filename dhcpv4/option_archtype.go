@@ -1,8 +1,5 @@
 package dhcpv4
 
-// This option implements the Client System Architecture Type option
-// https://tools.ietf.org/html/rfc4578
-
 import (
 	"fmt"
 
@@ -11,7 +8,7 @@ import (
 )
 
 // OptClientArchType represents an option encapsulating the Client System
-// Architecture Type option Definition.
+// Architecture Type option definition. See RFC 4578.
 type OptClientArchType struct {
 	ArchTypes []iana.Arch
 }

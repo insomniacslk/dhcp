@@ -6,11 +6,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the relay agent information option
-// https://tools.ietf.org/html/rfc3046
-
-// OptRelayAgentInformation is a "container" option for specific agent-supplied
-// sub-options.
+// OptRelayAgentInformation implements the relay agent info option described by
+// RFC 3046.
 type OptRelayAgentInformation struct {
 	Options Options
 }

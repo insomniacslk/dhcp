@@ -7,11 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the requested IP address option
-// https://tools.ietf.org/html/rfc2132
-
-// OptRequestedIPAddress represents an option encapsulating the server
-// identifier.
+// OptRequestedIPAddress implements the requested IP address option described
+// by RFC 2132, Section 9.1.
 type OptRequestedIPAddress struct {
 	RequestedAddr net.IP
 }

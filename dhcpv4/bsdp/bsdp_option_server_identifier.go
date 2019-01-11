@@ -8,7 +8,7 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptServerIdentifier represents an option encapsulating the server identifier.
+// OptServerIdentifier implements the BSDP server identifier option.
 type OptServerIdentifier struct {
 	ServerID net.IP
 }

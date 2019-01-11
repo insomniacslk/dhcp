@@ -7,10 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the subnet mask option
-// https://tools.ietf.org/html/rfc2132
-
-// OptSubnetMask represents an option encapsulating the subnet mask.
+// OptSubnetMask implements the subnet mask option described by RFC 2132,
+// Section 3.3.
 type OptSubnetMask struct {
 	SubnetMask net.IPMask
 }

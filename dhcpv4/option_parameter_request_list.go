@@ -7,10 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the parameter request list option
-// https://tools.ietf.org/html/rfc2132
-
-// OptParameterRequestList represents the parameter request list option.
+// OptParameterRequestList implements the parameter request list option
+// described by RFC 2132, Section 9.8.
 type OptParameterRequestList struct {
 	RequestedOpts []OptionCode
 }

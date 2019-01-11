@@ -2,16 +2,14 @@ package dhcpv4
 
 import "fmt"
 
-// This option implements the domain name option
-// https://tools.ietf.org/html/rfc2132
-
-// OptDomainName represents an option encapsulating the domain name.
+// OptDomainName implements the domain name option described in RFC 2132,
+// Section 3.17.
 type OptDomainName struct {
 	DomainName string
 }
 
-// ParseOptDomainName returns a new OptDomainName from a byte
-// stream, or error if any.
+// ParseOptDomainName returns a new OptDomainName from a byte stream, or error
+// if any.
 func ParseOptDomainName(data []byte) (*OptDomainName, error) {
 	return &OptDomainName{DomainName: string(data)}, nil
 }

@@ -7,10 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptServerIdentifier represents an option encapsulating the server identifier.
-//
-// This option implements the server identifier option
-// https://tools.ietf.org/html/rfc2132
+// OptServerIdentifier implements the server identifier option described by RFC
+// 2132, Section 9.7.
 type OptServerIdentifier struct {
 	ServerID net.IP
 }
