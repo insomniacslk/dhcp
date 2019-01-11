@@ -401,7 +401,7 @@ func TestMessageTypeForPacket(t *testing.T) {
 				&dhcpv4.OptHostName{HostName: "foobar1234"},
 				&OptVendorSpecificInformation{
 					Options: []dhcpv4.Option{
-						&OptVersion{Version: Version1_1},
+						Version1_1,
 					},
 				},
 			},
@@ -412,7 +412,7 @@ func TestMessageTypeForPacket(t *testing.T) {
 				&dhcpv4.OptHostName{HostName: "foobar1234"},
 				&OptVendorSpecificInformation{
 					Options: []dhcpv4.Option{
-						&OptVersion{Version: Version1_1},
+						Version1_1,
 						&OptMessageType{Type: MessageTypeList},
 					},
 				},

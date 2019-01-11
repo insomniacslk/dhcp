@@ -9,7 +9,7 @@ import (
 
 func TestOptVendorSpecificInformationInterfaceMethods(t *testing.T) {
 	messageTypeOpt := &OptMessageType{MessageTypeList}
-	versionOpt := &OptVersion{Version1_1}
+	versionOpt := Version1_1
 	o := &OptVendorSpecificInformation{[]dhcpv4.Option{messageTypeOpt, versionOpt}}
 	require.Equal(t, dhcpv4.OptionVendorSpecificInformation, o.Code(), "Code")
 
@@ -20,7 +20,7 @@ func TestOptVendorSpecificInformationInterfaceMethods(t *testing.T) {
 	o = &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
@@ -44,7 +44,7 @@ func TestParseOptVendorSpecificInformation(t *testing.T) {
 	expected := &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	require.Equal(t, 2, len(o.Options), "number of parsed suboptions")
@@ -126,7 +126,7 @@ func TestOptVendorSpecificInformationString(t *testing.T) {
 	o := &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	expectedString := "Vendor Specific Information ->\n  BSDP Message Type -> LIST\n  BSDP Version -> 1.1"
@@ -171,7 +171,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 	o := &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	foundOpts := o.GetOption(OptionBootImageList)
@@ -181,7 +181,7 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 	o = &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	foundOpts = o.GetOption(OptionMessageType)
@@ -189,17 +189,27 @@ func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
 	require.Equal(t, MessageTypeList, foundOpts[0].(*OptMessageType).Type)
 
 	// Multiple options
+	//
+	// TODO: Remove this test when RFC 3396 is properly implemented. This
+	// isn't a valid packet. RFC 2131, Section 4.1: "Options may appear
+	// only once." RFC 3396 clarifies this to say that options will be
+	// concatenated. I.e., in this case, the bytes would be:
+	//
+	// <versioncode> 4 1 1 0 1
+	//
+	// Which would obviously not be parsed by the Version parser, as it
+	// only accepts two bytes.
 	o = &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
-			&OptVersion{Version1_0},
+			Version1_1,
+			Version1_0,
 		},
 	}
 	foundOpts = o.GetOption(OptionVersion)
 	require.Equal(t, 2, len(foundOpts), "should get two options")
-	require.Equal(t, Version1_1, foundOpts[0].(*OptVersion).Version)
-	require.Equal(t, Version1_0, foundOpts[1].(*OptVersion).Version)
+	require.Equal(t, Version1_1, foundOpts[0].(Version))
+	require.Equal(t, Version1_0, foundOpts[1].(Version))
 }
 
 func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
@@ -207,7 +217,7 @@ func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	o := &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	foundOpt := o.GetOneOption(OptionBootImageList)
@@ -217,7 +227,7 @@ func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	o = &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
+			Version1_1,
 		},
 	}
 	foundOpt = o.GetOneOption(OptionMessageType)
@@ -227,10 +237,10 @@ func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	o = &OptVendorSpecificInformation{
 		[]dhcpv4.Option{
 			&OptMessageType{MessageTypeList},
-			&OptVersion{Version1_1},
-			&OptVersion{Version1_0},
+			Version1_1,
+			Version1_0,
 		},
 	}
 	foundOpt = o.GetOneOption(OptionVersion)
-	require.Equal(t, Version1_1, foundOpt.(*OptVersion).Version)
+	require.Equal(t, Version1_1, foundOpt.(Version))
 }

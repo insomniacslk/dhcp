@@ -7,37 +7,35 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
+// Version is the BSDP protocol version. Can be one of 1.0 or 1.1.
+type Version [2]byte
+
 // Specific versions.
 var (
-	Version1_0 = []byte{1, 0}
-	Version1_1 = []byte{1, 1}
+	Version1_0 = Version{1, 0}
+	Version1_1 = Version{1, 1}
 )
-
-// OptVersion represents a BSDP protocol version.
-//
-// Implements the BSDP option version. Can be one of 1.0 or 1.1
-type OptVersion struct {
-	Version []byte
-}
 
 // ParseOptVersion constructs an OptVersion struct from a sequence of
 // bytes and returns it, or an error.
-func ParseOptVersion(data []byte) (*OptVersion, error) {
+func ParseOptVersion(data []byte) (Version, error) {
 	buf := uio.NewBigEndianBuffer(data)
-	return &OptVersion{buf.CopyN(2)}, buf.FinError()
+	var v Version
+	buf.ReadBytes(v[:])
+	return v, buf.FinError()
 }
 
 // Code returns the option code.
-func (o *OptVersion) Code() dhcpv4.OptionCode {
+func (o Version) Code() dhcpv4.OptionCode {
 	return OptionVersion
 }
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptVersion) ToBytes() []byte {
-	return o.Version
+func (o Version) ToBytes() []byte {
+	return o[:]
 }
 
 // String returns a human-readable string for this option.
-func (o *OptVersion) String() string {
-	return fmt.Sprintf("BSDP Version -> %v.%v", o.Version[0], o.Version[1])
+func (o Version) String() string {
+	return fmt.Sprintf("BSDP Version -> %d.%d", o[0], o[1])
 }
