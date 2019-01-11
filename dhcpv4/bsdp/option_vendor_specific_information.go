@@ -48,10 +48,15 @@ func parseOption(code dhcpv4.OptionCode, data []byte) (dhcpv4.Option, error) {
 	return opt, nil
 }
 
+// codeGetter is a dhcpv4.OptionCodeGetter for BSDP optionCodes.
+func codeGetter(c uint8) dhcpv4.OptionCode {
+	return optionCode(c)
+}
+
 // ParseOptVendorSpecificInformation constructs an OptVendorSpecificInformation struct from a sequence of
 // bytes and returns it, or an error.
 func ParseOptVendorSpecificInformation(data []byte) (*OptVendorSpecificInformation, error) {
-	options, err := dhcpv4.OptionsFromBytesWithParser(data, parseOption, false /* don't check for OptionEnd tag */)
+	options, err := dhcpv4.OptionsFromBytesWithParser(data, codeGetter, parseOption, false /* don't check for OptionEnd tag */)
 	if err != nil {
 		return nil, err
 	}

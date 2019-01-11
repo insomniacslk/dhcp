@@ -32,9 +32,5 @@ func (o OptGeneric) ToBytes() []byte {
 
 // String returns a human-readable representation of a generic option.
 func (o OptGeneric) String() string {
-	code, ok := optionCodeToString[o.Code()]
-	if !ok {
-		code = "Unknown"
-	}
-	return fmt.Sprintf("%v -> %v", code, o.Data)
+	return fmt.Sprintf("%s -> %v", o.OptionCode, o.Data)
 }

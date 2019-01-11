@@ -23,9 +23,9 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 	opt, err = ParseOptRelayAgentInformation(data)
 	require.NoError(t, err)
 	require.Equal(t, len(opt.Options), 2)
-	circuit := opt.Options.GetOne(1).(*OptionGeneric)
+	circuit := opt.Options.GetOne(optionCode(1)).(*OptionGeneric)
 	require.NoError(t, err)
-	remote := opt.Options.GetOne(2).(*OptionGeneric)
+	remote := opt.Options.GetOne(optionCode(2)).(*OptionGeneric)
 	require.NoError(t, err)
 	require.Equal(t, circuit.Data, []byte("linux"))
 	require.Equal(t, remote.Data, []byte("boot"))
@@ -34,8 +34,8 @@ func TestParseOptRelayAgentInformation(t *testing.T) {
 func TestParseOptRelayAgentInformationToBytes(t *testing.T) {
 	opt := OptRelayAgentInformation{
 		Options: Options{
-			&OptionGeneric{OptionCode: 1, Data: []byte("linux")},
-			&OptionGeneric{OptionCode: 2, Data: []byte("boot")},
+			&OptionGeneric{OptionCode: optionCode(1), Data: []byte("linux")},
+			&OptionGeneric{OptionCode: optionCode(2), Data: []byte("boot")},
 		},
 	}
 	data := opt.ToBytes()
