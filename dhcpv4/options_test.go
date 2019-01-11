@@ -173,7 +173,7 @@ func TestOptionsMarshal(t *testing.T) {
 		{
 			opts: Options{
 				&OptionGeneric{
-					OptionCode: 5,
+					OptionCode: optionCode(5),
 					Data:       []byte{1, 2, 3, 4},
 				},
 			},
@@ -185,11 +185,11 @@ func TestOptionsMarshal(t *testing.T) {
 			// Test sorted key order.
 			opts: Options{
 				&OptionGeneric{
-					OptionCode: 5,
+					OptionCode: optionCode(5),
 					Data:       []byte{1, 2, 3},
 				},
 				&OptionGeneric{
-					OptionCode: 100,
+					OptionCode: optionCode(100),
 					Data:       []byte{101, 102, 103},
 				},
 			},
@@ -202,7 +202,7 @@ func TestOptionsMarshal(t *testing.T) {
 			// Test RFC 3396.
 			opts: Options{
 				&OptionGeneric{
-					OptionCode: 5,
+					OptionCode: optionCode(5),
 					Data:       bytes.Repeat([]byte{10}, math.MaxUint8+1),
 				},
 			},
@@ -263,7 +263,7 @@ func TestOptionsUnmarshal(t *testing.T) {
 			},
 			want: Options{
 				&OptionGeneric{
-					OptionCode: 3,
+					OptionCode: optionCode(3),
 					Data:       []byte{5, 6},
 				},
 			},
@@ -277,7 +277,7 @@ func TestOptionsUnmarshal(t *testing.T) {
 			),
 			want: Options{
 				&OptionGeneric{
-					OptionCode: 3,
+					OptionCode: optionCode(3),
 					Data:       bytes.Repeat([]byte{10}, math.MaxUint8+5),
 				},
 			},
@@ -290,11 +290,11 @@ func TestOptionsUnmarshal(t *testing.T) {
 			},
 			want: Options{
 				&OptionGeneric{
-					OptionCode: 10,
+					OptionCode: optionCode(10),
 					Data:       []byte{255, 254},
 				},
 				&OptionGeneric{
-					OptionCode: 11,
+					OptionCode: optionCode(11),
 					Data:       []byte{5, 5, 5},
 				},
 			},
@@ -306,14 +306,14 @@ func TestOptionsUnmarshal(t *testing.T) {
 			),
 			want: Options{
 				&OptionGeneric{
-					OptionCode: 10,
+					OptionCode: optionCode(10),
 					Data:       []byte{255, 254},
 				},
 			},
 		},
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
-			opt, err := OptionsFromBytesWithParser(tt.input, ParseOptionGeneric, true)
+			opt, err := OptionsFromBytesWithParser(tt.input, codeGetter, ParseOptionGeneric, true)
 			if tt.wantError {
 				require.Error(t, err)
 			} else {

@@ -1,34 +1,48 @@
 package bsdp
 
-import "github.com/insomniacslk/dhcp/dhcpv4"
-
 // DefaultMacOSVendorClassIdentifier is a default vendor class identifier used
 // on non-darwin hosts where the vendor class identifier cannot be determined.
 // It should mostly be used for debugging if testing BSDP on a non-darwin
 // system.
 const DefaultMacOSVendorClassIdentifier = AppleVendorID + "/i386/MacMini6,1"
 
+// optionCode are BSDP option codes.
+//
+// optionCode implements the dhcpv4.OptionCode interface.
+type optionCode uint8
+
+func (o optionCode) Code() uint8 {
+	return uint8(o)
+}
+
+func (o optionCode) String() string {
+	if s, ok := optionCodeToString[o]; ok {
+		return s
+	}
+	return "unknown"
+}
+
 // Options (occur as sub-options of DHCP option 43).
 const (
-	OptionMessageType                   dhcpv4.OptionCode = 1
-	OptionVersion                       dhcpv4.OptionCode = 2
-	OptionServerIdentifier              dhcpv4.OptionCode = 3
-	OptionServerPriority                dhcpv4.OptionCode = 4
-	OptionReplyPort                     dhcpv4.OptionCode = 5
-	OptionBootImageListPath             dhcpv4.OptionCode = 6 // Not used
-	OptionDefaultBootImageID            dhcpv4.OptionCode = 7
-	OptionSelectedBootImageID           dhcpv4.OptionCode = 8
-	OptionBootImageList                 dhcpv4.OptionCode = 9
-	OptionNetboot1_0Firmware            dhcpv4.OptionCode = 10
-	OptionBootImageAttributesFilterList dhcpv4.OptionCode = 11
-	OptionShadowMountPath               dhcpv4.OptionCode = 128
-	OptionShadowFilePath                dhcpv4.OptionCode = 129
-	OptionMachineName                   dhcpv4.OptionCode = 130
+	OptionMessageType                   optionCode = 1
+	OptionVersion                       optionCode = 2
+	OptionServerIdentifier              optionCode = 3
+	OptionServerPriority                optionCode = 4
+	OptionReplyPort                     optionCode = 5
+	OptionBootImageListPath             optionCode = 6 // Not used
+	OptionDefaultBootImageID            optionCode = 7
+	OptionSelectedBootImageID           optionCode = 8
+	OptionBootImageList                 optionCode = 9
+	OptionNetboot1_0Firmware            optionCode = 10
+	OptionBootImageAttributesFilterList optionCode = 11
+	OptionShadowMountPath               optionCode = 128
+	OptionShadowFilePath                optionCode = 129
+	OptionMachineName                   optionCode = 130
 )
 
 // optionCodeToString maps BSDP OptionCodes to human-readable strings
 // describing what they are.
-var optionCodeToString = map[dhcpv4.OptionCode]string{
+var optionCodeToString = map[optionCode]string{
 	OptionMessageType:                   "BSDP Message Type",
 	OptionVersion:                       "BSDP Version",
 	OptionServerIdentifier:              "BSDP Server Identifier",

@@ -21,7 +21,7 @@ func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error)
 	buf := uio.NewBigEndianBuffer(data)
 	requestedOpts := make([]OptionCode, 0, buf.Len())
 	for buf.Len() > 0 {
-		requestedOpts = append(requestedOpts, OptionCode(buf.Read8()))
+		requestedOpts = append(requestedOpts, optionCode(buf.Read8()))
 	}
 	return &OptParameterRequestList{RequestedOpts: requestedOpts}, buf.Error()
 }
@@ -35,7 +35,7 @@ func (o *OptParameterRequestList) Code() OptionCode {
 func (o *OptParameterRequestList) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	for _, req := range o.RequestedOpts {
-		buf.Write8(uint8(req))
+		buf.Write8(req.Code())
 	}
 	return buf.Data()
 }

@@ -24,9 +24,6 @@ var (
 	ErrInvalidOptions = errors.New("invalid options data")
 )
 
-// OptionCode is a single byte representing the code for a given Option.
-type OptionCode byte
-
 // Option is an interface that all DHCP v4 options adhere to.
 type Option interface {
 	Code() OptionCode
@@ -137,15 +134,23 @@ func (o Options) Has(code OptionCode) bool {
 //
 // Returns an error if any invalid option or length is found.
 func OptionsFromBytes(data []byte) (Options, error) {
-	return OptionsFromBytesWithParser(data, ParseOption, true)
+	return OptionsFromBytesWithParser(data, codeGetter, ParseOption, true)
 }
 
-// OptionParser is a function signature for option parsing
+// OptionParser is a function signature for option parsing.
 type OptionParser func(code OptionCode, data []byte) (Option, error)
+
+// OptionCodeGetter parses a code into an OptionCode.
+type OptionCodeGetter func(code uint8) OptionCode
+
+// codeGetter is an OptionCodeGetter for DHCP optionCodes.
+func codeGetter(c uint8) OptionCode {
+	return optionCode(c)
+}
 
 // OptionsFromBytesWithParser parses Options from byte sequences using the
 // parsing function that is passed in as a paremeter
-func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption bool) (Options, error) {
+func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser OptionParser, checkEndOption bool) (Options, error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
@@ -160,11 +165,11 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption
 		// 1 byte: option code
 		// 1 byte: option length n
 		// n bytes: data
-		code := OptionCode(buf.Read8())
+		code := buf.Read8()
 
-		if code == OptionPad {
+		if code == OptionPad.Code() {
 			continue
-		} else if code == OptionEnd {
+		} else if code == OptionEnd.Code() {
 			end = true
 			break
 		}
@@ -177,12 +182,14 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption
 		}
 		data = data[:length:length]
 
-		if _, ok := options[code]; !ok {
-			order = append(order, code)
+		// Get the OptionCode for this guy.
+		c := coder(code)
+		if _, ok := options[c]; !ok {
+			order = append(order, c)
 		}
 		// RFC 3396: Just concatenate the data if the option code was
 		// specified multiple times.
-		options[code] = append(options[code], data...)
+		options[c] = append(options[c], data...)
 	}
 
 	// If we never read the End option, the sender of this packet screwed
@@ -193,7 +200,7 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption
 
 	// Any bytes left must be padding.
 	for buf.Len() >= 1 {
-		if OptionCode(buf.Read8()) != OptionPad {
+		if buf.Read8() != OptionPad.Code() {
 			return nil, ErrInvalidOptions
 		}
 	}
@@ -212,16 +219,16 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser, checkEndOption
 // Marshal writes options binary representations to b.
 func (o Options) Marshal(b *uio.Lexer) {
 	for _, opt := range o {
-		code := opt.Code()
+		code := opt.Code().Code()
 
 		// Even if the End option is in there, don't marshal it until
 		// the end.
-		if code == OptionEnd {
+		if code == OptionEnd.Code() {
 			continue
-		} else if code == OptionPad {
+		} else if code == OptionPad.Code() {
 			// Some DHCPv4 options have fixed length and do not put
 			// length on the wire.
-			b.Write8(uint8(code))
+			b.Write8(code)
 			continue
 		}
 
@@ -231,7 +238,7 @@ func (o Options) Marshal(b *uio.Lexer) {
 		// option is simply listed multiple times.
 		for len(data) > 0 {
 			// 1 byte: option code
-			b.Write8(uint8(code))
+			b.Write8(code)
 
 			n := len(data)
 			if n > math.MaxUint8 {

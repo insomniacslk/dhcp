@@ -18,7 +18,7 @@ type OptRelayAgentInformation struct {
 // ParseOptRelayAgentInformation returns a new OptRelayAgentInformation from a
 // byte stream, or error if any.
 func ParseOptRelayAgentInformation(data []byte) (*OptRelayAgentInformation, error) {
-	options, err := OptionsFromBytesWithParser(data, ParseOptionGeneric, false /* don't check for OptionEnd tag */)
+	options, err := OptionsFromBytesWithParser(data, codeGetter, ParseOptionGeneric, false /* don't check for OptionEnd tag */)
 	if err != nil {
 		return nil, err
 	}
