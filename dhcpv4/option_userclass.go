@@ -8,10 +8,7 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the User Class option
-// https://tools.ietf.org/html/rfc3004
-
-// OptUserClass represents an option encapsulating User Classes.
+// OptUserClass implements the user class option described by RFC 3004.
 type OptUserClass struct {
 	UserClasses [][]byte
 	Rfc3004     bool

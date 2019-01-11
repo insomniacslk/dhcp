@@ -5,8 +5,6 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// Implements the BSDP option listing the boot images.
-
 // OptBootImageList contains the list of boot images presented by a netboot
 // server.
 type OptBootImageList struct {

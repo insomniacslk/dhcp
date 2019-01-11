@@ -6,16 +6,14 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the Maximum DHCP Message size option
-// https://tools.ietf.org/html/rfc2132
-
-// OptMaximumDHCPMessageSize represents the Maximum DHCP Message size option.
+// OptMaximumDHCPMessageSize implements the maximum DHCP message size option
+// described by RFC 2132, Section 9.10.
 type OptMaximumDHCPMessageSize struct {
 	Size uint16
 }
 
-// ParseOptMaximumDHCPMessageSize constructs an OptMaximumDHCPMessageSize struct from a sequence of
-// bytes and returns it, or an error.
+// ParseOptMaximumDHCPMessageSize constructs an OptMaximumDHCPMessageSize
+// struct from a sequence of bytes and returns it, or an error.
 func ParseOptMaximumDHCPMessageSize(data []byte) (*OptMaximumDHCPMessageSize, error) {
 	buf := uio.NewBigEndianBuffer(data)
 	return &OptMaximumDHCPMessageSize{Size: buf.Read16()}, buf.FinError()

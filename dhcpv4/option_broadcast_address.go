@@ -7,10 +7,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the server identifier option
-// https://tools.ietf.org/html/rfc2132
-
-// OptBroadcastAddress represents an option encapsulating the server identifier.
+// OptBroadcastAddress implements the broadcast address option described in RFC
+// 2132, Section 5.3.
 type OptBroadcastAddress struct {
 	BroadcastAddress net.IP
 }

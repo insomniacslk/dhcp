@@ -6,10 +6,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the IP Address Lease Time option
-// https://tools.ietf.org/html/rfc2132
-
-// OptIPAddressLeaseTime represents the IP Address Lease Time option.
+// OptIPAddressLeaseTime implements the IP address lease time option described
+// by RFC 2132, Section 9.2.
 type OptIPAddressLeaseTime struct {
 	LeaseTime uint32
 }

@@ -8,9 +8,6 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the router option
-// https://tools.ietf.org/html/rfc2132
-
 // ParseIPs parses an IPv4 address from a DHCP packet as used and specified by
 // options in RFC 2132, Sections 3.5 through 3.13, 8.2, 8.3, 8.5, 8.6, 8.9, and
 // 8.10.
@@ -48,7 +45,7 @@ func IPsToString(i []net.IP) string {
 	return strings.Join(s, ", ")
 }
 
-// OptRouter represents an option encapsulating the routers.
+// OptRouter implements the router option described by RFC 2132, Section 3.5.
 type OptRouter struct {
 	Routers []net.IP
 }
@@ -77,7 +74,8 @@ func (o *OptRouter) String() string {
 	return fmt.Sprintf("Routers -> %s", IPsToString(o.Routers))
 }
 
-// OptNTPServers represents an option encapsulating the NTP servers.
+// OptNTPServers implements the NTP servers option described by RFC 2132,
+// Section 8.3.
 type OptNTPServers struct {
 	NTPServers []net.IP
 }
@@ -106,8 +104,8 @@ func (o *OptNTPServers) String() string {
 	return fmt.Sprintf("NTP Servers -> %v", IPsToString(o.NTPServers))
 }
 
-// OptDomainNameServer represents an option encapsulating the domain name
-// servers.
+// OptDomainNameServer implements the DNS server option described by RFC 2132,
+// Section 3.8.
 type OptDomainNameServer struct {
 	NameServers []net.IP
 }

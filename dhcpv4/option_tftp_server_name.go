@@ -4,10 +4,8 @@ import (
 	"fmt"
 )
 
-// This option implements the TFTP server name option.
-// https://tools.ietf.org/html/rfc2132
-
-// OptTFTPServerName implements the TFTP server name option.
+// OptTFTPServerName implements the TFTP server name option described by RFC
+// 2132, Section 9.4.
 type OptTFTPServerName struct {
 	TFTPServerName string
 }

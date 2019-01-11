@@ -1,18 +1,16 @@
 package dhcpv4
 
-// This module defines the OptDomainSearch structure.
-// https://tools.ietf.org/html/rfc3397
-
 import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
-// FIXME rename OptDomainSearch to OptDomainSearchList, and DomainSearch to
+// OptDomainSearch implements the domain search list option described by RFC
+// 3397, Section 2.
+//
+// FIXME: rename OptDomainSearch to OptDomainSearchList, and DomainSearch to
 // SearchList, for consistency with the equivalent v6 option
-
-// OptDomainSearch represents an option encapsulating a domain search list.
 type OptDomainSearch struct {
 	DomainSearch *rfc1035label.Labels
 }

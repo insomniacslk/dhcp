@@ -6,10 +6,8 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// This option implements the message type option
-// https://tools.ietf.org/html/rfc2132
-
-// OptMessageType represents the DHCP message type option.
+// OptMessageType implements the DHCP message type option described by RFC
+// 2132, Section 9.6.
 type OptMessageType struct {
 	MessageType MessageType
 }

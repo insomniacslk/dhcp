@@ -4,10 +4,8 @@ import (
 	"fmt"
 )
 
-// This option implements the root path option
-// https://tools.ietf.org/html/rfc2132
-
-// OptRootPath represents the path to the client's root disk.
+// OptRootPath implements the root path option described by RFC 2132, Section
+// 3.19.
 type OptRootPath struct {
 	Path string
 }

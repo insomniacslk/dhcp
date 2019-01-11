@@ -4,10 +4,8 @@ import (
 	"fmt"
 )
 
-// This option implements the Class Identifier option
-// https://tools.ietf.org/html/rfc2132
-
-// OptClassIdentifier represents the DHCP message type option.
+// OptClassIdentifier implements the vendor class identifier option described
+// in RFC 2132, Section 9.13.
 type OptClassIdentifier struct {
 	Identifier string
 }

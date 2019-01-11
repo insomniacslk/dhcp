@@ -4,10 +4,8 @@ import (
 	"fmt"
 )
 
-// This option implements the Bootfile name Option.
-// https://tools.ietf.org/html/rfc2132
-
-// OptBootfileName implements the BootFile Name option
+// OptBootfileName implements the bootfile name option described in RFC 2132,
+// Section 9.5.
 type OptBootfileName struct {
 	BootfileName string
 }
