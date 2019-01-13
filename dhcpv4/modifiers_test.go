@@ -69,7 +69,7 @@ func TestUserClassModifierRFC(t *testing.T) {
 func TestWithNetboot(t *testing.T) {
 	d, _ := New()
 	d = WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> [TFTP Server Name, Bootfile Name]", d.Options[0].String())
+	require.Equal(t, "Parameter Request List -> TFTP Server Name, Bootfile Name", d.Options[0].String())
 }
 
 func TestWithNetbootExistingTFTP(t *testing.T) {
@@ -79,7 +79,7 @@ func TestWithNetbootExistingTFTP(t *testing.T) {
 	}
 	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> [TFTP Server Name, Bootfile Name]", d.Options[0].String())
+	require.Equal(t, "Parameter Request List -> TFTP Server Name, Bootfile Name", d.Options[0].String())
 }
 
 func TestWithNetbootExistingBootfileName(t *testing.T) {
@@ -89,7 +89,7 @@ func TestWithNetbootExistingBootfileName(t *testing.T) {
 	}
 	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> [Bootfile Name, TFTP Server Name]", d.Options[0].String())
+	require.Equal(t, "Parameter Request List -> Bootfile Name, TFTP Server Name", d.Options[0].String())
 }
 
 func TestWithNetbootExistingBoth(t *testing.T) {
@@ -99,7 +99,7 @@ func TestWithNetbootExistingBoth(t *testing.T) {
 	}
 	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> [Bootfile Name, TFTP Server Name]", d.Options[0].String())
+	require.Equal(t, "Parameter Request List -> Bootfile Name, TFTP Server Name", d.Options[0].String())
 }
 
 func TestWithRequestedOptions(t *testing.T) {

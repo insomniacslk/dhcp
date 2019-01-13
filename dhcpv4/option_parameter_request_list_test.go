@@ -14,7 +14,7 @@ func TestOptParameterRequestListInterfaceMethods(t *testing.T) {
 	expectedBytes := []byte{67, 5}
 	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
 
-	expectedString := "Parameter Request List -> [Bootfile Name, Name Server]"
+	expectedString := "Parameter Request List -> Bootfile Name, Name Server"
 	require.Equal(t, expectedString, o.String(), "String")
 }
 
@@ -25,6 +25,6 @@ func TestParseOptParameterRequestList(t *testing.T) {
 	)
 	o, err = ParseOptParameterRequestList([]byte{67, 5})
 	require.NoError(t, err)
-	expectedOpts := []OptionCode{OptionBootfileName, OptionNameServer}
+	expectedOpts := OptionCodeList{OptionBootfileName, OptionNameServer}
 	require.Equal(t, expectedOpts, o.RequestedOpts)
 }
