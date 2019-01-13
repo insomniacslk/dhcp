@@ -43,5 +43,5 @@ func TestOptionGenericStringUnknown(t *testing.T) {
 		OptionCode: optionCode(102), // Returned option code.
 		Data:       []byte{byte(MessageTypeDiscover)},
 	}
-	require.Equal(t, "unknown -> [1]", o.String())
+	require.Equal(t, "unknown (102) -> [1]", o.String())
 }
