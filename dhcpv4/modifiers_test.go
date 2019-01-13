@@ -77,7 +77,7 @@ func TestWithNetbootExistingTFTP(t *testing.T) {
 	OptParams := &OptParameterRequestList{
 		RequestedOpts: []OptionCode{OptionTFTPServerName},
 	}
-	d.AddOption(OptParams)
+	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
 	require.Equal(t, "Parameter Request List -> [TFTP Server Name, Bootfile Name]", d.Options[0].String())
 }
@@ -87,7 +87,7 @@ func TestWithNetbootExistingBootfileName(t *testing.T) {
 	OptParams := &OptParameterRequestList{
 		RequestedOpts: []OptionCode{OptionBootfileName},
 	}
-	d.AddOption(OptParams)
+	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
 	require.Equal(t, "Parameter Request List -> [Bootfile Name, TFTP Server Name]", d.Options[0].String())
 }
@@ -97,7 +97,7 @@ func TestWithNetbootExistingBoth(t *testing.T) {
 	OptParams := &OptParameterRequestList{
 		RequestedOpts: []OptionCode{OptionBootfileName, OptionTFTPServerName},
 	}
-	d.AddOption(OptParams)
+	d.UpdateOption(OptParams)
 	d = WithNetboot(d)
 	require.Equal(t, "Parameter Request List -> [Bootfile Name, TFTP Server Name]", d.Options[0].String())
 }

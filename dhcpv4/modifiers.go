@@ -37,7 +37,7 @@ func WithHwAddr(hwaddr net.HardwareAddr) Modifier {
 // WithOption appends a DHCPv4 option provided by the user
 func WithOption(opt Option) Modifier {
 	return func(d *DHCPv4) *DHCPv4 {
-		d.AddOption(opt)
+		d.UpdateOption(opt)
 		return d
 	}
 }
@@ -52,7 +52,7 @@ func WithUserClass(uc []byte, rfc bool) Modifier {
 			UserClasses: [][]byte{uc},
 			Rfc3004:     rfc,
 		}
-		d.AddOption(&ouc)
+		d.UpdateOption(&ouc)
 		return d
 	}
 }
@@ -85,7 +85,7 @@ func WithNetboot(d *DHCPv4) *DHCPv4 {
 		OptParams = &OptParameterRequestList{
 			RequestedOpts: []OptionCode{OptionTFTPServerName, OptionBootfileName},
 		}
-		d.AddOption(OptParams)
+		d.UpdateOption(OptParams)
 	}
 	return d
 }
@@ -96,7 +96,7 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 		params := d.GetOneOption(OptionParameterRequestList)
 		if params == nil {
 			params = &OptParameterRequestList{}
-			d.AddOption(params)
+			d.UpdateOption(params)
 		}
 		opts := params.(*OptParameterRequestList)
 		for _, optionCode := range optionCodes {

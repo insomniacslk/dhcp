@@ -41,7 +41,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 		log.Printf("NewReplyFromRequest failed: %v", err)
 		return
 	}
-	reply.AddOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
+	reply.UpdateOption(&OptServerIdentifier{ServerID: net.IP{1, 2, 3, 4}})
 	opt := m.GetOneOption(OptionDHCPMessageType)
 	if opt == nil {
 		log.Printf("No message type found!")
@@ -49,9 +49,9 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 	}
 	switch opt.(*OptMessageType).MessageType {
 	case MessageTypeDiscover:
-		reply.AddOption(&OptMessageType{MessageType: MessageTypeOffer})
+		reply.UpdateOption(&OptMessageType{MessageType: MessageTypeOffer})
 	case MessageTypeRequest:
-		reply.AddOption(&OptMessageType{MessageType: MessageTypeAck})
+		reply.UpdateOption(&OptMessageType{MessageType: MessageTypeAck})
 	default:
 		log.Printf("Unhandled message type: %v", opt.(*OptMessageType).MessageType)
 		return

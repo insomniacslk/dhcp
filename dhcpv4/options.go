@@ -95,21 +95,6 @@ func ParseOption(code OptionCode, data []byte) (Option, error) {
 // Options is a collection of options.
 type Options []Option
 
-// Get will attempt to get all options that match a DHCPv4 option from its
-// OptionCode.  If the option was not found it will return an empty list.
-//
-// According to RFC 3396, options that are specified more than once are
-// concatenated, and hence this should always just return one option.
-func (o Options) Get(code OptionCode) []Option {
-	opts := []Option{}
-	for _, opt := range o {
-		if opt.Code() == code {
-			opts = append(opts, opt)
-		}
-	}
-	return opts
-}
-
 // GetOne will attempt to get an  option that match a Option code.  If there
 // are multiple options with the same OptionCode it will only return the first
 // one found.  If no matching option is found nil will be returned.
@@ -125,6 +110,28 @@ func (o Options) GetOne(code OptionCode) Option {
 // Has checks whether o has the given `opcode` Option.
 func (o Options) Has(code OptionCode) bool {
 	return o.GetOne(code) != nil
+}
+
+// Update replaces an existing option with the same option code with the given
+// one, adding it if not already present.
+//
+// Per RFC 2131, Section 4.1, "options may appear only once."
+//
+// An End option is ignored.
+func (o *Options) Update(option Option) {
+	if option.Code() == OptionEnd {
+		return
+	}
+
+	for idx, opt := range *o {
+		if opt.Code() == option.Code() {
+			(*o)[idx] = option
+			// Don't look further.
+			return
+		}
+	}
+	// If not found, add it.
+	*o = append(*o, option)
 }
 
 // OptionsFromBytes parses a sequence of bytes until the end and builds a list
@@ -158,8 +165,8 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 	options := make(map[OptionCode][]byte, 10)
 	var order []OptionCode
 
-	// Due to RFC 3396 allowing an option to be specified multiple times,
-	// we have to collect all option data first, and then parse it.
+	// Due to RFC 2131, 3396 allowing an option to be specified multiple
+	// times, we have to collect all option data first, and then parse it.
 	var end bool
 	for buf.Len() >= 1 {
 		// 1 byte: option code
@@ -187,8 +194,14 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 		if _, ok := options[c]; !ok {
 			order = append(order, c)
 		}
-		// RFC 3396: Just concatenate the data if the option code was
-		// specified multiple times.
+
+		// RFC 2131, Section 4.1 "Options may appear only once, [...].
+		// The client concatenates the values of multiple instances of
+		// the same option into a single parameter list for
+		// configuration."
+		//
+		// See also RFC 3396 for concatenation order and options longer
+		// than 255 bytes.
 		options[c] = append(options[c], data...)
 	}
 
@@ -205,7 +218,7 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 		}
 	}
 
-	opts := make(Options, 0, 10)
+	opts := make(Options, 0, len(options))
 	for _, code := range order {
 		parsedOpt, err := parser(code, options[code])
 		if err != nil {

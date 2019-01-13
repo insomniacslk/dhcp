@@ -31,7 +31,6 @@ type ReplyConfig struct {
 // ParseBootImageListFromAck parses the list of boot images presented in the
 // ACK[LIST] packet and returns them as a list of BootImages.
 func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
-	var images []BootImage
 	opt := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	if opt == nil {
 		return nil, errors.New("ParseBootImageListFromAck: could not find vendor-specific option")
@@ -40,11 +39,11 @@ func ParseBootImageListFromAck(ack dhcpv4.DHCPv4) ([]BootImage, error) {
 	if err != nil {
 		return nil, err
 	}
-	bootImageOpts := vendorOpt.GetOption(OptionBootImageList)
-	for _, opt := range bootImageOpts {
-		images = append(images, opt.(*OptBootImageList).Images...)
+	bootImageOpts := vendorOpt.GetOneOption(OptionBootImageList)
+	if bootImageOpts == nil {
+		return nil, fmt.Errorf("boot image option not found")
 	}
-	return images, nil
+	return bootImageOpts.(*OptBootImageList).Images, nil
 }
 
 func needsReplyPort(replyPort uint16) bool {
@@ -59,12 +58,14 @@ func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) *MessageType {
 		vendorOpts *OptVendorSpecificInformation
 		err        error
 	)
-	for _, opt := range packet.GetOption(dhcpv4.OptionVendorSpecificInformation) {
-		if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err == nil {
-			if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
-				if optMessageType, ok := o.(*OptMessageType); ok {
-					return &optMessageType.Type
-				}
+	opt := packet.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
+	if opt == nil {
+		return nil
+	}
+	if vendorOpts, err = ParseOptVendorSpecificInformation(opt.ToBytes()); err == nil {
+		if o := vendorOpts.GetOneOption(OptionMessageType); o != nil {
+			if optMessageType, ok := o.(*OptMessageType); ok {
+				return &optMessageType.Type
 			}
 		}
 	}
@@ -114,21 +115,21 @@ func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*
 	if needsReplyPort(replyPort) {
 		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
-	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
+	d.UpdateOption(&OptVendorSpecificInformation{vendorOpts})
 
-	d.AddOption(&dhcpv4.OptParameterRequestList{
+	d.UpdateOption(&dhcpv4.OptParameterRequestList{
 		RequestedOpts: []dhcpv4.OptionCode{
 			dhcpv4.OptionVendorSpecificInformation,
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
-	d.AddOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize})
+	d.UpdateOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize})
 
 	vendorClassID, err := MakeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
+	d.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
 	return d, nil
 }
 
@@ -179,8 +180,8 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	if err != nil {
 		return nil, err
 	}
-	d.AddOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
-	d.AddOption(&dhcpv4.OptParameterRequestList{
+	d.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
+	d.UpdateOption(&dhcpv4.OptParameterRequestList{
 		RequestedOpts: []dhcpv4.OptionCode{
 			dhcpv4.OptionSubnetMask,
 			dhcpv4.OptionRouter,
@@ -189,8 +190,8 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 			dhcpv4.OptionClassIdentifier,
 		},
 	})
-	d.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
-	d.AddOption(&OptVendorSpecificInformation{vendorOpts})
+	d.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
+	d.UpdateOption(&OptVendorSpecificInformation{vendorOpts})
 	return d, nil
 }
 
@@ -212,9 +213,9 @@ func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.D
 	reply.ServerIPAddr = config.ServerIP
 	reply.ServerHostName = config.ServerHostname
 
-	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
-	reply.AddOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	reply.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	reply.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
+	reply.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 
 	// BSDP opts.
 	vendorOpts := []dhcpv4.Option{
@@ -226,9 +227,7 @@ func NewReplyForInformList(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4.D
 	if config.SelectedImage != nil {
 		vendorOpts = append(vendorOpts, &OptSelectedBootImageID{ID: config.SelectedImage.ID})
 	}
-	reply.AddOption(&OptVendorSpecificInformation{Options: vendorOpts})
-
-	reply.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	reply.UpdateOption(&OptVendorSpecificInformation{Options: vendorOpts})
 	return reply, nil
 }
 
@@ -252,18 +251,16 @@ func NewReplyForInformSelect(inform *dhcpv4.DHCPv4, config ReplyConfig) (*dhcpv4
 	reply.ServerHostName = config.ServerHostname
 	reply.BootFileName = config.BootFileName
 
-	reply.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	reply.AddOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
-	reply.AddOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
+	reply.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
+	reply.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: config.ServerIP})
+	reply.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 
 	// BSDP opts.
-	reply.AddOption(&OptVendorSpecificInformation{
+	reply.UpdateOption(&OptVendorSpecificInformation{
 		Options: []dhcpv4.Option{
 			&OptMessageType{Type: MessageTypeSelect},
 			&OptSelectedBootImageID{ID: config.SelectedImage.ID},
 		},
 	})
-
-	reply.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
 	return reply, nil
 }
