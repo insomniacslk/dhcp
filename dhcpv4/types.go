@@ -1,5 +1,9 @@
 package dhcpv4
 
+import (
+	"fmt"
+)
+
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and
 // http://www.networksorcery.com/enp/protocol/bootp/options.htm
 
@@ -31,7 +35,7 @@ func (m MessageType) String() string {
 	if s, ok := messageTypeToString[m]; ok {
 		return s
 	}
-	return "Unknown"
+	return fmt.Sprintf("unknown (%d)", byte(m))
 }
 
 var messageTypeToString = map[MessageType]string{
@@ -58,7 +62,7 @@ func (o OpcodeType) String() string {
 	if s, ok := opcodeToString[o]; ok {
 		return s
 	}
-	return "Unknown"
+	return fmt.Sprintf("unknown (%d)", uint8(o))
 }
 
 var opcodeToString = map[OpcodeType]string{
@@ -87,7 +91,7 @@ func (o optionCode) String() string {
 	if s, ok := optionCodeToString[o]; ok {
 		return s
 	}
-	return "unknown"
+	return fmt.Sprintf("unknown (%d)", o)
 }
 
 // DHCPv4 Options
