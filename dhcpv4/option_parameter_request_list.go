@@ -7,18 +7,49 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptionCodeList is a list of DHCP option codes.
+type OptionCodeList []OptionCode
+
+// Has returns whether c is in the list.
+func (ol OptionCodeList) Has(c OptionCode) bool {
+	for _, code := range ol {
+		if code == c {
+			return true
+		}
+	}
+	return false
+}
+
+// Add adds option codes in cs to ol.
+func (ol *OptionCodeList) Add(cs ...OptionCode) {
+	for _, c := range cs {
+		if !ol.Has(c) {
+			*ol = append(*ol, c)
+		}
+	}
+}
+
+// String returns a human-readable string for the option names.
+func (ol OptionCodeList) String() string {
+	var names []string
+	for _, code := range ol {
+		names = append(names, code.String())
+	}
+	return strings.Join(names, ", ")
+}
+
 // OptParameterRequestList implements the parameter request list option
 // described by RFC 2132, Section 9.8.
 type OptParameterRequestList struct {
-	RequestedOpts []OptionCode
+	RequestedOpts OptionCodeList
 }
 
 // ParseOptParameterRequestList returns a new OptParameterRequestList from a
 // byte stream, or error if any.
 func ParseOptParameterRequestList(data []byte) (*OptParameterRequestList, error) {
 	buf := uio.NewBigEndianBuffer(data)
-	requestedOpts := make([]OptionCode, 0, buf.Len())
-	for buf.Len() > 0 {
+	requestedOpts := make(OptionCodeList, 0, buf.Len())
+	for buf.Has(1) {
 		requestedOpts = append(requestedOpts, optionCode(buf.Read8()))
 	}
 	return &OptParameterRequestList{RequestedOpts: requestedOpts}, buf.Error()
@@ -40,13 +71,5 @@ func (o *OptParameterRequestList) ToBytes() []byte {
 
 // String returns a human-readable string for this option.
 func (o *OptParameterRequestList) String() string {
-	var optNames []string
-	for _, ro := range o.RequestedOpts {
-		name := ro.String()
-		if name == "Unknown" {
-			name += fmt.Sprintf("%s (%v)", name, ro)
-		}
-		optNames = append(optNames, name)
-	}
-	return fmt.Sprintf("Parameter Request List -> [%v]", strings.Join(optNames, ", "))
+	return fmt.Sprintf("Parameter Request List -> %s", o.RequestedOpts)
 }
