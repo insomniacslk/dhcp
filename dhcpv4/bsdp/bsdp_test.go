@@ -37,7 +37,7 @@ func TestParseBootImageListFromAck(t *testing.T) {
 		},
 	}
 	ack, _ := dhcpv4.New()
-	ack.AddOption(&OptVendorSpecificInformation{
+	ack.UpdateOption(&OptVendorSpecificInformation{
 		[]dhcpv4.Option{&OptBootImageList{expectedBootImages}},
 	})
 
@@ -69,7 +69,6 @@ func TestNewInformList_NoReplyPort(t *testing.T) {
 	require.True(t, m.Options.Has(dhcpv4.OptionVendorSpecificInformation))
 	require.True(t, m.Options.Has(dhcpv4.OptionParameterRequestList))
 	require.True(t, m.Options.Has(dhcpv4.OptionMaximumDHCPMessageSize))
-	require.True(t, m.Options.Has(dhcpv4.OptionEnd))
 
 	opt := m.GetOneOption(dhcpv4.OptionVendorSpecificInformation)
 	require.NotNil(t, opt, "vendor opts not present")
@@ -108,8 +107,7 @@ func newAck(hwAddr net.HardwareAddr, transactionID [4]byte) *dhcpv4.DHCPv4 {
 	ack.TransactionID = transactionID
 	ack.HWType = iana.HWTypeEthernet
 	ack.ClientHWAddr = hwAddr
-	ack.AddOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
-	ack.AddOption(&dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd})
+	ack.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeAck})
 	return ack
 }
 
@@ -127,7 +125,7 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 	}
 	ack := newAck(hwAddr, tid)
 	ack.SetBroadcast()
-	ack.AddOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
+	ack.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
 
 	m, err := InformSelectForAck(*ack, 0, bootImage)
 	require.NoError(t, err)
@@ -143,7 +141,6 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 	require.True(t, m.Options.Has(dhcpv4.OptionDHCPMessageType))
 	opt := m.GetOneOption(dhcpv4.OptionDHCPMessageType)
 	require.Equal(t, dhcpv4.MessageTypeInform, opt.(*dhcpv4.OptMessageType).MessageType)
-	require.True(t, m.Options.Has(dhcpv4.OptionEnd))
 
 	// Validate vendor opts.
 	require.True(t, m.Options.Has(dhcpv4.OptionVendorSpecificInformation))
@@ -186,7 +183,7 @@ func TestInformSelectForAck_BadReplyPort(t *testing.T) {
 	}
 	ack := newAck(hwAddr, tid)
 	ack.SetBroadcast()
-	ack.AddOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
+	ack.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
 
 	_, err := InformSelectForAck(*ack, 11223, bootImage)
 	require.Error(t, err, "expect error for > 1024 replyPort")
@@ -206,7 +203,7 @@ func TestInformSelectForAck_ReplyPort(t *testing.T) {
 	}
 	ack := newAck(hwAddr, tid)
 	ack.SetBroadcast()
-	ack.AddOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
+	ack.UpdateOption(&dhcpv4.OptServerIdentifier{ServerID: serverID})
 
 	replyPort := uint16(999)
 	m, err := InformSelectForAck(*ack, replyPort, bootImage)
@@ -280,9 +277,6 @@ func TestNewReplyForInformList(t *testing.T) {
 	RequireHasOption(t, ack.Options, &dhcpv4.OptServerIdentifier{ServerID: net.IP{9, 9, 9, 9}})
 	RequireHasOption(t, ack.Options, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
-
-	// Ensure options terminated with End option.
-	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options[len(ack.Options)-1])
 
 	// Vendor-specific options.
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
@@ -363,9 +357,6 @@ func TestNewReplyForInformSelect(t *testing.T) {
 	RequireHasOption(t, ack.Options, &dhcpv4.OptClassIdentifier{Identifier: AppleVendorID})
 	require.NotNil(t, ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation))
 
-	// Ensure options are terminated with End option.
-	require.Equal(t, &dhcpv4.OptionGeneric{OptionCode: dhcpv4.OptionEnd}, ack.Options[len(ack.Options)-1])
-
 	vendorOpts := ack.GetOneOption(dhcpv4.OptionVendorSpecificInformation).(*OptVendorSpecificInformation)
 	RequireHasOption(t, vendorOpts.Options, &OptMessageType{Type: MessageTypeSelect})
 	RequireHasOption(t, vendorOpts.Options, &OptSelectedBootImageID{ID: images[0].ID})
@@ -424,7 +415,7 @@ func TestMessageTypeForPacket(t *testing.T) {
 		t.Run(tt.tcName, func(t *testing.T) {
 			pkt, _ = dhcpv4.New()
 			for _, opt := range tt.opts {
-				pkt.AddOption(opt)
+				pkt.UpdateOption(opt)
 			}
 			gotMessageType = MessageTypeFromPacket(pkt)
 			require.Equal(t, tt.wantMessageType, gotMessageType)

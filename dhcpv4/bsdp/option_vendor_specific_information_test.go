@@ -166,52 +166,6 @@ func TestOptVendorSpecificInformationString(t *testing.T) {
 	require.Equal(t, expectedString, o.String())
 }
 
-func TestOptVendorSpecificInformationGetOptions(t *testing.T) {
-	// No option
-	o := &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	foundOpts := o.GetOption(OptionBootImageList)
-	require.Empty(t, foundOpts, "should not get any options")
-
-	// One option
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-		},
-	}
-	foundOpts = o.GetOption(OptionMessageType)
-	require.Equal(t, 1, len(foundOpts), "should only get one option")
-	require.Equal(t, MessageTypeList, foundOpts[0].(*OptMessageType).Type)
-
-	// Multiple options
-	//
-	// TODO: Remove this test when RFC 3396 is properly implemented. This
-	// isn't a valid packet. RFC 2131, Section 4.1: "Options may appear
-	// only once." RFC 3396 clarifies this to say that options will be
-	// concatenated. I.e., in this case, the bytes would be:
-	//
-	// <versioncode> 4 1 1 0 1
-	//
-	// Which would obviously not be parsed by the Version parser, as it
-	// only accepts two bytes.
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-			Version1_0,
-		},
-	}
-	foundOpts = o.GetOption(OptionVersion)
-	require.Equal(t, 2, len(foundOpts), "should get two options")
-	require.Equal(t, Version1_1, foundOpts[0].(Version))
-	require.Equal(t, Version1_0, foundOpts[1].(Version))
-}
-
 func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	// No option
 	o := &OptVendorSpecificInformation{
@@ -232,15 +186,4 @@ func TestOptVendorSpecificInformationGetOneOption(t *testing.T) {
 	}
 	foundOpt = o.GetOneOption(OptionMessageType)
 	require.Equal(t, MessageTypeList, foundOpt.(*OptMessageType).Type)
-
-	// Multiple options
-	o = &OptVendorSpecificInformation{
-		[]dhcpv4.Option{
-			&OptMessageType{MessageTypeList},
-			Version1_1,
-			Version1_0,
-		},
-	}
-	foundOpt = o.GetOneOption(OptionVersion)
-	require.Equal(t, Version1_1, foundOpt.(Version))
 }

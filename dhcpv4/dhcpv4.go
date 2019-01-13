@@ -124,8 +124,6 @@ func New() (*DHCPv4, error) {
 		GatewayIPAddr: net.IPv4zero,
 		Options:       make([]Option, 0, 10),
 	}
-	// the End option has to be added explicitly
-	d.AddOption(&OptionGeneric{OptionCode: OptionEnd})
 	return &d, nil
 }
 
@@ -152,8 +150,8 @@ func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
 	d.HWType = iana.HWTypeEthernet
 	d.ClientHWAddr = hwaddr
 	d.SetBroadcast()
-	d.AddOption(&OptMessageType{MessageType: MessageTypeDiscover})
-	d.AddOption(&OptParameterRequestList{
+	d.UpdateOption(&OptMessageType{MessageType: MessageTypeDiscover})
+	d.UpdateOption(&OptParameterRequestList{
 		RequestedOpts: []OptionCode{
 			OptionSubnetMask,
 			OptionRouter,
@@ -205,7 +203,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
 	d.HWType = iana.HWTypeEthernet
 	d.ClientHWAddr = hwaddr
 	d.ClientIPAddr = localIP
-	d.AddOption(&OptMessageType{MessageType: MessageTypeInform})
+	d.UpdateOption(&OptMessageType{MessageType: MessageTypeInform})
 	return d, nil
 }
 
@@ -235,9 +233,9 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
 	d.ServerIPAddr = serverIP
-	d.AddOption(&OptMessageType{MessageType: MessageTypeRequest})
-	d.AddOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr})
-	d.AddOption(&OptServerIdentifier{ServerID: serverIP})
+	d.UpdateOption(&OptMessageType{MessageType: MessageTypeRequest})
+	d.UpdateOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr})
+	d.UpdateOption(&OptServerIdentifier{ServerID: serverIP})
 	for _, mod := range modifiers {
 		d = mod(d)
 	}
@@ -359,48 +357,17 @@ func (d *DHCPv4) SetUnicast() {
 	d.Flags &= ^uint16(0x8000)
 }
 
-// GetOption will attempt to get all options that match a DHCPv4 option
-// from its OptionCode.  If the option was not found it will return an
-// empty list.
+// GetOneOption returns the option that matches the given option code.
 //
-// According to RFC 3396, options that are specified more than once are
-// concatenated, and hence this should always just return one option.
-func (d *DHCPv4) GetOption(code OptionCode) []Option {
-	return d.Options.Get(code)
-}
-
-// GetOneOption will attempt to get an  option that match a Option code.
-// If there are multiple options with the same OptionCode it will only return
-// the first one found.  If no matching option is found nil will be returned.
+// If no matching option is found, nil is returned.
 func (d *DHCPv4) GetOneOption(code OptionCode) Option {
 	return d.Options.GetOne(code)
 }
 
-// AddOption appends an option to the existing ones. If the last option is an
-// OptionEnd, it will be inserted before that. It does not deal with End
-// options that appead before the end, like in malformed packets.
-func (d *DHCPv4) AddOption(option Option) {
-	if len(d.Options) == 0 || d.Options[len(d.Options)-1].Code() != OptionEnd {
-		d.Options = append(d.Options, option)
-	} else {
-		end := d.Options[len(d.Options)-1]
-		d.Options[len(d.Options)-1] = option
-		d.Options = append(d.Options, end)
-	}
-}
-
-// UpdateOption updates the existing options with the passed option, adding it
-// at the end if not present already
+// UpdateOption replaces an existing option with the same option code with the
+// given one, adding it if not already present.
 func (d *DHCPv4) UpdateOption(option Option) {
-	for idx, opt := range d.Options {
-		if opt.Code() == option.Code() {
-			d.Options[idx] = option
-			// don't look further
-			return
-		}
-	}
-	// if not found, add it
-	d.AddOption(option)
+	d.Options.Update(option)
 }
 
 // MessageType returns the message type, trying to extract it from the
@@ -474,11 +441,13 @@ func (d *DHCPv4) Summary() string {
 // IsOptionRequested returns true if that option is within the requested
 // options of the DHCPv4 message.
 func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
-	for _, optprl := range d.GetOption(OptionParameterRequestList) {
-		for _, o := range optprl.(*OptParameterRequestList).RequestedOpts {
-			if o == requested {
-				return true
-			}
+	optprl := d.GetOneOption(OptionParameterRequestList)
+	if optprl == nil {
+		return false
+	}
+	for _, o := range optprl.(*OptParameterRequestList).RequestedOpts {
+		if o == requested {
+			return true
 		}
 	}
 	return false
