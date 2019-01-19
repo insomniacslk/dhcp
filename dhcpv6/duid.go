@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -8,6 +9,7 @@ import (
 	"github.com/insomniacslk/dhcp/iana"
 )
 
+// DuidType is the DUID type as defined in rfc3315.
 type DuidType uint16
 
 // DUID types
@@ -18,6 +20,7 @@ const (
 	DUID_UUID DuidType = 4
 )
 
+// DuidTypeToString maps a DuidType to a name.
 var DuidTypeToString = map[DuidType]string{
 	DUID_LL:   "DUID-LL",
 	DUID_LLT:  "DUID-LLT",
@@ -32,10 +35,11 @@ func (d DuidType) String() string {
 	return "Unknown"
 }
 
+// Duid is a DHCP Unique Identifier.
 type Duid struct {
 	Type                 DuidType
 	HwType               iana.HWType // for DUID-LLT and DUID-LL. Ignored otherwise. RFC 826
-	Time                 uint32          // for DUID-LLT. Ignored otherwise
+	Time                 uint32      // for DUID-LLT. Ignored otherwise
 	LinkLayerAddr        net.HardwareAddr
 	EnterpriseNumber     uint32 // for DUID-EN. Ignored otherwise
 	EnterpriseIdentifier []byte // for DUID-EN. Ignored otherwise
@@ -43,6 +47,7 @@ type Duid struct {
 	Opaque               []byte // for unknown DUIDs
 }
 
+// Length returns the DUID length in bytes.
 func (d *Duid) Length() int {
 	if d.Type == DUID_LLT {
 		return 8 + len(d.LinkLayerAddr)
@@ -57,6 +62,22 @@ func (d *Duid) Length() int {
 	}
 }
 
+// Equal compares two Duid objects.
+func (d Duid) Equal(o Duid) bool {
+	if d.Type != o.Type ||
+		d.HwType != o.HwType ||
+		d.Time != o.Time ||
+		!bytes.Equal(d.LinkLayerAddr, o.LinkLayerAddr) ||
+		d.EnterpriseNumber != o.EnterpriseNumber ||
+		!bytes.Equal(d.EnterpriseIdentifier, o.EnterpriseIdentifier) ||
+		!bytes.Equal(d.Uuid, o.Uuid) ||
+		!bytes.Equal(d.Opaque, o.Opaque) {
+		return false
+	}
+	return true
+}
+
+// ToBytes serializes a Duid object.
 func (d *Duid) ToBytes() []byte {
 	if d.Type == DUID_LLT {
 		buf := make([]byte, 8)
@@ -98,6 +119,7 @@ func (d *Duid) String() string {
 	return fmt.Sprintf("DUID{type=%v hwtype=%v hwaddr=%v}", d.Type.String(), d.HwType.String(), hwaddr)
 }
 
+// DuidFromBytes parses a Duid from a byte slice.
 func DuidFromBytes(data []byte) (*Duid, error) {
 	if len(data) < 2 {
 		return nil, fmt.Errorf("Invalid DUID: shorter than 2 bytes")
