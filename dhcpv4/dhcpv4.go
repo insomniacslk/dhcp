@@ -50,7 +50,7 @@ type DHCPv4 struct {
 
 // Modifier defines the signature for functions that can modify DHCPv4
 // structures. This is used to simplify packet manipulation
-type Modifier func(d *DHCPv4) *DHCPv4
+type Modifier func(d *DHCPv4)
 
 // IPv4AddrsForInterface obtains the currently-configured, non-loopback IPv4
 // addresses for iface.
@@ -106,7 +106,7 @@ func GenerateTransactionID() (TransactionID, error) {
 // won't be a valid DHCPv4 message so you will need to adjust its fields.
 // See also NewDiscovery, NewOffer, NewRequest, NewAcknowledge, NewInform and
 // NewRelease .
-func New() (*DHCPv4, error) {
+func New(modifiers ...Modifier) (*DHCPv4, error) {
 	xid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
@@ -124,42 +124,37 @@ func New() (*DHCPv4, error) {
 		GatewayIPAddr: net.IPv4zero,
 		Options:       make([]Option, 0, 10),
 	}
+	for _, mod := range modifiers {
+		mod(&d)
+	}
 	return &d, nil
 }
 
 // NewDiscoveryForInterface builds a new DHCPv4 Discovery message, with a default
 // Ethernet HW type and the hardware address obtained from the specified
 // interface.
-func NewDiscoveryForInterface(ifname string) (*DHCPv4, error) {
+func NewDiscoveryForInterface(ifname string, modifiers ...Modifier) (*DHCPv4, error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
 	}
-	return NewDiscovery(iface.HardwareAddr)
+	return NewDiscovery(iface.HardwareAddr, modifiers...)
 }
 
 // NewDiscovery builds a new DHCPv4 Discovery message, with a default Ethernet
 // HW type and specified hardware address.
-func NewDiscovery(hwaddr net.HardwareAddr) (*DHCPv4, error) {
-	d, err := New()
-	if err != nil {
-		return nil, err
-	}
-	// get hw addr
-	d.OpCode = OpcodeBootRequest
-	d.HWType = iana.HWTypeEthernet
-	d.ClientHWAddr = hwaddr
-	d.SetBroadcast()
-	d.UpdateOption(&OptMessageType{MessageType: MessageTypeDiscover})
-	d.UpdateOption(&OptParameterRequestList{
-		RequestedOpts: []OptionCode{
+func NewDiscovery(hwaddr net.HardwareAddr, modifiers ...Modifier) (*DHCPv4, error) {
+	return New(PrependModifiers(modifiers,
+		WithBroadcast(true),
+		WithHwAddr(hwaddr),
+		WithRequestedOptions(
 			OptionSubnetMask,
 			OptionRouter,
 			OptionDomainName,
 			OptionDomainNameServer,
-		},
-	})
-	return d, nil
+		),
+		WithMessageType(MessageTypeDiscover),
+	)...)
 }
 
 // NewInformForInterface builds a new DHCPv4 Informational message with default
@@ -190,74 +185,46 @@ func NewInformForInterface(ifname string, needsBroadcast bool) (*DHCPv4, error) 
 	return pkt, nil
 }
 
-// NewInform builds a new DHCPv4 Informational message with default Ethernet HW
-// type and specified hardware address. It does NOT put a DHCP End option at the
-// end.
-func NewInform(hwaddr net.HardwareAddr, localIP net.IP) (*DHCPv4, error) {
-	d, err := New()
-	if err != nil {
-		return nil, err
-	}
+// PrependModifiers prepends other to m.
+func PrependModifiers(m []Modifier, other ...Modifier) []Modifier {
+	return append(other, m...)
+}
 
-	d.OpCode = OpcodeBootRequest
-	d.HWType = iana.HWTypeEthernet
-	d.ClientHWAddr = hwaddr
-	d.ClientIPAddr = localIP
-	d.UpdateOption(&OptMessageType{MessageType: MessageTypeInform})
-	return d, nil
+// NewInform builds a new DHCPv4 Informational message with the specified
+// hardware address.
+func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (*DHCPv4, error) {
+	return New(PrependModifiers(
+		modifiers,
+		WithHwAddr(hwaddr),
+		WithMessageType(MessageTypeInform),
+		WithClientIP(localIP),
+	)...)
 }
 
 // NewRequestFromOffer builds a DHCPv4 request from an offer.
 func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
-	d, err := New()
-	if err != nil {
-		return nil, err
-	}
-	d.OpCode = OpcodeBootRequest
-	d.HWType = offer.HWType
-	d.ClientHWAddr = offer.ClientHWAddr
-	d.TransactionID = offer.TransactionID
-	if offer.IsBroadcast() {
-		d.SetBroadcast()
-	} else {
-		d.SetUnicast()
-	}
 	// find server IP address
-	var serverIP []byte
-	for _, opt := range offer.Options {
-		if opt.Code() == OptionServerIdentifier {
-			serverIP = opt.(*OptServerIdentifier).ServerID
-		}
+	var serverIP net.IP
+	serverID := offer.GetOneOption(OptionServerIdentifier)
+	if serverID != nil {
+		serverIP = serverID.(*OptServerIdentifier).ServerID
 	}
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
-	d.ServerIPAddr = serverIP
-	d.UpdateOption(&OptMessageType{MessageType: MessageTypeRequest})
-	d.UpdateOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr})
-	d.UpdateOption(&OptServerIdentifier{ServerID: serverIP})
-	for _, mod := range modifiers {
-		d = mod(d)
-	}
-	return d, nil
+
+	return New(PrependModifiers(modifiers,
+		WithReply(offer),
+		WithMessageType(MessageTypeRequest),
+		WithServerIP(serverIP),
+		WithOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr}),
+		WithOption(&OptServerIdentifier{ServerID: serverIP}),
+	)...)
 }
 
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
 func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
-	reply, err := New()
-	if err != nil {
-		return nil, err
-	}
-	reply.OpCode = OpcodeBootReply
-	reply.HWType = request.HWType
-	reply.ClientHWAddr = request.ClientHWAddr
-	reply.TransactionID = request.TransactionID
-	reply.Flags = request.Flags
-	reply.GatewayIPAddr = request.GatewayIPAddr
-	for _, mod := range modifiers {
-		reply = mod(reply)
-	}
-	return reply, nil
+	return New(PrependModifiers(modifiers, WithReply(request))...)
 }
 
 // FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an

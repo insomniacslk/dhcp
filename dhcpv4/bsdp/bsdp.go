@@ -96,15 +96,15 @@ func NewInformListForInterface(ifname string, replyPort uint16) (*dhcpv4.DHCPv4,
 
 // NewInformList creates a new INFORM packet for interface with hardware address
 // `hwaddr` and IP `localIP`. Packet will be sent out on port `replyPort`.
-func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*dhcpv4.DHCPv4, error) {
-	d, err := dhcpv4.NewInform(hwaddr, localIP)
-	if err != nil {
-		return nil, err
-	}
-
+func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16, modifiers ...dhcpv4.Modifier) (*dhcpv4.DHCPv4, error) {
 	// Validate replyPort first
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
 		return nil, errors.New("replyPort must be a privileged port")
+	}
+
+	vendorClassID, err := MakeVendorClassIdentifier()
+	if err != nil {
+		return nil, err
 	}
 
 	// These are vendor-specific options used to pass along BSDP information.
@@ -115,43 +115,23 @@ func NewInformList(hwaddr net.HardwareAddr, localIP net.IP, replyPort uint16) (*
 	if needsReplyPort(replyPort) {
 		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
-	d.UpdateOption(&OptVendorSpecificInformation{vendorOpts})
 
-	d.UpdateOption(&dhcpv4.OptParameterRequestList{
-		RequestedOpts: []dhcpv4.OptionCode{
+	return dhcpv4.NewInform(hwaddr, localIP,
+		dhcpv4.PrependModifiers(modifiers, dhcpv4.WithRequestedOptions(
 			dhcpv4.OptionVendorSpecificInformation,
 			dhcpv4.OptionClassIdentifier,
-		},
-	})
-	d.UpdateOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize})
-
-	vendorClassID, err := MakeVendorClassIdentifier()
-	if err != nil {
-		return nil, err
-	}
-	d.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
-	return d, nil
+		),
+			dhcpv4.WithOption(&dhcpv4.OptMaximumDHCPMessageSize{Size: MaxDHCPMessageSize}),
+			dhcpv4.WithOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID}),
+			dhcpv4.WithOption(&OptVendorSpecificInformation{vendorOpts}),
+		)...)
 }
 
 // InformSelectForAck constructs an INFORM[SELECT] packet given an ACK to the
 // previously-sent INFORM[LIST].
 func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootImage) (*dhcpv4.DHCPv4, error) {
-	d, err := dhcpv4.New()
-	if err != nil {
-		return nil, err
-	}
-
 	if needsReplyPort(replyPort) && replyPort >= 1024 {
 		return nil, errors.New("replyPort must be a privileged port")
-	}
-	d.OpCode = dhcpv4.OpcodeBootRequest
-	d.HWType = ack.HWType
-	d.ClientHWAddr = ack.ClientHWAddr
-	d.TransactionID = ack.TransactionID
-	if ack.IsBroadcast() {
-		d.SetBroadcast()
-	} else {
-		d.SetUnicast()
 	}
 
 	// Data for OptionSelectedBootImageID
@@ -159,6 +139,11 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 		&OptMessageType{MessageTypeSelect},
 		Version1_1,
 		&OptSelectedBootImageID{selectedImage.ID},
+	}
+
+	// Validate replyPort if requested.
+	if needsReplyPort(replyPort) {
+		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
 	}
 
 	// Find server IP address
@@ -171,28 +156,23 @@ func InformSelectForAck(ack dhcpv4.DHCPv4, replyPort uint16, selectedImage BootI
 	}
 	vendorOpts = append(vendorOpts, &OptServerIdentifier{serverIP})
 
-	// Validate replyPort if requested.
-	if needsReplyPort(replyPort) {
-		vendorOpts = append(vendorOpts, &OptReplyPort{replyPort})
-	}
-
 	vendorClassID, err := MakeVendorClassIdentifier()
 	if err != nil {
 		return nil, err
 	}
-	d.UpdateOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID})
-	d.UpdateOption(&dhcpv4.OptParameterRequestList{
-		RequestedOpts: []dhcpv4.OptionCode{
+
+	return dhcpv4.New(dhcpv4.WithReply(&ack),
+		dhcpv4.WithOption(&dhcpv4.OptClassIdentifier{Identifier: vendorClassID}),
+		dhcpv4.WithRequestedOptions(
 			dhcpv4.OptionSubnetMask,
 			dhcpv4.OptionRouter,
 			dhcpv4.OptionBootfileName,
 			dhcpv4.OptionVendorSpecificInformation,
 			dhcpv4.OptionClassIdentifier,
-		},
-	})
-	d.UpdateOption(&dhcpv4.OptMessageType{MessageType: dhcpv4.MessageTypeInform})
-	d.UpdateOption(&OptVendorSpecificInformation{vendorOpts})
-	return d, nil
+		),
+		dhcpv4.WithMessageType(dhcpv4.MessageTypeInform),
+		dhcpv4.WithOption(&OptVendorSpecificInformation{vendorOpts}),
+	)
 }
 
 // NewReplyForInformList constructs an ACK for the INFORM[LIST] packet `inform`

@@ -104,6 +104,7 @@ func TestNewInformList_ReplyPort(t *testing.T) {
 
 func newAck(hwAddr net.HardwareAddr, transactionID [4]byte) *dhcpv4.DHCPv4 {
 	ack, _ := dhcpv4.New()
+	ack.OpCode = dhcpv4.OpcodeBootReply
 	ack.TransactionID = transactionID
 	ack.HWType = iana.HWTypeEthernet
 	ack.ClientHWAddr = hwAddr

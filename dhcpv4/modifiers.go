@@ -3,42 +3,84 @@ package dhcpv4
 import (
 	"net"
 
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
 // WithTransactionID sets the Transaction ID for the DHCPv4 packet
 func WithTransactionID(xid TransactionID) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		d.TransactionID = xid
-		return d
+	}
+}
+
+// WithClientIP sets the Client IP for a DHCPv4 packet.
+func WithClientIP(ip net.IP) Modifier {
+	return func(d *DHCPv4) {
+		d.ClientIPAddr = ip
+	}
+}
+
+// WithYourIP sets the Your IP for a DHCPv4 packet.
+func WithYourIP(ip net.IP) Modifier {
+	return func(d *DHCPv4) {
+		d.YourIPAddr = ip
+	}
+}
+
+// WithServerIP sets the Server IP for a DHCPv4 packet.
+func WithServerIP(ip net.IP) Modifier {
+	return func(d *DHCPv4) {
+		d.ServerIPAddr = ip
+	}
+}
+
+// WithReply fills in opcode, hwtype, xid, clienthwaddr, flags, and gateway ip
+// addr from the given packet.
+func WithReply(request *DHCPv4) Modifier {
+	return func(d *DHCPv4) {
+		if request.OpCode == OpcodeBootRequest {
+			d.OpCode = OpcodeBootReply
+		} else {
+			d.OpCode = OpcodeBootRequest
+		}
+		d.HWType = request.HWType
+		d.TransactionID = request.TransactionID
+		d.ClientHWAddr = request.ClientHWAddr
+		d.Flags = request.Flags
+		d.GatewayIPAddr = request.GatewayIPAddr
+	}
+}
+
+// WithHWType sets the Hardware Type for a DHCPv4 packet.
+func WithHWType(hwt iana.HWType) Modifier {
+	return func(d *DHCPv4) {
+		d.HWType = hwt
 	}
 }
 
 // WithBroadcast sets the packet to be broadcast or unicast
 func WithBroadcast(broadcast bool) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		if broadcast {
 			d.SetBroadcast()
 		} else {
 			d.SetUnicast()
 		}
-		return d
 	}
 }
 
 // WithHwAddr sets the hardware address for a packet
 func WithHwAddr(hwaddr net.HardwareAddr) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		d.ClientHWAddr = hwaddr
-		return d
 	}
 }
 
 // WithOption appends a DHCPv4 option provided by the user
 func WithOption(opt Option) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		d.UpdateOption(opt)
-		return d
 	}
 }
 
@@ -54,13 +96,18 @@ func WithUserClass(uc []byte, rfc bool) Modifier {
 }
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv4 packet.
-func WithNetboot(d *DHCPv4) *DHCPv4 {
-	return WithRequestedOptions(OptionTFTPServerName, OptionBootfileName)(d)
+func WithNetboot(d *DHCPv4) {
+	WithRequestedOptions(OptionTFTPServerName, OptionBootfileName)(d)
+}
+
+// WithMessageType adds the DHCPv4 message type m to a packet.
+func WithMessageType(m MessageType) Modifier {
+	return WithOption(&OptMessageType{m})
 }
 
 // WithRequestedOptions adds requested options to the packet.
 func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		params := d.GetOneOption(OptionParameterRequestList)
 		if params == nil {
 			d.UpdateOption(&OptParameterRequestList{OptionCodeList(optionCodes)})
@@ -68,18 +115,16 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 			opts := params.(*OptParameterRequestList)
 			opts.RequestedOpts.Add(optionCodes...)
 		}
-		return d
 	}
 }
 
 // WithRelay adds parameters required for DHCPv4 to be relayed by the relay
 // server with given ip
 func WithRelay(ip net.IP) Modifier {
-	return func(d *DHCPv4) *DHCPv4 {
+	return func(d *DHCPv4) {
 		d.SetUnicast()
 		d.GatewayIPAddr = ip
 		d.HopCount += 1
-		return d
 	}
 }
 
