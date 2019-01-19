@@ -220,12 +220,9 @@ func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]*DHCPv4, erro
 	}()
 
 	// Discover
-	discover, err := NewDiscoveryForInterface(ifname)
+	discover, err := NewDiscoveryForInterface(ifname, modifiers...)
 	if err != nil {
 		return conversation, err
-	}
-	for _, mod := range modifiers {
-		discover = mod(discover)
 	}
 	conversation = append(conversation, discover)
 
