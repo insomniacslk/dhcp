@@ -118,3 +118,31 @@ func TestOpaqueDuid(t *testing.T) {
 		t.Fatalf("ToBytes: unexpected result: got %x, want %x", got, want)
 	}
 }
+
+func TestDuidEqual(t *testing.T) {
+	d := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HWTypeEthernet,
+		LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+	}
+	o := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HWTypeEthernet,
+		LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+	}
+	require.True(t, d.Equal(o))
+}
+
+func TestDuidEqualNotEqual(t *testing.T) {
+	d := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HWTypeEthernet,
+		LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff},
+	}
+	o := Duid{
+		Type:          DUID_LL,
+		HwType:        iana.HWTypeEthernet,
+		LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x00},
+	}
+	require.False(t, d.Equal(o))
+}
