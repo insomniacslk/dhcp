@@ -56,7 +56,6 @@ func TestOptionServerId(t *testing.T) {
 			LinkLayerAddr: net.HardwareAddr([]byte{0xde, 0xad, 0, 0, 0xbe, 0xef}),
 		},
 	}
-	require.Equal(t, 10, opt.Length())
 	require.Equal(t, OptionServerID, opt.Code())
 	require.Contains(
 		t,

@@ -68,10 +68,6 @@ func (op *OptNetworkInterfaceId) SetMinor(minor uint8) {
 	op.minor = minor
 }
 
-func (op *OptNetworkInterfaceId) Length() int {
-	return 3
-}
-
 func (op *OptNetworkInterfaceId) String() string {
 	typeName, ok := niiToStringMap[op.type_]
 	if !ok {

@@ -92,14 +92,6 @@ func (r *DHCPv6Relay) SetPeerAddr(peerAddr net.IP) {
 	r.peerAddr = peerAddr
 }
 
-func (r *DHCPv6Relay) Length() int {
-	mLen := RelayHeaderSize
-	for _, opt := range r.options {
-		mLen += opt.Length() + 4 // +4 for opt code and opt len
-	}
-	return mLen
-}
-
 func (r *DHCPv6Relay) Options() []Option {
 	return r.options
 }

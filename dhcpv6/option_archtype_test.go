@@ -35,7 +35,6 @@ func TestOptClientArchType(t *testing.T) {
 	opt := OptClientArchType{
 		ArchTypes: []iana.Arch{iana.EFI_ITANIUM},
 	}
-	require.Equal(t, 2, opt.Length())
 	require.Equal(t, OptionClientArchType, opt.Code())
 	require.Contains(t, opt.String(), "archtype=EFI Itanium", "String() should contain the correct ArchType output")
 }

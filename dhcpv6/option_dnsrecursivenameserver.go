@@ -29,11 +29,6 @@ func (op *OptDNSRecursiveNameServer) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptDNSRecursiveNameServer) Length() int {
-	return len(op.NameServers) * net.IPv6len
-}
-
 func (op *OptDNSRecursiveNameServer) String() string {
 	return fmt.Sprintf("OptDNSRecursiveNameServer{nameservers=%v}", op.NameServers)
 }

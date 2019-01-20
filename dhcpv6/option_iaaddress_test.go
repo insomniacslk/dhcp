@@ -16,7 +16,6 @@ func TestOptIAAddressParse(t *testing.T) {
 	}...)
 	opt, err := ParseOptIAAddress(data)
 	require.NoError(t, err)
-	require.Equal(t, 30, opt.Length())
 	require.Equal(t, net.IP(ipaddr), opt.IPv6Addr)
 	require.Equal(t, uint32(0x0a0b0c0d), opt.PreferredLifetime)
 	require.Equal(t, uint32(0x0e0f0102), opt.ValidLifetime)

@@ -12,9 +12,6 @@ func TestOptElapsedTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if optLen := opt.Length(); optLen != 2 {
-		t.Fatalf("Invalid length. Expected 2, got %v", optLen)
-	}
 	if elapsedTime := opt.ElapsedTime; elapsedTime != 0xaabb {
 		t.Fatalf("Invalid elapsed time. Expected 0xaabb, got %v", elapsedTime)
 	}

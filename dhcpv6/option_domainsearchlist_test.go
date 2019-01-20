@@ -16,7 +16,6 @@ func TestParseOptDomainSearchList(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OptionDomainSearchList, opt.Code())
 	require.Equal(t, 2, len(opt.DomainSearchList.Labels))
-	require.Equal(t, len(data), opt.DomainSearchList.Length())
 	require.Equal(t, "example.com", opt.DomainSearchList.Labels[0])
 	require.Equal(t, "subnet.example.org", opt.DomainSearchList.Labels[1])
 	require.Contains(t, opt.String(), "searchlist=[example.com subnet.example.org]", "String() should contain the correct domain search output")

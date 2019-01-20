@@ -28,15 +28,6 @@ func (op *OptVendorOpts) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptVendorOpts) Length() int {
-	l := 4 // 4 bytes for Enterprise Number
-	for _, opt := range op.VendorOpts {
-		l += 4 + opt.Length() // 4 bytes for Code and Length from Vendor
-	}
-	return l
-}
-
 // String returns a string representation of the VendorOpts data
 func (op *OptVendorOpts) String() string {
 	return fmt.Sprintf("OptVendorOpts{enterprisenum=%v, vendorOpts=%v}",

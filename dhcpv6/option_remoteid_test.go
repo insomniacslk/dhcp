@@ -15,9 +15,6 @@ func TestOptRemoteId(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if optLen := opt.Length(); optLen != len(expected) {
-		t.Fatalf("Invalid length. Expected %v, got %v", len(expected), optLen)
-	}
 	if en := opt.EnterpriseNumber(); en != 0xaabbccdd {
 		t.Fatalf("Invalid Enterprise Number. Expected 0xaabbccdd, got %v", en)
 	}

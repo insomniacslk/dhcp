@@ -30,15 +30,6 @@ func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptIAForPrefixDelegation) Length() int {
-	l := 12
-	for _, opt := range op.Options {
-		l += 4 + opt.Length()
-	}
-	return l
-}
-
 // String returns a string representation of the OptIAForPrefixDelegation data
 func (op *OptIAForPrefixDelegation) String() string {
 	return fmt.Sprintf("OptIAForPrefixDelegation{IAID=%v, t1=%v, t2=%v, options=%v}",

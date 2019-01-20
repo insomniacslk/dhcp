@@ -27,10 +27,6 @@ func (op *OptRelayMsg) SetRelayMessage(relayMessage DHCPv6) {
 	op.relayMessage = relayMessage
 }
 
-func (op *OptRelayMsg) Length() int {
-	return op.relayMessage.Length()
-}
-
 func (op *OptRelayMsg) String() string {
 	return fmt.Sprintf("OptRelayMsg{relaymsg=%v}", op.relayMessage)
 }

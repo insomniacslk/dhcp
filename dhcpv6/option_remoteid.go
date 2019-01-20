@@ -42,10 +42,6 @@ func (op *OptRemoteId) SetRemoteID(remoteId []byte) {
 	op.remoteId = append([]byte(nil), remoteId...)
 }
 
-func (op *OptRemoteId) Length() int {
-	return 4 + len(op.remoteId)
-}
-
 func (op *OptRemoteId) String() string {
 	return fmt.Sprintf("OptRemoteId{enterprisenum=%v, remoteid=%v}",
 		op.enterpriseNumber, op.remoteId,

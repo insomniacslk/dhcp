@@ -10,7 +10,6 @@ import (
 type Option interface {
 	Code() OptionCode
 	ToBytes() []byte
-	Length() int
 	String() string
 }
 
@@ -29,10 +28,6 @@ func (og *OptionGeneric) ToBytes() []byte {
 
 func (og *OptionGeneric) String() string {
 	return fmt.Sprintf("%s -> %v", og.OptionCode, og.OptionData)
-}
-
-func (og *OptionGeneric) Length() int {
-	return len(og.OptionData)
 }
 
 // ParseOption parses data according to the given code.

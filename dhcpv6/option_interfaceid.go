@@ -29,10 +29,6 @@ func (op *OptInterfaceId) SetInterfaceID(interfaceId []byte) {
 	op.interfaceId = append([]byte(nil), interfaceId...)
 }
 
-func (op *OptInterfaceId) Length() int {
-	return len(op.interfaceId)
-}
-
 func (op *OptInterfaceId) String() string {
 	return fmt.Sprintf("OptInterfaceId{interfaceid=%v}", op.interfaceId)
 }
