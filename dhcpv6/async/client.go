@@ -25,7 +25,7 @@ type Client struct {
 	receiveQueue chan dhcpv6.DHCPv6
 	sendQueue    chan dhcpv6.DHCPv6
 	packetsLock  sync.Mutex
-	packets      map[uint32]*promise.Promise
+	packets      map[dhcpv6.TransactionID]*promise.Promise
 	errors       chan error
 }
 
@@ -69,7 +69,7 @@ func (c *Client) Open(bufferSize int) error {
 	c.stopping = new(sync.WaitGroup)
 	c.sendQueue = make(chan dhcpv6.DHCPv6, bufferSize)
 	c.receiveQueue = make(chan dhcpv6.DHCPv6, bufferSize)
-	c.packets = make(map[uint32]*promise.Promise)
+	c.packets = make(map[dhcpv6.TransactionID]*promise.Promise)
 	c.packetsLock = sync.Mutex{}
 	c.errors = make(chan error)
 

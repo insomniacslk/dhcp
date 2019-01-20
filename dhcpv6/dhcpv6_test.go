@@ -7,51 +7,11 @@ import (
 	"net"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/insomniacslk/dhcp/iana"
 )
-
-func TestBytesToTransactionID(t *testing.T) {
-	// Check if the function transforms the bytes for the exact length input
-	b := make([]byte, 4)
-	binary.LittleEndian.PutUint32(b, 0x01020304)
-	tid, err := BytesToTransactionID(b)
-	require.NoError(t, err)
-	require.NotNil(t, tid)
-	assert.Equal(t, *tid, uint32(0x000040302))
-
-	binary.BigEndian.PutUint32(b, 0x01020304)
-	tid, err = BytesToTransactionID(b)
-	require.NoError(t, err)
-	require.NotNil(t, tid)
-	assert.Equal(t, *tid, uint32(0x00010203))
-
-	// Check if the function transforms only the first bytes for a longer input
-	b = make([]byte, 8)
-	binary.LittleEndian.PutUint32(b, 0x01020304)
-	binary.LittleEndian.PutUint32(b[4:], 0x11121314)
-	tid, err = BytesToTransactionID(b)
-	require.NoError(t, err)
-	require.NotNil(t, tid)
-	assert.Equal(t, *tid, uint32(0x000040302))
-
-	binary.BigEndian.PutUint32(b, 0x01020304)
-	binary.BigEndian.PutUint32(b[4:], 0x11121314)
-	tid, err = BytesToTransactionID(b)
-	require.NoError(t, err)
-	require.NotNil(t, tid)
-	assert.Equal(t, *tid, uint32(0x00010203))
-}
-
-func TestBytesToTransactionIDShortData(t *testing.T) {
-	// short sequence, less than three bytes
-	tid, err := BytesToTransactionID([]byte{0x11, 0x22})
-	require.Error(t, err)
-	require.Nil(t, tid)
-}
 
 func randomReadMock(value []byte, n int, err error) func([]byte) (int, error) {
 	return func(b []byte) (int, error) {
@@ -77,22 +37,21 @@ func (s *GenerateTransactionIDTestSuite) TestErrors() {
 	// Error is returned from random number generator
 	e := errors.New("mocked error")
 	randomRead = randomReadMock(s.random, 0, e)
-	tid, err := GenerateTransactionID()
+	_, err := GenerateTransactionID()
 	s.Assert().Equal(e, err)
-	s.Assert().Nil(tid)
 
 	// Less than 4 bytes are generated
-	randomRead = randomReadMock(s.random, 3, nil)
+	randomRead = randomReadMock(s.random, 2, nil)
 	_, err = GenerateTransactionID()
-	s.Assert().EqualError(err, "invalid random sequence: shorter than 4 bytes")
+	s.Assert().EqualError(err, "invalid random sequence: shorter than 3 bytes")
 }
 
 func (s *GenerateTransactionIDTestSuite) TestSuccess() {
-	binary.BigEndian.PutUint32(s.random, 0x01020304)
-	randomRead = randomReadMock(s.random, 4, nil)
+	binary.BigEndian.PutUint32(s.random, 0x01020300)
+	randomRead = randomReadMock(s.random, 3, nil)
 	tid, err := GenerateTransactionID()
 	s.Require().NoError(err)
-	s.Assert().Equal(*tid, uint32(0x00010203))
+	s.Assert().Equal(TransactionID{0x1, 0x2, 0x3}, tid)
 }
 
 func TestGenerateTransactionIDTestSuite(t *testing.T) {
@@ -159,8 +118,9 @@ func TestSettersAndGetters(t *testing.T) {
 	require.Equal(t, MessageTypeAdvertise, d.Type())
 
 	// TransactionID
-	d.SetTransactionID(12345)
-	require.Equal(t, uint32(12345), d.TransactionID())
+	xid := TransactionID{0xa, 0xb, 0xc}
+	d.SetTransactionID(xid)
+	require.Equal(t, xid, d.TransactionID())
 
 	// Options
 	require.Empty(t, d.Options())
@@ -180,11 +140,12 @@ func TestAddOption(t *testing.T) {
 func TestToBytes(t *testing.T) {
 	d := DHCPv6Message{}
 	d.SetMessage(MessageTypeSolicit)
-	d.SetTransactionID(0xabcdef)
+	xid := TransactionID{0xa, 0xb, 0xc}
+	d.SetTransactionID(xid)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
 	bytes := d.ToBytes()
-	expected := []byte{01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00}
+	expected := []byte{01, 0xa, 0xb, 0xc, 0x00, 0x00, 0x00, 0x00}
 	require.Equal(t, expected, bytes)
 }
 
@@ -199,7 +160,8 @@ func TestFromAndToBytes(t *testing.T) {
 func TestNewAdvertiseFromSolicit(t *testing.T) {
 	s := DHCPv6Message{}
 	s.SetMessage(MessageTypeSolicit)
-	s.SetTransactionID(0xabcdef)
+	xid := TransactionID{0xa, 0xb, 0xc}
+	s.SetTransactionID(xid)
 	cid := OptClientId{}
 	s.AddOption(&cid)
 	duid := Duid{}
@@ -212,7 +174,8 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 
 func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	msg := DHCPv6Message{}
-	msg.SetTransactionID(0xabcdef)
+	xid := TransactionID{0xa, 0xb, 0xc}
+	msg.SetTransactionID(xid)
 	cid := OptClientId{}
 	msg.AddOption(&cid)
 	sid := OptServerId{}
