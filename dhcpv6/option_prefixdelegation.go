@@ -1,13 +1,12 @@
 package dhcpv6
 
-// This module defines the OptIAForPrefixDelegation structure.
-// https://www.ietf.org/rfc/rfc3633.txt
-
 import (
 	"encoding/binary"
 	"fmt"
 )
 
+// OptIAForPrefixDelegation implements the identity association for prefix
+// delegation option defined by RFC 3633, Section 9.
 type OptIAForPrefixDelegation struct {
 	IaId    [4]byte
 	T1      uint32

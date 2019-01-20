@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 const RelayHeaderSize = 34
@@ -49,17 +51,18 @@ func (r *DHCPv6Relay) Summary() string {
 	return ret
 }
 
+// ToBytes returns the serialized version of this relay message as defined by
+// RFC 3315, Section 6.
 func (r *DHCPv6Relay) ToBytes() []byte {
-	ret := make([]byte, RelayHeaderSize)
-	ret[0] = byte(r.messageType)
-	ret[1] = byte(r.hopCount)
-	copy(ret[2:18], r.linkAddr)
-	copy(ret[18:34], r.peerAddr)
+	buf := uio.NewBigEndianBuffer(make([]byte, 0, RelayHeaderSize))
+	buf.Write8(byte(r.messageType))
+	buf.Write8(byte(r.hopCount))
+	buf.WriteBytes(r.linkAddr.To16())
+	buf.WriteBytes(r.peerAddr.To16())
 	for _, opt := range r.options {
-		ret = append(ret, opt.ToBytes()...)
+		buf.WriteBytes(opt.ToBytes())
 	}
-
-	return ret
+	return buf.Data()
 }
 
 func (r *DHCPv6Relay) SetMessageType(messageType MessageType) {
