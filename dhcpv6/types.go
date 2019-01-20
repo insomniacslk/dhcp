@@ -1,13 +1,15 @@
 package dhcpv6
 
-// from http://www.networksorcery.com/enp/protocol/dhcpv6.htm
+import (
+	"fmt"
+)
 
 // MessageType represents the kind of DHCPv6 message.
 type MessageType uint8
 
-// The different kinds of DHCPv6 message types.
+// The DHCPv6 message types defined per RFC 3315, Section 5.3.
 const (
-	// MessageTypeNone is used internally and is not part of the RFC
+	// MessageTypeNone is used internally and is not part of the RFC.
 	MessageTypeNone               MessageType = 0
 	MessageTypeSolicit            MessageType = 1
 	MessageTypeAdvertise          MessageType = 2
@@ -28,16 +30,17 @@ const (
 	MessageTypeLeaseQueryData     MessageType = 17
 )
 
+// String prints the message type name.
 func (m MessageType) String() string {
-	if s, ok := MessageTypeToStringMap[m]; ok {
+	if s, ok := messageTypeToStringMap[m]; ok {
 		return s
 	}
-	return "Unknown"
+	return fmt.Sprintf("unknown (%d)", m)
 }
 
-// MessageTypeToStringMap contains the mapping of MessageTypes to human-readable
-// strings.
-var MessageTypeToStringMap = map[MessageType]string{
+// messageTypeToStringMap contains the mapping of MessageTypes to
+// human-readable strings.
+var messageTypeToStringMap = map[MessageType]string{
 	MessageTypeSolicit:            "SOLICIT",
 	MessageTypeAdvertise:          "ADVERTISE",
 	MessageTypeRequest:            "REQUEST",
