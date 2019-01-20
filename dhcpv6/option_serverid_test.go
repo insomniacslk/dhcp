@@ -30,8 +30,6 @@ func TestOptServerIdToBytes(t *testing.T) {
 		},
 	}
 	expected := []byte{
-		0, 2, // OptionServerID
-		0, 10, // length
 		0, 3, // DUID_LL
 		0, 1, // hwtype ethernet
 		5, 4, 3, 2, 1, 0, // hw addr
@@ -45,13 +43,9 @@ func TestOptServerIdDecodeEncode(t *testing.T) {
 		0, 1, // hwtype ethernet
 		5, 4, 3, 2, 1, 0, // hw addr
 	}
-	expected := append([]byte{
-		0, 2, // OptionServerID
-		0, 10, // length
-	}, data...)
 	opt, err := ParseOptServerId(data)
 	require.NoError(t, err)
-	require.Equal(t, expected, opt.ToBytes())
+	require.Equal(t, data, opt.ToBytes())
 }
 
 func TestOptionServerId(t *testing.T) {

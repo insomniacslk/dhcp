@@ -10,11 +10,11 @@ import (
 
 func TestOptIAPrefix(t *testing.T) {
 	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd,                         // preferredLifetime
-		0xee, 0xff, 0x00, 0x11,                         // validLifetime
+		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
+		0xee, 0xff, 0x00, 0x11, // validLifetime
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
-		0, 8, 0, 2, 0xaa, 0xbb,				// options
+		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}
 	opt, err := ParseOptIAPrefix(buf)
 	if err != nil {
@@ -39,24 +39,22 @@ func TestOptIAPrefix(t *testing.T) {
 
 func TestOptIAPrefixToBytes(t *testing.T) {
 	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd,                         // preferredLifetime
-		0xee, 0xff, 0x00, 0x11,                         // validLifetime
+		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
+		0xee, 0xff, 0x00, 0x11, // validLifetime
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
-		0, 8, 0, 2, 0xaa, 0xbb,				// options
+		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}
-	expected := []byte{00, 26, 00, byte(len(buf))}
-	expected = append(expected, buf...)
 	opt := OptIAPrefix{
 		PreferredLifetime: 0xaabbccdd,
-		ValidLifetime: 0xeeff0011,
-		prefixLength: 36,
-		ipv6Prefix: net.IPv6zero,
+		ValidLifetime:     0xeeff0011,
+		prefixLength:      36,
+		ipv6Prefix:        net.IPv6zero,
 	}
 	opt.Options = append(opt.Options, &OptElapsedTime{ElapsedTime: 0xaabb})
 	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
+	if !bytes.Equal(toBytes, buf) {
+		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
 	}
 }
 
@@ -64,8 +62,8 @@ func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
 	buf := []byte{
 		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
 		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                     // prefixLength
-		0, 0, 0, 0, 0, 0, 0,    // truncated ipv6Prefix
+		36,                  // prefixLength
+		0, 0, 0, 0, 0, 0, 0, // truncated ipv6Prefix
 	}
 	if opt, err := ParseOptIAPrefix(buf); err == nil {
 		t.Fatalf("ParseOptIAPrefix: Expected error on truncated option, got %v", opt)
@@ -74,9 +72,9 @@ func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
 
 func TestOptIAPrefixString(t *testing.T) {
 	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd,                         // preferredLifetime
-		0xee, 0xff, 0x00, 0x11,                         // validLifetime
-		36,                                             // prefixLength
+		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
+		0xee, 0xff, 0x00, 0x11, // validLifetime
+		36,                                                         // prefixLength
 		0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
 	}
 	opt, err := ParseOptIAPrefix(buf)

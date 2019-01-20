@@ -314,9 +314,7 @@ func (d *DHCPv6Message) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	buf.Write8(uint8(d.messageType))
 	buf.WriteBytes(d.transactionID[:])
-	for _, opt := range d.options {
-		buf.WriteBytes(opt.ToBytes())
-	}
+	buf.WriteBytes(d.options.ToBytes())
 	return buf.Data()
 }
 

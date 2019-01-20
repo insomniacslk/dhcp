@@ -23,8 +23,6 @@ func (op *OptDNSRecursiveNameServer) Code() OptionCode {
 // ToBytes returns the option serialized to bytes.
 func (op *OptDNSRecursiveNameServer) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionDNSRecursiveNameServer))
-	buf.Write16(uint16(op.Length()))
 	for _, ns := range op.NameServers {
 		buf.WriteBytes(ns.To16())
 	}

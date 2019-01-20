@@ -140,10 +140,9 @@ func TestAddOption(t *testing.T) {
 func TestToBytes(t *testing.T) {
 	d := DHCPv6Message{}
 	d.SetMessage(MessageTypeSolicit)
-	xid := TransactionID{0xa, 0xb, 0xc}
-	d.SetTransactionID(xid)
-	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
-	d.AddOption(&opt)
+	d.SetTransactionID(TransactionID{0xa, 0xb, 0xc})
+	d.AddOption(&OptionGeneric{OptionCode: 0, OptionData: []byte{}})
+
 	bytes := d.ToBytes()
 	expected := []byte{01, 0xa, 0xb, 0xc, 0x00, 0x00, 0x00, 0x00}
 	require.Equal(t, expected, bytes)

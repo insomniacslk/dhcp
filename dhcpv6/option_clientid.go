@@ -2,8 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptClientId represents a Client ID option
@@ -20,11 +18,7 @@ func (op *OptClientId) Code() OptionCode {
 
 // ToBytes marshals the Client ID option as defined by RFC 3315, Section 22.2.
 func (op *OptClientId) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionClientID))
-	buf.Write16(uint16(op.Length()))
-	buf.WriteBytes(op.Cid.ToBytes())
-	return buf.Data()
+	return op.Cid.ToBytes()
 }
 
 func (op *OptClientId) Length() int {

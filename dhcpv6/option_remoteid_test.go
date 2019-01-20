@@ -28,8 +28,7 @@ func TestOptRemoteId(t *testing.T) {
 
 func TestOptRemoteIdToBytes(t *testing.T) {
 	remoteId := []byte("DSLAM01 eth2/1/01/21")
-	expected := []byte{00, 37, 00, byte(len(remoteId) + 4), 00, 00, 00, 00}
-	expected = append(expected, remoteId...)
+	expected := append([]byte{0, 0, 0, 0}, remoteId...)
 	opt := OptRemoteId{
 		remoteId: remoteId,
 	}

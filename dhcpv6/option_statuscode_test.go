@@ -20,8 +20,6 @@ func TestParseOptStatusCode(t *testing.T) {
 
 func TestOptStatusCodeToBytes(t *testing.T) {
 	expected := []byte{
-		0, 13, // OptionStatusCode
-		0, 9, // length
 		0, 0, // StatusSuccess
 		's', 'u', 'c', 'c', 'e', 's', 's',
 	}

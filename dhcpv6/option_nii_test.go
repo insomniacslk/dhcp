@@ -8,9 +8,9 @@ import (
 
 func TestOptNetworkInterfaceIdParse(t *testing.T) {
 	expected := []byte{
-		1,      // type (UNDI)
-		3,      // major revision
-		20,     // minor revision
+		1,  // type (UNDI)
+		3,  // major revision
+		20, // minor revision
 	}
 	opt, err := ParseOptNetworkInterfaceId(expected)
 	require.NoError(t, err, "ParseOptNetworkInterfaceId() should not return an error with correct bytes")
@@ -23,11 +23,9 @@ func TestOptNetworkInterfaceIdParse(t *testing.T) {
 
 func TestOptNetworkInterfaceIdToBytes(t *testing.T) {
 	expected := []byte{
-		0, 62,  // OptNetworkInterfaceId
-		0, 3,   // length
-		1,      // type (UNDI)
-		3,      // major revision
-		20,     // minor revision
+		1,  // type (UNDI)
+		3,  // major revision
+		20, // minor revision
 	}
 	opt := OptNetworkInterfaceId{}
 	opt.SetType(1)
@@ -38,9 +36,9 @@ func TestOptNetworkInterfaceIdToBytes(t *testing.T) {
 
 func TestOptNetworkInterfaceIdTooShort(t *testing.T) {
 	buf := []byte{
-		0, 62,  // OptNetworkInterfaceId
-		0, 3,   // length
-		1,      // type (UNDI)
+		0, 62, // OptNetworkInterfaceId
+		0, 3, // length
+		1, // type (UNDI)
 		// missing major/minor revision bytes
 	}
 	_, err := ParseOptNetworkInterfaceId(buf)
@@ -49,9 +47,9 @@ func TestOptNetworkInterfaceIdTooShort(t *testing.T) {
 
 func TestOptNetworkInterfaceIdString(t *testing.T) {
 	buf := []byte{
-		1,      // type (UNDI)
-		3,      // major revision
-		20,     // minor revision
+		1,  // type (UNDI)
+		3,  // major revision
+		20, // minor revision
 	}
 	opt, err := ParseOptNetworkInterfaceId(buf)
 	require.NoError(t, err)

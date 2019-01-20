@@ -26,14 +26,9 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 	data := []byte{
 		0, 8, // EFI_XSCALE
 	}
-	expected := []byte{
-		0, 61, // OptionClientArchType
-		0, 2, // length
-		0, 8, // EFI_XSCALE
-	}
 	opt, err := ParseOptClientArchType(data)
 	require.NoError(t, err)
-	require.Equal(t, expected, opt.ToBytes())
+	require.Equal(t, data, opt.ToBytes())
 }
 
 func TestOptClientArchType(t *testing.T) {

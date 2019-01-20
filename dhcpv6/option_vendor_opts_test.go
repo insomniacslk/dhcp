@@ -33,13 +33,11 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 	var opts []Option
 	opts = append(opts, &OptionGeneric{OptionCode: 1, OptionData: optData})
 
-	var expected []byte
-	expected = append(expected, []byte{0, 17, // VendorOption Code 17
-		0, byte(len(optData) + 8), // Length of optionData + 4 (code & length of sub-option) + 4 for EnterpriseNumber Length
+	expected := append([]byte{
 		0, 0, 0, 0, // EnterpriseNumber
 		0, 1, // Sub-Option code from vendor
-		0, byte(len(optData))}...) // Length of optionData only
-	expected = append(expected, optData...)
+		0, byte(len(optData)), // Length of optionData only
+	}, optData...)
 
 	opt := OptVendorOpts{
 		EnterpriseNumber: 0000,

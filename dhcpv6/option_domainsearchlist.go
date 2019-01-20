@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptDomainSearchList list implements a OptionDomainSearchList option
@@ -21,11 +20,7 @@ func (op *OptDomainSearchList) Code() OptionCode {
 
 // ToBytes marshals this option to bytes.
 func (op *OptDomainSearchList) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionDomainSearchList))
-	buf.Write16(uint16(op.Length()))
-	buf.WriteBytes(op.DomainSearchList.ToBytes())
-	return buf.Data()
+	return op.DomainSearchList.ToBytes()
 }
 
 func (op *OptDomainSearchList) Length() int {

@@ -38,8 +38,6 @@ func (op *OptNetworkInterfaceId) Code() OptionCode {
 
 func (op *OptNetworkInterfaceId) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionNII))
-	buf.Write16(uint16(op.Length()))
 	buf.Write8(op.type_)
 	buf.Write8(op.major)
 	buf.Write8(op.minor)

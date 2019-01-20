@@ -59,9 +59,7 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	buf.Write8(byte(r.hopCount))
 	buf.WriteBytes(r.linkAddr.To16())
 	buf.WriteBytes(r.peerAddr.To16())
-	for _, opt := range r.options {
-		buf.WriteBytes(opt.ToBytes())
-	}
+	buf.WriteBytes(r.options.ToBytes())
 	return buf.Data()
 }
 

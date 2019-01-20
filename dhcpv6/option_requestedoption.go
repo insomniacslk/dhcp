@@ -21,8 +21,6 @@ func (op *OptRequestedOption) Code() OptionCode {
 
 func (op *OptRequestedOption) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionORO))
-	buf.Write16(uint16(op.Length()))
 	for _, ro := range op.requestedOptions {
 		buf.Write16(uint16(ro))
 	}

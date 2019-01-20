@@ -2,8 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptBootFileURL implements the OptionBootfileURL option
@@ -21,11 +19,7 @@ func (op *OptBootFileURL) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptBootFileURL) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionBootfileURL))
-	buf.Write16(uint16(len(op.BootFileURL)))
-	buf.WriteBytes(op.BootFileURL)
-	return buf.Data()
+	return op.BootFileURL
 }
 
 // Length returns the option length in bytes

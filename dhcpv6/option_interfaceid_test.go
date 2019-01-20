@@ -23,13 +23,11 @@ func TestOptInterfaceId(t *testing.T) {
 
 func TestOptInterfaceIdToBytes(t *testing.T) {
 	interfaceId := []byte("DSLAM01 eth2/1/01/21")
-	expected := []byte{00, 18, 00, byte(len(interfaceId))}
-	expected = append(expected, interfaceId...)
 	opt := OptInterfaceId{}
 	opt.SetInterfaceID(interfaceId)
 	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
+	if !bytes.Equal(toBytes, interfaceId) {
+		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", interfaceId, toBytes)
 	}
 }
 
