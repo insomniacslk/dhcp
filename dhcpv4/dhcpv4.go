@@ -2,7 +2,6 @@ package dhcpv4
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"net"
@@ -347,15 +346,10 @@ func (d *DHCPv4) MessageType() MessageType {
 	return opt.(*OptMessageType).MessageType
 }
 
-// HumanXID returns a human-readably integer transaction ID.
-func (d *DHCPv4) HumanXID() uint32 {
-	return binary.LittleEndian.Uint32(d.TransactionID[:])
-}
-
 // String implements fmt.Stringer.
 func (d *DHCPv4) String() string {
-	return fmt.Sprintf("DHCPv4(opcode=%s xid=%v hwtype=%s hwaddr=%s)",
-		d.OpCode.String(), d.HumanXID(), d.HWType, d.ClientHWAddr)
+	return fmt.Sprintf("DHCPv4(opcode=%s xid=%s hwtype=%s hwaddr=%s)",
+		d.OpCode, d.TransactionID, d.HWType, d.ClientHWAddr)
 }
 
 // Summary prints detailed information about the packet.
@@ -378,7 +372,7 @@ func (d *DHCPv4) Summary() string {
 		d.OpCode,
 		d.HWType,
 		d.HopCount,
-		d.HumanXID(),
+		d.TransactionID,
 		d.NumSeconds,
 		d.FlagsToString(),
 		d.Flags,
