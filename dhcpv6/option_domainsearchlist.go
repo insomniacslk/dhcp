@@ -1,16 +1,16 @@
 package dhcpv6
 
-// This module defines the OptDomainSearchList structure.
-// https://www.ietf.org/rfc/rfc3646.txt
-
 import (
-	"encoding/binary"
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptDomainSearchList list implements a OptionDomainSearchList option
+//
+// This module defines the OptDomainSearchList structure.
+// https://www.ietf.org/rfc/rfc3646.txt
 type OptDomainSearchList struct {
 	DomainSearchList *rfc1035label.Labels
 }
@@ -19,12 +19,13 @@ func (op *OptDomainSearchList) Code() OptionCode {
 	return OptionDomainSearchList
 }
 
+// ToBytes marshals this option to bytes.
 func (op *OptDomainSearchList) ToBytes() []byte {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionDomainSearchList))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	buf = append(buf, op.DomainSearchList.ToBytes()...)
-	return buf
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionDomainSearchList))
+	buf.Write16(uint16(op.Length()))
+	buf.WriteBytes(op.DomainSearchList.ToBytes())
+	return buf.Data()
 }
 
 func (op *OptDomainSearchList) Length() int {
@@ -42,11 +43,11 @@ func (op *OptDomainSearchList) String() string {
 // ParseOptDomainSearchList builds an OptDomainSearchList structure from a sequence
 // of bytes. The input data does not include option code and length bytes.
 func ParseOptDomainSearchList(data []byte) (*OptDomainSearchList, error) {
-	opt := OptDomainSearchList{}
-	labels, err := rfc1035label.FromBytes(data)
+	var opt OptDomainSearchList
+	var err error
+	opt.DomainSearchList, err = rfc1035label.FromBytes(data)
 	if err != nil {
 		return nil, err
 	}
-	opt.DomainSearchList = labels
 	return &opt, nil
 }

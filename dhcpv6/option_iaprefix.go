@@ -1,14 +1,16 @@
 package dhcpv6
 
-// This module defines the OptIAPrefix structure.
-// https://www.ietf.org/rfc/rfc3633.txt
-
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptIAPrefix implements the IAPrefix option.
+//
+// This module defines the OptIAPrefix structure.
+// https://www.ietf.org/rfc/rfc3633.txt
 type OptIAPrefix struct {
 	PreferredLifetime uint32
 	ValidLifetime     uint32
@@ -21,18 +23,19 @@ func (op *OptIAPrefix) Code() OptionCode {
 	return OptionIAPrefix
 }
 
+// ToBytes marshals this option according to RFC 3633, Section 10.
 func (op *OptIAPrefix) ToBytes() []byte {
-	buf := make([]byte, 12)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPrefix))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	binary.BigEndian.PutUint32(buf[4:8], op.PreferredLifetime)
-	binary.BigEndian.PutUint32(buf[8:12], op.ValidLifetime)
-	buf = append(buf, op.prefixLength)
-	buf = append(buf, op.ipv6Prefix...)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionIAPrefix))
+	buf.Write16(uint16(op.Length()))
+	buf.Write32(op.PreferredLifetime)
+	buf.Write32(op.ValidLifetime)
+	buf.Write8(op.prefixLength)
+	buf.WriteBytes(op.ipv6Prefix.To16())
 	for _, opt := range op.Options {
-		buf = append(buf, opt.ToBytes()...)
+		buf.WriteBytes(opt.ToBytes())
 	}
-	return buf
+	return buf.Data()
 }
 
 func (op *OptIAPrefix) PrefixLength() byte {
@@ -78,19 +81,17 @@ func (op *OptIAPrefix) DelOption(code OptionCode) {
 	op.Options.Del(code)
 }
 
-// build an OptIAPrefix structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
+// ParseOptIAPrefix an OptIAPrefix structure from a sequence of bytes. The
+// input data does not include option code and length bytes.
 func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
-	opt := OptIAPrefix{}
-	if len(data) < 25 {
-		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 25 bytes, got %v", len(data))
-	}
-	opt.PreferredLifetime = binary.BigEndian.Uint32(data[:4])
-	opt.ValidLifetime = binary.BigEndian.Uint32(data[4:8])
-	opt.prefixLength = data[8]
-	opt.ipv6Prefix = net.IP(data[9:25])
-	if err := opt.Options.FromBytes(data[25:]); err != nil {
+	buf := uio.NewBigEndianBuffer(data)
+	var opt OptIAPrefix
+	opt.PreferredLifetime = buf.Read32()
+	opt.ValidLifetime = buf.Read32()
+	opt.prefixLength = buf.Read8()
+	opt.ipv6Prefix = net.IP(buf.CopyN(net.IPv6len))
+	if err := opt.Options.FromBytes(buf.ReadAll()); err != nil {
 		return nil, err
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

@@ -1,8 +1,9 @@
 package dhcpv6
 
 import (
-	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptIAForPrefixDelegation implements the identity association for prefix
@@ -21,16 +22,14 @@ func (op *OptIAForPrefixDelegation) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAForPrefixDelegation) ToBytes() []byte {
-	buf := make([]byte, 16)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAPD))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	copy(buf[4:8], op.IaId[:])
-	binary.BigEndian.PutUint32(buf[8:12], op.T1)
-	binary.BigEndian.PutUint32(buf[12:16], op.T2)
-	for _, opt := range op.Options {
-		buf = append(buf, opt.ToBytes()...)
-	}
-	return buf
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionIAPD))
+	buf.Write16(uint16(op.Length()))
+	buf.WriteBytes(op.IaId[:])
+	buf.Write32(op.T1)
+	buf.Write32(op.T2)
+	buf.WriteBytes(op.Options.ToBytes())
+	return buf.Data()
 }
 
 // Length returns the option length
@@ -62,15 +61,13 @@ func (op *OptIAForPrefixDelegation) DelOption(code OptionCode) {
 // build an OptIAForPrefixDelegation structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIAForPrefixDelegation(data []byte) (*OptIAForPrefixDelegation, error) {
-	opt := OptIAForPrefixDelegation{}
-	if len(data) < 12 {
-		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 12 bytes, got %v", len(data))
-	}
-	copy(opt.IaId[:], data[:4])
-	opt.T1 = binary.BigEndian.Uint32(data[4:8])
-	opt.T2 = binary.BigEndian.Uint32(data[8:12])
-	if err := opt.Options.FromBytes(data[12:]); err != nil {
+	var opt OptIAForPrefixDelegation
+	buf := uio.NewBigEndianBuffer(data)
+	buf.ReadBytes(opt.IaId[:])
+	opt.T1 = buf.Read32()
+	opt.T2 = buf.Read32()
+	if err := opt.Options.FromBytes(buf.ReadAll()); err != nil {
 		return nil, err
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

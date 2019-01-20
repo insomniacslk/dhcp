@@ -1,13 +1,15 @@
 package dhcpv6
 
-// This module defines the OptElapsedTime structure.
-// https://www.ietf.org/rfc/rfc3315.txt
-
 import (
-	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptElapsedTime implements the Elapsed Time option.
+//
+// This module defines the OptElapsedTime structure.
+// https://www.ietf.org/rfc/rfc3315.txt
 type OptElapsedTime struct {
 	ElapsedTime uint16
 }
@@ -16,12 +18,13 @@ func (op *OptElapsedTime) Code() OptionCode {
 	return OptionElapsedTime
 }
 
+// ToBytes marshals this option to bytes.
 func (op *OptElapsedTime) ToBytes() []byte {
-	buf := make([]byte, 6)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionElapsedTime))
-	binary.BigEndian.PutUint16(buf[2:4], 2)
-	binary.BigEndian.PutUint16(buf[4:6], uint16(op.ElapsedTime))
-	return buf
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionElapsedTime))
+	buf.Write16(2)
+	buf.Write16(uint16(op.ElapsedTime))
+	return buf.Data()
 }
 
 func (op *OptElapsedTime) Length() int {
@@ -35,10 +38,8 @@ func (op *OptElapsedTime) String() string {
 // build an OptElapsedTime structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptElapsedTime(data []byte) (*OptElapsedTime, error) {
-	opt := OptElapsedTime{}
-	if len(data) != 2 {
-		return nil, fmt.Errorf("Invalid elapsed time data length. Expected 2 bytes, got %v", len(data))
-	}
-	opt.ElapsedTime = binary.BigEndian.Uint16(data)
-	return &opt, nil
+	var opt OptElapsedTime
+	buf := uio.NewBigEndianBuffer(data)
+	opt.ElapsedTime = buf.Read16()
+	return &opt, buf.FinError()
 }
