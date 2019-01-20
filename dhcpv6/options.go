@@ -5,9 +5,6 @@ import (
 	"fmt"
 )
 
-// OptionCode is a single byte representing the code for a given Option.
-type OptionCode uint16
-
 // Option is an interface that all DHCPv6 options adhere to.
 type Option interface {
 	Code() OptionCode
@@ -38,11 +35,7 @@ func (og *OptionGeneric) ToBytes() []byte {
 }
 
 func (og *OptionGeneric) String() string {
-	code, ok := OptionCodeToString[og.OptionCode]
-	if !ok {
-		code = "UnknownOption"
-	}
-	return fmt.Sprintf("%v -> %v", code, og.OptionData)
+	return fmt.Sprintf("%s -> %v", og.OptionCode, og.OptionData)
 }
 
 func (og *OptionGeneric) Length() int {

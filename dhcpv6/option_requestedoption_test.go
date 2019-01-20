@@ -32,7 +32,7 @@ func TestOptRequestedOptionString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"Unknown",
+		"unknown",
 		"String() should contain 'Unknown' for an illegal option",
 	)
 }

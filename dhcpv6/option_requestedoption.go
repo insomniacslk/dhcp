@@ -6,6 +6,7 @@ package dhcpv6
 import (
 	"encoding/binary"
 	"fmt"
+	"strings"
 )
 
 type OptRequestedOption struct {
@@ -39,7 +40,7 @@ func (op *OptRequestedOption) SetRequestedOptions(opts []OptionCode) {
 func (op *OptRequestedOption) AddRequestedOption(opt OptionCode) {
 	for _, requestedOption := range op.requestedOptions {
 		if opt == requestedOption {
-			fmt.Printf("Warning: option %s is already set, appending duplicate", OptionCodeToString[opt])
+			fmt.Printf("Warning: option %s is already set, appending duplicate", opt)
 		}
 	}
 	op.requestedOptions = append(op.requestedOptions, opt)
@@ -50,19 +51,11 @@ func (op *OptRequestedOption) Length() int {
 }
 
 func (op *OptRequestedOption) String() string {
-	roString := "["
-	for idx, code := range op.requestedOptions {
-		if name, ok := OptionCodeToString[OptionCode(code)]; ok {
-			roString += name
-		} else {
-			roString += "Unknown"
-		}
-		if idx < len(op.requestedOptions)-1 {
-			roString += ", "
-		}
+	names := make([]string, 0, len(op.requestedOptions))
+	for _, code := range op.requestedOptions {
+		names = append(names, code.String())
 	}
-	roString += "]"
-	return fmt.Sprintf("OptRequestedOption{options=%v}", roString)
+	return fmt.Sprintf("OptRequestedOption{options=[%v]}", strings.Join(names, ", "))
 }
 
 // build an OptRequestedOption structure from a sequence of bytes.
