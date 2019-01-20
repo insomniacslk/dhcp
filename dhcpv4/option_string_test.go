@@ -14,11 +14,11 @@ func TestOptDomainName(t *testing.T) {
 }
 
 func TestParseOptDomainName(t *testing.T) {
-	o := Options{
-		OptionDomainName.Code(): []byte{'t', 'e', 's', 't'},
-	}
-	require.Equal(t, "test", GetDomainName(o))
-	require.Equal(t, "", GetDomainName(Options{}))
+	m, _ := New(WithGeneric(OptionDomainName, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.DomainName())
+
+	m, _ = New()
+	require.Equal(t, "", m.DomainName())
 }
 
 func TestOptHostName(t *testing.T) {
@@ -29,11 +29,11 @@ func TestOptHostName(t *testing.T) {
 }
 
 func TestParseOptHostName(t *testing.T) {
-	o := Options{
-		OptionHostName.Code(): []byte{'t', 'e', 's', 't'},
-	}
-	require.Equal(t, "test", GetHostName(o))
-	require.Equal(t, "", GetHostName(Options{}))
+	m, _ := New(WithGeneric(OptionHostName, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.HostName())
+
+	m, _ = New()
+	require.Equal(t, "", m.HostName())
 }
 
 func TestOptRootPath(t *testing.T) {
@@ -44,9 +44,11 @@ func TestOptRootPath(t *testing.T) {
 }
 
 func TestParseOptRootPath(t *testing.T) {
-	o := OptionsFromList(OptRootPath("test"))
-	require.Equal(t, "test", GetRootPath(o))
-	require.Equal(t, "", GetRootPath(Options{}))
+	m, _ := New(WithGeneric(OptionRootPath, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.RootPath())
+
+	m, _ = New()
+	require.Equal(t, "", m.RootPath())
 }
 
 func TestOptBootFileName(t *testing.T) {
@@ -57,9 +59,11 @@ func TestOptBootFileName(t *testing.T) {
 }
 
 func TestParseOptBootFileName(t *testing.T) {
-	o := OptionsFromList(OptBootFileName("test"))
-	require.Equal(t, "test", GetBootFileName(o))
-	require.Equal(t, "", GetBootFileName(Options{}))
+	m, _ := New(WithGeneric(OptionBootfileName, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.BootFileNameOption())
+
+	m, _ = New()
+	require.Equal(t, "", m.BootFileNameOption())
 }
 
 func TestOptTFTPServerName(t *testing.T) {
@@ -70,9 +74,11 @@ func TestOptTFTPServerName(t *testing.T) {
 }
 
 func TestParseOptTFTPServerName(t *testing.T) {
-	o := OptionsFromList(OptTFTPServerName("test"))
-	require.Equal(t, "test", GetTFTPServerName(o))
-	require.Equal(t, "", GetTFTPServerName(Options{}))
+	m, _ := New(WithGeneric(OptionTFTPServerName, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.TFTPServerName())
+
+	m, _ = New()
+	require.Equal(t, "", m.TFTPServerName())
 }
 
 func TestOptClassIdentifier(t *testing.T) {
@@ -83,7 +89,9 @@ func TestOptClassIdentifier(t *testing.T) {
 }
 
 func TestParseOptClassIdentifier(t *testing.T) {
-	o := OptionsFromList(OptClassIdentifier("test"))
-	require.Equal(t, "test", GetClassIdentifier(o))
-	require.Equal(t, "", GetClassIdentifier(Options{}))
+	m, _ := New(WithGeneric(OptionClassIdentifier, []byte{'t', 'e', 's', 't'}))
+	require.Equal(t, "test", m.ClassIdentifier())
+
+	m, _ = New()
+	require.Equal(t, "", m.ClassIdentifier())
 }

@@ -30,23 +30,24 @@ func TestOptVIVCInterfaceMethods(t *testing.T) {
 }
 
 func TestParseOptVICO(t *testing.T) {
-	options := Options{OptionVendorIdentifyingVendorClass.Code(): sampleVIVCOptRaw}
-	o := GetVIVC(options)
+	m, _ := New(WithGeneric(OptionVendorIdentifyingVendorClass, sampleVIVCOptRaw))
+	o := m.VIVC()
 	require.Equal(t, sampleVIVCOpt, o)
 
 	// Identifier len too long
 	data := make([]byte, len(sampleVIVCOptRaw))
 	copy(data, sampleVIVCOptRaw)
 	data[4] = 40
-	options = Options{OptionVendorIdentifyingVendorClass.Code(): data}
-	o = GetVIVC(options)
+	m, _ = New(WithGeneric(OptionVendorIdentifyingVendorClass, data))
+	o = m.VIVC()
 	require.Nil(t, o, "should get error from bad length")
 
 	// Longer than length
 	data[4] = 5
-	options = Options{OptionVendorIdentifyingVendorClass.Code(): data[:10]}
-	o = GetVIVC(options)
+	m, _ = New(WithGeneric(OptionVendorIdentifyingVendorClass, data[:10]))
+	o = m.VIVC()
 	require.Equal(t, o[0].Data, []byte("Cisco"))
 
-	require.Equal(t, VIVCIdentifiers(nil), GetVIVC(Options{}))
+	m, _ = New()
+	require.Equal(t, VIVCIdentifiers(nil), m.VIVC())
 }

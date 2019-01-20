@@ -7,14 +7,12 @@ import (
 )
 
 func TestGetRelayAgentInformation(t *testing.T) {
-	o := Options{
-		OptionRelayAgentInformation.Code(): []byte{
-			1, 5, 'l', 'i', 'n', 'u', 'x',
-			2, 4, 'b', 'o', 'o', 't',
-		},
-	}
+	m, _ := New(WithGeneric(OptionRelayAgentInformation, []byte{
+		1, 5, 'l', 'i', 'n', 'u', 'x',
+		2, 4, 'b', 'o', 'o', 't',
+	}))
 
-	opt := GetRelayAgentInfo(o)
+	opt := m.RelayAgentInfo()
 	require.NotNil(t, opt)
 	require.Equal(t, len(opt.Options), 2)
 
@@ -24,15 +22,14 @@ func TestGetRelayAgentInformation(t *testing.T) {
 	require.Equal(t, remote, []byte("boot"))
 
 	// Empty.
-	require.Nil(t, GetRelayAgentInfo(Options{}))
+	m, _ = New()
+	require.Nil(t, m.RelayAgentInfo())
 
 	// Invalid contents.
-	o = Options{
-		OptionRelayAgentInformation.Code(): []byte{
-			1, 7, 'l', 'i', 'n', 'u', 'x',
-		},
-	}
-	require.Nil(t, GetRelayAgentInfo(o))
+	m, _ = New(WithGeneric(OptionRelayAgentInformation, []byte{
+		1, 7, 'l', 'i', 'n', 'u', 'x',
+	}))
+	require.Nil(t, m.RelayAgentInfo())
 }
 
 func TestOptRelayAgentInfo(t *testing.T) {

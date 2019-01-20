@@ -40,13 +40,6 @@ func GetIP(code OptionCode, o Options) net.IP {
 	return net.IP(ip)
 }
 
-// GetBroadcastAddress returns the DHCPv4 Broadcast Address value in o.
-//
-// The broadcast address option is described in RFC 2132, Section 5.3.
-func GetBroadcastAddress(o Options) net.IP {
-	return GetIP(OptionBroadcastAddress, o)
-}
-
 // OptBroadcastAddress returns a new DHCPv4 Broadcast Address option.
 //
 // The broadcast address option is described in RFC 2132, Section 5.3.
@@ -54,25 +47,11 @@ func OptBroadcastAddress(ip net.IP) Option {
 	return Option{Code: OptionBroadcastAddress, Value: IP(ip)}
 }
 
-// GetRequestedIPAddress returns the DHCPv4 Requested IP Address value in o.
-//
-// The requested IP address option is described by RFC 2132, Section 9.1.
-func GetRequestedIPAddress(o Options) net.IP {
-	return GetIP(OptionRequestedIPAddress, o)
-}
-
 // OptRequestedIPAddress returns a new DHCPv4 Requested IP Address option.
 //
 // The requested IP address option is described by RFC 2132, Section 9.1.
 func OptRequestedIPAddress(ip net.IP) Option {
 	return Option{Code: OptionRequestedIPAddress, Value: IP(ip)}
-}
-
-// GetServerIdentifier returns the DHCPv4 Server Identifier value in o.
-//
-// The server identifier option is described by RFC 2132, Section 9.7.
-func GetServerIdentifier(o Options) net.IP {
-	return GetIP(OptionServerIdentifier, o)
 }
 
 // OptServerIdentifier returns a new DHCPv4 Server Identifier option.

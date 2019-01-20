@@ -39,7 +39,7 @@ func TestWithOptionModifier(t *testing.T) {
 	d, err := New(WithOption(OptDomainName("slackware.it")))
 	require.NoError(t, err)
 
-	dnOpt := GetDomainName(d.Options)
+	dnOpt := d.DomainName()
 	require.NotNil(t, dnOpt)
 	require.Equal(t, "slackware.it", dnOpt)
 }
@@ -68,28 +68,28 @@ func TestWithNetboot(t *testing.T) {
 	d, err := New(WithNetboot)
 	require.NoError(t, err)
 
-	require.Equal(t, "TFTP Server Name, Bootfile Name", GetParameterRequestList(d.Options).String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingTFTP(t *testing.T) {
 	d, _ := New()
 	d.UpdateOption(OptParameterRequestList(OptionTFTPServerName))
 	WithNetboot(d)
-	require.Equal(t, "TFTP Server Name, Bootfile Name", GetParameterRequestList(d.Options).String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingBootfileName(t *testing.T) {
 	d, _ := New()
 	d.UpdateOption(OptParameterRequestList(OptionBootfileName))
 	WithNetboot(d)
-	require.Equal(t, "TFTP Server Name, Bootfile Name", GetParameterRequestList(d.Options).String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingBoth(t *testing.T) {
 	d, _ := New()
 	d.UpdateOption(OptParameterRequestList(OptionBootfileName, OptionTFTPServerName))
 	WithNetboot(d)
-	require.Equal(t, "TFTP Server Name, Bootfile Name", GetParameterRequestList(d.Options).String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithRequestedOptions(t *testing.T) {
@@ -98,13 +98,13 @@ func TestWithRequestedOptions(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, d)
 
-	opts := GetParameterRequestList(d.Options)
+	opts := d.ParameterRequestList()
 	require.NotNil(t, opts)
 	require.ElementsMatch(t, opts, []OptionCode{OptionFQDN})
 	// Check if already set options are preserved
 	WithRequestedOptions(OptionHostName)(d)
 	require.NotNil(t, d)
-	opts = GetParameterRequestList(d.Options)
+	opts = d.ParameterRequestList()
 	require.NotNil(t, opts)
 	require.ElementsMatch(t, opts, []OptionCode{OptionFQDN, OptionHostName})
 }
@@ -123,8 +123,7 @@ func TestWithNetmask(t *testing.T) {
 	d, err := New(WithNetmask(net.IPv4Mask(255, 255, 255, 0)))
 	require.NoError(t, err)
 
-	osm := GetSubnetMask(d.Options)
-	require.Equal(t, net.IPv4Mask(255, 255, 255, 0), osm)
+	require.Equal(t, net.IPv4Mask(255, 255, 255, 0), d.SubnetMask())
 }
 
 func TestWithLeaseTime(t *testing.T) {
@@ -132,15 +131,14 @@ func TestWithLeaseTime(t *testing.T) {
 	require.NoError(t, err)
 
 	require.True(t, d.Options.Has(OptionIPAddressLeaseTime))
-	olt := GetIPAddressLeaseTime(d.Options, 10*time.Second)
-	require.Equal(t, 3600*time.Second, olt)
+	require.Equal(t, 3600*time.Second, d.IPAddressLeaseTime(10*time.Second))
 }
 
 func TestWithDNS(t *testing.T) {
 	d, err := New(WithDNS(net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")))
 	require.NoError(t, err)
 
-	dns := GetDNS(d.Options)
+	dns := d.DNS()
 	require.Equal(t, net.ParseIP("10.0.0.1").To4(), dns[0])
 	require.Equal(t, net.ParseIP("10.0.0.2").To4(), dns[1])
 }
@@ -149,7 +147,7 @@ func TestWithDomainSearchList(t *testing.T) {
 	d, err := New(WithDomainSearchList("slackware.it", "dhcp.slackware.it"))
 	require.NoError(t, err)
 
-	osl := GetDomainSearch(d.Options)
+	osl := d.DomainSearch()
 	require.NotNil(t, osl)
 	require.Equal(t, 2, len(osl.Labels))
 	require.Equal(t, "slackware.it", osl.Labels[0])
@@ -161,6 +159,6 @@ func TestWithRouter(t *testing.T) {
 	d, err := New(WithRouter(rtr))
 	require.NoError(t, err)
 
-	ortr := GetRouter(d.Options)
+	ortr := d.Router()
 	require.Equal(t, rtr, ortr[0])
 }

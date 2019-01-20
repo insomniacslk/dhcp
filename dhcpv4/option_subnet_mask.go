@@ -31,21 +31,6 @@ func (im *IPMask) FromBytes(data []byte) error {
 	return buf.FinError()
 }
 
-// GetSubnetMask returns a subnet mask option contained in o, if there is one.
-//
-// The subnet mask option is described by RFC 2132, Section 3.3.
-func GetSubnetMask(o Options) net.IPMask {
-	v := o.Get(OptionSubnetMask)
-	if v == nil {
-		return nil
-	}
-	var im IPMask
-	if err := im.FromBytes(v); err != nil {
-		return nil
-	}
-	return net.IPMask(im)
-}
-
 // OptSubnetMask returns a new DHCPv4 SubnetMask option per RFC 2132, Section 3.3.
 func OptSubnetMask(mask net.IPMask) Option {
 	return Option{

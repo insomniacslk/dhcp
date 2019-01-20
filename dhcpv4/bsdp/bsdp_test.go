@@ -75,7 +75,7 @@ func TestNewInformList_NoReplyPort(t *testing.T) {
 	require.True(t, vendorOpts.Has(OptionMessageType))
 	require.True(t, vendorOpts.Has(OptionVersion))
 
-	mt := GetMessageType(vendorOpts.Options)
+	mt := vendorOpts.MessageType()
 	require.Equal(t, MessageTypeList, mt)
 }
 
@@ -96,7 +96,7 @@ func TestNewInformList_ReplyPort(t *testing.T) {
 	vendorOpts := GetVendorOptions(m.Options)
 	require.True(t, vendorOpts.Options.Has(OptionReplyPort))
 
-	port, err := GetReplyPort(vendorOpts.Options)
+	port, err := vendorOpts.ReplyPort()
 	require.NoError(t, err)
 	require.Equal(t, replyPort, port)
 }
@@ -139,7 +139,7 @@ func TestInformSelectForAck_Broadcast(t *testing.T) {
 	require.True(t, m.Options.Has(dhcpv4.OptionClassIdentifier))
 	require.True(t, m.Options.Has(dhcpv4.OptionParameterRequestList))
 	require.True(t, m.Options.Has(dhcpv4.OptionDHCPMessageType))
-	mt := dhcpv4.GetMessageType(m.Options)
+	mt := m.MessageType()
 	require.Equal(t, dhcpv4.MessageTypeInform, mt)
 
 	// Validate vendor opts.

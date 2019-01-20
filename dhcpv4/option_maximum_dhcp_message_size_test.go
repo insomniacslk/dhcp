@@ -14,18 +14,18 @@ func TestOptMaximumDHCPMessageSize(t *testing.T) {
 }
 
 func TestGetMaximumDHCPMessageSize(t *testing.T) {
-	options := Options{OptionMaximumDHCPMessageSize.Code(): []byte{5, 220}}
-	o, err := GetMaxMessageSize(options)
+	m, _ := New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{5, 220}))
+	o, err := m.MaxMessageSize()
 	require.NoError(t, err)
 	require.Equal(t, uint16(1500), o)
 
 	// Short byte stream
-	options = Options{OptionMaximumDHCPMessageSize.Code(): []byte{2}}
-	_, err = GetMaxMessageSize(options)
+	m, _ = New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{2}))
+	_, err = m.MaxMessageSize()
 	require.Error(t, err, "should get error from short byte stream")
 
 	// Bad length
-	options = Options{OptionMaximumDHCPMessageSize.Code(): []byte{1, 1, 1}}
-	_, err = GetMaxMessageSize(options)
+	m, _ = New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{2, 2, 2}))
+	_, err = m.MaxMessageSize()
 	require.Error(t, err, "should get error from bad length")
 }

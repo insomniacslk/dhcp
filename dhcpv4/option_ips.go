@@ -62,13 +62,6 @@ func GetIPs(code OptionCode, o Options) []net.IP {
 	return []net.IP(ips)
 }
 
-// GetRouter parses the DHCPv4 Router option if present.
-//
-// The Router option is described by RFC 2132, Section 3.5.
-func GetRouter(o Options) []net.IP {
-	return GetIPs(OptionRouter, o)
-}
-
 // OptRouter returns a new DHCPv4 Router option.
 //
 // The Router option is described by RFC 2132, Section 3.5.
@@ -84,13 +77,6 @@ func WithRouter(routers ...net.IP) Modifier {
 	return WithOption(OptRouter(routers...))
 }
 
-// GetNTPServers parses the DHCPv4 NTP Servers option if present.
-//
-// The NTP servers option is described by RFC 2132, Section 8.3.
-func GetNTPServers(o Options) []net.IP {
-	return GetIPs(OptionNTPServers, o)
-}
-
 // OptNTPServers returns a new DHCPv4 NTP Server option.
 //
 // The NTP servers option is described by RFC 2132, Section 8.3.
@@ -99,13 +85,6 @@ func OptNTPServers(ntpServers ...net.IP) Option {
 		Code:  OptionNTPServers,
 		Value: IPs(ntpServers),
 	}
-}
-
-// GetDNS parses the DHCPv4 Domain Name Server option if present.
-//
-// The DNS server option is described by RFC 2132, Section 3.8.
-func GetDNS(o Options) []net.IP {
-	return GetIPs(OptionDomainNameServer, o)
 }
 
 // OptDNS returns a new DHCPv4 Domain Name Server option.

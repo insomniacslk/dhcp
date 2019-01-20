@@ -64,21 +64,6 @@ func (ol *OptionCodeList) FromBytes(data []byte) error {
 	return buf.FinError()
 }
 
-// GetParameterRequestList returns the DHCPv4 Parameter Request List in o.
-//
-// The parameter request list option is described by RFC 2132, Section 9.8.
-func GetParameterRequestList(o Options) OptionCodeList {
-	v := o.Get(OptionParameterRequestList)
-	if v == nil {
-		return nil
-	}
-	var codes OptionCodeList
-	if err := codes.FromBytes(v); err != nil {
-		return nil
-	}
-	return codes
-}
-
 // OptParameterRequestList returns a new DHCPv4 Parameter Request List.
 //
 // The parameter request list option is described by RFC 2132, Section 9.8.

@@ -9,7 +9,7 @@
 //   p.UpdateOption(dhcpv4.OptServerIdentifier(net.IP{192, 110, 110, 110}))
 //
 //   // Retrieve the DHCP Message Type option.
-//   m := dhcpv4.GetMessageType(p.Options)
+//   m := p.MessageType()
 //
 //   bytesOnTheWire := p.ToBytes()
 //   longSummary := p.Summary()
@@ -21,8 +21,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -218,7 +220,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (
 // NewRequestFromOffer builds a DHCPv4 request from an offer.
 func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	// find server IP address
-	serverIP := GetServerIdentifier(offer.Options)
+	serverIP := offer.ServerIdentifier()
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
@@ -350,12 +352,6 @@ func (d *DHCPv4) UpdateOption(opt Option) {
 	d.Options.Update(opt)
 }
 
-// MessageType returns the message type, trying to extract it from the
-// OptMessageType option. It returns nil if the message type cannot be extracted
-func (d *DHCPv4) MessageType() MessageType {
-	return GetMessageType(d.Options)
-}
-
 // String implements fmt.Stringer.
 func (d *DHCPv4) String() string {
 	return fmt.Sprintf("DHCPv4(opcode=%s xid=%s hwtype=%s hwaddr=%s)",
@@ -408,7 +404,7 @@ func (d *DHCPv4) Summary() string {
 // IsOptionRequested returns true if that option is within the requested
 // options of the DHCPv4 message.
 func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
-	for _, o := range GetParameterRequestList(d.Options) {
+	for _, o := range d.ParameterRequestList() {
 		if o == requested {
 			return true
 		}
@@ -469,4 +465,225 @@ func (d *DHCPv4) ToBytes() []byte {
 	buf.Write8(uint8(OptionEnd))
 
 	return buf.Data()
+}
+
+// GetBroadcastAddress returns the DHCPv4 Broadcast Address value in d.
+//
+// The broadcast address option is described in RFC 2132, Section 5.3.
+func (d *DHCPv4) BroadcastAddress() net.IP {
+	return GetIP(OptionBroadcastAddress, d.Options)
+}
+
+// RequestedIPAddress returns the DHCPv4 Requested IP Address value in d.
+//
+// The requested IP address option is described by RFC 2132, Section 9.1.
+func (d *DHCPv4) RequestedIPAddress() net.IP {
+	return GetIP(OptionRequestedIPAddress, d.Options)
+}
+
+// ServerIdentifier returns the DHCPv4 Server Identifier value in d.
+//
+// The server identifier option is described by RFC 2132, Section 9.7.
+func (d *DHCPv4) ServerIdentifier() net.IP {
+	return GetIP(OptionServerIdentifier, d.Options)
+}
+
+// Router parses the DHCPv4 Router option if present.
+//
+// The Router option is described by RFC 2132, Section 3.5.
+func (d *DHCPv4) Router() []net.IP {
+	return GetIPs(OptionRouter, d.Options)
+}
+
+// NTPServers parses the DHCPv4 NTP Servers option if present.
+//
+// The NTP servers option is described by RFC 2132, Section 8.3.
+func (d *DHCPv4) NTPServers() []net.IP {
+	return GetIPs(OptionNTPServers, d.Options)
+}
+
+// DNS parses the DHCPv4 Domain Name Server option if present.
+//
+// The DNS server option is described by RFC 2132, Section 3.8.
+func (d *DHCPv4) DNS() []net.IP {
+	return GetIPs(OptionDomainNameServer, d.Options)
+}
+
+// DomainName parses the DHCPv4 Domain Name option if present.
+//
+// The Domain Name option is described by RFC 2132, Section 3.17.
+func (d *DHCPv4) DomainName() string {
+	return GetString(OptionDomainName, d.Options)
+}
+
+// HostName parses the DHCPv4 Host Name option if present.
+//
+// The Host Name option is described by RFC 2132, Section 3.14.
+func (d *DHCPv4) HostName() string {
+	return GetString(OptionHostName, d.Options)
+}
+
+// RootPath parses the DHCPv4 Root Path option if present.
+//
+// The Root Path option is described by RFC 2132, Section 3.19.
+func (d *DHCPv4) RootPath() string {
+	return GetString(OptionRootPath, d.Options)
+}
+
+// BootFileNameOption parses the DHCPv4 Bootfile Name option if present.
+//
+// The Bootfile Name option is described by RFC 2132, Section 9.5.
+func (d *DHCPv4) BootFileNameOption() string {
+	return GetString(OptionBootfileName, d.Options)
+}
+
+// TFTPServerName parses the DHCPv4 TFTP Server Name option if present.
+//
+// The TFTP Server Name option is described by RFC 2132, Section 9.4.
+func (d *DHCPv4) TFTPServerName() string {
+	return GetString(OptionTFTPServerName, d.Options)
+}
+
+// ClassIdentifier parses the DHCPv4 Class Identifier option if present.
+//
+// The Vendor Class Identifier option is described by RFC 2132, Section 9.13.
+func (d *DHCPv4) ClassIdentifier() string {
+	return GetString(OptionClassIdentifier, d.Options)
+}
+
+// ClientArch returns the Client System Architecture Type option.
+func (d *DHCPv4) ClientArch() []iana.Arch {
+	v := d.Options.Get(OptionClientSystemArchitectureType)
+	if v == nil {
+		return nil
+	}
+	var archs iana.Archs
+	if err := archs.FromBytes(v); err != nil {
+		return nil
+	}
+	return archs
+}
+
+// DomainSearch returns the domain search list if present.
+//
+// The domain search option is described by RFC 3397, Section 2.
+func (d *DHCPv4) DomainSearch() *rfc1035label.Labels {
+	v := d.Options.Get(OptionDNSDomainSearchList)
+	if v == nil {
+		return nil
+	}
+	labels, err := rfc1035label.FromBytes(v)
+	if err != nil {
+		return nil
+	}
+	return labels
+}
+
+// IPAddressLeaseTime returns the IP address lease time or the given
+// default duration if not present.
+//
+// The IP address lease time option is described by RFC 2132, Section 9.2.
+func (d *DHCPv4) IPAddressLeaseTime(def time.Duration) time.Duration {
+	v := d.Options.Get(OptionIPAddressLeaseTime)
+	if v == nil {
+		return def
+	}
+	var dur Duration
+	if err := dur.FromBytes(v); err != nil {
+		return def
+	}
+	return time.Duration(dur)
+}
+
+// MaxMessageSize returns the DHCP Maximum Message Size if present.
+//
+// The Maximum DHCP Message Size option is described by RFC 2132, Section 9.10.
+func (d *DHCPv4) MaxMessageSize() (uint16, error) {
+	return GetUint16(OptionMaximumDHCPMessageSize, d.Options)
+}
+
+// MessageType returns the DHCPv4 Message Type option.
+func (d *DHCPv4) MessageType() MessageType {
+	v := d.Options.Get(OptionDHCPMessageType)
+	if v == nil {
+		return MessageTypeNone
+	}
+	var m MessageType
+	if err := m.FromBytes(v); err != nil {
+		return MessageTypeNone
+	}
+	return m
+}
+
+// ParameterRequestList returns the DHCPv4 Parameter Request List.
+//
+// The parameter request list option is described by RFC 2132, Section 9.8.
+func (d *DHCPv4) ParameterRequestList() OptionCodeList {
+	v := d.Options.Get(OptionParameterRequestList)
+	if v == nil {
+		return nil
+	}
+	var codes OptionCodeList
+	if err := codes.FromBytes(v); err != nil {
+		return nil
+	}
+	return codes
+}
+
+// RelayAgentInfo returns options embedded by the relay agent.
+//
+// The relay agent info option is described by RFC 3046.
+func (d *DHCPv4) RelayAgentInfo() *RelayOptions {
+	v := d.Options.Get(OptionRelayAgentInformation)
+	if v == nil {
+		return nil
+	}
+	var relayOptions RelayOptions
+	if err := relayOptions.FromBytes(v); err != nil {
+		return nil
+	}
+	return &relayOptions
+}
+
+// SubnetMask returns a subnet mask option contained if present.
+//
+// The subnet mask option is described by RFC 2132, Section 3.3.
+func (d *DHCPv4) SubnetMask() net.IPMask {
+	v := d.Options.Get(OptionSubnetMask)
+	if v == nil {
+		return nil
+	}
+	var im IPMask
+	if err := im.FromBytes(v); err != nil {
+		return nil
+	}
+	return net.IPMask(im)
+}
+
+// UserClass returns the user class if present.
+//
+// The user class information option is defined by RFC 3004.
+func (d *DHCPv4) UserClass() *UserClass {
+	v := d.Options.Get(OptionUserClassInformation)
+	if v == nil {
+		return nil
+	}
+	var uc UserClass
+	if err := uc.FromBytes(v); err != nil {
+		return nil
+	}
+	return &uc
+}
+
+// VIVC returns the vendor-identifying vendor class option if present.
+func (d *DHCPv4) VIVC() VIVCIdentifiers {
+	v := d.Options.Get(OptionVendorIdentifyingVendorClass)
+	if v == nil {
+		return nil
+	}
+	var ids VIVCIdentifiers
+	if err := ids.FromBytes(v); err != nil {
+		return nil
+	}
+	return ids
 }

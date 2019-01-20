@@ -31,7 +31,9 @@ func TestParseOptMessageType(t *testing.T) {
 }
 
 func TestGetMessageType(t *testing.T) {
-	o := OptionsFromList(OptMessageType(MessageTypeDiscover))
-	require.Equal(t, MessageTypeDiscover, GetMessageType(o))
-	require.Equal(t, MessageTypeNone, GetMessageType(Options{}))
+	m, _ := New(WithMessageType(MessageTypeDiscover))
+	require.Equal(t, MessageTypeDiscover, m.MessageType())
+
+	m, _ = New()
+	require.Equal(t, MessageTypeNone, m.MessageType())
 }

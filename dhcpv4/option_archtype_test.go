@@ -8,33 +8,34 @@ import (
 )
 
 func TestParseOptClientArchType(t *testing.T) {
-	o := Options{OptionClientSystemArchitectureType.Code(): []byte{
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{
 		0, 6, // EFI_IA32
-	}}
-	archs := GetClientArch(o)
+	}))
+	archs := m.ClientArch()
 	require.NotNil(t, archs)
 	require.Equal(t, archs[0], iana.EFI_IA32)
 }
 
 func TestParseOptClientArchTypeMultiple(t *testing.T) {
-	o := Options{OptionClientSystemArchitectureType.Code(): []byte{
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{
 		0, 6, // EFI_IA32
 		0, 2, // EFI_ITANIUM
-	}}
-	archs := GetClientArch(o)
+	}))
+	archs := m.ClientArch()
 	require.NotNil(t, archs)
 	require.Equal(t, archs[0], iana.EFI_IA32)
 	require.Equal(t, archs[1], iana.EFI_ITANIUM)
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
-	o := Options{OptionClientSystemArchitectureType.Code(): []byte{42}}
-	archs := GetClientArch(o)
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{42}))
+	archs := m.ClientArch()
 	require.Nil(t, archs)
 }
 
 func TestGetClientArchEmpty(t *testing.T) {
-	require.Nil(t, GetClientArch(Options{}))
+	m, _ := New()
+	require.Nil(t, m.ClientArch())
 }
 
 func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {

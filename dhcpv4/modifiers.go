@@ -112,14 +112,9 @@ func WithMessageType(m MessageType) Modifier {
 // WithRequestedOptions adds requested options to the packet.
 func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 	return func(d *DHCPv4) {
-		params := d.GetOneOption(OptionParameterRequestList)
-		if params == nil {
-			d.UpdateOption(OptParameterRequestList(optionCodes...))
-		} else {
-			cl := OptionCodeList(GetParameterRequestList(d.Options))
-			cl.Add(optionCodes...)
-			d.UpdateOption(OptParameterRequestList(cl...))
-		}
+		cl := d.ParameterRequestList()
+		cl.Add(optionCodes...)
+		d.UpdateOption(OptParameterRequestList(cl...))
 	}
 }
 
@@ -148,4 +143,8 @@ func WithDomainSearchList(searchList ...string) Modifier {
 	return WithOption(OptDomainSearch(&rfc1035label.Labels{
 		Labels: searchList,
 	}))
+}
+
+func WithGeneric(code OptionCode, value []byte) Modifier {
+	return WithOption(OptGeneric(code, value))
 }

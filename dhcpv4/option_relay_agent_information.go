@@ -36,18 +36,3 @@ func (r *RelayOptions) FromBytes(data []byte) error {
 func OptRelayAgentInfo(o ...Option) Option {
 	return Option{Code: OptionRelayAgentInformation, Value: RelayOptions{OptionsFromList(o...)}}
 }
-
-// GetRelayAgentInfo returns options embedded by the relay agent.
-//
-// The relay agent info option is described by RFC 3046.
-func GetRelayAgentInfo(o Options) *RelayOptions {
-	v := o.Get(OptionRelayAgentInformation)
-	if v == nil {
-		return nil
-	}
-	var relayOptions RelayOptions
-	if err := relayOptions.FromBytes(v); err != nil {
-		return nil
-	}
-	return &relayOptions
-}
