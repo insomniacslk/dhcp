@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 const MessageHeaderSize = 4
@@ -307,16 +308,16 @@ func (d *DHCPv6Message) Summary() string {
 	return ret
 }
 
-// Convert a DHCPv6Message structure into its binary representation, suitable for being
-// sent over the network
+// ToBytes returns the serialized version of this message as defined by RFC
+// 3315, Section 5.
 func (d *DHCPv6Message) ToBytes() []byte {
-	var ret []byte
-	ret = append(ret, byte(d.messageType))
-	ret = append(ret, d.transactionID[:]...) // discard the first byte
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write8(uint8(d.messageType))
+	buf.WriteBytes(d.transactionID[:])
 	for _, opt := range d.options {
-		ret = append(ret, opt.ToBytes()...)
+		buf.WriteBytes(opt.ToBytes())
 	}
-	return ret
+	return buf.Data()
 }
 
 func (d *DHCPv6Message) Length() int {

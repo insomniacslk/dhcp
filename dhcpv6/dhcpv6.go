@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 type DHCPv6 interface {
@@ -29,36 +30,19 @@ type DHCPv6 interface {
 type Modifier func(d DHCPv6) DHCPv6
 
 func FromBytes(data []byte) (DHCPv6, error) {
-	var (
-		isRelay     = false
-		headerSize  int
-		messageType = MessageType(data[0])
-	)
+	buf := uio.NewBigEndianBuffer(data)
+	messageType := MessageType(buf.Read8())
+
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		isRelay = true
-	}
-	if isRelay {
-		headerSize = RelayHeaderSize
-	} else {
-		headerSize = MessageHeaderSize
-	}
-	if len(data) < headerSize {
-		return nil, fmt.Errorf("Invalid header size: shorter than %v bytes", headerSize)
-	}
-	if isRelay {
-		var (
-			linkAddr, peerAddr []byte
-		)
 		d := DHCPv6Relay{
 			messageType: messageType,
-			hopCount:    uint8(data[1]),
+			hopCount:    buf.Read8(),
 		}
-		linkAddr = append(linkAddr, data[2:18]...)
-		d.linkAddr = linkAddr
-		peerAddr = append(peerAddr, data[18:34]...)
-		d.peerAddr = peerAddr
+		d.linkAddr = net.IP(buf.CopyN(net.IPv6len))
+		d.peerAddr = net.IP(buf.CopyN(net.IPv6len))
+
 		// TODO fail if no OptRelayMessage is present
-		if err := d.options.FromBytes(data[34:]); err != nil {
+		if err := d.options.FromBytes(buf.Data()); err != nil {
 			return nil, err
 		}
 		return &d, nil
@@ -66,8 +50,8 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		d := DHCPv6Message{
 			messageType: messageType,
 		}
-		copy(d.transactionID[:], data[1:4])
-		if err := d.options.FromBytes(data[4:]); err != nil {
+		buf.ReadBytes(d.transactionID[:])
+		if err := d.options.FromBytes(buf.Data()); err != nil {
 			return nil, err
 		}
 		return &d, nil
