@@ -44,10 +44,6 @@ func (op *OptRequestedOption) AddRequestedOption(opt OptionCode) {
 	op.requestedOptions = append(op.requestedOptions, opt)
 }
 
-func (op *OptRequestedOption) Length() int {
-	return len(op.requestedOptions) * 2
-}
-
 func (op *OptRequestedOption) String() string {
 	names := make([]string, 0, len(op.requestedOptions))
 	for _, code := range op.requestedOptions {

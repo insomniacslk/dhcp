@@ -23,14 +23,6 @@ func (op *OptDomainSearchList) ToBytes() []byte {
 	return op.DomainSearchList.ToBytes()
 }
 
-func (op *OptDomainSearchList) Length() int {
-	var length int
-	for _, label := range op.DomainSearchList.Labels {
-		length += len(label) + 2 // add the first and the last length bytes
-	}
-	return length
-}
-
 func (op *OptDomainSearchList) String() string {
 	return fmt.Sprintf("OptDomainSearchList{searchlist=%v}", op.DomainSearchList.Labels)
 }

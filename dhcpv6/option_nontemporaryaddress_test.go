@@ -16,7 +16,6 @@ func TestOptIANAParseOptIANA(t *testing.T) {
 	}
 	opt, err := ParseOptIANA(data)
 	require.NoError(t, err)
-	require.Equal(t, len(data), opt.Length())
 	require.Equal(t, OptionIANA, opt.Code())
 }
 

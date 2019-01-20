@@ -30,15 +30,6 @@ func (op *OptVendorClass) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptVendorClass) Length() int {
-	ret := 0
-	for _, data := range op.Data {
-		ret += 2 + len(data)
-	}
-	return 4 + ret
-}
-
 // String returns a string representation of the VendorClass data
 func (op *OptVendorClass) String() string {
 	vcStrings := make([]string, 0)

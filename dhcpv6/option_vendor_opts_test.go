@@ -19,7 +19,6 @@ func TestOptVendorOpts(t *testing.T) {
 	expectedOpts.VendorOpts = append(vendorOpts, &OptionGeneric{OptionCode: 1, OptionData: optData})
 	opt, err := ParseOptVendorOpts(expected)
 	require.NoError(t, err)
-	require.Equal(t, len(expected), opt.Length())
 	require.Equal(t, uint32(0xaabbccdd), opt.EnterpriseNumber)
 	require.Equal(t, expectedOpts.VendorOpts, opt.VendorOpts)
 

@@ -22,11 +22,6 @@ func (op *OptBootFileURL) ToBytes() []byte {
 	return op.BootFileURL
 }
 
-// Length returns the option length in bytes
-func (op *OptBootFileURL) Length() int {
-	return len(op.BootFileURL)
-}
-
 func (op *OptBootFileURL) String() string {
 	return fmt.Sprintf("OptBootFileURL{BootFileUrl=%s}", op.BootFileURL)
 }

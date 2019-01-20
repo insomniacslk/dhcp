@@ -21,10 +21,6 @@ func (op *OptClientId) ToBytes() []byte {
 	return op.Cid.ToBytes()
 }
 
-func (op *OptClientId) Length() int {
-	return op.Cid.Length()
-}
-
 func (op *OptClientId) String() string {
 	return fmt.Sprintf("OptClientId{cid=%v}", op.Cid.String())
 }

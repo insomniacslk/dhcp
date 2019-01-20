@@ -33,15 +33,6 @@ func (op *OptIAAddress) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptIAAddress) Length() int {
-	opLen := 24
-	for _, opt := range op.Options {
-		opLen += 4 + opt.Length()
-	}
-	return opLen
-}
-
 func (op *OptIAAddress) String() string {
 	return fmt.Sprintf("OptIAAddress{ipv6addr=%v, preferredlifetime=%v, validlifetime=%v, options=%v}",
 		op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options)

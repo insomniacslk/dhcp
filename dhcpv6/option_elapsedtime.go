@@ -25,10 +25,6 @@ func (op *OptElapsedTime) ToBytes() []byte {
 	return buf.Data()
 }
 
-func (op *OptElapsedTime) Length() int {
-	return 2
-}
-
 func (op *OptElapsedTime) String() string {
 	return fmt.Sprintf("OptElapsedTime{elapsedtime=%v}", op.ElapsedTime)
 }

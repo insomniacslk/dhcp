@@ -52,15 +52,6 @@ func (op *OptIAPrefix) SetIPv6Prefix(p net.IP) {
 	op.ipv6Prefix = p
 }
 
-// Length returns the option length
-func (op *OptIAPrefix) Length() int {
-	opLen := 25
-	for _, opt := range op.Options {
-		opLen += 4 + opt.Length()
-	}
-	return opLen
-}
-
 func (op *OptIAPrefix) String() string {
 	return fmt.Sprintf("OptIAPrefix{preferredlifetime=%v, validlifetime=%v, prefixlength=%v, ipv6prefix=%v, options=%v}",
 		op.PreferredLifetime, op.ValidLifetime, op.PrefixLength(), op.IPv6Prefix(), op.Options)

@@ -29,10 +29,6 @@ func (op *OptClientArchType) ToBytes() []byte {
 	return buf.Data()
 }
 
-func (op *OptClientArchType) Length() int {
-	return 2 * len(op.ArchTypes)
-}
-
 func (op *OptClientArchType) String() string {
 	atStrings := make([]string, 0)
 	for _, at := range op.ArchTypes {

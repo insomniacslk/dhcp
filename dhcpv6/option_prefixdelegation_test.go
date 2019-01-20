@@ -20,7 +20,6 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 	}
 	opt, err := ParseOptIAForPrefixDelegation(data)
 	require.NoError(t, err)
-	require.Equal(t, len(data), opt.Length())
 	require.Equal(t, OptionIAPD, opt.Code())
 	require.Equal(t, [4]byte{1, 0, 0, 0}, opt.IaId)
 	require.Equal(t, uint32(1), opt.T1)

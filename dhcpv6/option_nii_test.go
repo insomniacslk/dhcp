@@ -14,7 +14,6 @@ func TestOptNetworkInterfaceIdParse(t *testing.T) {
 	}
 	opt, err := ParseOptNetworkInterfaceId(expected)
 	require.NoError(t, err, "ParseOptNetworkInterfaceId() should not return an error with correct bytes")
-	require.Equal(t, 3, opt.Length(), "Length() should return 3")
 	require.Equal(t, OptionNII, opt.Code(), OptionNII, "Code() should return 62 for OptNetworkInterfaceId")
 	require.Equal(t, uint8(1), opt.Type(), "Type() should return 1 for UNDI")
 	require.Equal(t, uint8(3), opt.Major(), "Major() should return 1 for UNDI")
@@ -36,8 +35,6 @@ func TestOptNetworkInterfaceIdToBytes(t *testing.T) {
 
 func TestOptNetworkInterfaceIdTooShort(t *testing.T) {
 	buf := []byte{
-		0, 62, // OptNetworkInterfaceId
-		0, 3, // length
 		1, // type (UNDI)
 		// missing major/minor revision bytes
 	}

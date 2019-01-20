@@ -18,7 +18,6 @@ func TestParseOptDNSRecursiveNameServer(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expected, opt.NameServers)
 	require.Equal(t, OptionDNSRecursiveNameServer, opt.Code())
-	require.Equal(t, 16, opt.Length())
 	require.Contains(t, opt.String(), "nameservers=[2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct nameservers output")
 }
 

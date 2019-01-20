@@ -29,11 +29,6 @@ func (op *OptStatusCode) ToBytes() []byte {
 	return buf.Data()
 }
 
-// Length returns the option length
-func (op *OptStatusCode) Length() int {
-	return 2 + len(op.StatusMessage)
-}
-
 func (op *OptStatusCode) String() string {
 	return fmt.Sprintf("OptStatusCode{code=%s (%d), message=%v}",
 		op.StatusCode.String(), op.StatusCode,

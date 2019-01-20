@@ -32,14 +32,6 @@ func (op *OptIANA) ToBytes() []byte {
 	return buf.Data()
 }
 
-func (op *OptIANA) Length() int {
-	l := 12
-	for _, opt := range op.Options {
-		l += 4 + opt.Length()
-	}
-	return l
-}
-
 func (op *OptIANA) String() string {
 	return fmt.Sprintf("OptIANA{IAID=%v, t1=%v, t2=%v, options=%v}",
 		op.IaId, op.T1, op.T2, op.Options)
