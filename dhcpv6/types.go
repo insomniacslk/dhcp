@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+// TransactionID is a DHCPv6 Transaction ID defined by RFC 3315, Section 6.
+type TransactionID [3]byte
+
+// String prints the transaction ID as a hex value.
+func (xid TransactionID) String() string {
+	return fmt.Sprintf("0x%x", xid[:])
+}
+
 // MessageType represents the kind of DHCPv6 message.
 type MessageType uint8
 

@@ -112,6 +112,9 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 func GenerateTransactionID() (TransactionID, error) {
 	var xid TransactionID
 	n, err := rand.Read(xid[:])
+	if err != nil {
+		return xid, err
+	}
 	if n != 4 {
 		return xid, errors.New("invalid random sequence for transaction ID: smaller than 32 bits")
 	}

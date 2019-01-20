@@ -102,7 +102,8 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 			MessageTypeSolicit, dType,
 		)
 	}
-	if tID := innerDHCP.TransactionID(); tID != 0xaabbcc {
+	xid := TransactionID{0xaa, 0xbb, 0xcc}
+	if tID := innerDHCP.TransactionID(); tID != xid {
 		t.Fatalf("Invalid inner DHCP transaction ID. Expected 0xaabbcc, got %v", tID)
 	}
 	if len(innerDHCP.options) != 1 {

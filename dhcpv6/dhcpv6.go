@@ -63,14 +63,10 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		}
 		return &d, nil
 	} else {
-		tid, err := BytesToTransactionID(data[1:4])
-		if err != nil {
-			return nil, err
-		}
 		d := DHCPv6Message{
-			messageType:   messageType,
-			transactionID: *tid,
+			messageType: messageType,
 		}
+		copy(d.transactionID[:], data[1:4])
 		if err := d.options.FromBytes(data[4:]); err != nil {
 			return nil, err
 		}
@@ -86,7 +82,7 @@ func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 	}
 	msg := DHCPv6Message{
 		messageType:   MessageTypeSolicit,
-		transactionID: *tid,
+		transactionID: tid,
 	}
 	// apply modifiers
 	d := DHCPv6(&msg)
@@ -209,16 +205,16 @@ func IsUsingUEFI(msg DHCPv6) bool {
 
 // GetTransactionID returns a transactionID of a message or its inner message
 // in case of relay
-func GetTransactionID(packet DHCPv6) (uint32, error) {
+func GetTransactionID(packet DHCPv6) (TransactionID, error) {
 	if message, ok := packet.(*DHCPv6Message); ok {
 		return message.TransactionID(), nil
 	}
 	if relay, ok := packet.(*DHCPv6Relay); ok {
 		message, err := relay.GetInnerMessage()
 		if err != nil {
-			return 0, err
+			return TransactionID{0, 0, 0}, err
 		}
 		return GetTransactionID(message)
 	}
-	return 0, errors.New("Invalid DHCPv6 packet")
+	return TransactionID{0, 0, 0}, errors.New("Invalid DHCPv6 packet")
 }

@@ -2,7 +2,6 @@ package dhcpv6
 
 import (
 	"crypto/rand"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
@@ -16,49 +15,21 @@ const MessageHeaderSize = 4
 
 type DHCPv6Message struct {
 	messageType   MessageType
-	transactionID uint32 // only 24 bits are used though
+	transactionID TransactionID
 	options       Options
-}
-
-func BytesToTransactionID(data []byte) (*uint32, error) {
-	// return a uint32 from a  sequence of bytes, representing a transaction ID.
-	// Transaction IDs are three-bytes long. If the provided data is shorter than
-	// 3 bytes, it return an error. If longer, will use the first three bytes
-	// only.
-	if len(data) < 3 {
-		return nil, fmt.Errorf("Invalid transaction ID: less than 3 bytes")
-	}
-	buf := make([]byte, 4)
-	copy(buf[1:4], data[:3])
-	tid := binary.BigEndian.Uint32(buf)
-	return &tid, nil
 }
 
 var randomRead = rand.Read
 
-func GenerateTransactionID() (*uint32, error) {
-	var tid *uint32
-	for {
-		tidBytes := make([]byte, 4)
-		n, err := randomRead(tidBytes)
-		if err != nil {
-			return nil, err
-		}
-		if n != 4 {
-			return nil, fmt.Errorf("invalid random sequence: shorter than 4 bytes")
-		}
-		tid, err = BytesToTransactionID(tidBytes)
-		if err != nil {
-			return nil, err
-		}
-		if tid == nil {
-			return nil, fmt.Errorf("got a nil Transaction ID")
-		}
-		// retry until != 0
-		// TODO add retry limit
-		if *tid != 0 {
-			break
-		}
+// GenerateTransactionID generates a random 3-byte transaction ID.
+func GenerateTransactionID() (TransactionID, error) {
+	var tid TransactionID
+	n, err := randomRead(tid[:])
+	if err != nil {
+		return tid, err
+	}
+	if n != len(tid) {
+		return tid, fmt.Errorf("invalid random sequence: shorter than 3 bytes")
 	}
 	return tid, nil
 }
@@ -260,16 +231,14 @@ func (d *DHCPv6Message) MessageTypeToString() string {
 	return d.messageType.String()
 }
 
-func (d *DHCPv6Message) TransactionID() uint32 {
+// TransactionID returns this message's transaction id.
+func (d *DHCPv6Message) TransactionID() TransactionID {
 	return d.transactionID
 }
 
-func (d *DHCPv6Message) SetTransactionID(tid uint32) {
-	ttid := tid & 0x00ffffff
-	if ttid != tid {
-		log.Printf("Warning: truncating transaction ID that is longer than 24 bits: %v", tid)
-	}
-	d.transactionID = ttid
+// SetTransactionID sets this message's transaction id.
+func (d *DHCPv6Message) SetTransactionID(tid TransactionID) {
+	d.transactionID = tid
 }
 
 func (d *DHCPv6Message) SetOptions(options []Option) {
@@ -343,9 +312,7 @@ func (d *DHCPv6Message) Summary() string {
 func (d *DHCPv6Message) ToBytes() []byte {
 	var ret []byte
 	ret = append(ret, byte(d.messageType))
-	tidBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(tidBytes, d.transactionID)
-	ret = append(ret, tidBytes[1:4]...) // discard the first byte
+	ret = append(ret, d.transactionID[:]...) // discard the first byte
 	for _, opt := range d.options {
 		ret = append(ret, opt.ToBytes()...)
 	}

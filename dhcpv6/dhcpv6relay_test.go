@@ -92,7 +92,7 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 	opt := OptRelayMsg{
 		relayMessage: &DHCPv6Message{
 			messageType:   MessageTypeSolicit,
-			transactionID: 0xaabbcc,
+			transactionID: TransactionID{0xaa, 0xbb, 0xcc},
 			options: []Option{
 				&OptElapsedTime{
 					ElapsedTime: 0,
