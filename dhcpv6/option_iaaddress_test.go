@@ -44,13 +44,8 @@ func TestOptIAAddressParseInvalidBrokenOptions(t *testing.T) {
 }
 
 func TestOptIAAddressToBytes(t *testing.T) {
-	expected := []byte{
-		0, 5, // OptionIAAddr
-		0, 30, // length
-	}
 	ipBytes := []byte{0x24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
-	expected = append(expected, ipBytes...)
-	expected = append(expected, []byte{
+	expected := append(ipBytes, []byte{
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
 		0, 8, 0, 2, 0xaa, 0xbb, // options

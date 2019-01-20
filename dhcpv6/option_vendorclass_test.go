@@ -31,8 +31,6 @@ func TestOptVendorClassToBytes(t *testing.T) {
 	}
 	data := opt.ToBytes()
 	expected := []byte{
-		0, 16, // OptionVendorClass
-		0, 22, // length
 		0xaa, 0xbb, 0xcc, 0xdd, // EnterpriseNumber
 		0, 10, 'H', 'T', 'T', 'P', 'C', 'l', 'i', 'e', 'n', 't',
 		0, 4, 't', 'e', 's', 't',

@@ -22,7 +22,7 @@ func TestOptElapsedTime(t *testing.T) {
 
 func TestOptElapsedTimeToBytes(t *testing.T) {
 	opt := OptElapsedTime{}
-	expected := []byte{0, 8, 0, 2, 0, 0}
+	expected := []byte{0, 0}
 	if toBytes := opt.ToBytes(); !bytes.Equal(expected, toBytes) {
 		t.Fatalf("Invalid ToBytes output. Expected %v, got %v", expected, toBytes)
 	}

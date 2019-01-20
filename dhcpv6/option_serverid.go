@@ -2,8 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptServerId represents a Server ID option
@@ -20,11 +18,7 @@ func (op *OptServerId) Code() OptionCode {
 
 // ToBytes serializes this option.
 func (op *OptServerId) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionServerID))
-	buf.Write16(uint16(op.Length()))
-	buf.WriteBytes(op.Sid.ToBytes())
-	return buf.Data()
+	return op.Sid.ToBytes()
 }
 
 func (op *OptServerId) Length() int {

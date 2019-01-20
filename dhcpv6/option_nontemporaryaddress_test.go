@@ -99,8 +99,6 @@ func TestOptIANAToBytes(t *testing.T) {
 		},
 	}
 	expected := []byte{
-		0, 3, // OptionIANA
-		0, 18, // length
 		1, 2, 3, 4, // IA ID
 		0, 0, 0x30, 0x39, // T1 = 12345
 		0, 0, 0xd4, 0x31, // T2 = 54321

@@ -25,8 +25,6 @@ func (op *OptIANA) Code() OptionCode {
 // ToBytes serializes IANA to DHCPv6 bytes.
 func (op *OptIANA) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionIANA))
-	buf.Write16(uint16(op.Length()))
 	buf.WriteBytes(op.IaId[:])
 	buf.Write32(op.T1)
 	buf.Write32(op.T2)

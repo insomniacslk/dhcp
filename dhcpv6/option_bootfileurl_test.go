@@ -24,13 +24,11 @@ func TestOptBootFileURL(t *testing.T) {
 
 func TestOptBootFileURLToBytes(t *testing.T) {
 	urlString := []byte("https://insomniac.slackware.it")
-	expected := []byte{00, 59, 00, byte(len(urlString))}
-	expected = append(expected, urlString...)
 	opt := OptBootFileURL{
 		BootFileURL: urlString,
 	}
 	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
+	if !bytes.Equal(toBytes, urlString) {
+		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", urlString, toBytes)
 	}
 }

@@ -23,8 +23,6 @@ func (op *OptIAForPrefixDelegation) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAForPrefixDelegation) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionIAPD))
-	buf.Write16(uint16(op.Length()))
 	buf.WriteBytes(op.IaId[:])
 	buf.Write32(op.T1)
 	buf.Write32(op.T2)

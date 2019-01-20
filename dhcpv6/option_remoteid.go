@@ -21,8 +21,6 @@ func (op *OptRemoteId) Code() OptionCode {
 // ToBytes serializes this option to a byte stream.
 func (op *OptRemoteId) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionRemoteID))
-	buf.Write16(uint16(op.Length()))
 	buf.Write32(uint32(op.enterpriseNumber))
 	buf.WriteBytes(op.remoteId)
 	return buf.Data()

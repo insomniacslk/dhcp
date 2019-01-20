@@ -5,8 +5,6 @@ package dhcpv6
 
 import (
 	"fmt"
-
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 type OptRelayMsg struct {
@@ -18,11 +16,7 @@ func (op *OptRelayMsg) Code() OptionCode {
 }
 
 func (op *OptRelayMsg) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionRelayMsg))
-	buf.Write16(uint16(op.Length()))
-	buf.WriteBytes(op.relayMessage.ToBytes())
-	return buf.Data()
+	return op.relayMessage.ToBytes()
 }
 
 func (op *OptRelayMsg) RelayMessage() DHCPv6 {

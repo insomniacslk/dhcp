@@ -23,8 +23,6 @@ func (op *OptClientArchType) Code() OptionCode {
 // ToBytes marshals the client arch type as defined by RFC 5970.
 func (op *OptClientArchType) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionClientArchType))
-	buf.Write16(uint16(op.Length()))
 	for _, at := range op.ArchTypes {
 		buf.Write16(uint16(at))
 	}

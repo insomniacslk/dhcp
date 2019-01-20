@@ -24,8 +24,6 @@ func (op *OptStatusCode) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptStatusCode) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionStatusCode))
-	buf.Write16(uint16(op.Length()))
 	buf.Write16(uint16(op.StatusCode))
 	buf.WriteBytes(op.StatusMessage)
 	return buf.Data()

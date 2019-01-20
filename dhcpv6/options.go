@@ -24,11 +24,7 @@ func (og *OptionGeneric) Code() OptionCode {
 }
 
 func (og *OptionGeneric) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(og.OptionCode))
-	buf.Write16(uint16(len(og.OptionData)))
-	buf.WriteBytes(og.OptionData)
-	return buf.Data()
+	return og.OptionData
 }
 
 func (og *OptionGeneric) String() string {
@@ -152,11 +148,15 @@ func (o *Options) Update(option Option) {
 
 // ToBytes marshals all options to bytes.
 func (o Options) ToBytes() []byte {
-	var buf []byte
+	buf := uio.NewBigEndianBuffer(nil)
 	for _, opt := range o {
-		buf = append(buf, opt.ToBytes()...)
+		buf.Write16(uint16(opt.Code()))
+
+		val := opt.ToBytes()
+		buf.Write16(uint16(len(val)))
+		buf.WriteBytes(val)
 	}
-	return buf
+	return buf.Data()
 }
 
 // FromBytes reads data into o and returns an error if the options are not a

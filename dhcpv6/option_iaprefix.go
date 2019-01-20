@@ -26,15 +26,11 @@ func (op *OptIAPrefix) Code() OptionCode {
 // ToBytes marshals this option according to RFC 3633, Section 10.
 func (op *OptIAPrefix) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionIAPrefix))
-	buf.Write16(uint16(op.Length()))
 	buf.Write32(op.PreferredLifetime)
 	buf.Write32(op.ValidLifetime)
 	buf.Write8(op.prefixLength)
 	buf.WriteBytes(op.ipv6Prefix.To16())
-	for _, opt := range op.Options {
-		buf.WriteBytes(opt.ToBytes())
-	}
+	buf.WriteBytes(op.Options.ToBytes())
 	return buf.Data()
 }
 

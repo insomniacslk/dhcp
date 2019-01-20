@@ -26,11 +26,7 @@ func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
 	ns1 := net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")
 	ns2 := net.ParseIP("2001:4860:4860::8888")
 	nameservers := []net.IP{ns1, ns2}
-	expected := []byte{
-		0, 23, // OptionDNSRecursiveNameServer
-		0, 32, // length
-	}
-	expected = append(expected, []byte(ns1)...)
+	expected := append([]byte{}, []byte(ns1)...)
 	expected = append(expected, []byte(ns2)...)
 	opt := OptDNSRecursiveNameServer{NameServers: nameservers}
 	require.Equal(t, expected, opt.ToBytes())

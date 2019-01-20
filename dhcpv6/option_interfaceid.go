@@ -2,8 +2,6 @@ package dhcpv6
 
 import (
 	"fmt"
-
-	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptInterfaceId implements the interface-id option as defined by RFC 3315,
@@ -20,11 +18,7 @@ func (op *OptInterfaceId) Code() OptionCode {
 }
 
 func (op *OptInterfaceId) ToBytes() []byte {
-	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write16(uint16(OptionInterfaceID))
-	buf.Write16(uint16(len(op.interfaceId)))
-	buf.WriteBytes(op.interfaceId)
-	return buf.Data()
+	return op.interfaceId
 }
 
 func (op *OptInterfaceId) InterfaceID() []byte {
