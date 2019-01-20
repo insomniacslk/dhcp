@@ -78,13 +78,13 @@ func TestOptIANADelOption(t *testing.T) {
 	optiana1.Options = append(optiana1.Options, &optiaaddr)
 	optiana1.Options = append(optiana1.Options, &optiaaddr)
 	optiana1.DelOption(OptionIAAddr)
-	require.Equal(t, optiana1.Options, []Option{&optsc})
+	require.Equal(t, optiana1.Options, Options{&optsc})
 
 	optiana2.Options = append(optiana2.Options, &optiaaddr)
 	optiana2.Options = append(optiana2.Options, &optsc)
 	optiana2.Options = append(optiana2.Options, &optiaaddr)
 	optiana2.DelOption(OptionIAAddr)
-	require.Equal(t, optiana2.Options, []Option{&optsc})
+	require.Equal(t, optiana2.Options, Options{&optsc})
 }
 
 func TestOptIANAToBytes(t *testing.T) {

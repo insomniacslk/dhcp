@@ -13,7 +13,7 @@ type DHCPv6Relay struct {
 	hopCount    uint8
 	linkAddr    net.IP
 	peerAddr    net.IP
-	options     []Option
+	options     Options
 }
 
 func (r *DHCPv6Relay) Type() MessageType {
@@ -102,12 +102,13 @@ func (r *DHCPv6Relay) Length() int {
 func (r *DHCPv6Relay) Options() []Option {
 	return r.options
 }
+
 func (r *DHCPv6Relay) GetOption(code OptionCode) []Option {
-	return getOptions(r.options, code, false)
+	return r.options.Get(code)
 }
 
 func (r *DHCPv6Relay) GetOneOption(code OptionCode) Option {
-	return getOption(r.options, code)
+	return r.options.GetOne(code)
 }
 
 func (r *DHCPv6Relay) SetOptions(options []Option) {
@@ -115,20 +116,12 @@ func (r *DHCPv6Relay) SetOptions(options []Option) {
 }
 
 func (r *DHCPv6Relay) AddOption(option Option) {
-	r.options = append(r.options, option)
+	r.options.Add(option)
 }
 
 // UpdateOption replaces the first option of the same type as the specified one.
 func (r *DHCPv6Relay) UpdateOption(option Option) {
-	for idx, opt := range r.options {
-		if opt.Code() == option.Code() {
-			r.options[idx] = option
-			// don't look further
-			return
-		}
-	}
-	// if not found, add it
-	r.AddOption(option)
+	r.options.Update(option)
 }
 
 func (r *DHCPv6Relay) IsRelay() bool {

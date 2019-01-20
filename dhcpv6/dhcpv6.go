@@ -57,12 +57,10 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		d.linkAddr = linkAddr
 		peerAddr = append(peerAddr, data[18:34]...)
 		d.peerAddr = peerAddr
-		options, err := OptionsFromBytes(data[34:])
-		if err != nil {
+		// TODO fail if no OptRelayMessage is present
+		if err := d.options.FromBytes(data[34:]); err != nil {
 			return nil, err
 		}
-		// TODO fail if no OptRelayMessage is present
-		d.options = options
 		return &d, nil
 	} else {
 		tid, err := BytesToTransactionID(data[1:4])
@@ -73,11 +71,9 @@ func FromBytes(data []byte) (DHCPv6, error) {
 			messageType:   messageType,
 			transactionID: *tid,
 		}
-		options, err := OptionsFromBytes(data[4:])
-		if err != nil {
+		if err := d.options.FromBytes(data[4:]); err != nil {
 			return nil, err
 		}
-		d.options = options
 		return &d, nil
 	}
 }
@@ -98,37 +94,6 @@ func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 		d = mod(d)
 	}
 	return d, nil
-}
-
-func getOptions(options []Option, code OptionCode, onlyFirst bool) []Option {
-	var ret []Option
-	for _, opt := range options {
-		if opt.Code() == code {
-			ret = append(ret, opt)
-			if onlyFirst {
-				break
-			}
-		}
-	}
-	return ret
-}
-
-func getOption(options []Option, code OptionCode) Option {
-	opts := getOptions(options, code, true)
-	if opts == nil {
-		return nil
-	}
-	return opts[0]
-}
-
-func delOption(options []Option, code OptionCode) []Option {
-	newOpts := make([]Option, 0, len(options))
-	for _, opt := range options {
-		if opt.Code() != code {
-			newOpts = append(newOpts, opt)
-		}
-	}
-	return newOpts
 }
 
 // DecapsulateRelay extracts the content of a relay message. It does not recurse

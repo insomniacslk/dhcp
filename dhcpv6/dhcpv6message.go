@@ -17,7 +17,7 @@ const MessageHeaderSize = 4
 type DHCPv6Message struct {
 	messageType   MessageType
 	transactionID uint32 // only 24 bits are used though
-	options       []Option
+	options       Options
 }
 
 func BytesToTransactionID(data []byte) (*uint32, error) {
@@ -277,21 +277,13 @@ func (d *DHCPv6Message) SetOptions(options []Option) {
 }
 
 func (d *DHCPv6Message) AddOption(option Option) {
-	d.options = append(d.options, option)
+	d.options.Add(option)
 }
 
 // UpdateOption updates the existing options with the passed option, adding it
 // at the end if not present already
 func (d *DHCPv6Message) UpdateOption(option Option) {
-	for idx, opt := range d.options {
-		if opt.Code() == option.Code() {
-			d.options[idx] = option
-			// don't look further
-			return
-		}
-	}
-	// if not found, add it
-	d.AddOption(option)
+	d.options.Update(option)
 }
 
 // IsNetboot returns true if the machine is trying to netboot. It checks if
@@ -373,11 +365,11 @@ func (d *DHCPv6Message) Options() []Option {
 }
 
 func (d *DHCPv6Message) GetOption(code OptionCode) []Option {
-	return getOptions(d.options, code, false)
+	return d.options.Get(code)
 }
 
 func (d *DHCPv6Message) GetOneOption(code OptionCode) Option {
-	return getOption(d.options, code)
+	return d.options.GetOne(code)
 }
 
 func (d *DHCPv6Message) IsRelay() bool {

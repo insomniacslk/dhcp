@@ -12,7 +12,7 @@ type OptIAForPrefixDelegation struct {
 	IaId    [4]byte
 	T1      uint32
 	T2      uint32
-	Options []Option
+	Options Options
 }
 
 // Code returns the option code
@@ -52,18 +52,17 @@ func (op *OptIAForPrefixDelegation) String() string {
 // GetOneOption will get an option of the give type from the Options field, if
 // it is present. It will return `nil` otherwise
 func (op *OptIAForPrefixDelegation) GetOneOption(code OptionCode) Option {
-	return getOption(op.Options, code)
+	return op.Options.GetOne(code)
 }
 
 // DelOption will remove all the options that match a Option code.
 func (op *OptIAForPrefixDelegation) DelOption(code OptionCode) {
-	op.Options = delOption(op.Options, code)
+	op.Options.Del(code)
 }
 
 // build an OptIAForPrefixDelegation structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIAForPrefixDelegation(data []byte) (*OptIAForPrefixDelegation, error) {
-	var err error
 	opt := OptIAForPrefixDelegation{}
 	if len(data) < 12 {
 		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 12 bytes, got %v", len(data))
@@ -71,8 +70,7 @@ func ParseOptIAForPrefixDelegation(data []byte) (*OptIAForPrefixDelegation, erro
 	copy(opt.IaId[:], data[:4])
 	opt.T1 = binary.BigEndian.Uint32(data[4:8])
 	opt.T2 = binary.BigEndian.Uint32(data[8:12])
-	opt.Options, err = OptionsFromBytes(data[12:])
-	if err != nil {
+	if err := opt.Options.FromBytes(data[12:]); err != nil {
 		return nil, err
 	}
 	return &opt, nil
