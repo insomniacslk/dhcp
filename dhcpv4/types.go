@@ -13,6 +13,11 @@ import (
 // The TransactionID is used to match DHCP replies to their original request.
 type TransactionID [4]byte
 
+// String prints a hex transaction ID.
+func (xid TransactionID) String() string {
+	return fmt.Sprintf("0x%x", xid[:])
+}
+
 // MessageType represents the possible DHCP message types - DISCOVER, OFFER, etc
 type MessageType byte
 
