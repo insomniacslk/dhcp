@@ -1,16 +1,16 @@
 package dhcpv6
 
-// This module defines the OptUserClass structure.
-// https://www.ietf.org/rfc/rfc3315.txt
-
 import (
-	"encoding/binary"
-	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptUserClass represent a DHCPv6 User Class option
+//
+// This module defines the OptUserClass structure.
+// https://www.ietf.org/rfc/rfc3315.txt
 type OptUserClass struct {
 	UserClasses [][]byte
 }
@@ -22,16 +22,14 @@ func (op *OptUserClass) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptUserClass) ToBytes() []byte {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionUserClass))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	u16 := make([]byte, 2)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionUserClass))
+	buf.Write16(uint16(op.Length()))
 	for _, uc := range op.UserClasses {
-		binary.BigEndian.PutUint16(u16, uint16(len(uc)))
-		buf = append(buf, u16...)
-		buf = append(buf, uc...)
+		buf.Write16(uint16(len(uc)))
+		buf.WriteBytes(uc)
 	}
-	return buf
+	return buf.Data()
 }
 
 // Length returns the option length
@@ -44,7 +42,7 @@ func (op *OptUserClass) Length() int {
 }
 
 func (op *OptUserClass) String() string {
-	ucStrings := make([]string, 0)
+	ucStrings := make([]string, 0, len(op.UserClasses))
 	for _, uc := range op.UserClasses {
 		ucStrings = append(ucStrings, string(uc))
 	}
@@ -54,23 +52,14 @@ func (op *OptUserClass) String() string {
 // ParseOptUserClass builds an OptUserClass structure from a sequence of
 // bytes. The input data does not include option code and length bytes.
 func ParseOptUserClass(data []byte) (*OptUserClass, error) {
-	opt := OptUserClass{}
-	for {
-		if len(data) == 0 {
-			break
-		}
-		if len(data) < 2 {
-			return nil, errors.New("ParseOptUserClass: short data: missing length field")
-		}
-		ucLen := int(binary.BigEndian.Uint16(data[:2]))
-		if len(data) < ucLen+2 {
-			return nil, fmt.Errorf("ParseOptUserClass: short data: less than %d bytes", ucLen+2)
-		}
-		opt.UserClasses = append(opt.UserClasses, data[2:ucLen+2])
-		data = data[2+ucLen:]
+	var opt OptUserClass
+	if len(data) == 0 {
+		return nil, fmt.Errorf("user class option must not be empty")
 	}
-	if len(opt.UserClasses) < 1 {
-		return nil, errors.New("ParseOptUserClass: at least one user class is required")
+	buf := uio.NewBigEndianBuffer(data)
+	for buf.Has(2) {
+		len := buf.Read16()
+		opt.UserClasses = append(opt.UserClasses, buf.CopyN(int(len)))
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

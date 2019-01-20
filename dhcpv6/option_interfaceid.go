@@ -1,13 +1,16 @@
 package dhcpv6
 
-// This module defines the OptInterfaceId structure.
-// https://www.ietf.org/rfc/rfc3315.txt
-
 import (
-	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptInterfaceId implements the interface-id option as defined by RFC 3315,
+// Section 22.18.
+//
+// This module defines the OptInterfaceId structure.
+// https://www.ietf.org/rfc/rfc3315.txt
 type OptInterfaceId struct {
 	interfaceId []byte
 }
@@ -17,11 +20,11 @@ func (op *OptInterfaceId) Code() OptionCode {
 }
 
 func (op *OptInterfaceId) ToBytes() []byte {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionInterfaceID))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(len(op.interfaceId)))
-	buf = append(buf, op.interfaceId...)
-	return buf
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionInterfaceID))
+	buf.Write16(uint16(len(op.interfaceId)))
+	buf.WriteBytes(op.interfaceId)
+	return buf.Data()
 }
 
 func (op *OptInterfaceId) InterfaceID() []byte {
@@ -43,7 +46,7 @@ func (op *OptInterfaceId) String() string {
 // build an OptInterfaceId structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptInterfaceId(data []byte) (*OptInterfaceId, error) {
-	opt := OptInterfaceId{}
+	var opt OptInterfaceId
 	opt.interfaceId = append([]byte(nil), data...)
 	return &opt, nil
 }

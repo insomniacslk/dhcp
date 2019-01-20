@@ -48,28 +48,3 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 	toBytes := opt.ToBytes()
 	require.Equal(t, expected, toBytes)
 }
-
-func TestVendParseOption(t *testing.T) {
-	var buf []byte
-	buf = append(buf, []byte{00, 1, 00, 33}...)
-	buf = append(buf, []byte("Arista;DCS-7304;01.00;HSH14425148")...)
-
-	expected := &OptionGeneric{OptionCode: 1, OptionData: []byte("Arista;DCS-7304;01.00;HSH14425148")}
-	opt, err := vendParseOption(buf)
-	require.NoError(t, err)
-	require.Equal(t, expected, opt)
-
-	shortData := make([]byte, 1) // data length too small
-	_, err = vendParseOption(shortData)
-	require.Error(t, err)
-
-	shortData = []byte{0, 0, 0, 0} // missing actual vendor data.
-	_, err = vendParseOption(shortData)
-	require.Error(t, err)
-
-	shortData = []byte{0, 0,
-		0, 4, // declared length
-		0} // data starts here, length of 1
-	_, err = vendParseOption(shortData)
-	require.Error(t, err)
-}

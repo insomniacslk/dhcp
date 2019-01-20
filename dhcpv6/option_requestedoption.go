@@ -1,14 +1,16 @@
 package dhcpv6
 
-// This module defines the OptRequestedOption structure.
-// https://www.ietf.org/rfc/rfc3315.txt
-
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
+// OptRequestedOption implements the requested options option.
+//
+// This module defines the OptRequestedOption structure.
+// https://www.ietf.org/rfc/rfc3315.txt
 type OptRequestedOption struct {
 	requestedOptions []OptionCode
 }
@@ -18,15 +20,13 @@ func (op *OptRequestedOption) Code() OptionCode {
 }
 
 func (op *OptRequestedOption) ToBytes() []byte {
-	buf := make([]byte, 4)
-	roBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionORO))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionORO))
+	buf.Write16(uint16(op.Length()))
 	for _, ro := range op.requestedOptions {
-		binary.BigEndian.PutUint16(roBytes, uint16(ro))
-		buf = append(buf, roBytes...)
+		buf.Write16(uint16(ro))
 	}
-	return buf
+	return buf.Data()
 }
 
 func (op *OptRequestedOption) RequestedOptions() []OptionCode {
@@ -61,14 +61,10 @@ func (op *OptRequestedOption) String() string {
 // build an OptRequestedOption structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptRequestedOption(data []byte) (*OptRequestedOption, error) {
-	if len(data)%2 != 0 {
-		return nil, fmt.Errorf("Invalid OptRequestedOption data: length is not a multiple of 2")
+	var opt OptRequestedOption
+	buf := uio.NewBigEndianBuffer(data)
+	for buf.Has(2) {
+		opt.requestedOptions = append(opt.requestedOptions, OptionCode(buf.Read16()))
 	}
-	opt := OptRequestedOption{}
-	var rOpts []OptionCode
-	for i := 0; i < len(data); i += 2 {
-		rOpts = append(rOpts, OptionCode(binary.BigEndian.Uint16(data[i:i+2])))
-	}
-	opt.requestedOptions = rOpts
-	return &opt, nil
+	return &opt, buf.FinError()
 }

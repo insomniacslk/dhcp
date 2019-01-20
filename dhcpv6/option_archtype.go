@@ -1,17 +1,17 @@
 package dhcpv6
 
-// This module defines the OptClientArchType structure.
-// https://www.ietf.org/rfc/rfc5970.txt
-
 import (
-	"encoding/binary"
 	"fmt"
 	"strings"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptClientArchType represents an option CLIENT_ARCH_TYPE
+//
+// This module defines the OptClientArchType structure.
+// https://www.ietf.org/rfc/rfc5970.txt
 type OptClientArchType struct {
 	ArchTypes []iana.Arch
 }
@@ -20,20 +20,19 @@ func (op *OptClientArchType) Code() OptionCode {
 	return OptionClientArchType
 }
 
+// ToBytes marshals the client arch type as defined by RFC 5970.
 func (op *OptClientArchType) ToBytes() []byte {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionClientArchType))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	u16 := make([]byte, 2)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionClientArchType))
+	buf.Write16(uint16(op.Length()))
 	for _, at := range op.ArchTypes {
-		binary.BigEndian.PutUint16(u16, uint16(at))
-		buf = append(buf, u16...)
+		buf.Write16(uint16(at))
 	}
-	return buf
+	return buf.Data()
 }
 
 func (op *OptClientArchType) Length() int {
-	return 2*len(op.ArchTypes)
+	return 2 * len(op.ArchTypes)
 }
 
 func (op *OptClientArchType) String() string {
@@ -48,13 +47,10 @@ func (op *OptClientArchType) String() string {
 // a sequence of bytes The input data does not include option code and
 // length bytes.
 func ParseOptClientArchType(data []byte) (*OptClientArchType, error) {
-	opt := OptClientArchType{}
-	if len(data) == 0 || len(data)%2 != 0 {
-		return nil, fmt.Errorf("Invalid arch type data length. Expected multiple of 2 larger than 2, got %v", len(data))
+	var opt OptClientArchType
+	buf := uio.NewBigEndianBuffer(data)
+	for buf.Has(2) {
+		opt.ArchTypes = append(opt.ArchTypes, iana.Arch(buf.Read16()))
 	}
-	for idx := 0; idx < len(data); idx += 2 {
-		b := data[idx : idx+2]
-		opt.ArchTypes = append(opt.ArchTypes, iana.Arch(binary.BigEndian.Uint16(b)))
-	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

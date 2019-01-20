@@ -4,8 +4,9 @@ package dhcpv6
 // https://www.ietf.org/rfc/rfc3315.txt
 
 import (
-	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 type OptRelayMsg struct {
@@ -17,11 +18,11 @@ func (op *OptRelayMsg) Code() OptionCode {
 }
 
 func (op *OptRelayMsg) ToBytes() []byte {
-	buf := make([]byte, 4)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionRelayMsg))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	buf = append(buf, op.relayMessage.ToBytes()...)
-	return buf
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionRelayMsg))
+	buf.Write16(uint16(op.Length()))
+	buf.WriteBytes(op.relayMessage.ToBytes())
+	return buf.Data()
 }
 
 func (op *OptRelayMsg) RelayMessage() DHCPv6 {
@@ -44,7 +45,7 @@ func (op *OptRelayMsg) String() string {
 // The input data does not include option code and length bytes.
 func ParseOptRelayMsg(data []byte) (*OptRelayMsg, error) {
 	var err error
-	opt := OptRelayMsg{}
+	var opt OptRelayMsg
 	opt.relayMessage, err = FromBytes(data)
 	if err != nil {
 		return nil, err

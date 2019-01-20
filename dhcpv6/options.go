@@ -1,8 +1,9 @@
 package dhcpv6
 
 import (
-	"encoding/binary"
 	"fmt"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // Option is an interface that all DHCPv6 options adhere to.
@@ -23,15 +24,11 @@ func (og *OptionGeneric) Code() OptionCode {
 }
 
 func (og *OptionGeneric) ToBytes() []byte {
-	var ret []byte
-	codeBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(codeBytes, uint16(og.OptionCode))
-	ret = append(ret, codeBytes...)
-	lengthBytes := make([]byte, 2)
-	binary.BigEndian.PutUint16(lengthBytes, uint16(len(og.OptionData)))
-	ret = append(ret, lengthBytes...)
-	ret = append(ret, og.OptionData...)
-	return ret
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(og.OptionCode))
+	buf.Write16(uint16(len(og.OptionData)))
+	buf.WriteBytes(og.OptionData)
+	return buf.Data()
 }
 
 func (og *OptionGeneric) String() string {
@@ -42,24 +39,14 @@ func (og *OptionGeneric) Length() int {
 	return len(og.OptionData)
 }
 
-func ParseOption(dataStart []byte) (Option, error) {
+// ParseOption parses data according to the given code.
+func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	// Parse a sequence of bytes as a single DHCPv6 option.
 	// Returns the option structure, or an error if any.
-	if len(dataStart) < 4 {
-		return nil, fmt.Errorf("Invalid DHCPv6 option: less than 4 bytes")
-	}
-	code := OptionCode(binary.BigEndian.Uint16(dataStart[:2]))
-	length := int(binary.BigEndian.Uint16(dataStart[2:4]))
-	if len(dataStart) < length+4 {
-		return nil, fmt.Errorf("Invalid option length for option %v. Declared %v, actual %v",
-			code, length, len(dataStart)-4,
-		)
-	}
 	var (
 		err error
 		opt Option
 	)
-	optData := dataStart[4 : 4+length]
 	switch code {
 	case OptionClientID:
 		opt, err = ParseOptClientId(optData)
@@ -106,10 +93,6 @@ func ParseOption(dataStart []byte) (Option, error) {
 	}
 	if err != nil {
 		return nil, err
-	}
-	if length != opt.Length() {
-		return nil, fmt.Errorf("Error: declared length is different from actual length for option %d: %d != %d",
-			code, opt.Length(), length)
 	}
 	return opt, nil
 }
@@ -167,6 +150,15 @@ func (o *Options) Update(option Option) {
 	o.Add(option)
 }
 
+// ToBytes marshals all options to bytes.
+func (o Options) ToBytes() []byte {
+	var buf []byte
+	for _, opt := range o {
+		buf = append(buf, opt.ToBytes()...)
+	}
+	return buf
+}
+
 // FromBytes reads data into o and returns an error if the options are not a
 // valid serialized representation of DHCPv6 options per RFC 3315.
 func (o *Options) FromBytes(data []byte) error {
@@ -174,37 +166,31 @@ func (o *Options) FromBytes(data []byte) error {
 }
 
 // OptionParser is a function signature for option parsing
-type OptionParser func(data []byte) (Option, error)
+type OptionParser func(code OptionCode, data []byte) (Option, error)
 
 // FromBytesWithParser parses Options from byte sequences using the parsing
 // function that is passed in as a paremeter
 func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
-	// Parse a sequence of bytes until the end and build a list of options from
-	// it. Returns an error if any invalid option or length is found.
 	*o = make(Options, 0, 10)
 	if len(data) == 0 {
 		// no options, no party
 		return nil
 	}
-	if len(data) < 4 {
-		// cannot be shorter than option code (2 bytes) + length (2 bytes)
-		return fmt.Errorf("Invalid options: shorter than 4 bytes")
-	}
-	idx := 0
-	for {
-		if idx == len(data) {
-			break
-		}
-		if idx > len(data) {
-			// this should never happen
-			return fmt.Errorf("Error: reading past the end of options")
-		}
-		opt, err := parser(data[idx:])
+
+	buf := uio.NewBigEndianBuffer(data)
+	for buf.Has(4) {
+		code := OptionCode(buf.Read16())
+		length := int(buf.Read16())
+
+		// Consume, but do not Copy. Each parser will make a copy of
+		// pertinent data.
+		optData := buf.Consume(length)
+
+		opt, err := parser(code, optData)
 		if err != nil {
 			return err
 		}
 		*o = append(*o, opt)
-		idx += opt.Length() + 4 // 4 bytes for type + length
 	}
-	return nil
+	return buf.FinError()
 }

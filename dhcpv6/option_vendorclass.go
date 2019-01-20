@@ -1,10 +1,11 @@
 package dhcpv6
 
 import (
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 // OptVendorClass represents a DHCPv6 Vendor Class option
@@ -20,17 +21,15 @@ func (op *OptVendorClass) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptVendorClass) ToBytes() []byte {
-	buf := make([]byte, 8)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionVendorClass))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	binary.BigEndian.PutUint32(buf[4:8], uint32(op.EnterpriseNumber))
-	u16 := make([]byte, 2)
+	buf := uio.NewBigEndianBuffer(nil)
+	buf.Write16(uint16(OptionVendorClass))
+	buf.Write16(uint16(op.Length()))
+	buf.Write32(uint32(op.EnterpriseNumber))
 	for _, data := range op.Data {
-		binary.BigEndian.PutUint16(u16, uint16(len(data)))
-		buf = append(buf, u16...)
-		buf = append(buf, data...)
+		buf.Write16(uint16(len(data)))
+		buf.WriteBytes(data)
 	}
-	return buf
+	return buf.Data()
 }
 
 // Length returns the option length
@@ -54,28 +53,15 @@ func (op *OptVendorClass) String() string {
 // ParseOptVendorClass builds an OptVendorClass structure from a sequence of
 // bytes. The input data does not include option code and length bytes.
 func ParseOptVendorClass(data []byte) (*OptVendorClass, error) {
-	opt := OptVendorClass{}
-	if len(data) < 4 {
-		return nil, fmt.Errorf("Invalid vendor opts data length. Expected at least 4 bytes, got %v", len(data))
-	}
-	opt.EnterpriseNumber = binary.BigEndian.Uint32(data[:4])
-	data = data[4:]
-	for {
-		if len(data) == 0 {
-			break
-		}
-		if len(data) < 2 {
-			return nil, errors.New("ParseOptVendorClass: short data: missing length field")
-		}
-		vcLen := int(binary.BigEndian.Uint16(data[:2]))
-		if len(data) < vcLen+2 {
-			return nil, fmt.Errorf("ParseOptVendorClass: short data: less than %d bytes", vcLen+2)
-		}
-		opt.Data = append(opt.Data, data[2:vcLen+2])
-		data = data[2+vcLen:]
+	var opt OptVendorClass
+	buf := uio.NewBigEndianBuffer(data)
+	opt.EnterpriseNumber = buf.Read32()
+	for buf.Has(2) {
+		len := buf.Read16()
+		opt.Data = append(opt.Data, buf.CopyN(int(len)))
 	}
 	if len(opt.Data) < 1 {
 		return nil, errors.New("ParseOptVendorClass: at least one vendor class data is required")
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }

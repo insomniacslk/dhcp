@@ -1,15 +1,16 @@
 package dhcpv6
 
-// This module defines the OptIAAddress structure.
-// https://www.ietf.org/rfc/rfc3633.txt
-
 import (
-	"encoding/binary"
 	"fmt"
 	"net"
+
+	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptIAAddress represents an OptionIAAddr
+// OptIAAddress represents an OptionIAAddr.
+//
+// This module defines the OptIAAddress structure.
+// https://www.ietf.org/rfc/rfc3633.txt
 type OptIAAddress struct {
 	IPv6Addr          net.IP
 	PreferredLifetime uint32
@@ -24,16 +25,14 @@ func (op *OptIAAddress) Code() OptionCode {
 
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAAddress) ToBytes() []byte {
-	buf := make([]byte, 28)
-	binary.BigEndian.PutUint16(buf[0:2], uint16(OptionIAAddr))
-	binary.BigEndian.PutUint16(buf[2:4], uint16(op.Length()))
-	copy(buf[4:20], op.IPv6Addr[:])
-	binary.BigEndian.PutUint32(buf[20:24], op.PreferredLifetime)
-	binary.BigEndian.PutUint32(buf[24:28], op.ValidLifetime)
-	for _, opt := range op.Options {
-		buf = append(buf, opt.ToBytes()...)
-	}
-	return buf
+	buf := uio.NewBigEndianBuffer(make([]byte, 0, 28))
+	buf.Write16(uint16(OptionIAAddr))
+	buf.Write16(uint16(op.Length()))
+	buf.WriteBytes(op.IPv6Addr.To16())
+	buf.Write32(op.PreferredLifetime)
+	buf.Write32(op.ValidLifetime)
+	buf.WriteBytes(op.Options.ToBytes())
+	return buf.Data()
 }
 
 // Length returns the option length
@@ -54,15 +53,13 @@ func (op *OptIAAddress) String() string {
 // of bytes. The input data does not include option code and length
 // bytes.
 func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
-	opt := OptIAAddress{}
-	if len(data) < 24 {
-		return nil, fmt.Errorf("Invalid IA Address data length. Expected at least 24 bytes, got %v", len(data))
-	}
-	opt.IPv6Addr = net.IP(data[:16])
-	opt.PreferredLifetime = binary.BigEndian.Uint32(data[16:20])
-	opt.ValidLifetime = binary.BigEndian.Uint32(data[20:24])
-	if err := opt.Options.FromBytes(data[24:]); err != nil {
+	var opt OptIAAddress
+	buf := uio.NewBigEndianBuffer(data)
+	opt.IPv6Addr = net.IP(buf.CopyN(net.IPv6len))
+	opt.PreferredLifetime = buf.Read32()
+	opt.ValidLifetime = buf.Read32()
+	if err := opt.Options.FromBytes(buf.ReadAll()); err != nil {
 		return nil, err
 	}
-	return &opt, nil
+	return &opt, buf.FinError()
 }
