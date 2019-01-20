@@ -356,19 +356,19 @@ func (d *DHCPv4) String() string {
 func (d *DHCPv4) Summary() string {
 	ret := fmt.Sprintf(
 		"DHCPv4\n"+
-			"  opcode=%v\n"+
-			"  hwtype=%v\n"+
+			"  opcode=%s\n"+
+			"  hwtype=%s\n"+
 			"  hopcount=%v\n"+
-			"  transactionid=0x%08x\n"+
+			"  transactionid=%s\n"+
 			"  numseconds=%v\n"+
 			"  flags=%v (0x%02x)\n"+
-			"  clientipaddr=%v\n"+
-			"  youripaddr=%v\n"+
-			"  serveripaddr=%v\n"+
-			"  gatewayipaddr=%v\n"+
-			"  clienthwaddr=%v\n"+
-			"  serverhostname=%v\n"+
-			"  bootfilename=%v\n",
+			"  clientipaddr=%s\n"+
+			"  youripaddr=%s\n"+
+			"  serveripaddr=%s\n"+
+			"  gatewayipaddr=%s\n"+
+			"  clienthwaddr=%s\n"+
+			"  serverhostname=%s\n"+
+			"  bootfilename=%s\n",
 		d.OpCode,
 		d.HWType,
 		d.HopCount,
