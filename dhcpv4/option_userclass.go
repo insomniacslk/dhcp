@@ -14,21 +14,6 @@ type UserClass struct {
 	RFC3004     bool
 }
 
-// GetUserClass returns the user class in o if present.
-//
-// The user class information option is defined by RFC 3004.
-func GetUserClass(o Options) *UserClass {
-	v := o.Get(OptionUserClassInformation)
-	if v == nil {
-		return nil
-	}
-	var uc UserClass
-	if err := uc.FromBytes(v); err != nil {
-		return nil
-	}
-	return &uc
-}
-
 // OptUserClass returns a new user class option.
 func OptUserClass(v []byte) Option {
 	return Option{

@@ -48,10 +48,3 @@ func GetUint16(code OptionCode, o Options) (uint16, error) {
 func OptMaxMessageSize(size uint16) Option {
 	return Option{Code: OptionMaximumDHCPMessageSize, Value: Uint16(size)}
 }
-
-// GetMaxMessageSize returns the DHCP Maximum Message Size in o if present.
-//
-// The Maximum DHCP Message Size option is described by RFC 2132, Section 9.10.
-func GetMaxMessageSize(o Options) (uint16, error) {
-	return GetUint16(OptionMaximumDHCPMessageSize, o)
-}

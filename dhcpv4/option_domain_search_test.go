@@ -12,10 +12,8 @@ func TestGetDomainSearch(t *testing.T) {
 		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'o', 'r', 'g', 0,
 	}
-	o := Options{
-		OptionDNSDomainSearchList.Code(): data,
-	}
-	labels := GetDomainSearch(o)
+	m, _ := New(WithGeneric(OptionDNSDomainSearchList, data))
+	labels := m.DomainSearch()
 	require.NotNil(t, labels)
 	require.Equal(t, 2, len(labels.Labels))
 	require.Equal(t, data, labels.ToBytes())
@@ -33,7 +31,6 @@ func TestOptDomainSearchToBytes(t *testing.T) {
 			"example.com",
 			"subnet.example.org",
 		},
-	},
-	)
+	})
 	require.Equal(t, opt.Value.ToBytes(), expected)
 }

@@ -87,7 +87,7 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 
 	// get the subnet mask from OptionSubnetMask. If the netmask is not defined
 	// in the packet, an error is returned
-	netmask := dhcpv4.GetSubnetMask(d.Options)
+	netmask := d.SubnetMask()
 	if netmask == nil {
 		return nil, errors.New("no netmask option in response packet")
 	}
@@ -99,7 +99,7 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	// netconf struct requires a valid lifetime to be specified. ValidLifetime is a dhcpv6
 	// concept, the closest mapping in dhcpv4 world is "IP Address Lease Time". If the lease
 	// time option is nil, we set it to 0
-	leaseTime := dhcpv4.GetIPAddressLeaseTime(d.Options, 0)
+	leaseTime := d.IPAddressLeaseTime(0)
 
 	netconf.Addresses = append(netconf.Addresses, AddrConf{
 		IPNet: net.IPNet{
@@ -111,14 +111,14 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	})
 
 	// get DNS configuration
-	dnsServers := dhcpv4.GetDNS(d.Options)
+	dnsServers := d.DNS()
 	if len(dnsServers) == 0 {
 		return nil, errors.New("no dns servers options in response packet")
 	}
 	netconf.DNSServers = dnsServers
 
 	// get domain search list
-	dnsSearchList := dhcpv4.GetDomainSearch(d.Options)
+	dnsSearchList := d.DomainSearch()
 	if dnsSearchList != nil {
 		if len(dnsSearchList.Labels) == 0 {
 			return nil, errors.New("dns search list is empty")
@@ -127,7 +127,7 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	}
 
 	// get default gateway
-	routersList := dhcpv4.GetRouter(d.Options)
+	routersList := d.Router()
 	if len(routersList) == 0 {
 		return nil, errors.New("no routers specified in the corresponding option")
 	}

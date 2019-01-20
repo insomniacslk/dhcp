@@ -51,16 +51,3 @@ func OptBootImageList(b ...BootImage) dhcpv4.Option {
 		Value: BootImageList(b),
 	}
 }
-
-// GetBootImageList returns the BSDP boot image list.
-func GetBootImageList(o dhcpv4.Options) BootImageList {
-	v := o.Get(OptionBootImageList)
-	if v == nil {
-		return nil
-	}
-	var bil BootImageList
-	if err := bil.FromBytes(v); err != nil {
-		return nil
-	}
-	return bil
-}

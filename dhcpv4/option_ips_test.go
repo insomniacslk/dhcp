@@ -43,9 +43,11 @@ func TestGetDomainNameServer(t *testing.T) {
 		net.IP{192, 168, 0, 1},
 		net.IP{192, 168, 0, 10},
 	}
-	o := OptionsFromList(OptDNS(ips...))
-	require.Equal(t, ips, GetDNS(o))
-	require.Nil(t, GetDNS(Options{}))
+	m, _ := New(WithOption(OptDNS(ips...)))
+	require.Equal(t, ips, m.DNS())
+
+	m, _ = New()
+	require.Nil(t, m.DNS())
 }
 
 func TestOptNTPServers(t *testing.T) {
@@ -60,9 +62,11 @@ func TestGetNTPServers(t *testing.T) {
 		net.IP{192, 168, 0, 1},
 		net.IP{192, 168, 0, 10},
 	}
-	o := OptionsFromList(OptNTPServers(ips...))
-	require.Equal(t, ips, GetNTPServers(o))
-	require.Nil(t, GetNTPServers(Options{}))
+	m, _ := New(WithOption(OptNTPServers(ips...)))
+	require.Equal(t, ips, m.NTPServers())
+
+	m, _ = New()
+	require.Nil(t, m.NTPServers())
 }
 
 func TestOptRouter(t *testing.T) {
@@ -77,7 +81,9 @@ func TestGetRouter(t *testing.T) {
 		net.IP{192, 168, 0, 1},
 		net.IP{192, 168, 0, 10},
 	}
-	o := OptionsFromList(OptRouter(ips...))
-	require.Equal(t, ips, GetRouter(o))
-	require.Nil(t, GetRouter(Options{}))
+	m, _ := New(WithOption(OptRouter(ips...)))
+	require.Equal(t, ips, m.Router())
+
+	m, _ = New()
+	require.Nil(t, m.Router())
 }

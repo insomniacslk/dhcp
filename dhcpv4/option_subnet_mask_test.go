@@ -15,15 +15,15 @@ func TestOptSubnetMask(t *testing.T) {
 }
 
 func TestGetSubnetMask(t *testing.T) {
-	o := OptionsFromList(OptSubnetMask(net.IPMask{}))
-	mask := GetSubnetMask(o)
+	m, _ := New(WithOption(OptSubnetMask(net.IPMask{})))
+	mask := m.SubnetMask()
 	require.Nil(t, mask, "empty byte stream")
 
-	o = OptionsFromList(OptSubnetMask(net.IPMask{255}))
-	mask = GetSubnetMask(o)
+	m, _ = New(WithOption(OptSubnetMask(net.IPMask{255})))
+	mask = m.SubnetMask()
 	require.Nil(t, mask, "short byte stream")
 
-	o = OptionsFromList(OptSubnetMask(net.IPMask{255, 255, 255, 0}))
-	mask = GetSubnetMask(o)
+	m, _ = New(WithOption(OptSubnetMask(net.IPMask{255, 255, 255, 0})))
+	mask = m.SubnetMask()
 	require.Equal(t, net.IPMask{255, 255, 255, 0}, mask)
 }

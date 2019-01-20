@@ -35,7 +35,7 @@ func ParseBootImageListFromAck(ack *dhcpv4.DHCPv4) ([]BootImage, error) {
 	if vendorOpts == nil {
 		return nil, errors.New("ParseBootImageListFromAck: could not find vendor-specific option")
 	}
-	return GetBootImageList(vendorOpts.Options), nil
+	return vendorOpts.BootImageList(), nil
 }
 
 func needsReplyPort(replyPort uint16) bool {
@@ -50,7 +50,7 @@ func MessageTypeFromPacket(packet *dhcpv4.DHCPv4) MessageType {
 	if vendorOpts == nil {
 		return MessageTypeNone
 	}
-	return GetMessageType(vendorOpts.Options)
+	return vendorOpts.MessageType()
 }
 
 // Packet is a BSDP packet wrapper around a DHCPv4 packet in order to print the
@@ -156,7 +156,7 @@ func InformSelectForAck(ack *Packet, replyPort uint16, selectedImage BootImage) 
 	}
 
 	// Find server IP address
-	serverIP := dhcpv4.GetServerIdentifier(ack.Options)
+	serverIP := ack.ServerIdentifier()
 	if serverIP.To4() == nil {
 		return nil, fmt.Errorf("could not parse server identifier from ACK")
 	}

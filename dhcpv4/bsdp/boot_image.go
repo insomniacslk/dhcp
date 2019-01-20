@@ -129,18 +129,8 @@ func OptDefaultBootImageID(b BootImageID) dhcpv4.Option {
 	return dhcpv4.Option{Code: OptionDefaultBootImageID, Value: b}
 }
 
-// GetDefaultBootImageID returns the default boot image ID contained in o.
-func GetDefaultBootImageID(o dhcpv4.Options) *BootImageID {
-	return getBootImageID(OptionDefaultBootImageID, o)
-}
-
 // OptSelectedBootImageID returns a new selected boot image ID option as per
 // BSDP.
 func OptSelectedBootImageID(b BootImageID) dhcpv4.Option {
 	return dhcpv4.Option{Code: OptionSelectedBootImageID, Value: b}
-}
-
-// GetSelectedBootImageID returns the selected boot image ID contained in o.
-func GetSelectedBootImageID(o dhcpv4.Options) *BootImageID {
-	return getBootImageID(OptionSelectedBootImageID, o)
 }

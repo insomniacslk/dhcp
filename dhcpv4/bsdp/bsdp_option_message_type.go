@@ -55,16 +55,3 @@ func OptMessageType(mt MessageType) dhcpv4.Option {
 		Value: mt,
 	}
 }
-
-// GetMessageType returns the BSDP Message Type in o.
-func GetMessageType(o dhcpv4.Options) MessageType {
-	v := o.Get(OptionMessageType)
-	if v == nil {
-		return MessageTypeNone
-	}
-	var m MessageType
-	if err := m.FromBytes(v); err != nil {
-		return MessageTypeNone
-	}
-	return m
-}

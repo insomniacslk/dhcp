@@ -36,19 +36,3 @@ func (d Duration) String() string {
 func OptIPAddressLeaseTime(d time.Duration) Option {
 	return Option{Code: OptionIPAddressLeaseTime, Value: Duration(d)}
 }
-
-// GetIPAddressLeaseTime returns the IP address lease time in o, or the given
-// default duration if not present.
-//
-// The IP address lease time option is described by RFC 2132, Section 9.2.
-func GetIPAddressLeaseTime(o Options, def time.Duration) time.Duration {
-	v := o.Get(OptionIPAddressLeaseTime)
-	if v == nil {
-		return def
-	}
-	var d Duration
-	if err := d.FromBytes(v); err != nil {
-		return def
-	}
-	return time.Duration(d)
-}

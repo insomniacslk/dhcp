@@ -25,19 +25,6 @@ func OptVIVC(identifiers ...VIVCIdentifier) Option {
 	}
 }
 
-// GetVIVC returns the vendor-identifying vendor class option in o if present.
-func GetVIVC(o Options) VIVCIdentifiers {
-	v := o.Get(OptionVendorIdentifyingVendorClass)
-	if v == nil {
-		return nil
-	}
-	var ids VIVCIdentifiers
-	if err := ids.FromBytes(v); err != nil {
-		return nil
-	}
-	return ids
-}
-
 // VIVCIdentifiers implements encoding and decoding methods for a DHCP option
 // described in RFC 3925.
 type VIVCIdentifiers []VIVCIdentifier

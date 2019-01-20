@@ -17,11 +17,12 @@ func TestOptReplyPort(t *testing.T) {
 
 func TestGetReplyPort(t *testing.T) {
 	o := VendorOptions{dhcpv4.OptionsFromList(OptReplyPort(1234))}
-	port, err := GetReplyPort(o.Options)
+	port, err := o.ReplyPort()
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), port)
 
-	port, err = GetReplyPort(dhcpv4.Options{})
+	o = VendorOptions{dhcpv4.Options{}}
+	port, err = o.ReplyPort()
 	require.Error(t, err, "no reply port present")
 }
 
@@ -34,11 +35,12 @@ func TestOptServerPriority(t *testing.T) {
 
 func TestGetServerPriority(t *testing.T) {
 	o := VendorOptions{dhcpv4.OptionsFromList(OptServerPriority(1234))}
-	prio, err := GetServerPriority(o.Options)
+	prio, err := o.ServerPriority()
 	require.NoError(t, err)
 	require.Equal(t, uint16(1234), prio)
 
-	prio, err = GetServerPriority(dhcpv4.Options{})
+	o = VendorOptions{dhcpv4.Options{}}
+	prio, err = o.ServerPriority()
 	require.Error(t, err, "no server prio present")
 }
 
@@ -51,8 +53,10 @@ func TestOptMachineName(t *testing.T) {
 
 func TestGetMachineName(t *testing.T) {
 	o := VendorOptions{dhcpv4.OptionsFromList(OptMachineName("foo"))}
-	require.Equal(t, "foo", GetMachineName(o.Options))
-	require.Equal(t, "", GetMachineName(dhcpv4.Options{}))
+	require.Equal(t, "foo", o.MachineName())
+
+	o = VendorOptions{dhcpv4.Options{}}
+	require.Equal(t, "", o.MachineName())
 }
 
 func TestOptVersion(t *testing.T) {
@@ -64,20 +68,24 @@ func TestOptVersion(t *testing.T) {
 
 func TestGetVersion(t *testing.T) {
 	o := VendorOptions{dhcpv4.OptionsFromList(OptVersion(Version1_1))}
-	ver, err := GetVersion(o.Options)
+	ver, err := o.Version()
 	require.NoError(t, err)
 	require.Equal(t, ver, Version1_1)
 
-	ver, err = GetVersion(dhcpv4.Options{})
+	o = VendorOptions{dhcpv4.Options{}}
+	ver, err = o.Version()
 	require.Error(t, err, "no version present")
 
-	ver, err = GetVersion(dhcpv4.Options{OptionVersion.Code(): []byte{}})
+	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{}}}
+	ver, err = o.Version()
 	require.Error(t, err, "empty version field")
 
-	ver, err = GetVersion(dhcpv4.Options{OptionVersion.Code(): []byte{1}})
+	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{1}}}
+	ver, err = o.Version()
 	require.Error(t, err, "version option too short")
 
-	ver, err = GetVersion(dhcpv4.Options{OptionVersion.Code(): []byte{1, 2, 3}})
+	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{1, 2, 3}}}
+	ver, err = o.Version()
 	require.Error(t, err, "version option too long")
 }
 
@@ -90,6 +98,8 @@ func TestOptServerIdentifier(t *testing.T) {
 
 func TestGetServerIdentifier(t *testing.T) {
 	o := VendorOptions{dhcpv4.OptionsFromList(OptServerIdentifier(net.IP{1, 1, 1, 1}))}
-	require.Equal(t, net.IP{1, 1, 1, 1}, GetServerIdentifier(o.Options))
-	require.Equal(t, net.IP(nil), GetServerIdentifier(dhcpv4.Options{}))
+	require.Equal(t, net.IP{1, 1, 1, 1}, o.ServerIdentifier())
+
+	o = VendorOptions{dhcpv4.Options{}}
+	require.Nil(t, o.ServerIdentifier())
 }

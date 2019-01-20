@@ -42,8 +42,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 		return
 	}
 	reply.UpdateOption(OptServerIdentifier(net.IP{1, 2, 3, 4}))
-	mt := GetMessageType(m.Options)
-	switch mt {
+	switch mt := m.MessageType(); mt {
 	case MessageTypeDiscover:
 		reply.UpdateOption(OptMessageType(MessageTypeOffer))
 	case MessageTypeRequest:

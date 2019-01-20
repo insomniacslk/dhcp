@@ -38,25 +38,11 @@ func OptDomainName(name string) Option {
 	return Option{Code: OptionDomainName, Value: String(name)}
 }
 
-// GetDomainName parses the DHCPv4 Domain Name option from o if present.
-//
-// The Domain Name option is described by RFC 2132, Section 3.17.
-func GetDomainName(o Options) string {
-	return GetString(OptionDomainName, o)
-}
-
 // OptHostName returns a new DHCPv4 Host Name option.
 //
 // The Host Name option is described by RFC 2132, Section 3.14.
 func OptHostName(name string) Option {
 	return Option{Code: OptionHostName, Value: String(name)}
-}
-
-// GetHostName parses the DHCPv4 Host Name option from o if present.
-//
-// The Host Name option is described by RFC 2132, Section 3.14.
-func GetHostName(o Options) string {
-	return GetString(OptionHostName, o)
 }
 
 // OptRootPath returns a new DHCPv4 Root Path option.
@@ -66,25 +52,11 @@ func OptRootPath(name string) Option {
 	return Option{Code: OptionRootPath, Value: String(name)}
 }
 
-// GetRootPath parses the DHCPv4 Root Path option from o if present.
-//
-// The Root Path option is described by RFC 2132, Section 3.19.
-func GetRootPath(o Options) string {
-	return GetString(OptionRootPath, o)
-}
-
 // OptBootFileName returns a new DHCPv4 Boot File Name option.
 //
 // The Bootfile Name option is described by RFC 2132, Section 9.5.
 func OptBootFileName(name string) Option {
 	return Option{Code: OptionBootfileName, Value: String(name)}
-}
-
-// GetBootFileName parses the DHCPv4 Bootfile Name option from o if present.
-//
-// The Bootfile Name option is described by RFC 2132, Section 9.5.
-func GetBootFileName(o Options) string {
-	return GetString(OptionBootfileName, o)
 }
 
 // OptTFTPServerName returns a new DHCPv4 TFTP Server Name option.
@@ -94,24 +66,9 @@ func OptTFTPServerName(name string) Option {
 	return Option{Code: OptionTFTPServerName, Value: String(name)}
 }
 
-// GetTFTPServerName parses the DHCPv4 TFTP Server Name option from o if
-// present.
-//
-// The TFTP Server Name option is described by RFC 2132, Section 9.4.
-func GetTFTPServerName(o Options) string {
-	return GetString(OptionTFTPServerName, o)
-}
-
 // OptClassIdentifier returns a new DHCPv4 Class Identifier option.
 //
 // The Vendor Class Identifier option is described by RFC 2132, Section 9.13.
 func OptClassIdentifier(name string) Option {
 	return Option{Code: OptionClassIdentifier, Value: String(name)}
-}
-
-// GetClassIdentifier parses the DHCPv4 Class Identifier option from o if present.
-//
-// The Vendor Class Identifier option is described by RFC 2132, Section 9.13.
-func GetClassIdentifier(o Options) string {
-	return GetString(OptionClassIdentifier, o)
 }

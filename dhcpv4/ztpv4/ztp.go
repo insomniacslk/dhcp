@@ -18,7 +18,7 @@ var errVendorOptionMalformed = errors.New("malformed vendor option")
 // ParseVendorData will try to parse dhcp4 options looking for more
 // specific vendor data (like model, serial number, etc).
 func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
-	vc := dhcpv4.GetClassIdentifier(packet.Options)
+	vc := packet.ClassIdentifier()
 	if len(vc) == 0 {
 		return nil, errors.New("vendor options not found")
 	}
@@ -58,7 +58,7 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		p := strings.Split(vc, "-")
 		if len(p) < 3 {
 			vd.Model = p[1]
-			vd.Serial = dhcpv4.GetHostName(packet.Options)
+			vd.Serial = packet.HostName()
 			if len(vd.Serial) == 0 {
 				return nil, errors.New("host name option is missing")
 			}
