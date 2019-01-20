@@ -14,7 +14,7 @@ type OptIAPrefix struct {
 	ValidLifetime     uint32
 	prefixLength      byte
 	ipv6Prefix        net.IP
-	Options           []Option
+	Options           Options
 }
 
 func (op *OptIAPrefix) Code() OptionCode {
@@ -70,18 +70,17 @@ func (op *OptIAPrefix) String() string {
 // GetOneOption will get an option of the give type from the Options field, if
 // it is present. It will return `nil` otherwise
 func (op *OptIAPrefix) GetOneOption(code OptionCode) Option {
-	return getOption(op.Options, code)
+	return op.Options.GetOne(code)
 }
 
 // DelOption will remove all the options that match a Option code.
 func (op *OptIAPrefix) DelOption(code OptionCode) {
-	op.Options = delOption(op.Options, code)
+	op.Options.Del(code)
 }
 
 // build an OptIAPrefix structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
-	var err error
 	opt := OptIAPrefix{}
 	if len(data) < 25 {
 		return nil, fmt.Errorf("Invalid IA for Prefix Delegation data length. Expected at least 25 bytes, got %v", len(data))
@@ -90,8 +89,7 @@ func ParseOptIAPrefix(data []byte) (*OptIAPrefix, error) {
 	opt.ValidLifetime = binary.BigEndian.Uint32(data[4:8])
 	opt.prefixLength = data[8]
 	opt.ipv6Prefix = net.IP(data[9:25])
-	opt.Options, err = OptionsFromBytes(data[25:])
-	if err != nil {
+	if err := opt.Options.FromBytes(data[25:]); err != nil {
 		return nil, err
 	}
 	return &opt, nil

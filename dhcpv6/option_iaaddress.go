@@ -14,7 +14,7 @@ type OptIAAddress struct {
 	IPv6Addr          net.IP
 	PreferredLifetime uint32
 	ValidLifetime     uint32
-	Options           []Option
+	Options           Options
 }
 
 // Code returns the option's code
@@ -54,7 +54,6 @@ func (op *OptIAAddress) String() string {
 // of bytes. The input data does not include option code and length
 // bytes.
 func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
-	var err error
 	opt := OptIAAddress{}
 	if len(data) < 24 {
 		return nil, fmt.Errorf("Invalid IA Address data length. Expected at least 24 bytes, got %v", len(data))
@@ -62,8 +61,7 @@ func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
 	opt.IPv6Addr = net.IP(data[:16])
 	opt.PreferredLifetime = binary.BigEndian.Uint32(data[16:20])
 	opt.ValidLifetime = binary.BigEndian.Uint32(data[20:24])
-	opt.Options, err = OptionsFromBytes(data[24:])
-	if err != nil {
+	if err := opt.Options.FromBytes(data[24:]); err != nil {
 		return nil, err
 	}
 	return &opt, nil

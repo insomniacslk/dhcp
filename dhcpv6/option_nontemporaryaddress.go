@@ -12,7 +12,7 @@ type OptIANA struct {
 	IaId    [4]byte
 	T1      uint32
 	T2      uint32
-	Options []Option
+	Options Options
 }
 
 func (op *OptIANA) Code() OptionCode {
@@ -47,24 +47,23 @@ func (op *OptIANA) String() string {
 
 // AddOption adds an option at the end of the IA_NA options
 func (op *OptIANA) AddOption(opt Option) {
-	op.Options = append(op.Options, opt)
+	op.Options.Add(opt)
 }
 
 // GetOneOption will get an option of the give type from the Options field, if
 // it is present. It will return `nil` otherwise
 func (op *OptIANA) GetOneOption(code OptionCode) Option {
-	return getOption(op.Options, code)
+	return op.Options.GetOne(code)
 }
 
 // DelOption will remove all the options that match a Option code.
 func (op *OptIANA) DelOption(code OptionCode) {
-	op.Options = delOption(op.Options, code)
+	op.Options.Del(code)
 }
 
 // build an OptIANA structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIANA(data []byte) (*OptIANA, error) {
-	var err error
 	opt := OptIANA{}
 	if len(data) < 12 {
 		return nil, fmt.Errorf("Invalid IA for Non-temporary Addresses data length. Expected at least 12 bytes, got %v", len(data))
@@ -72,8 +71,7 @@ func ParseOptIANA(data []byte) (*OptIANA, error) {
 	copy(opt.IaId[:], data[:4])
 	opt.T1 = binary.BigEndian.Uint32(data[4:8])
 	opt.T2 = binary.BigEndian.Uint32(data[8:12])
-	opt.Options, err = OptionsFromBytes(data[12:])
-	if err != nil {
+	if err := opt.Options.FromBytes(data[12:]); err != nil {
 		return nil, err
 	}
 	return &opt, nil

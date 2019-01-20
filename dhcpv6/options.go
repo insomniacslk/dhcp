@@ -121,26 +121,81 @@ func ParseOption(dataStart []byte) (Option, error) {
 	return opt, nil
 }
 
-func OptionsFromBytes(data []byte) ([]Option, error) {
-	 return OptionsFromBytesWithParser(data, ParseOption)
+// Options is a collection of options.
+type Options []Option
+
+// Get returns all options matching the option code.
+func (o Options) Get(code OptionCode) []Option {
+	var ret []Option
+	for _, opt := range o {
+		if opt.Code() == code {
+			ret = append(ret, opt)
+		}
+	}
+	return ret
+}
+
+// GetOne returns the first option matching the option code.
+func (o Options) GetOne(code OptionCode) Option {
+	for _, opt := range o {
+		if opt.Code() == code {
+			return opt
+		}
+	}
+	return nil
+}
+
+// Add appends one option.
+func (o *Options) Add(option Option) {
+	*o = append(*o, option)
+}
+
+// Del deletes all options matching the option code.
+func (o *Options) Del(code OptionCode) {
+	newOpts := make(Options, 0, len(*o))
+	for _, opt := range *o {
+		if opt.Code() != code {
+			newOpts = append(newOpts, opt)
+		}
+	}
+	*o = newOpts
+}
+
+// Update replaces the first option of the same type as the specified one.
+func (o *Options) Update(option Option) {
+	for idx, opt := range *o {
+		if opt.Code() == option.Code() {
+			(*o)[idx] = option
+			// don't look further
+			return
+		}
+	}
+	// if not found, add it
+	o.Add(option)
+}
+
+// FromBytes reads data into o and returns an error if the options are not a
+// valid serialized representation of DHCPv6 options per RFC 3315.
+func (o *Options) FromBytes(data []byte) error {
+	return o.FromBytesWithParser(data, ParseOption)
 }
 
 // OptionParser is a function signature for option parsing
 type OptionParser func(data []byte) (Option, error)
 
-// OptionsFromBytesWithParser parses Options from byte sequences using the
-// parsing function that is passed in as a paremeter
-func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, error) {
+// FromBytesWithParser parses Options from byte sequences using the parsing
+// function that is passed in as a paremeter
+func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 	// Parse a sequence of bytes until the end and build a list of options from
 	// it. Returns an error if any invalid option or length is found.
-	options := make([]Option, 0, 10)
+	*o = make(Options, 0, 10)
 	if len(data) == 0 {
 		// no options, no party
-		return options, nil
+		return nil
 	}
 	if len(data) < 4 {
 		// cannot be shorter than option code (2 bytes) + length (2 bytes)
-		return nil, fmt.Errorf("Invalid options: shorter than 4 bytes")
+		return fmt.Errorf("Invalid options: shorter than 4 bytes")
 	}
 	idx := 0
 	for {
@@ -149,14 +204,14 @@ func OptionsFromBytesWithParser(data []byte, parser OptionParser) ([]Option, err
 		}
 		if idx > len(data) {
 			// this should never happen
-			return nil, fmt.Errorf("Error: reading past the end of options")
+			return fmt.Errorf("Error: reading past the end of options")
 		}
 		opt, err := parser(data[idx:])
 		if err != nil {
-			return nil, err
+			return err
 		}
-		options = append(options, opt)
+		*o = append(*o, opt)
 		idx += opt.Length() + 4 // 4 bytes for type + length
 	}
-	return options, nil
+	return nil
 }

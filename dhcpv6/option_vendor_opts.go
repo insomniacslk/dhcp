@@ -36,7 +36,7 @@ import (
 // OptVendorOpts represents a DHCPv6 Status Code option
 type OptVendorOpts struct {
 	EnterpriseNumber uint32
-	VendorOpts       []Option
+	VendorOpts       Options
 }
 
 // Code returns the option code
@@ -81,9 +81,7 @@ func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {
 	}
 	opt.EnterpriseNumber = binary.BigEndian.Uint32(data[:4])
 
-	var err error
-	opt.VendorOpts, err = OptionsFromBytesWithParser(data[4:], vendParseOption)
-	if err != nil {
+	if err := opt.VendorOpts.FromBytesWithParser(data[4:], vendParseOption); err != nil {
 		return nil, err
 	}
 	return &opt, nil

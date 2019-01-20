@@ -26,7 +26,8 @@ func TestRelayMsgParseOptRelayMsg(t *testing.T) {
 }
 
 func TestRelayMsgOptionsFromBytes(t *testing.T) {
-	opts, err := OptionsFromBytes([]byte{
+	var opts Options
+	err := opts.FromBytes([]byte{
 		0, 9, // option: relay message
 		0, 10, // relayed message length
 		1,                // MessageTypeSolicit
