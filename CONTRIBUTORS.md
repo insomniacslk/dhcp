@@ -5,3 +5,4 @@
 * Sean Karlage (BSDP package, and of tons of improvements to the DHCPv4 package)
 * Owen Mooney (several option fixes and modifiers)
 * Mikolaj Walczak (asynchronous DHCPv6 client)
+* Chris Koch (tons of improvements in DHCPv4 and DHCPv6 internals and interface)
