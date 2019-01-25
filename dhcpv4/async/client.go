@@ -194,7 +194,11 @@ func (c *Client) remoteAddr() (*net.UDPAddr, error) {
 
 // Send inserts a message to the queue to be sent asynchronously.
 // Returns a future which resolves to response and error.
-func (c *Client) Send(message *dhcpv4.DHCPv4) *promise.Future {
+func (c *Client) Send(message *dhcpv4.DHCPv4, modifiers ...dhcpv4.Modifier) *promise.Future {
+	for _, mod := range modifiers {
+		mod(message)
+	}
+
 	p := promise.NewPromise()
 	c.packetsLock.Lock()
 	c.packets[message.TransactionID] = p
