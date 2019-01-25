@@ -3,6 +3,7 @@ package bsdp
 import (
 	"fmt"
 
+	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -18,9 +19,9 @@ const (
 	// 4 - 127 are reserved for future use.
 )
 
-// BootImageTypeToString maps the different BootImageTypes to human-readable
+// bootImageTypeToString maps the different BootImageTypes to human-readable
 // representations.
-var BootImageTypeToString = map[BootImageType]string{
+var bootImageTypeToString = map[BootImageType]string{
 	BootImageTypeMacOS9:              "macOS 9",
 	BootImageTypeMacOSX:              "macOS",
 	BootImageTypeMacOSXServer:        "macOS Server",
@@ -33,6 +34,16 @@ type BootImageID struct {
 	IsInstall bool
 	ImageType BootImageType
 	Index     uint16
+}
+
+// ToBytes implements dhcpv4.OptionValue.
+func (b BootImageID) ToBytes() []byte {
+	return uio.ToBigEndian(b)
+}
+
+// FromBytes reads data into b.
+func (b *BootImageID) FromBytes(data []byte) error {
+	return uio.FromBigEndian(b, data)
 }
 
 // Marshal writes the binary representation to buf.
@@ -55,7 +66,7 @@ func (b BootImageID) String() string {
 	} else {
 		s += " uninstallable"
 	}
-	t, ok := BootImageTypeToString[b.ImageType]
+	t, ok := bootImageTypeToString[b.ImageType]
 	if !ok {
 		t = "unknown"
 	}
@@ -98,4 +109,28 @@ func (b *BootImage) Unmarshal(buf *uio.Lexer) error {
 	nameLength := buf.Read8()
 	b.Name = string(buf.Consume(int(nameLength)))
 	return buf.Error()
+}
+
+func getBootImageID(code dhcpv4.OptionCode, o dhcpv4.Options) *BootImageID {
+	v := o.Get(code)
+	if v == nil {
+		return nil
+	}
+	var b BootImageID
+	if err := uio.FromBigEndian(&b, v); err != nil {
+		return nil
+	}
+	return &b
+}
+
+// OptDefaultBootImageID returns a new default boot image ID option as per
+// BSDP.
+func OptDefaultBootImageID(b BootImageID) dhcpv4.Option {
+	return dhcpv4.Option{Code: OptionDefaultBootImageID, Value: b}
+}
+
+// OptSelectedBootImageID returns a new selected boot image ID option as per
+// BSDP.
+func OptSelectedBootImageID(b BootImageID) dhcpv4.Option {
+	return dhcpv4.Option{Code: OptionSelectedBootImageID, Value: b}
 }

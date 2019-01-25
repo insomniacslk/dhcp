@@ -15,16 +15,23 @@ type MessageType byte
 
 // BSDP Message types - e.g. LIST, SELECT, FAILED
 const (
+	MessageTypeNone   MessageType = 0
 	MessageTypeList   MessageType = 1
 	MessageTypeSelect MessageType = 2
 	MessageTypeFailed MessageType = 3
 )
 
+// ToBytes returns a serialized stream of bytes for this option.
+func (m MessageType) ToBytes() []byte {
+	return []byte{byte(m)}
+}
+
+// String returns a human-friendly representation of MessageType.
 func (m MessageType) String() string {
 	if s, ok := messageTypeToString[m]; ok {
 		return s
 	}
-	return "Unknown"
+	return fmt.Sprintf("unknown (%d)", m)
 }
 
 // messageTypeToString maps each BSDP message type to a human-readable string.
@@ -34,29 +41,17 @@ var messageTypeToString = map[MessageType]string{
 	MessageTypeFailed: "FAILED",
 }
 
-// OptMessageType represents a BSDP message type.
-type OptMessageType struct {
-	Type MessageType
-}
-
-// ParseOptMessageType constructs an OptMessageType struct from a sequence of
-// bytes and returns it, or an error.
-func ParseOptMessageType(data []byte) (*OptMessageType, error) {
+// FromBytes reads data into m.
+func (m *MessageType) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	return &OptMessageType{Type: MessageType(buf.Read8())}, buf.FinError()
+	*m = MessageType(buf.Read8())
+	return buf.FinError()
 }
 
-// Code returns the option code.
-func (o *OptMessageType) Code() dhcpv4.OptionCode {
-	return OptionMessageType
-}
-
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptMessageType) ToBytes() []byte {
-	return []byte{byte(o.Type)}
-}
-
-// String returns a human-readable string for this option.
-func (o *OptMessageType) String() string {
-	return fmt.Sprintf("BSDP Message Type -> %s", o.Type.String())
+// OptMessageType returns a new BSDP Message Type option.
+func OptMessageType(mt MessageType) dhcpv4.Option {
+	return dhcpv4.Option{
+		Code:  OptionMessageType,
+		Value: mt,
+	}
 }

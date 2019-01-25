@@ -25,8 +25,8 @@ func TestOptBootImageListInterfaceMethods(t *testing.T) {
 			Name: "bsdp-2",
 		},
 	}
-	o := OptBootImageList{bs}
-	require.Equal(t, OptionBootImageList, o.Code(), "Code")
+	o := OptBootImageList(bs...)
+	require.Equal(t, OptionBootImageList, o.Code, "Code")
 	expectedBytes := []byte{
 		// boot image 1
 		0x1, 0x0, 0x03, 0xe9, // ID
@@ -37,7 +37,7 @@ func TestOptBootImageListInterfaceMethods(t *testing.T) {
 		6, // name length
 		'b', 's', 'd', 'p', '-', '2',
 	}
-	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
+	require.Equal(t, expectedBytes, o.Value.ToBytes(), "ToBytes")
 }
 
 func TestParseOptBootImageList(t *testing.T) {
@@ -51,9 +51,10 @@ func TestParseOptBootImageList(t *testing.T) {
 		6, // name length
 		'b', 's', 'd', 'p', '-', '2',
 	}
-	o, err := ParseOptBootImageList(data)
+	var o BootImageList
+	err := o.FromBytes(data)
 	require.NoError(t, err)
-	expectedBootImages := []BootImage{
+	expectedBootImages := BootImageList{
 		BootImage{
 			ID: BootImageID{
 				IsInstall: false,
@@ -71,7 +72,7 @@ func TestParseOptBootImageList(t *testing.T) {
 			Name: "bsdp-2",
 		},
 	}
-	require.Equal(t, &OptBootImageList{expectedBootImages}, o)
+	require.Equal(t, expectedBootImages, o)
 
 	// Error parsing boot image (malformed)
 	data = []byte{
@@ -84,7 +85,7 @@ func TestParseOptBootImageList(t *testing.T) {
 		6, // name length
 		'b', 's', 'd', 'p', '-', '2',
 	}
-	_, err = ParseOptBootImageList(data)
+	err = o.FromBytes(data)
 	require.Error(t, err, "should get error from bad boot image")
 }
 
@@ -107,7 +108,7 @@ func TestOptBootImageListString(t *testing.T) {
 			Name: "bsdp-2",
 		},
 	}
-	o := OptBootImageList{bs}
-	expectedString := "BSDP Boot Image List ->\n  bsdp-1 [1001] uninstallable macOS image\n  bsdp-2 [9009] installable macOS 9 image"
+	o := OptBootImageList(bs...)
+	expectedString := "BSDP Boot Image List: bsdp-1 [1001] uninstallable macOS image, bsdp-2 [9009] installable macOS 9 image"
 	require.Equal(t, expectedString, o.String())
 }

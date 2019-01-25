@@ -3,6 +3,7 @@ package dhcpv4
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -35,13 +36,12 @@ func TestHwAddrModifier(t *testing.T) {
 }
 
 func TestWithOptionModifier(t *testing.T) {
-	d, err := New(WithOption(&OptDomainName{DomainName: "slackware.it"}))
+	d, err := New(WithOption(OptDomainName("slackware.it")))
 	require.NoError(t, err)
 
-	opt := d.GetOneOption(OptionDomainName)
-	require.NotNil(t, opt)
-	dnOpt := opt.(*OptDomainName)
-	require.Equal(t, "slackware.it", dnOpt.DomainName)
+	dnOpt := d.DomainName()
+	require.NotNil(t, dnOpt)
+	require.Equal(t, "slackware.it", dnOpt)
 }
 
 func TestUserClassModifier(t *testing.T) {
@@ -51,8 +51,7 @@ func TestUserClassModifier(t *testing.T) {
 	expected := []byte{
 		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
-	require.Equal(t, "User Class Information -> linuxboot", d.Options[0].String())
-	require.Equal(t, expected, d.Options[0].ToBytes())
+	require.Equal(t, expected, d.GetOneOption(OptionUserClassInformation))
 }
 
 func TestUserClassModifierRFC(t *testing.T) {
@@ -62,43 +61,35 @@ func TestUserClassModifierRFC(t *testing.T) {
 	expected := []byte{
 		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 	}
-	require.Equal(t, "User Class Information -> linuxboot", d.Options[0].String())
-	require.Equal(t, expected, d.Options[0].ToBytes())
+	require.Equal(t, expected, d.GetOneOption(OptionUserClassInformation))
 }
 
 func TestWithNetboot(t *testing.T) {
 	d, err := New(WithNetboot)
 	require.NoError(t, err)
 
-	require.Equal(t, "Parameter Request List -> TFTP Server Name, Bootfile Name", d.Options[0].String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingTFTP(t *testing.T) {
-	d, err := New()
-	require.NoError(t, err)
-	d.UpdateOption(&OptParameterRequestList{
-		RequestedOpts: []OptionCode{OptionTFTPServerName},
-	})
+	d, _ := New()
+	d.UpdateOption(OptParameterRequestList(OptionTFTPServerName))
 	WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> TFTP Server Name, Bootfile Name", d.Options[0].String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingBootfileName(t *testing.T) {
 	d, _ := New()
-	d.UpdateOption(&OptParameterRequestList{
-		RequestedOpts: []OptionCode{OptionBootfileName},
-	})
+	d.UpdateOption(OptParameterRequestList(OptionBootfileName))
 	WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> Bootfile Name, TFTP Server Name", d.Options[0].String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithNetbootExistingBoth(t *testing.T) {
 	d, _ := New()
-	d.UpdateOption(&OptParameterRequestList{
-		RequestedOpts: []OptionCode{OptionBootfileName, OptionTFTPServerName},
-	})
+	d.UpdateOption(OptParameterRequestList(OptionBootfileName, OptionTFTPServerName))
 	WithNetboot(d)
-	require.Equal(t, "Parameter Request List -> Bootfile Name, TFTP Server Name", d.Options[0].String())
+	require.Equal(t, "TFTP Server Name, Bootfile Name", d.ParameterRequestList().String())
 }
 
 func TestWithRequestedOptions(t *testing.T) {
@@ -106,18 +97,16 @@ func TestWithRequestedOptions(t *testing.T) {
 	d, err := New(WithRequestedOptions(OptionFQDN))
 	require.NoError(t, err)
 	require.NotNil(t, d)
-	o := d.GetOneOption(OptionParameterRequestList)
-	require.NotNil(t, o)
-	opts := o.(*OptParameterRequestList)
-	require.ElementsMatch(t, opts.RequestedOpts, []OptionCode{OptionFQDN})
 
+	opts := d.ParameterRequestList()
+	require.NotNil(t, opts)
+	require.ElementsMatch(t, opts, []OptionCode{OptionFQDN})
 	// Check if already set options are preserved
 	WithRequestedOptions(OptionHostName)(d)
 	require.NotNil(t, d)
-	o = d.GetOneOption(OptionParameterRequestList)
-	require.NotNil(t, o)
-	opts = o.(*OptParameterRequestList)
-	require.ElementsMatch(t, opts.RequestedOpts, []OptionCode{OptionFQDN, OptionHostName})
+	opts = d.ParameterRequestList()
+	require.NotNil(t, opts)
+	require.ElementsMatch(t, opts, []OptionCode{OptionFQDN, OptionHostName})
 }
 
 func TestWithRelay(t *testing.T) {
@@ -134,56 +123,42 @@ func TestWithNetmask(t *testing.T) {
 	d, err := New(WithNetmask(net.IPv4Mask(255, 255, 255, 0)))
 	require.NoError(t, err)
 
-	require.Equal(t, 1, len(d.Options))
-	require.Equal(t, OptionSubnetMask, d.Options[0].Code())
-	osm := d.Options[0].(*OptSubnetMask)
-	require.Equal(t, net.IPv4Mask(255, 255, 255, 0), osm.SubnetMask)
+	require.Equal(t, net.IPv4Mask(255, 255, 255, 0), d.SubnetMask())
 }
 
 func TestWithLeaseTime(t *testing.T) {
 	d, err := New(WithLeaseTime(uint32(3600)))
 	require.NoError(t, err)
 
-	require.Equal(t, 1, len(d.Options))
-	require.Equal(t, OptionIPAddressLeaseTime, d.Options[0].Code())
-	olt := d.Options[0].(*OptIPAddressLeaseTime)
-	require.Equal(t, uint32(3600), olt.LeaseTime)
+	require.True(t, d.Options.Has(OptionIPAddressLeaseTime))
+	require.Equal(t, 3600*time.Second, d.IPAddressLeaseTime(10*time.Second))
 }
 
 func TestWithDNS(t *testing.T) {
 	d, err := New(WithDNS(net.ParseIP("10.0.0.1"), net.ParseIP("10.0.0.2")))
 	require.NoError(t, err)
 
-	require.Equal(t, 1, len(d.Options))
-	require.Equal(t, OptionDomainNameServer, d.Options[0].Code())
-	olt := d.Options[0].(*OptDomainNameServer)
-	require.Equal(t, 2, len(olt.NameServers))
-	require.Equal(t, net.ParseIP("10.0.0.1"), olt.NameServers[0])
-	require.Equal(t, net.ParseIP("10.0.0.2"), olt.NameServers[1])
-	require.NotEqual(t, net.ParseIP("10.0.0.1"), olt.NameServers[1])
+	dns := d.DNS()
+	require.Equal(t, net.ParseIP("10.0.0.1").To4(), dns[0])
+	require.Equal(t, net.ParseIP("10.0.0.2").To4(), dns[1])
 }
 
 func TestWithDomainSearchList(t *testing.T) {
 	d, err := New(WithDomainSearchList("slackware.it", "dhcp.slackware.it"))
 	require.NoError(t, err)
 
-	require.Equal(t, 1, len(d.Options))
-	osl := d.Options[0].(*OptDomainSearch)
-	require.Equal(t, OptionDNSDomainSearchList, osl.Code())
-	require.NotNil(t, osl.DomainSearch)
-	require.Equal(t, 2, len(osl.DomainSearch.Labels))
-	require.Equal(t, "slackware.it", osl.DomainSearch.Labels[0])
-	require.Equal(t, "dhcp.slackware.it", osl.DomainSearch.Labels[1])
+	osl := d.DomainSearch()
+	require.NotNil(t, osl)
+	require.Equal(t, 2, len(osl.Labels))
+	require.Equal(t, "slackware.it", osl.Labels[0])
+	require.Equal(t, "dhcp.slackware.it", osl.Labels[1])
 }
 
 func TestWithRouter(t *testing.T) {
-	rtr := net.ParseIP("10.0.0.254")
+	rtr := net.ParseIP("10.0.0.254").To4()
 	d, err := New(WithRouter(rtr))
 	require.NoError(t, err)
 
-	require.Equal(t, 1, len(d.Options))
-	ortr := d.Options[0].(*OptRouter)
-	require.Equal(t, OptionRouter, ortr.Code())
-	require.Equal(t, 1, len(ortr.Routers))
-	require.Equal(t, rtr, ortr.Routers[0])
+	ortr := d.Router()
+	require.Equal(t, rtr, ortr[0])
 }

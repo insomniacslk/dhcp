@@ -224,13 +224,13 @@ func TestGetNetConfFromPacketv4(t *testing.T) {
 	require.Equal(t, 5200, netconf.Addresses[0].ValidLifetime)
 	// check DNSes
 	require.Equal(t, 2, len(netconf.DNSServers))
-	require.Equal(t, net.ParseIP("10.10.0.1"), netconf.DNSServers[0])
-	require.Equal(t, net.ParseIP("10.10.0.2"), netconf.DNSServers[1])
+	require.Equal(t, net.ParseIP("10.10.0.1").To4(), netconf.DNSServers[0])
+	require.Equal(t, net.ParseIP("10.10.0.2").To4(), netconf.DNSServers[1])
 	// check DNS search list
 	require.Equal(t, 2, len(netconf.DNSSearchList))
 	require.Equal(t, "slackware.it", netconf.DNSSearchList[0])
 	require.Equal(t, "dhcp.slackware.it", netconf.DNSSearchList[1])
 	// check routers
 	require.Equal(t, 1, len(netconf.Routers))
-	require.Equal(t, net.ParseIP("10.0.0.254"), netconf.Routers[0])
+	require.Equal(t, net.ParseIP("10.0.0.254").To4(), netconf.Routers[0])
 }

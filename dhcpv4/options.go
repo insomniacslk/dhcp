@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sort"
+	"strings"
 
+	"github.com/insomniacslk/dhcp/iana"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -24,149 +28,95 @@ var (
 	ErrInvalidOptions = errors.New("invalid options data")
 )
 
-// Option is an interface that all DHCP v4 options adhere to.
-type Option interface {
-	Code() OptionCode
+// OptionValue is an interface that all DHCP v4 options adhere to.
+type OptionValue interface {
 	ToBytes() []byte
 	String() string
 }
 
-// ParseOption parses a sequence of bytes as a single DHCPv4 option, returning
-// the specific option structure or error, if any.
-func ParseOption(code OptionCode, data []byte) (Option, error) {
-	var (
-		opt Option
-		err error
-	)
-	switch code {
-	case OptionSubnetMask:
-		opt, err = ParseOptSubnetMask(data)
-	case OptionRouter:
-		opt, err = ParseOptRouter(data)
-	case OptionDomainNameServer:
-		opt, err = ParseOptDomainNameServer(data)
-	case OptionHostName:
-		opt, err = ParseOptHostName(data)
-	case OptionDomainName:
-		opt, err = ParseOptDomainName(data)
-	case OptionRootPath:
-		opt, err = ParseOptRootPath(data)
-	case OptionBroadcastAddress:
-		opt, err = ParseOptBroadcastAddress(data)
-	case OptionNTPServers:
-		opt, err = ParseOptNTPServers(data)
-	case OptionRequestedIPAddress:
-		opt, err = ParseOptRequestedIPAddress(data)
-	case OptionIPAddressLeaseTime:
-		opt, err = ParseOptIPAddressLeaseTime(data)
-	case OptionDHCPMessageType:
-		opt, err = ParseOptMessageType(data)
-	case OptionServerIdentifier:
-		opt, err = ParseOptServerIdentifier(data)
-	case OptionParameterRequestList:
-		opt, err = ParseOptParameterRequestList(data)
-	case OptionMaximumDHCPMessageSize:
-		opt, err = ParseOptMaximumDHCPMessageSize(data)
-	case OptionClassIdentifier:
-		opt, err = ParseOptClassIdentifier(data)
-	case OptionTFTPServerName:
-		opt, err = ParseOptTFTPServerName(data)
-	case OptionBootfileName:
-		opt, err = ParseOptBootfileName(data)
-	case OptionUserClassInformation:
-		opt, err = ParseOptUserClass(data)
-	case OptionRelayAgentInformation:
-		opt, err = ParseOptRelayAgentInformation(data)
-	case OptionClientSystemArchitectureType:
-		opt, err = ParseOptClientArchType(data)
-	case OptionDNSDomainSearchList:
-		opt, err = ParseOptDomainSearch(data)
-	case OptionVendorIdentifyingVendorClass:
-		opt, err = ParseOptVIVC(data)
-	default:
-		opt, err = ParseOptionGeneric(code, data)
+// Option is a DHCPv4 option and consists of a 1-byte option code and a value
+// stream of bytes.
+//
+// The value is to be interpreted based on the option code.
+type Option struct {
+	Code  OptionCode
+	Value OptionValue
+}
+
+// String returns a human-readable version of this option.
+func (o Option) String() string {
+	v := o.Value.String()
+	if strings.Contains(v, "\n") {
+		return fmt.Sprintf("%s:\n%s", o.Code, v)
 	}
-	if err != nil {
-		return nil, err
-	}
-	return opt, nil
+	return fmt.Sprintf("%s: %s", o.Code, v)
 }
 
 // Options is a collection of options.
-type Options []Option
+type Options map[uint8][]byte
 
-// GetOne will attempt to get an  option that match a Option code.  If there
-// are multiple options with the same OptionCode it will only return the first
-// one found.  If no matching option is found nil will be returned.
-func (o Options) GetOne(code OptionCode) Option {
+// OptionsFromList adds all given options to an options map.
+func OptionsFromList(o ...Option) Options {
+	opts := make(Options)
 	for _, opt := range o {
-		if opt.Code() == code {
-			return opt
-		}
+		opts.Update(opt)
 	}
-	return nil
+	return opts
 }
 
-// Has checks whether o has the given `opcode` Option.
-func (o Options) Has(code OptionCode) bool {
-	return o.GetOne(code) != nil
-}
-
-// Update replaces an existing option with the same option code with the given
-// one, adding it if not already present.
+// Get will attempt to get all options that match a DHCPv4 option
+// from its OptionCode.  If the option was not found it will return an
+// empty list.
 //
-// Per RFC 2131, Section 4.1, "options may appear only once."
-//
-// An End option is ignored.
-func (o *Options) Update(option Option) {
-	if option.Code() == OptionEnd {
-		return
-	}
-
-	for idx, opt := range *o {
-		if opt.Code() == option.Code() {
-			(*o)[idx] = option
-			// Don't look further.
-			return
-		}
-	}
-	// If not found, add it.
-	*o = append(*o, option)
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option. This
+// currently returns a list to be API compatible.
+func (o Options) Get(code OptionCode) []byte {
+	return o[code.Code()]
 }
 
-// OptionsFromBytes parses a sequence of bytes until the end and builds a list
-// of options from it.
+// Has checks whether o has the given opcode.
+func (o Options) Has(opcode OptionCode) bool {
+	_, ok := o[opcode.Code()]
+	return ok
+}
+
+// Update updates the existing options with the passed option, adding it
+// at the end if not present already
+func (o Options) Update(option Option) {
+	o[option.Code.Code()] = option.Value.ToBytes()
+}
+
+// ToBytes makes Options usable as an OptionValue as well.
+//
+// Used in the case of vendor-specific and relay agent options.
+func (o Options) ToBytes() []byte {
+	return uio.ToBigEndian(o)
+}
+
+// FromBytes parses a sequence of bytes until the end and builds a list of
+// options from it.
 //
 // The sequence should not contain the DHCP magic cookie.
 //
 // Returns an error if any invalid option or length is found.
-func OptionsFromBytes(data []byte) (Options, error) {
-	return OptionsFromBytesWithParser(data, codeGetter, ParseOption, true)
+func (o Options) FromBytes(data []byte) error {
+	return o.fromBytesCheckEnd(data, false)
 }
 
-// OptionParser is a function signature for option parsing.
-type OptionParser func(code OptionCode, data []byte) (Option, error)
+const (
+	optPad = 0
+	optEnd = 255
+)
 
-// OptionCodeGetter parses a code into an OptionCode.
-type OptionCodeGetter func(code uint8) OptionCode
-
-// codeGetter is an OptionCodeGetter for DHCP optionCodes.
-func codeGetter(c uint8) OptionCode {
-	return optionCode(c)
-}
-
-// OptionsFromBytesWithParser parses Options from byte sequences using the
+// FromBytesCheckEnd parses Options from byte sequences using the
 // parsing function that is passed in as a paremeter
-func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser OptionParser, checkEndOption bool) (Options, error) {
+func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
 	if len(data) == 0 {
-		return nil, nil
+		return nil
 	}
 	buf := uio.NewBigEndianBuffer(data)
-	options := make(map[OptionCode][]byte, 10)
-	var order []OptionCode
 
-	// Due to RFC 2131, 3396 allowing an option to be specified multiple
-	// times, we have to collect all option data first, and then parse it.
 	var end bool
 	for buf.Len() >= 1 {
 		// 1 byte: option code
@@ -174,9 +124,9 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 		// n bytes: data
 		code := buf.Read8()
 
-		if code == OptionPad.Code() {
+		if code == optPad {
 			continue
-		} else if code == OptionEnd.Code() {
+		} else if code == optEnd {
 			end = true
 			break
 		}
@@ -185,15 +135,9 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 		// N bytes: option data
 		data := buf.Consume(length)
 		if data == nil {
-			return nil, fmt.Errorf("error collecting options: %v", buf.Error())
+			return fmt.Errorf("error collecting options: %v", buf.Error())
 		}
 		data = data[:length:length]
-
-		// Get the OptionCode for this guy.
-		c := coder(code)
-		if _, ok := options[c]; !ok {
-			order = append(order, c)
-		}
 
 		// RFC 2131, Section 4.1 "Options may appear only once, [...].
 		// The client concatenates the values of multiple instances of
@@ -202,56 +146,54 @@ func OptionsFromBytesWithParser(data []byte, coder OptionCodeGetter, parser Opti
 		//
 		// See also RFC 3396 for concatenation order and options longer
 		// than 255 bytes.
-		options[c] = append(options[c], data...)
+		o[code] = append(o[code], data...)
 	}
 
 	// If we never read the End option, the sender of this packet screwed
 	// up.
 	if !end && checkEndOption {
-		return nil, io.ErrUnexpectedEOF
+		return io.ErrUnexpectedEOF
 	}
 
 	// Any bytes left must be padding.
 	for buf.Len() >= 1 {
-		if buf.Read8() != OptionPad.Code() {
-			return nil, ErrInvalidOptions
+		if buf.Read8() != optPad {
+			return ErrInvalidOptions
 		}
+	}
+	return nil
+}
+
+// sortedKeys returns an ordered slice of option keys from the Options map, for
+// use in serializing options to binary.
+func (o Options) sortedKeys() []int {
+	// Send all values for a given key
+	var codes []int
+	for k := range o {
+		codes = append(codes, int(k))
 	}
 
-	opts := make(Options, 0, len(options))
-	for _, code := range order {
-		parsedOpt, err := parser(code, options[code])
-		if err != nil {
-			return nil, fmt.Errorf("error parsing option code %s: %v", code, err)
-		}
-		opts = append(opts, parsedOpt)
-	}
-	return opts, nil
+	sort.Sort(sort.IntSlice(codes))
+	return codes
 }
 
 // Marshal writes options binary representations to b.
 func (o Options) Marshal(b *uio.Lexer) {
-	for _, opt := range o {
-		code := opt.Code().Code()
-
+	for _, c := range o.sortedKeys() {
+		code := uint8(c)
 		// Even if the End option is in there, don't marshal it until
 		// the end.
-		if code == OptionEnd.Code() {
-			continue
-		} else if code == OptionPad.Code() {
-			// Some DHCPv4 options have fixed length and do not put
-			// length on the wire.
-			b.Write8(code)
+		if code == optEnd {
 			continue
 		}
 
-		data := opt.ToBytes()
+		data := o[code]
 
 		// RFC 3396: If more than 256 bytes of data are given, the
 		// option is simply listed multiple times.
 		for len(data) > 0 {
 			// 1 byte: option code
-			b.Write8(code)
+			b.Write8(uint8(code))
 
 			n := len(data)
 			if n > math.MaxUint8 {
@@ -266,4 +208,138 @@ func (o Options) Marshal(b *uio.Lexer) {
 			data = data[n:]
 		}
 	}
+}
+
+// String prints options using DHCP-specified option codes.
+func (o Options) String() string {
+	return o.ToString(dhcpHumanizer)
+}
+
+// Summary prints options in human-readable values.
+//
+// Summary uses vendorParser to interpret the OptionVendorSpecificInformation option.
+func (o Options) Summary(vendorDecoder OptionDecoder) string {
+	return o.ToString(OptionHumanizer{
+		ValueHumanizer: parserFor(vendorDecoder),
+		CodeHumanizer: func(c uint8) OptionCode {
+			return optionCode(c)
+		},
+	})
+}
+
+// OptionParser gives a human-legible interpretation of data for the given option code.
+type OptionParser func(code OptionCode, data []byte) fmt.Stringer
+
+// OptionHumanizer is used to interpret a set of Options for their option code
+// name and values.
+//
+// There should be separate OptionHumanizers for each Option "space": DHCP,
+// BSDP, Relay Agent Info, and others.
+type OptionHumanizer struct {
+	ValueHumanizer OptionParser
+	CodeHumanizer  func(code uint8) OptionCode
+}
+
+// Stringify returns a human-readable interpretation of the option code and its
+// associated data.
+func (oh OptionHumanizer) Stringify(code uint8, data []byte) string {
+	c := oh.CodeHumanizer(code)
+	val := oh.ValueHumanizer(c, data)
+	return fmt.Sprintf("%s: %s", c, val)
+}
+
+// dhcpHumanizer humanizes the set of DHCP option codes.
+var dhcpHumanizer = OptionHumanizer{
+	ValueHumanizer: parseOption,
+	CodeHumanizer: func(c uint8) OptionCode {
+		return optionCode(c)
+	},
+}
+
+// ToString uses parse to parse options into human-readable values.
+func (o Options) ToString(humanizer OptionHumanizer) string {
+	var ret string
+	for _, c := range o.sortedKeys() {
+		code := uint8(c)
+		v := o[code]
+		optString := humanizer.Stringify(code, v)
+		// If this option has sub structures, offset them accordingly.
+		if strings.Contains(optString, "\n") {
+			optString = strings.Replace(optString, "\n  ", "\n      ", -1)
+		}
+		ret += fmt.Sprintf("    %v\n", optString)
+	}
+	return ret
+}
+
+func parseOption(code OptionCode, data []byte) fmt.Stringer {
+	return parserFor(nil)(code, data)
+}
+
+func parserFor(vendorParser OptionDecoder) OptionParser {
+	return func(code OptionCode, data []byte) fmt.Stringer {
+		return getOption(code, data, vendorParser)
+	}
+}
+
+// OptionDecoder can decode a byte stream into a human-readable option.
+type OptionDecoder interface {
+	fmt.Stringer
+	FromBytes([]byte) error
+}
+
+func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.Stringer {
+	var d OptionDecoder
+	switch code {
+	case OptionRouter, OptionDomainNameServer, OptionNTPServers, OptionServerIdentifier:
+		d = &IPs{}
+
+	case OptionBroadcastAddress, OptionRequestedIPAddress:
+		d = &IP{}
+
+	case OptionClientSystemArchitectureType:
+		d = &iana.Archs{}
+
+	case OptionSubnetMask:
+		d = &IPMask{}
+
+	case OptionDHCPMessageType:
+		var mt MessageType
+		d = &mt
+
+	case OptionParameterRequestList:
+		d = &OptionCodeList{}
+
+	case OptionHostName, OptionDomainName, OptionRootPath,
+		OptionClassIdentifier, OptionTFTPServerName, OptionBootfileName:
+		var s String
+		d = &s
+
+	case OptionRelayAgentInformation:
+		d = &RelayOptions{}
+
+	case OptionDNSDomainSearchList:
+		d = &rfc1035label.Labels{}
+
+	case OptionIPAddressLeaseTime:
+		var dur Duration
+		d = &dur
+
+	case OptionMaximumDHCPMessageSize:
+		var u Uint16
+		d = &u
+
+	case OptionUserClassInformation:
+		d = &UserClass{}
+
+	case OptionVendorIdentifyingVendorClass:
+		d = &VIVCIdentifiers{}
+
+	case OptionVendorSpecificInformation:
+		d = vendorDecoder
+	}
+	if d != nil && d.FromBytes(data) == nil {
+		return d
+	}
+	return OptionGeneric{data}
 }

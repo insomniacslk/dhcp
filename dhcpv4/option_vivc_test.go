@@ -7,11 +7,9 @@ import (
 )
 
 var (
-	sampleVIVCOpt = OptVIVC{
-		Identifiers: []VIVCIdentifier{
-			{EntID: 9, Data: []byte("CiscoIdentifier")},
-			{EntID: 18, Data: []byte("WellfleetIdentifier")},
-		},
+	sampleVIVCOpt = VIVCIdentifiers{
+		VIVCIdentifier{EntID: 9, Data: []byte("CiscoIdentifier")},
+		VIVCIdentifier{EntID: 18, Data: []byte("WellfleetIdentifier")},
 	}
 	sampleVIVCOptRaw = []byte{
 		0x0, 0x0, 0x0, 0x9, // enterprise id 9
@@ -24,30 +22,32 @@ var (
 )
 
 func TestOptVIVCInterfaceMethods(t *testing.T) {
-	require.Equal(t, OptionVendorIdentifyingVendorClass, sampleVIVCOpt.Code(), "Code")
-	require.Equal(t, sampleVIVCOptRaw, sampleVIVCOpt.ToBytes(), "ToBytes")
+	opt := OptVIVC(sampleVIVCOpt...)
+	require.Equal(t, OptionVendorIdentifyingVendorClass, opt.Code, "Code")
+	require.Equal(t, sampleVIVCOptRaw, opt.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Vendor-Identifying Vendor Class: 9:'CiscoIdentifier', 18:'WellfleetIdentifier'",
+		opt.String())
 }
 
 func TestParseOptVICO(t *testing.T) {
-	o, err := ParseOptVIVC(sampleVIVCOptRaw)
-	require.NoError(t, err)
-	require.Equal(t, &sampleVIVCOpt, o)
+	m, _ := New(WithGeneric(OptionVendorIdentifyingVendorClass, sampleVIVCOptRaw))
+	o := m.VIVC()
+	require.Equal(t, sampleVIVCOpt, o)
 
 	// Identifier len too long
 	data := make([]byte, len(sampleVIVCOptRaw))
 	copy(data, sampleVIVCOptRaw)
 	data[4] = 40
-	_, err = ParseOptVIVC(data)
-	require.Error(t, err, "should get error from bad length")
+	m, _ = New(WithGeneric(OptionVendorIdentifyingVendorClass, data))
+	o = m.VIVC()
+	require.Nil(t, o, "should get error from bad length")
 
 	// Longer than length
 	data[4] = 5
-	o, err = ParseOptVIVC(data[:10])
-	require.NoError(t, err)
-	require.Equal(t, o.Identifiers[0].Data, []byte("Cisco"))
-}
+	m, _ = New(WithGeneric(OptionVendorIdentifyingVendorClass, data[:10]))
+	o = m.VIVC()
+	require.Equal(t, o[0].Data, []byte("Cisco"))
 
-func TestOptVIVCString(t *testing.T) {
-	require.Equal(t, "Vendor-Identifying Vendor Class -> 9:'CiscoIdentifier', 18:'WellfleetIdentifier'",
-		sampleVIVCOpt.String())
+	m, _ = New()
+	require.Equal(t, VIVCIdentifiers(nil), m.VIVC())
 }

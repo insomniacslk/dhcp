@@ -54,15 +54,10 @@ func TestParseV4VendorClass(t *testing.T) {
 			}
 
 			if tc.vc != "" {
-				packet.UpdateOption(&dhcpv4.OptClassIdentifier{
-					Identifier: tc.vc,
-				})
+				packet.UpdateOption(dhcpv4.OptClassIdentifier(tc.vc))
 			}
-
 			if tc.hostname != "" {
-				packet.UpdateOption(&dhcpv4.OptHostName{
-					HostName: tc.hostname,
-				})
+				packet.UpdateOption(dhcpv4.OptHostName(tc.hostname))
 			}
 
 			vd, err := ParseVendorData(packet)

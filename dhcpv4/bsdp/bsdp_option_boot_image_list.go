@@ -1,52 +1,53 @@
 package bsdp
 
 import (
+	"strings"
+
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptBootImageList contains the list of boot images presented by a netboot
-// server.
-type OptBootImageList struct {
-	Images []BootImage
-}
+// BootImageList contains a list of boot images presented by a netboot server.
+//
+// Implements the BSDP option listing the boot images.
+type BootImageList []BootImage
 
-// ParseOptBootImageList constructs an OptBootImageList struct from a sequence
-// of bytes and returns it, or an error.
-func ParseOptBootImageList(data []byte) (*OptBootImageList, error) {
+// FromBytes deserializes data into bil.
+func (bil *BootImageList) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 
-	var bootImages []BootImage
 	for buf.Has(5) {
 		var image BootImage
-		if err := (&image).Unmarshal(buf); err != nil {
-			return nil, err
+		if err := image.Unmarshal(buf); err != nil {
+			return err
 		}
-		bootImages = append(bootImages, image)
+		*bil = append(*bil, image)
 	}
-
-	return &OptBootImageList{bootImages}, nil
-}
-
-// Code returns the option code.
-func (o *OptBootImageList) Code() dhcpv4.OptionCode {
-	return OptionBootImageList
+	return nil
 }
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptBootImageList) ToBytes() []byte {
+func (bil BootImageList) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	for _, image := range o.Images {
+	for _, image := range bil {
 		image.Marshal(buf)
 	}
 	return buf.Data()
 }
 
 // String returns a human-readable string for this option.
-func (o *OptBootImageList) String() string {
-	s := "BSDP Boot Image List ->"
-	for _, image := range o.Images {
-		s += "\n  " + image.String()
+func (bil BootImageList) String() string {
+	s := make([]string, 0, len(bil))
+	for _, image := range bil {
+		s = append(s, image.String())
 	}
-	return s
+	return strings.Join(s, ", ")
+}
+
+// OptBootImageList returns a new BSDP boot image list.
+func OptBootImageList(b ...BootImage) dhcpv4.Option {
+	return dhcpv4.Option{
+		Code:  OptionBootImageList,
+		Value: BootImageList(b),
+	}
 }

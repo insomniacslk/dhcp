@@ -2,37 +2,37 @@ package dhcpv4
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptIPAddressLeaseTime implements the IP address lease time option described
-// by RFC 2132, Section 9.2.
-type OptIPAddressLeaseTime struct {
-	LeaseTime uint32
-}
+// Duration implements the IP address lease time option described by RFC 2132,
+// Section 9.2.
+type Duration time.Duration
 
-// ParseOptIPAddressLeaseTime constructs an OptIPAddressLeaseTime struct from a
-// sequence of bytes and returns it, or an error.
-func ParseOptIPAddressLeaseTime(data []byte) (*OptIPAddressLeaseTime, error) {
+// FromBytes parses a duration from a byte stream according to RFC 2132, Section 9.2.
+func (d *Duration) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	leaseTime := buf.Read32()
-	return &OptIPAddressLeaseTime{LeaseTime: leaseTime}, buf.FinError()
-}
-
-// Code returns the option code.
-func (o *OptIPAddressLeaseTime) Code() OptionCode {
-	return OptionIPAddressLeaseTime
+	*d = Duration(time.Duration(buf.Read32()) * time.Second)
+	return buf.FinError()
 }
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptIPAddressLeaseTime) ToBytes() []byte {
+func (d Duration) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write32(o.LeaseTime)
+	buf.Write32(uint32(time.Duration(d) / time.Second))
 	return buf.Data()
 }
 
 // String returns a human-readable string for this option.
-func (o *OptIPAddressLeaseTime) String() string {
-	return fmt.Sprintf("IP Addresses Lease Time -> %v", o.LeaseTime)
+func (d Duration) String() string {
+	return fmt.Sprintf("%s", time.Duration(d))
+}
+
+// OptIPAddressLeaseTime returns a new IP address lease time option.
+//
+// The IP address lease time option is described by RFC 2132, Section 9.2.
+func OptIPAddressLeaseTime(d time.Duration) Option {
+	return Option{Code: OptionIPAddressLeaseTime, Value: Duration(d)}
 }

@@ -1,3 +1,18 @@
+// Package dhcpv4 provides encoding and decoding of DHCPv4 packets and options.
+//
+// Example Usage:
+//
+//   p, err := dhcpv4.New(
+//     dhcpv4.WithClientIP(net.IP{192, 168, 0, 1}),
+//     dhcpv4.WithMessageType(dhcpv4.MessageTypeInform),
+//   )
+//   p.UpdateOption(dhcpv4.OptServerIdentifier(net.IP{192, 110, 110, 110}))
+//
+//   // Retrieve the DHCP Message Type option.
+//   m := p.MessageType()
+//
+//   bytesOnTheWire := p.ToBytes()
+//   longSummary := p.Summary()
 package dhcpv4
 
 import (
@@ -6,8 +21,10 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -124,7 +141,7 @@ func New(modifiers ...Modifier) (*DHCPv4, error) {
 		YourIPAddr:    net.IPv4zero,
 		ServerIPAddr:  net.IPv4zero,
 		GatewayIPAddr: net.IPv4zero,
-		Options:       make([]Option, 0, 10),
+		Options:       make(Options),
 	}
 	for _, mod := range modifiers {
 		mod(&d)
@@ -206,11 +223,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (
 // NewRequestFromOffer builds a DHCPv4 request from an offer.
 func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	// find server IP address
-	var serverIP net.IP
-	serverID := offer.GetOneOption(OptionServerIdentifier)
-	if serverID != nil {
-		serverIP = serverID.(*OptServerIdentifier).ServerID
-	}
+	serverIP := offer.ServerIdentifier()
 	if serverIP == nil {
 		return nil, errors.New("Missing Server IP Address in DHCP Offer")
 	}
@@ -219,8 +232,8 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 		WithReply(offer),
 		WithMessageType(MessageTypeRequest),
 		WithServerIP(serverIP),
-		WithOption(&OptRequestedIPAddress{RequestedAddr: offer.YourIPAddr}),
-		WithOption(&OptServerIdentifier{ServerID: serverIP}),
+		WithOption(OptRequestedIPAddress(offer.YourIPAddr)),
+		WithOption(OptServerIdentifier(serverIP)),
 	)...)
 }
 
@@ -284,11 +297,10 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 		return nil, fmt.Errorf("malformed DHCP packet: got magic cookie %v, want %v", cookie[:], magicCookie[:])
 	}
 
-	opts, err := OptionsFromBytes(buf.Data())
-	if err != nil {
+	p.Options = make(Options)
+	if err := p.Options.fromBytesCheckEnd(buf.Data(), true); err != nil {
 		return nil, err
 	}
-	p.Options = opts
 	return &p, nil
 }
 
@@ -328,25 +340,19 @@ func (d *DHCPv4) SetUnicast() {
 
 // GetOneOption returns the option that matches the given option code.
 //
-// If no matching option is found, nil is returned.
-func (d *DHCPv4) GetOneOption(code OptionCode) Option {
-	return d.Options.GetOne(code)
+// According to RFC 3396, options that are specified more than once are
+// concatenated, and hence this should always just return one option.
+func (d *DHCPv4) GetOneOption(code OptionCode) []byte {
+	return d.Options.Get(code)
 }
 
 // UpdateOption replaces an existing option with the same option code with the
 // given one, adding it if not already present.
-func (d *DHCPv4) UpdateOption(option Option) {
-	d.Options.Update(option)
-}
-
-// MessageType returns the message type, trying to extract it from the
-// OptMessageType option. It returns nil if the message type cannot be extracted
-func (d *DHCPv4) MessageType() MessageType {
-	opt := d.GetOneOption(OptionDHCPMessageType)
-	if opt == nil {
-		return MessageTypeNone
+func (d *DHCPv4) UpdateOption(opt Option) {
+	if d.Options == nil {
+		d.Options = make(Options)
 	}
-	return opt.(*OptMessageType).MessageType
+	d.Options.Update(opt)
 }
 
 // String implements fmt.Stringer.
@@ -355,23 +361,24 @@ func (d *DHCPv4) String() string {
 		d.OpCode, d.TransactionID, d.HWType, d.ClientHWAddr)
 }
 
-// Summary prints detailed information about the packet.
-func (d *DHCPv4) Summary() string {
+// SummaryWithVendor prints a summary of the packet, interpreting the
+// vendor-specific info option using the given parser (can be nil).
+func (d *DHCPv4) SummaryWithVendor(vendorDecoder OptionDecoder) string {
 	ret := fmt.Sprintf(
-		"DHCPv4\n"+
-			"  opcode=%s\n"+
-			"  hwtype=%s\n"+
-			"  hopcount=%v\n"+
-			"  transactionid=%s\n"+
-			"  numseconds=%v\n"+
-			"  flags=%v (0x%02x)\n"+
-			"  clientipaddr=%s\n"+
-			"  youripaddr=%s\n"+
-			"  serveripaddr=%s\n"+
-			"  gatewayipaddr=%s\n"+
-			"  clienthwaddr=%s\n"+
-			"  serverhostname=%s\n"+
-			"  bootfilename=%s\n",
+		"DHCPv4 Message\n"+
+			"  opcode: %s\n"+
+			"  hwtype: %s\n"+
+			"  hopcount: %v\n"+
+			"  transaction ID: %s\n"+
+			"  num seconds: %v\n"+
+			"  flags: %v (0x%02x)\n"+
+			"  client IP: %s\n"+
+			"  your IP: %s\n"+
+			"  server IP: %s\n"+
+			"  gateway IP: %s\n"+
+			"  client MAC: %s\n"+
+			"  server hostname: %s\n"+
+			"  bootfile name: %s\n",
 		d.OpCode,
 		d.HWType,
 		d.HopCount,
@@ -387,29 +394,20 @@ func (d *DHCPv4) Summary() string {
 		d.ServerHostName,
 		d.BootFileName,
 	)
-	ret += "  options=\n"
-	for _, opt := range d.Options {
-		optString := opt.String()
-		// If this option has sub structures, offset them accordingly.
-		if strings.Contains(optString, "\n") {
-			optString = strings.Replace(optString, "\n  ", "\n      ", -1)
-		}
-		ret += fmt.Sprintf("    %v\n", optString)
-		if opt.Code() == OptionEnd {
-			break
-		}
-	}
+	ret += "  options:\n"
+	ret += d.Options.Summary(vendorDecoder)
 	return ret
+}
+
+// Summary prints detailed information about the packet.
+func (d *DHCPv4) Summary() string {
+	return d.SummaryWithVendor(nil)
 }
 
 // IsOptionRequested returns true if that option is within the requested
 // options of the DHCPv4 message.
 func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
-	optprl := d.GetOneOption(OptionParameterRequestList)
-	if optprl == nil {
-		return false
-	}
-	for _, o := range optprl.(*OptParameterRequestList).RequestedOpts {
+	for _, o := range d.ParameterRequestList() {
 		if o == requested {
 			return true
 		}
@@ -462,7 +460,233 @@ func (d *DHCPv4) ToBytes() []byte {
 
 	// The magic cookie.
 	buf.WriteBytes(magicCookie[:])
+
+	// Write all options.
 	d.Options.Marshal(buf)
+
+	// Finish the packet.
 	buf.Write8(uint8(OptionEnd))
+
 	return buf.Data()
+}
+
+// GetBroadcastAddress returns the DHCPv4 Broadcast Address value in d.
+//
+// The broadcast address option is described in RFC 2132, Section 5.3.
+func (d *DHCPv4) BroadcastAddress() net.IP {
+	return GetIP(OptionBroadcastAddress, d.Options)
+}
+
+// RequestedIPAddress returns the DHCPv4 Requested IP Address value in d.
+//
+// The requested IP address option is described by RFC 2132, Section 9.1.
+func (d *DHCPv4) RequestedIPAddress() net.IP {
+	return GetIP(OptionRequestedIPAddress, d.Options)
+}
+
+// ServerIdentifier returns the DHCPv4 Server Identifier value in d.
+//
+// The server identifier option is described by RFC 2132, Section 9.7.
+func (d *DHCPv4) ServerIdentifier() net.IP {
+	return GetIP(OptionServerIdentifier, d.Options)
+}
+
+// Router parses the DHCPv4 Router option if present.
+//
+// The Router option is described by RFC 2132, Section 3.5.
+func (d *DHCPv4) Router() []net.IP {
+	return GetIPs(OptionRouter, d.Options)
+}
+
+// NTPServers parses the DHCPv4 NTP Servers option if present.
+//
+// The NTP servers option is described by RFC 2132, Section 8.3.
+func (d *DHCPv4) NTPServers() []net.IP {
+	return GetIPs(OptionNTPServers, d.Options)
+}
+
+// DNS parses the DHCPv4 Domain Name Server option if present.
+//
+// The DNS server option is described by RFC 2132, Section 3.8.
+func (d *DHCPv4) DNS() []net.IP {
+	return GetIPs(OptionDomainNameServer, d.Options)
+}
+
+// DomainName parses the DHCPv4 Domain Name option if present.
+//
+// The Domain Name option is described by RFC 2132, Section 3.17.
+func (d *DHCPv4) DomainName() string {
+	return GetString(OptionDomainName, d.Options)
+}
+
+// HostName parses the DHCPv4 Host Name option if present.
+//
+// The Host Name option is described by RFC 2132, Section 3.14.
+func (d *DHCPv4) HostName() string {
+	return GetString(OptionHostName, d.Options)
+}
+
+// RootPath parses the DHCPv4 Root Path option if present.
+//
+// The Root Path option is described by RFC 2132, Section 3.19.
+func (d *DHCPv4) RootPath() string {
+	return GetString(OptionRootPath, d.Options)
+}
+
+// BootFileNameOption parses the DHCPv4 Bootfile Name option if present.
+//
+// The Bootfile Name option is described by RFC 2132, Section 9.5.
+func (d *DHCPv4) BootFileNameOption() string {
+	return GetString(OptionBootfileName, d.Options)
+}
+
+// TFTPServerName parses the DHCPv4 TFTP Server Name option if present.
+//
+// The TFTP Server Name option is described by RFC 2132, Section 9.4.
+func (d *DHCPv4) TFTPServerName() string {
+	return GetString(OptionTFTPServerName, d.Options)
+}
+
+// ClassIdentifier parses the DHCPv4 Class Identifier option if present.
+//
+// The Vendor Class Identifier option is described by RFC 2132, Section 9.13.
+func (d *DHCPv4) ClassIdentifier() string {
+	return GetString(OptionClassIdentifier, d.Options)
+}
+
+// ClientArch returns the Client System Architecture Type option.
+func (d *DHCPv4) ClientArch() []iana.Arch {
+	v := d.Options.Get(OptionClientSystemArchitectureType)
+	if v == nil {
+		return nil
+	}
+	var archs iana.Archs
+	if err := archs.FromBytes(v); err != nil {
+		return nil
+	}
+	return archs
+}
+
+// DomainSearch returns the domain search list if present.
+//
+// The domain search option is described by RFC 3397, Section 2.
+func (d *DHCPv4) DomainSearch() *rfc1035label.Labels {
+	v := d.Options.Get(OptionDNSDomainSearchList)
+	if v == nil {
+		return nil
+	}
+	labels, err := rfc1035label.FromBytes(v)
+	if err != nil {
+		return nil
+	}
+	return labels
+}
+
+// IPAddressLeaseTime returns the IP address lease time or the given
+// default duration if not present.
+//
+// The IP address lease time option is described by RFC 2132, Section 9.2.
+func (d *DHCPv4) IPAddressLeaseTime(def time.Duration) time.Duration {
+	v := d.Options.Get(OptionIPAddressLeaseTime)
+	if v == nil {
+		return def
+	}
+	var dur Duration
+	if err := dur.FromBytes(v); err != nil {
+		return def
+	}
+	return time.Duration(dur)
+}
+
+// MaxMessageSize returns the DHCP Maximum Message Size if present.
+//
+// The Maximum DHCP Message Size option is described by RFC 2132, Section 9.10.
+func (d *DHCPv4) MaxMessageSize() (uint16, error) {
+	return GetUint16(OptionMaximumDHCPMessageSize, d.Options)
+}
+
+// MessageType returns the DHCPv4 Message Type option.
+func (d *DHCPv4) MessageType() MessageType {
+	v := d.Options.Get(OptionDHCPMessageType)
+	if v == nil {
+		return MessageTypeNone
+	}
+	var m MessageType
+	if err := m.FromBytes(v); err != nil {
+		return MessageTypeNone
+	}
+	return m
+}
+
+// ParameterRequestList returns the DHCPv4 Parameter Request List.
+//
+// The parameter request list option is described by RFC 2132, Section 9.8.
+func (d *DHCPv4) ParameterRequestList() OptionCodeList {
+	v := d.Options.Get(OptionParameterRequestList)
+	if v == nil {
+		return nil
+	}
+	var codes OptionCodeList
+	if err := codes.FromBytes(v); err != nil {
+		return nil
+	}
+	return codes
+}
+
+// RelayAgentInfo returns options embedded by the relay agent.
+//
+// The relay agent info option is described by RFC 3046.
+func (d *DHCPv4) RelayAgentInfo() *RelayOptions {
+	v := d.Options.Get(OptionRelayAgentInformation)
+	if v == nil {
+		return nil
+	}
+	var relayOptions RelayOptions
+	if err := relayOptions.FromBytes(v); err != nil {
+		return nil
+	}
+	return &relayOptions
+}
+
+// SubnetMask returns a subnet mask option contained if present.
+//
+// The subnet mask option is described by RFC 2132, Section 3.3.
+func (d *DHCPv4) SubnetMask() net.IPMask {
+	v := d.Options.Get(OptionSubnetMask)
+	if v == nil {
+		return nil
+	}
+	var im IPMask
+	if err := im.FromBytes(v); err != nil {
+		return nil
+	}
+	return net.IPMask(im)
+}
+
+// UserClass returns the user class if present.
+//
+// The user class information option is defined by RFC 3004.
+func (d *DHCPv4) UserClass() *UserClass {
+	v := d.Options.Get(OptionUserClassInformation)
+	if v == nil {
+		return nil
+	}
+	var uc UserClass
+	if err := uc.FromBytes(v); err != nil {
+		return nil
+	}
+	return &uc
+}
+
+// VIVC returns the vendor-identifying vendor class option if present.
+func (d *DHCPv4) VIVC() VIVCIdentifiers {
+	v := d.Options.Get(OptionVendorIdentifyingVendorClass)
+	if v == nil {
+		return nil
+	}
+	var ids VIVCIdentifiers
+	if err := ids.FromBytes(v); err != nil {
+		return nil
+	}
+	return ids
 }

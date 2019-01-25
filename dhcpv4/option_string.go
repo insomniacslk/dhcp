@@ -1,163 +1,74 @@
 package dhcpv4
 
-import (
-	"fmt"
-)
-
-// OptDomainName implements the domain name option described in RFC 2132,
-// Section 3.17.
-type OptDomainName struct {
-	DomainName string
-}
-
-// ParseOptDomainName returns a new OptDomainName from a byte stream, or error
-// if any.
-func ParseOptDomainName(data []byte) (*OptDomainName, error) {
-	return &OptDomainName{DomainName: string(data)}, nil
-}
-
-// Code returns the option code.
-func (o *OptDomainName) Code() OptionCode {
-	return OptionDomainName
-}
+// String represents an option encapsulating a string in IPv4 DHCP.
+//
+// This representation is shared by multiple options specified by RFC 2132,
+// Sections 3.14, 3.16, 3.17, 3.19, and 3.20.
+type String string
 
 // ToBytes returns a serialized stream of bytes for this option.
-func (o *OptDomainName) ToBytes() []byte {
-	return []byte(o.DomainName)
+func (o String) ToBytes() []byte {
+	return []byte(o)
 }
 
 // String returns a human-readable string.
-func (o *OptDomainName) String() string {
-	return fmt.Sprintf("Domain Name -> %v", o.DomainName)
+func (o String) String() string {
+	return string(o)
 }
 
-// OptHostName implements the host name option described by RFC 2132, Section
-// 3.14.
-type OptHostName struct {
-	HostName string
+// FromBytes parses a serialized stream of bytes into o.
+func (o *String) FromBytes(data []byte) error {
+	*o = String(string(data))
+	return nil
 }
 
-// ParseOptHostName returns a new OptHostName from a byte stream, or error if
-// any.
-func ParseOptHostName(data []byte) (*OptHostName, error) {
-	return &OptHostName{HostName: string(data)}, nil
+// GetString parses an RFC 2132 string from o[code].
+func GetString(code OptionCode, o Options) string {
+	v := o.Get(code)
+	if v == nil {
+		return ""
+	}
+	return string(v)
 }
 
-// Code returns the option code.
-func (o *OptHostName) Code() OptionCode {
-	return OptionHostName
+// OptDomainName returns a new DHCPv4 Domain Name option.
+//
+// The Domain Name option is described by RFC 2132, Section 3.17.
+func OptDomainName(name string) Option {
+	return Option{Code: OptionDomainName, Value: String(name)}
 }
 
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptHostName) ToBytes() []byte {
-	return []byte(o.HostName)
+// OptHostName returns a new DHCPv4 Host Name option.
+//
+// The Host Name option is described by RFC 2132, Section 3.14.
+func OptHostName(name string) Option {
+	return Option{Code: OptionHostName, Value: String(name)}
 }
 
-// String returns a human-readable string.
-func (o *OptHostName) String() string {
-	return fmt.Sprintf("Host Name -> %v", o.HostName)
+// OptRootPath returns a new DHCPv4 Root Path option.
+//
+// The Root Path option is described by RFC 2132, Section 3.19.
+func OptRootPath(name string) Option {
+	return Option{Code: OptionRootPath, Value: String(name)}
 }
 
-// OptRootPath implements the root path option described by RFC 2132, Section
-// 3.19.
-type OptRootPath struct {
-	Path string
+// OptBootFileName returns a new DHCPv4 Boot File Name option.
+//
+// The Bootfile Name option is described by RFC 2132, Section 9.5.
+func OptBootFileName(name string) Option {
+	return Option{Code: OptionBootfileName, Value: String(name)}
 }
 
-// ParseOptRootPath constructs an OptRootPath struct from a sequence of  bytes
-// and returns it, or an error.
-func ParseOptRootPath(data []byte) (*OptRootPath, error) {
-	return &OptRootPath{Path: string(data)}, nil
+// OptTFTPServerName returns a new DHCPv4 TFTP Server Name option.
+//
+// The TFTP Server Name option is described by RFC 2132, Section 9.4.
+func OptTFTPServerName(name string) Option {
+	return Option{Code: OptionTFTPServerName, Value: String(name)}
 }
 
-// Code returns the option code.
-func (o *OptRootPath) Code() OptionCode {
-	return OptionRootPath
-}
-
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptRootPath) ToBytes() []byte {
-	return []byte(o.Path)
-}
-
-// String returns a human-readable string for this option.
-func (o *OptRootPath) String() string {
-	return fmt.Sprintf("Root Path -> %v", o.Path)
-}
-
-// OptBootfileName implements the bootfile name option described in RFC 2132,
-// Section 9.5.
-type OptBootfileName struct {
-	BootfileName string
-}
-
-// Code returns the option code
-func (op *OptBootfileName) Code() OptionCode {
-	return OptionBootfileName
-}
-
-// ToBytes serializes the option and returns it as a sequence of bytes
-func (op *OptBootfileName) ToBytes() []byte {
-	return []byte(op.BootfileName)
-}
-
-func (op *OptBootfileName) String() string {
-	return fmt.Sprintf("Bootfile Name -> %s", op.BootfileName)
-}
-
-// ParseOptBootfileName returns a new OptBootfile from a byte stream or error if any
-func ParseOptBootfileName(data []byte) (*OptBootfileName, error) {
-	return &OptBootfileName{BootfileName: string(data)}, nil
-}
-
-// OptTFTPServerName implements the TFTP server name option described by RFC
-// 2132, Section 9.4.
-type OptTFTPServerName struct {
-	TFTPServerName string
-}
-
-// Code returns the option code
-func (op *OptTFTPServerName) Code() OptionCode {
-	return OptionTFTPServerName
-}
-
-// ToBytes serializes the option and returns it as a sequence of bytes
-func (op *OptTFTPServerName) ToBytes() []byte {
-	return []byte(op.TFTPServerName)
-}
-
-func (op *OptTFTPServerName) String() string {
-	return fmt.Sprintf("TFTP Server Name -> %s", op.TFTPServerName)
-}
-
-// ParseOptTFTPServerName returns a new OptTFTPServerName from a byte stream or error if any
-func ParseOptTFTPServerName(data []byte) (*OptTFTPServerName, error) {
-	return &OptTFTPServerName{TFTPServerName: string(data)}, nil
-}
-
-// OptClassIdentifier implements the vendor class identifier option described
-// in RFC 2132, Section 9.13.
-type OptClassIdentifier struct {
-	Identifier string
-}
-
-// ParseOptClassIdentifier constructs an OptClassIdentifier struct from a sequence of
-// bytes and returns it, or an error.
-func ParseOptClassIdentifier(data []byte) (*OptClassIdentifier, error) {
-	return &OptClassIdentifier{Identifier: string(data)}, nil
-}
-
-// Code returns the option code.
-func (o *OptClassIdentifier) Code() OptionCode {
-	return OptionClassIdentifier
-}
-
-// ToBytes returns a serialized stream of bytes for this option.
-func (o *OptClassIdentifier) ToBytes() []byte {
-	return []byte(o.Identifier)
-}
-
-// String returns a human-readable string for this option.
-func (o *OptClassIdentifier) String() string {
-	return fmt.Sprintf("Class Identifier -> %v", o.Identifier)
+// OptClassIdentifier returns a new DHCPv4 Class Identifier option.
+//
+// The Vendor Class Identifier option is described by RFC 2132, Section 9.13.
+func OptClassIdentifier(name string) Option {
+	return Option{Code: OptionClassIdentifier, Value: String(name)}
 }

@@ -8,21 +8,38 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// OptUserClass implements the user class option described by RFC 3004.
-type OptUserClass struct {
+// UserClass implements the user class option described by RFC 3004.
+type UserClass struct {
 	UserClasses [][]byte
-	Rfc3004     bool
+	RFC3004     bool
 }
 
-// Code returns the option code
-func (op *OptUserClass) Code() OptionCode {
-	return OptionUserClassInformation
+// OptUserClass returns a new user class option.
+func OptUserClass(v []byte) Option {
+	return Option{
+		Code: OptionUserClassInformation,
+		Value: &UserClass{
+			UserClasses: [][]byte{v},
+			RFC3004:     false,
+		},
+	}
+}
+
+// OptRFC3004UserClass returns a new user class option according to RFC 3004.
+func OptRFC3004UserClass(v [][]byte) Option {
+	return Option{
+		Code: OptionUserClassInformation,
+		Value: &UserClass{
+			UserClasses: v,
+			RFC3004:     true,
+		},
+	}
 }
 
 // ToBytes serializes the option and returns it as a sequence of bytes
-func (op *OptUserClass) ToBytes() []byte {
+func (op *UserClass) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	if !op.Rfc3004 {
+	if !op.RFC3004 {
 		buf.WriteBytes(op.UserClasses[0])
 	} else {
 		for _, uc := range op.UserClasses {
@@ -33,22 +50,21 @@ func (op *OptUserClass) ToBytes() []byte {
 	return buf.Data()
 }
 
-func (op *OptUserClass) String() string {
+// String returns a human-readable user class.
+func (op *UserClass) String() string {
 	ucStrings := make([]string, 0, len(op.UserClasses))
-	if !op.Rfc3004 {
+	if !op.RFC3004 {
 		ucStrings = append(ucStrings, string(op.UserClasses[0]))
 	} else {
 		for _, uc := range op.UserClasses {
 			ucStrings = append(ucStrings, string(uc))
 		}
 	}
-	return fmt.Sprintf("User Class Information -> %v", strings.Join(ucStrings, ", "))
+	return strings.Join(ucStrings, ", ")
 }
 
-// ParseOptUserClass returns a new OptUserClass from a byte stream or
-// error if any
-func ParseOptUserClass(data []byte) (*OptUserClass, error) {
-	opt := OptUserClass{}
+// FromBytes parses data into op.
+func (op *UserClass) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 
 	// Check if option is Microsoft style instead of RFC compliant, issue #113
@@ -64,19 +80,19 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		counting += int(data[counting]) + 1
 	}
 	if counting != buf.Len() {
-		opt.UserClasses = append(opt.UserClasses, data)
-		return &opt, nil
+		op.UserClasses = append(op.UserClasses, data)
+		return nil
 	}
-	opt.Rfc3004 = true
+	op.RFC3004 = true
 	for buf.Has(1) {
 		ucLen := buf.Read8()
 		if ucLen == 0 {
-			return nil, fmt.Errorf("DHCP user class must have length greater than 0")
+			return fmt.Errorf("DHCP user class must have length greater than 0")
 		}
-		opt.UserClasses = append(opt.UserClasses, buf.CopyN(int(ucLen)))
+		op.UserClasses = append(op.UserClasses, buf.CopyN(int(ucLen)))
 	}
-	if len(opt.UserClasses) == 0 {
-		return nil, errors.New("ParseOptUserClass: at least one user class is required")
+	if len(op.UserClasses) == 0 {
+		return errors.New("ParseOptUserClass: at least one user class is required")
 	}
-	return &opt, buf.FinError()
+	return buf.FinError()
 }

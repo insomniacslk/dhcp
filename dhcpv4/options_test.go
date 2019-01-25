@@ -11,154 +11,148 @@ import (
 )
 
 func TestParseOption(t *testing.T) {
-	// Generic
-	option := []byte{192, 168, 1, 254} // Name server option
-	opt, err := ParseOption(OptionNameServer, option)
-	require.NoError(t, err)
-	generic := opt.(*OptionGeneric)
-	require.Equal(t, OptionNameServer, generic.Code())
-	require.Equal(t, []byte{192, 168, 1, 254}, generic.Data)
-	require.Equal(t, "Name Server -> [192 168 1 254]", generic.String())
+	for _, tt := range []struct {
+		code  OptionCode
+		value []byte
+		want  string
+	}{
+		{
+			code:  OptionNameServer,
+			value: []byte{192, 168, 1, 254},
+			want:  "[192 168 1 254]",
+		},
+		{
+			code:  OptionSubnetMask,
+			value: []byte{255, 255, 255, 0},
+			want:  "ffffff00",
+		},
+		{
+			code:  OptionRouter,
+			value: []byte{192, 168, 1, 1, 192, 168, 2, 1},
+			want:  "192.168.1.1, 192.168.2.1",
+		},
+		{
+			code:  OptionDomainNameServer,
+			value: []byte{192, 168, 1, 1, 192, 168, 2, 1},
+			want:  "192.168.1.1, 192.168.2.1",
+		},
+		{
+			code:  OptionNTPServers,
+			value: []byte{192, 168, 1, 1, 192, 168, 2, 1},
+			want:  "192.168.1.1, 192.168.2.1",
+		},
+		{
+			code:  OptionServerIdentifier,
+			value: []byte{192, 168, 1, 1, 192, 168, 2, 1},
+			want:  "192.168.1.1, 192.168.2.1",
+		},
+		{
+			code:  OptionHostName,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionDomainName,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionRootPath,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionClassIdentifier,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionTFTPServerName,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionBootfileName,
+			value: []byte("test"),
+			want:  "test",
+		},
+		{
+			code:  OptionBroadcastAddress,
+			value: []byte{192, 168, 1, 1},
+			want:  "192.168.1.1",
+		},
+		{
+			code:  OptionRequestedIPAddress,
+			value: []byte{192, 168, 1, 1},
+			want:  "192.168.1.1",
+		},
+		{
+			code:  OptionIPAddressLeaseTime,
+			value: []byte{0, 0, 0, 12},
+			want:  "12s",
+		},
+		{
+			code:  OptionDHCPMessageType,
+			value: []byte{1},
+			want:  "DISCOVER",
+		},
+		{
+			code:  OptionParameterRequestList,
+			value: []byte{3, 4, 5},
+			want:  "Router, Time Server, Name Server",
+		},
+		{
+			code:  OptionMaximumDHCPMessageSize,
+			value: []byte{1, 2},
+			want:  "258",
+		},
+		{
+			code:  OptionUserClassInformation,
+			value: []byte{4, 't', 'e', 's', 't', 3, 'f', 'o', 'o'},
+			want:  "test, foo",
+		},
+		{
+			code:  OptionRelayAgentInformation,
+			value: []byte{1, 4, 129, 168, 0, 1},
+			want:  "    unknown (1): [129 168 0 1]\n",
+		},
+		{
+			code:  OptionClientSystemArchitectureType,
+			value: []byte{0, 0},
+			want:  "Intel x86PC",
+		},
+	} {
+		s := parseOption(tt.code, tt.value)
+		if got := s.String(); got != tt.want {
+			t.Errorf("parseOption(%s, %v) = %s, want %s", tt.code, tt.value, got, tt.want)
+		}
+	}
+}
 
-	// Option subnet mask
-	option = []byte{255, 255, 255, 0}
-	opt, err = ParseOption(OptionSubnetMask, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionSubnetMask, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+func TestOptionToBytes(t *testing.T) {
+	o := Option{
+		Code:  OptionDHCPMessageType,
+		Value: &OptionGeneric{[]byte{byte(MessageTypeDiscover)}},
+	}
+	serialized := o.Value.ToBytes()
+	expected := []byte{1}
+	require.Equal(t, expected, serialized)
+}
 
-	// Option router
-	option = []byte{192, 168, 1, 1}
-	opt, err = ParseOption(OptionRouter, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRouter, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+func TestOptionString(t *testing.T) {
+	o := Option{
+		Code:  OptionDHCPMessageType,
+		Value: MessageTypeDiscover,
+	}
+	require.Equal(t, "DHCP Message Type: DISCOVER", o.String())
+}
 
-	// Option domain name server
-	option = []byte{192, 168, 1, 1}
-	opt, err = ParseOption(OptionDomainNameServer, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionDomainNameServer, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option host name
-	option = []byte{'t', 'e', 's', 't'}
-	opt, err = ParseOption(OptionHostName, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionHostName, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option domain name
-	option = []byte{'t', 'e', 's', 't'}
-	opt, err = ParseOption(OptionDomainName, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionDomainName, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option root path
-	option = []byte{'/', 'f', 'o', 'o'}
-	opt, err = ParseOption(OptionRootPath, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRootPath, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option broadcast address
-	option = []byte{255, 255, 255, 255}
-	opt, err = ParseOption(OptionBroadcastAddress, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionBroadcastAddress, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option NTP servers
-	option = []byte{10, 10, 10, 10}
-	opt, err = ParseOption(OptionNTPServers, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionNTPServers, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Requested IP address
-	option = []byte{1, 2, 3, 4}
-	opt, err = ParseOption(OptionRequestedIPAddress, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRequestedIPAddress, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Requested IP address lease time
-	option = []byte{0, 0, 0, 0}
-	opt, err = ParseOption(OptionIPAddressLeaseTime, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionIPAddressLeaseTime, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Message type
-	option = []byte{1}
-	opt, err = ParseOption(OptionDHCPMessageType, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionDHCPMessageType, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option server ID
-	option = []byte{1, 2, 3, 4}
-	opt, err = ParseOption(OptionServerIdentifier, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionServerIdentifier, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Parameter request list
-	option = []byte{5, 53, 61}
-	opt, err = ParseOption(OptionParameterRequestList, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionParameterRequestList, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option max message size
-	option = []byte{1, 2}
-	opt, err = ParseOption(OptionMaximumDHCPMessageSize, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionMaximumDHCPMessageSize, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option class identifier
-	option = []byte{'t', 'e', 's', 't'}
-	opt, err = ParseOption(OptionClassIdentifier, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionClassIdentifier, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option TFTP server name
-	option = []byte{'t', 'e', 's', 't'}
-	opt, err = ParseOption(OptionTFTPServerName, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionTFTPServerName, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option Bootfile name
-	option = []byte{'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't'}
-	opt, err = ParseOption(OptionBootfileName, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionBootfileName, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option user class information
-	option = []byte{4, 't', 'e', 's', 't'}
-	opt, err = ParseOption(OptionUserClassInformation, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionUserClassInformation, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option relay agent information
-	option = []byte{1, 4, 129, 168, 0, 1}
-	opt, err = ParseOption(OptionRelayAgentInformation, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionRelayAgentInformation, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
-
-	// Option client system architecture type option
-	option = []byte{'t', 'e', 's', 't'}
-	opt, err = ParseOption(OptionClientSystemArchitectureType, option)
-	require.NoError(t, err)
-	require.Equal(t, OptionClientSystemArchitectureType, opt.Code(), "Code")
-	require.Equal(t, option, opt.ToBytes(), "ToBytes")
+func TestOptionStringUnknown(t *testing.T) {
+	o := Option{
+		Code:  GenericOptionCode(102), // Returend option code.
+		Value: &OptionGeneric{[]byte{byte(MessageTypeDiscover)}},
+	}
+	require.Equal(t, "unknown (102): [1]", o.String())
 }
 
 func TestOptionsMarshal(t *testing.T) {
@@ -172,10 +166,7 @@ func TestOptionsMarshal(t *testing.T) {
 		},
 		{
 			opts: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(5),
-					Data:       []byte{1, 2, 3, 4},
-				},
+				5: []byte{1, 2, 3, 4},
 			},
 			want: []byte{
 				5 /* key */, 4 /* length */, 1, 2, 3, 4,
@@ -184,14 +175,9 @@ func TestOptionsMarshal(t *testing.T) {
 		{
 			// Test sorted key order.
 			opts: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(5),
-					Data:       []byte{1, 2, 3},
-				},
-				&OptionGeneric{
-					OptionCode: optionCode(100),
-					Data:       []byte{101, 102, 103},
-				},
+				5:   []byte{1, 2, 3},
+				100: []byte{101, 102, 103},
+				255: []byte{},
 			},
 			want: []byte{
 				5, 3, 1, 2, 3,
@@ -201,10 +187,7 @@ func TestOptionsMarshal(t *testing.T) {
 		{
 			// Test RFC 3396.
 			opts: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(5),
-					Data:       bytes.Repeat([]byte{10}, math.MaxUint8+1),
-				},
+				5: bytes.Repeat([]byte{10}, math.MaxUint8+1),
 			},
 			want: append(append(
 				[]byte{5, math.MaxUint8}, bytes.Repeat([]byte{10}, math.MaxUint8)...),
@@ -262,10 +245,7 @@ func TestOptionsUnmarshal(t *testing.T) {
 				byte(OptionEnd),
 			},
 			want: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(3),
-					Data:       []byte{5, 6},
-				},
+				3: []byte{5, 6},
 			},
 		},
 		{
@@ -276,10 +256,7 @@ func TestOptionsUnmarshal(t *testing.T) {
 				byte(OptionEnd),
 			),
 			want: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(3),
-					Data:       bytes.Repeat([]byte{10}, math.MaxUint8+5),
-				},
+				3: bytes.Repeat([]byte{10}, math.MaxUint8+5),
 			},
 		},
 		{
@@ -289,14 +266,8 @@ func TestOptionsUnmarshal(t *testing.T) {
 				byte(OptionEnd),
 			},
 			want: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(10),
-					Data:       []byte{255, 254},
-				},
-				&OptionGeneric{
-					OptionCode: optionCode(11),
-					Data:       []byte{5, 5, 5},
-				},
+				10: []byte{255, 254},
+				11: []byte{5, 5, 5},
 			},
 		},
 		{
@@ -305,15 +276,13 @@ func TestOptionsUnmarshal(t *testing.T) {
 				byte(OptionEnd),
 			),
 			want: Options{
-				&OptionGeneric{
-					OptionCode: optionCode(10),
-					Data:       []byte{255, 254},
-				},
+				10: []byte{255, 254},
 			},
 		},
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
-			opt, err := OptionsFromBytesWithParser(tt.input, codeGetter, ParseOptionGeneric, true)
+			opt := make(Options)
+			err := opt.fromBytesCheckEnd(tt.input, true)
 			if tt.wantError {
 				require.Error(t, err)
 			} else {

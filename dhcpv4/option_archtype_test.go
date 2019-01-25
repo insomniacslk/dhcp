@@ -8,53 +8,43 @@ import (
 )
 
 func TestParseOptClientArchType(t *testing.T) {
-	data := []byte{
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{
 		0, 6, // EFI_IA32
-	}
-	opt, err := ParseOptClientArchType(data)
-	require.NoError(t, err)
-	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
+	}))
+	archs := m.ClientArch()
+	require.NotNil(t, archs)
+	require.Equal(t, archs[0], iana.EFI_IA32)
 }
 
 func TestParseOptClientArchTypeMultiple(t *testing.T) {
-	data := []byte{
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{
 		0, 6, // EFI_IA32
 		0, 2, // EFI_ITANIUM
-	}
-	opt, err := ParseOptClientArchType(data)
-	require.NoError(t, err)
-	require.Equal(t, opt.ArchTypes[0], iana.EFI_IA32)
-	require.Equal(t, opt.ArchTypes[1], iana.EFI_ITANIUM)
+	}))
+	archs := m.ClientArch()
+	require.NotNil(t, archs)
+	require.Equal(t, archs[0], iana.EFI_IA32)
+	require.Equal(t, archs[1], iana.EFI_ITANIUM)
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
-	data := []byte{42}
-	_, err := ParseOptClientArchType(data)
-	require.Error(t, err)
+	m, _ := New(WithGeneric(OptionClientSystemArchitectureType, []byte{42}))
+	archs := m.ClientArch()
+	require.Nil(t, archs)
 }
 
-func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
-	data := []byte{
-		0, 8, // EFI_XSCALE
-	}
-	opt, err := ParseOptClientArchType(data)
-	require.NoError(t, err)
-	require.Equal(t, opt.ToBytes(), data)
+func TestGetClientArchEmpty(t *testing.T) {
+	m, _ := New()
+	require.Nil(t, m.ClientArch())
 }
 
 func TestOptClientArchTypeParseAndToBytesMultiple(t *testing.T) {
 	data := []byte{
-		0, 8, // EFI_XSCALE
 		0, 6, // EFI_IA32
+		0, 8, // EFI_XSCALE
 	}
-	opt, err := ParseOptClientArchType(data)
-	require.NoError(t, err)
-	require.Equal(t, opt.ToBytes(), data)
-}
-
-func TestOptClientArchType(t *testing.T) {
-	opt := OptClientArchType{
-		ArchTypes: []iana.Arch{iana.EFI_ITANIUM},
-	}
-	require.Equal(t, opt.Code(), OptionClientSystemArchitectureType)
+	opt := OptClientArch(iana.EFI_IA32, iana.EFI_XSCALE)
+	require.Equal(t, opt.Value.ToBytes(), data)
+	require.Equal(t, opt.Code, OptionClientSystemArchitectureType)
+	require.Equal(t, opt.String(), "Client System Architecture Type: EFI IA32, EFI Xscale")
 }

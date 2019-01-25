@@ -6,30 +6,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptMaximumDHCPMessageSizeInterfaceMethods(t *testing.T) {
-	o := OptMaximumDHCPMessageSize{Size: 1500}
-	require.Equal(t, OptionMaximumDHCPMessageSize, o.Code(), "Code")
-	require.Equal(t, []byte{5, 220}, o.ToBytes(), "ToBytes")
+func TestOptMaximumDHCPMessageSize(t *testing.T) {
+	o := OptMaxMessageSize(1500)
+	require.Equal(t, OptionMaximumDHCPMessageSize, o.Code, "Code")
+	require.Equal(t, []byte{5, 220}, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "Maximum DHCP Message Size: 1500", o.String())
 }
 
-func TestParseOptMaximumDHCPMessageSize(t *testing.T) {
-	data := []byte{5, 220}
-	o, err := ParseOptMaximumDHCPMessageSize(data)
+func TestGetMaximumDHCPMessageSize(t *testing.T) {
+	m, _ := New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{5, 220}))
+	o, err := m.MaxMessageSize()
 	require.NoError(t, err)
-	require.Equal(t, &OptMaximumDHCPMessageSize{Size: 1500}, o)
+	require.Equal(t, uint16(1500), o)
 
 	// Short byte stream
-	data = []byte{2}
-	_, err = ParseOptMaximumDHCPMessageSize(data)
+	m, _ = New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{2}))
+	_, err = m.MaxMessageSize()
 	require.Error(t, err, "should get error from short byte stream")
 
 	// Bad length
-	data = []byte{1, 1, 1}
-	_, err = ParseOptMaximumDHCPMessageSize(data)
+	m, _ = New(WithGeneric(OptionMaximumDHCPMessageSize, []byte{2, 2, 2}))
+	_, err = m.MaxMessageSize()
 	require.Error(t, err, "should get error from bad length")
-}
-
-func TestOptMaximumDHCPMessageSizeString(t *testing.T) {
-	o := OptMaximumDHCPMessageSize{Size: 1500}
-	require.Equal(t, "Maximum DHCP Message Size -> 1500", o.String())
 }

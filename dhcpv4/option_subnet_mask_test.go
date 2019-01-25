@@ -7,30 +7,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptSubnetMaskInterfaceMethods(t *testing.T) {
-	mask := net.IPMask{255, 255, 255, 0}
-	o := OptSubnetMask{SubnetMask: mask}
-
-	require.Equal(t, OptionSubnetMask, o.Code(), "Code")
-
-	expectedBytes := []byte{255, 255, 255, 0}
-	require.Equal(t, expectedBytes, o.ToBytes(), "ToBytes")
-
-	require.Equal(t, "Subnet Mask -> ffffff00", o.String(), "String")
+func TestOptSubnetMask(t *testing.T) {
+	o := OptSubnetMask(net.IPMask{255, 255, 255, 0})
+	require.Equal(t, o.Code, OptionSubnetMask, "Code")
+	require.Equal(t, "Subnet Mask: ffffff00", o.String(), "String")
+	require.Equal(t, []byte{255, 255, 255, 0}, o.Value.ToBytes(), "ToBytes")
 }
 
-func TestParseOptSubnetMask(t *testing.T) {
-	var (
-		o   *OptSubnetMask
-		err error
-	)
-	o, err = ParseOptSubnetMask([]byte{})
-	require.Error(t, err, "empty byte stream")
+func TestGetSubnetMask(t *testing.T) {
+	m, _ := New(WithOption(OptSubnetMask(net.IPMask{})))
+	mask := m.SubnetMask()
+	require.Nil(t, mask, "empty byte stream")
 
-	o, err = ParseOptSubnetMask([]byte{255})
-	require.Error(t, err, "short byte stream")
+	m, _ = New(WithOption(OptSubnetMask(net.IPMask{255})))
+	mask = m.SubnetMask()
+	require.Nil(t, mask, "short byte stream")
 
-	o, err = ParseOptSubnetMask([]byte{255, 255, 255, 0})
-	require.NoError(t, err)
-	require.Equal(t, net.IPMask{255, 255, 255, 0}, o.SubnetMask)
+	m, _ = New(WithOption(OptSubnetMask(net.IPMask{255, 255, 255, 0})))
+	mask = m.SubnetMask()
+	require.Equal(t, net.IPMask{255, 255, 255, 0}, mask)
 }
