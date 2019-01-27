@@ -1,4 +1,4 @@
-package dhcpv6
+package server6
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
 /*
@@ -56,7 +58,7 @@ func main() {
 
 // Handler is a type that defines the handler function to be called every time a
 // valid DHCPv6 message is received
-type Handler func(conn net.PacketConn, peer net.Addr, m DHCPv6)
+type Handler func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6)
 
 // Server represents a DHCPv6 server object
 type Server struct {
@@ -129,7 +131,7 @@ func (s *Server) ActivateAndServe() error {
 			continue
 		}
 		log.Printf("Handling request from %v", peer)
-		m, err := FromBytes(rbuf[:n])
+		m, err := dhcpv6.FromBytes(rbuf[:n])
 		if err != nil {
 			log.Printf("Error parsing DHCPv6 request: %v", err)
 			continue

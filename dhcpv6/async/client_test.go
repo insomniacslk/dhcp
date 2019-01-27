@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +38,7 @@ func serve(ctx context.Context, addr *net.UDPAddr, response dhcpv6.DHCPv6) error
 	go func() {
 		defer conn.Close()
 		oobdata := []byte{}
-		buffer := make([]byte, dhcpv6.MaxUDPReceivedPacketSize)
+		buffer := make([]byte, client6.MaxUDPReceivedPacketSize)
 		for {
 			select {
 			case <-ctx.Done():
@@ -66,8 +67,8 @@ func serve(ctx context.Context, addr *net.UDPAddr, response dhcpv6.DHCPv6) error
 func TestNewClient(t *testing.T) {
 	c := NewClient()
 	require.NotNil(t, c)
-	require.Equal(t, c.ReadTimeout, dhcpv6.DefaultReadTimeout)
-	require.Equal(t, c.ReadTimeout, dhcpv6.DefaultWriteTimeout)
+	require.Equal(t, c.ReadTimeout, client6.DefaultReadTimeout)
+	require.Equal(t, c.ReadTimeout, client6.DefaultWriteTimeout)
 }
 
 func TestOpenInvalidAddrFailes(t *testing.T) {

@@ -1,10 +1,12 @@
-package dhcpv6
+package client6
 
 import (
 	"errors"
 	"fmt"
 	"net"
 	"time"
+
+	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
 // Client constants
@@ -41,8 +43,8 @@ func NewClient() *Client {
 // Reply). The modifiers will be applied to the Solicit and Request packets.
 // A common use is to make sure that the Solicit packet has the right options,
 // see modifiers.go
-func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]DHCPv6, error) {
-	conversation := make([]DHCPv6, 0)
+func (c *Client) Exchange(ifname string, modifiers ...dhcpv6.Modifier) ([]dhcpv6.DHCPv6, error) {
+	conversation := make([]dhcpv6.DHCPv6, 0)
 	var err error
 
 	// Solicit
@@ -57,7 +59,7 @@ func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]DHCPv6, error
 
 	// Decapsulate advertise if it's relayed before passing it to Request
 	if advertise.IsRelay() {
-		advertiseRelay := advertise.(*DHCPv6Relay)
+		advertiseRelay := advertise.(*dhcpv6.DHCPv6Relay)
 		advertise, err = advertiseRelay.GetInnerMessage()
 		if err != nil {
 			return conversation, err
@@ -74,30 +76,30 @@ func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]DHCPv6, error
 	return conversation, nil
 }
 
-func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageType) (DHCPv6, error) {
+func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType dhcpv6.MessageType) (dhcpv6.DHCPv6, error) {
 	if packet == nil {
 		return nil, fmt.Errorf("Packet to send cannot be nil")
 	}
-	if expectedType == MessageTypeNone {
+	if expectedType == dhcpv6.MessageTypeNone {
 		// infer the expected type from the packet being sent
-		if packet.Type() == MessageTypeSolicit {
-			expectedType = MessageTypeAdvertise
-		} else if packet.Type() == MessageTypeRequest {
-			expectedType = MessageTypeReply
-		} else if packet.Type() == MessageTypeRelayForward {
-			expectedType = MessageTypeRelayReply
-		} else if packet.Type() == MessageTypeLeaseQuery {
-			expectedType = MessageTypeLeaseQueryReply
+		if packet.Type() == dhcpv6.MessageTypeSolicit {
+			expectedType = dhcpv6.MessageTypeAdvertise
+		} else if packet.Type() == dhcpv6.MessageTypeRequest {
+			expectedType = dhcpv6.MessageTypeReply
+		} else if packet.Type() == dhcpv6.MessageTypeRelayForward {
+			expectedType = dhcpv6.MessageTypeRelayReply
+		} else if packet.Type() == dhcpv6.MessageTypeLeaseQuery {
+			expectedType = dhcpv6.MessageTypeLeaseQueryReply
 		} // and probably more
 	}
 	// if no LocalAddr is specified, get the interface's link-local address
 	var laddr net.UDPAddr
 	if c.LocalAddr == nil {
-		llAddr, err := GetLinkLocalAddr(ifname)
+		llAddr, err := dhcpv6.GetLinkLocalAddr(ifname)
 		if err != nil {
 			return nil, err
 		}
-		laddr = net.UDPAddr{IP: llAddr, Port: DefaultClientPort, Zone: ifname}
+		laddr = net.UDPAddr{IP: llAddr, Port: dhcpv6.DefaultClientPort, Zone: ifname}
 	} else {
 		if addr, ok := c.LocalAddr.(*net.UDPAddr); ok {
 			laddr = *addr
@@ -109,7 +111,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	// if no RemoteAddr is specified, use AllDHCPRelayAgentsAndServers
 	var raddr net.UDPAddr
 	if c.RemoteAddr == nil {
-		raddr = net.UDPAddr{IP: AllDHCPRelayAgentsAndServers, Port: DefaultServerPort}
+		raddr = net.UDPAddr{IP: AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}
 	} else {
 		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
 			raddr = *addr
@@ -147,11 +149,11 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 	oobdata := []byte{} // ignoring oob data
 	conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	var (
-		adv       DHCPv6
+		adv       dhcpv6.DHCPv6
 		isMessage bool
 	)
 	defer conn.Close()
-	msg, ok := packet.(*DHCPv6Message)
+	msg, ok := packet.(*dhcpv6.DHCPv6Message)
 	if ok {
 		isMessage = true
 	}
@@ -161,12 +163,12 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 		if err != nil {
 			return nil, err
 		}
-		adv, err = FromBytes(buf[:n])
+		adv, err = dhcpv6.FromBytes(buf[:n])
 		if err != nil {
 			// skip non-DHCP packets
 			continue
 		}
-		if recvMsg, ok := adv.(*DHCPv6Message); ok && isMessage {
+		if recvMsg, ok := adv.(*dhcpv6.DHCPv6Message); ok && isMessage {
 			// if a regular message, check the transaction ID first
 			// XXX should this unpack relay messages and check the XID of the
 			// inner packet too?
@@ -175,7 +177,7 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 				continue
 			}
 		}
-		if expectedType == MessageTypeNone {
+		if expectedType == dhcpv6.MessageTypeNone {
 			// just take whatever arrived
 			break
 		} else if adv.Type() == expectedType {
@@ -188,29 +190,29 @@ func (c *Client) sendReceive(ifname string, packet DHCPv6, expectedType MessageT
 // Solicit sends a Solicit, returns the Solicit, an Advertise (if not nil), and
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
-func (c *Client) Solicit(ifname string, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
-	solicit, err := NewSolicitForInterface(ifname)
+func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+	solicit, err := dhcpv6.NewSolicitForInterface(ifname)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		solicit = mod(solicit)
 	}
-	advertise, err := c.sendReceive(ifname, solicit, MessageTypeNone)
+	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
 	return solicit, advertise, err
 }
 
 // Request sends a Request built from an Advertise. It returns the Request, a
 // Reply (if not nil), and an error if any. The modifiers will be applied to
 // the Request before sending it, see modifiers.go
-func (c *Client) Request(ifname string, advertise DHCPv6, modifiers ...Modifier) (DHCPv6, DHCPv6, error) {
-	request, err := NewRequestFromAdvertise(advertise)
+func (c *Client) Request(ifname string, advertise dhcpv6.DHCPv6, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+	request, err := dhcpv6.NewRequestFromAdvertise(advertise)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		request = mod(request)
 	}
-	reply, err := c.sendReceive(ifname, request, MessageTypeNone)
+	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
 	return request, reply, err
 }

@@ -1,4 +1,4 @@
-package dhcpv6
+package server6
 
 import (
 	"log"
@@ -6,13 +6,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 	"github.com/insomniacslk/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
-func setUpClientAndServer(handler Handler) (*Client, *Server) {
+func setUpClientAndServer(handler Handler) (*client6.Client, *Server) {
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP("::1"),
 		Port: 0,
@@ -20,7 +22,7 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	s := NewServer(laddr, handler)
 	go s.ActivateAndServe()
 
-	c := NewClient()
+	c := client6.NewClient()
 	c.LocalAddr = &net.UDPAddr{
 		IP: net.ParseIP("::1"),
 	}
@@ -44,7 +46,7 @@ func TestNewServer(t *testing.T) {
 		IP:   net.ParseIP("::1"),
 		Port: 0,
 	}
-	handler := func(conn net.PacketConn, peer net.Addr, m DHCPv6) {}
+	handler := func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {}
 	s := NewServer(laddr, handler)
 	defer s.Close()
 
@@ -55,8 +57,8 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestServerActivateAndServe(t *testing.T) {
-	handler := func(conn net.PacketConn, peer net.Addr, m DHCPv6) {
-		adv, err := NewAdvertiseFromSolicit(m)
+	handler := func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
+		adv, err := dhcpv6.NewAdvertiseFromSolicit(m)
 		if err != nil {
 			log.Printf("NewAdvertiseFromSolicit failed: %v", err)
 			return
