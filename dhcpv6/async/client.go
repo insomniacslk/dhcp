@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fanliao/go-promise"
+	promise "github.com/fanliao/go-promise"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 )
 
 // Client implements an asynchronous DHCPv6 client
@@ -32,8 +33,8 @@ type Client struct {
 // NewClient creates an asynchronous client
 func NewClient() *Client {
 	return &Client{
-		ReadTimeout:  dhcpv6.DefaultReadTimeout,
-		WriteTimeout: dhcpv6.DefaultWriteTimeout,
+		ReadTimeout:  client6.DefaultReadTimeout,
+		WriteTimeout: client6.DefaultWriteTimeout,
 	}
 }
 
@@ -164,7 +165,7 @@ func (c *Client) receive(_ dhcpv6.DHCPv6) {
 
 	c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	for {
-		buffer := make([]byte, dhcpv6.MaxUDPReceivedPacketSize)
+		buffer := make([]byte, client6.MaxUDPReceivedPacketSize)
 		n, _, _, _, err := c.connection.ReadMsgUDP(buffer, oobdata)
 		if err != nil {
 			if err, ok := err.(net.Error); !ok || !err.Timeout() {
@@ -196,7 +197,7 @@ func (c *Client) receive(_ dhcpv6.DHCPv6) {
 
 func (c *Client) remoteAddr() (*net.UDPAddr, error) {
 	if c.RemoteAddr == nil {
-		return &net.UDPAddr{IP: dhcpv6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}, nil
+		return &net.UDPAddr{IP: client6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}, nil
 	}
 
 	if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {

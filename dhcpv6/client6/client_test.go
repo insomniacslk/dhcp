@@ -1,4 +1,4 @@
-package dhcpv6
+package client6
 
 import (
 	"testing"

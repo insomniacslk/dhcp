@@ -8,6 +8,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 )
 
 var sleeper = func(d time.Duration) {
@@ -26,7 +27,7 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 	for i := 0; i <= retries; i++ {
 		log.Printf("sending request, attempt #%d", i+1)
 
-		client := dhcpv6.NewClient()
+		client := client6.NewClient()
 		client.ReadTimeout = timeout
 		conversation, err = client.Exchange(ifname, modifiers...)
 		if err != nil {
@@ -131,13 +132,13 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 // DHCPv4 4-way conversation and returns them, or an error if any.
 func ConversationToNetconfv4(conversation []*dhcpv4.DHCPv4) (*NetConf, string, error) {
 	var reply *dhcpv4.DHCPv4
-	var bootFileUrl string
+	var bootFileURL string
 	for _, m := range conversation {
 		// look for a BootReply packet of type Offer containing the bootfile URL.
 		// Normally both packets with Message Type OFFER or ACK do contain
 		// the bootfile URL.
 		if m.OpCode == dhcpv4.OpcodeBootReply && m.MessageType() == dhcpv4.MessageTypeOffer {
-			bootFileUrl = m.BootFileName
+			bootFileURL = m.BootFileName
 			reply = m
 			break
 		}
@@ -149,5 +150,5 @@ func ConversationToNetconfv4(conversation []*dhcpv4.DHCPv4) (*NetConf, string, e
 	if err != nil {
 		return nil, "", fmt.Errorf("could not get netconf: %v", err)
 	}
-	return netconf, bootFileUrl, nil
+	return netconf, bootFileURL, nil
 }
