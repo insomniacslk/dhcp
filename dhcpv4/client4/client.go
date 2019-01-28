@@ -113,7 +113,7 @@ func MakeBroadcastSocket(ifname string) (int, error) {
 // MakeListeningSocket creates a listening socket on 0.0.0.0 for the DHCP client
 // port and returns it.
 func MakeListeningSocket(ifname string) (int, error) {
-	return makeListeningSocketWithCustomPort(ifname, ClientPort)
+	return makeListeningSocketWithCustomPort(ifname, dhcpv4.ClientPort)
 }
 
 func htons(v uint16) uint16 {
@@ -157,7 +157,7 @@ func toUDPAddr(addr net.Addr, defaultAddr *net.UDPAddr) (*net.UDPAddr, error) {
 }
 
 func (c *Client) getLocalUDPAddr() (*net.UDPAddr, error) {
-	defaultLocalAddr := &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort}
+	defaultLocalAddr := &net.UDPAddr{IP: net.IPv4zero, Port: dhcpv4.ClientPort}
 	laddr, err := toUDPAddr(c.LocalAddr, defaultLocalAddr)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid local address: %s", err)
@@ -166,7 +166,7 @@ func (c *Client) getLocalUDPAddr() (*net.UDPAddr, error) {
 }
 
 func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
-	defaultRemoteAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: ServerPort}
+	defaultRemoteAddr := &net.UDPAddr{IP: net.IPv4bcast, Port: dhcpv4.ServerPort}
 	raddr, err := toUDPAddr(c.RemoteAddr, defaultRemoteAddr)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid remote address: %s", err)
@@ -304,7 +304,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 			udph := buf[iph.Len:n]
 			// check source and destination ports
 			srcPort := int(binary.BigEndian.Uint16(udph[0:2]))
-			expectedSrcPort := ServerPort
+			expectedSrcPort := dhcpv4.ServerPort
 			if c.RemoteAddr != nil {
 				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
 			}
@@ -312,7 +312,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 				continue
 			}
 			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
-			expectedDstPort := ClientPort
+			expectedDstPort := dhcpv4.ClientPort
 			if c.RemoteAddr != nil {
 				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
 			}

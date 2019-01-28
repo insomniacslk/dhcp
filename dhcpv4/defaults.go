@@ -1,4 +1,4 @@
-package client4
+package dhcpv4
 
 const (
 	ServerPort = 67
