@@ -40,7 +40,7 @@ func ParseBootImageListFromAck(ack *dhcpv4.DHCPv4) ([]BootImage, error) {
 }
 
 func needsReplyPort(replyPort uint16) bool {
-	return replyPort != 0 && replyPort != client4.ClientPort
+	return replyPort != 0 && replyPort != dhcpv4.ClientPort
 }
 
 // MessageTypeFromPacket extracts the BSDP message type (LIST, SELECT) from the
