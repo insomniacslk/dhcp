@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/dhcpv6/client6"
 )
@@ -58,7 +59,7 @@ func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifie
 	modifiers = append(modifiers, dhcpv4.WithNetboot)
 	for i := 0; i <= retries; i++ {
 		log.Printf("sending request, attempt #%d", i+1)
-		client := dhcpv4.NewClient()
+		client := client4.NewClient()
 		client.ReadTimeout = timeout
 		conversation, err = client.Exchange(ifname, modifiers...)
 		if err != nil {
