@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
@@ -57,7 +58,7 @@ func TestParseBootImageListFromAckNoVendorOption(t *testing.T) {
 func TestNeedsReplyPort(t *testing.T) {
 	require.True(t, needsReplyPort(123))
 	require.False(t, needsReplyPort(0))
-	require.False(t, needsReplyPort(dhcpv4.ClientPort))
+	require.False(t, needsReplyPort(client4.ClientPort))
 }
 
 func TestNewInformList_NoReplyPort(t *testing.T) {
@@ -214,13 +215,13 @@ func TestInformSelectForAck_ReplyPort(t *testing.T) {
 }
 
 func TestNewReplyForInformList_NoDefaultImage(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	_, err := NewReplyForInformList(inform, ReplyConfig{})
 	require.Error(t, err)
 }
 
 func TestNewReplyForInformList_NoImages(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	fakeImage := BootImage{
 		ID: BootImageID{ImageType: BootImageTypeMacOSX},
 	}
@@ -238,7 +239,7 @@ func TestNewReplyForInformList_NoImages(t *testing.T) {
 }
 
 func TestNewReplyForInformList(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	images := []BootImage{
 		BootImage{
 			ID: BootImageID{
@@ -292,13 +293,13 @@ func TestNewReplyForInformList(t *testing.T) {
 }
 
 func TestNewReplyForInformSelect_NoSelectedImage(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	_, err := NewReplyForInformSelect(inform, ReplyConfig{})
 	require.Error(t, err)
 }
 
 func TestNewReplyForInformSelect_NoImages(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	fakeImage := BootImage{
 		ID: BootImageID{ImageType: BootImageTypeMacOSX},
 	}
@@ -316,7 +317,7 @@ func TestNewReplyForInformSelect_NoImages(t *testing.T) {
 }
 
 func TestNewReplyForInformSelect(t *testing.T) {
-	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, dhcpv4.ClientPort)
+	inform, _ := NewInformList(net.HardwareAddr{1, 2, 3, 4, 5, 6}, net.IP{1, 2, 3, 4}, client4.ClientPort)
 	images := []BootImage{
 		BootImage{
 			ID: BootImageID{

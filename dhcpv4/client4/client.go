@@ -1,4 +1,4 @@
-package dhcpv4
+package client4
 
 import (
 	"encoding/binary"
@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/insomniacslk/dhcp/dhcpv4"
 	"golang.org/x/net/ipv4"
 	"golang.org/x/sys/unix"
 )
@@ -88,7 +89,7 @@ func makeRawSocket(ifname string) (int, error) {
 	if err != nil {
 		return fd, err
 	}
-	err = BindToInterface(fd, ifname)
+	err = dhcpv4.BindToInterface(fd, ifname)
 	if err != nil {
 		return fd, err
 	}
@@ -179,8 +180,8 @@ func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]*DHCPv4, error) {
-	conversation := make([]*DHCPv4, 0)
+func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
+	conversation := make([]*dhcpv4.DHCPv4, 0)
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
@@ -220,28 +221,28 @@ func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]*DHCPv4, erro
 	}()
 
 	// Discover
-	discover, err := NewDiscoveryForInterface(ifname, modifiers...)
+	discover, err := dhcpv4.NewDiscoveryForInterface(ifname, modifiers...)
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := c.SendReceive(sfd, rfd, discover, MessageTypeOffer)
+	offer, err := c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, offer)
 
 	// Request
-	request, err := NewRequestFromOffer(offer, modifiers...)
+	request, err := dhcpv4.NewRequestFromOffer(offer, modifiers...)
 	if err != nil {
 		return conversation, err
 	}
 	conversation = append(conversation, request)
 
 	// Ack
-	ack, err := c.SendReceive(sfd, rfd, request, MessageTypeAck)
+	ack, err := c.SendReceive(sfd, rfd, request, dhcpv4.MessageTypeAck)
 	if err != nil {
 		return conversation, err
 	}
@@ -253,7 +254,7 @@ func (c *Client) Exchange(ifname string, modifiers ...Modifier) ([]*DHCPv4, erro
 // SendReceive sends a packet (with some write timeout) and waits for a
 // response up to some read timeout value. If the message type is not
 // MessageTypeNone, it will wait for a specific message type
-func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType MessageType) (*DHCPv4, error) {
+func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageType dhcpv4.MessageType) (*dhcpv4.DHCPv4, error) {
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
@@ -271,7 +272,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 	// a certain amount of time.
 	var (
 		destination [net.IPv4len]byte
-		response    *DHCPv4
+		response    *dhcpv4.DHCPv4
 	)
 	copy(destination[:], raddr.IP.To4())
 	remoteAddr := unix.SockaddrInet4{Port: laddr.Port, Addr: destination}
@@ -322,7 +323,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 			pLen := int(binary.BigEndian.Uint16(udph[4:6]))
 			payload := buf[iph.Len+8 : iph.Len+8+pLen]
 
-			response, innerErr = FromBytes(payload)
+			response, innerErr = dhcpv4.FromBytes(payload)
 			if innerErr != nil {
 				errs <- innerErr
 				return
@@ -332,12 +333,12 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *DHCPv4, messageType Mes
 				continue
 			}
 			// wait for a response message
-			if response.OpCode != OpcodeBootReply {
+			if response.OpCode != dhcpv4.OpcodeBootReply {
 				continue
 			}
 			// if we are not requested to wait for a specific message type,
 			// return what we have
-			if messageType == MessageTypeNone {
+			if messageType == dhcpv4.MessageTypeNone {
 				break
 			}
 			// break if it's a reply of the desired type, continue otherwise

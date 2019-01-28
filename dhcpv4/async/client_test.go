@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func serve(ctx context.Context, addr *net.UDPAddr, response *dhcpv4.DHCPv4) erro
 	go func() {
 		defer conn.Close()
 		oobdata := []byte{}
-		buffer := make([]byte, dhcpv4.MaxUDPReceivedPacketSize)
+		buffer := make([]byte, client4.MaxUDPReceivedPacketSize)
 		for {
 			select {
 			case <-ctx.Done():
@@ -48,8 +49,8 @@ func serve(ctx context.Context, addr *net.UDPAddr, response *dhcpv4.DHCPv4) erro
 func TestNewClient(t *testing.T) {
 	c := NewClient()
 	require.NotNil(t, c)
-	require.Equal(t, c.ReadTimeout, dhcpv4.DefaultReadTimeout)
-	require.Equal(t, c.ReadTimeout, dhcpv4.DefaultWriteTimeout)
+	require.Equal(t, c.ReadTimeout, client4.DefaultReadTimeout)
+	require.Equal(t, c.ReadTimeout, client4.DefaultWriteTimeout)
 }
 
 func TestOpenInvalidAddrFailes(t *testing.T) {

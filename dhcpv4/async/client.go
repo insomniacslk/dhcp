@@ -7,8 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fanliao/go-promise"
+	promise "github.com/fanliao/go-promise"
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 )
 
 // Default ports
@@ -41,8 +42,8 @@ type Client struct {
 // NewClient creates an asynchronous client
 func NewClient() *Client {
 	return &Client{
-		ReadTimeout:  dhcpv4.DefaultReadTimeout,
-		WriteTimeout: dhcpv4.DefaultWriteTimeout,
+		ReadTimeout:  client4.DefaultReadTimeout,
+		WriteTimeout: client4.DefaultWriteTimeout,
 	}
 }
 
@@ -159,7 +160,7 @@ func (c *Client) receive(_ *dhcpv4.DHCPv4) {
 
 	c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout))
 	for {
-		buffer := make([]byte, dhcpv4.MaxUDPReceivedPacketSize)
+		buffer := make([]byte, client4.MaxUDPReceivedPacketSize)
 		n, _, _, _, err := c.connection.ReadMsgUDP(buffer, oobdata)
 		if err != nil {
 			if err, ok := err.(net.Error); !ok || !err.Timeout() {

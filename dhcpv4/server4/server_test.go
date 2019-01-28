@@ -1,6 +1,6 @@
 // +build integration
 
-package dhcpv4
+package server4
 
 import (
 	"log"
@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 	"github.com/insomniacslk/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
@@ -27,26 +29,26 @@ func randPort() int {
 }
 
 // DORAHandler is a server handler suitable for DORA transactions
-func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
+func DORAHandler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 	if m == nil {
 		log.Printf("Packet is nil!")
 		return
 	}
-	if m.OpCode != OpcodeBootRequest {
+	if m.OpCode != dhcpv4.OpcodeBootRequest {
 		log.Printf("Not a BootRequest!")
 		return
 	}
-	reply, err := NewReplyFromRequest(m)
+	reply, err := dhcpv4.NewReplyFromRequest(m)
 	if err != nil {
 		log.Printf("NewReplyFromRequest failed: %v", err)
 		return
 	}
-	reply.UpdateOption(OptServerIdentifier(net.IP{1, 2, 3, 4}))
+	reply.UpdateOption(dhcpv4.OptServerIdentifier(net.IP{1, 2, 3, 4}))
 	switch mt := m.MessageType(); mt {
-	case MessageTypeDiscover:
-		reply.UpdateOption(OptMessageType(MessageTypeOffer))
-	case MessageTypeRequest:
-		reply.UpdateOption(OptMessageType(MessageTypeAck))
+	case dhcpv4.MessageTypeDiscover:
+		reply.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeOffer))
+	case dhcpv4.MessageTypeRequest:
+		reply.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeAck))
 	default:
 		log.Printf("Unhandled message type: %v", mt)
 		return
@@ -59,7 +61,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *DHCPv4) {
 
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
-func setUpClientAndServer(handler Handler) (*Client, *Server) {
+func setUpClientAndServer(handler Handler) (*client4.Client, *Server) {
 	// strong assumption, I know
 	loAddr := net.ParseIP("127.0.0.1")
 	laddr := net.UDPAddr{
@@ -69,7 +71,7 @@ func setUpClientAndServer(handler Handler) (*Client, *Server) {
 	s := NewServer(laddr, handler)
 	go s.ActivateAndServe()
 
-	c := NewClient()
+	c := client4.NewClient()
 	// FIXME this doesn't deal well with raw sockets, the actual 0 will be used
 	// in the UDP header as source port
 	c.LocalAddr = &net.UDPAddr{IP: loAddr, Port: randPort()}
@@ -108,12 +110,12 @@ func TestServerActivateAndServe(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, len(ifaces))
 
-	xid := TransactionID{0xaa, 0xbb, 0xcc, 0xdd}
+	xid := dhcpv4.TransactionID{0xaa, 0xbb, 0xcc, 0xdd}
 	hwaddr := net.HardwareAddr{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}
 
-	modifiers := []Modifier{
-		WithTransactionID(xid),
-		WithHwAddr(hwaddr),
+	modifiers := []dhcpv4.Modifier{
+		dhcpv4.WithTransactionID(xid),
+		dhcpv4.WithHwAddr(hwaddr),
 	}
 
 	conv, err := c.Exchange(ifaces[0].Name, modifiers...)
