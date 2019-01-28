@@ -35,7 +35,7 @@ func (c *Client) Exchange(ifname string) ([]*Packet, error) {
 	}
 
 	// INFORM[LIST]
-	informList, err := NewInformListForInterface(ifname, client4.ClientPort)
+	informList, err := NewInformListForInterface(ifname, dhcpv4.ClientPort)
 	if err != nil {
 		return conversation, err
 	}
@@ -60,7 +60,7 @@ func (c *Client) Exchange(ifname string) ([]*Packet, error) {
 	}
 
 	// INFORM[SELECT]
-	informSelect, err := InformSelectForAck(PacketFor(ackForList), client4.ClientPort, bootImages[0])
+	informSelect, err := InformSelectForAck(PacketFor(ackForList), dhcpv4.ClientPort, bootImages[0])
 	if err != nil {
 		return conversation, err
 	}
