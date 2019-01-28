@@ -10,52 +10,6 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
-/*
-  To use the DHCPv6 server code you have to call NewServer with two arguments:
-  - a handler function, that will be called every time a valid DHCPv6 packet is
-      received, and
-  - an address to listen on.
-
-  The handler is a function that takes as input a packet connection, that can be
-  used to reply to the client; a peer address, that identifies the client sending
-  the request, and the DHCPv6 packet itself. Just implement your custom logic in
-  the handler.
-
-  The address to listen on is used to know IP address, port and optionally the
-  scope to create and UDP6 socket to listen on for DHCPv6 traffic.
-
-  Example program:
-
-
-package main
-
-import (
-	"log"
-	"net"
-
-	"github.com/insomniacslk/dhcp/dhcpv6"
-)
-
-func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
-	// this function will just print the received DHCPv6 message, without replying
-	log.Print(m.Summary())
-}
-
-func main() {
-	laddr := net.UDPAddr{
-		IP:   net.ParseIP("::1"),
-		Port: dhcpv6.DefaultServerPort,
-	}
-	server := dhcpv6.NewServer(laddr, handler)
-
-	defer server.Close()
-	if err := server.ActivateAndServe(); err != nil {
-		log.Panic(err)
-	}
-}
-
-*/
-
 // Handler is a type that defines the handler function to be called every time a
 // valid DHCPv6 message is received
 type Handler func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6)
