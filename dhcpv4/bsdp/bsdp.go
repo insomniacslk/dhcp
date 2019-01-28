@@ -6,7 +6,6 @@ import (
 	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/dhcpv4/client4"
 )
 
 // MaxDHCPMessageSize is the size set in DHCP option 57 (DHCP Maximum Message Size).
