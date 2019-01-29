@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -28,9 +29,11 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
+// Package-level constants
 const (
 	// minPacketLen is the minimum DHCP header length.
-	minPacketLen = 236
+	minPacketLen             = 236
+	DefaultCryptoRandTimeout = 3 * time.Second
 
 	// Maximum length of the ClientHWAddr (client hardware address) according to
 	// RFC 2131, Section 2. This is the link-layer destination a server
@@ -40,6 +43,27 @@ const (
 	// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
 	MaxMessageSize = 576
 )
+
+func init() {
+	setRandomRead(rand.Read)
+}
+
+var (
+	randomReadFunc  func([]byte) (int, error)
+	randomReadMutex sync.Mutex
+)
+
+func setRandomRead(f func([]byte) (int, error)) {
+	randomReadMutex.Lock()
+	defer randomReadMutex.Unlock()
+	randomReadFunc = f
+}
+
+func randomRead(b []byte) (int, error) {
+	randomReadMutex.Lock()
+	defer randomReadMutex.Unlock()
+	return randomRead(b)
+}
 
 // magicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
@@ -110,15 +134,32 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 // GenerateTransactionID generates a random 32-bits number suitable for use as
 // TransactionID
 func GenerateTransactionID() (TransactionID, error) {
-	var xid TransactionID
-	n, err := rand.Read(xid[:])
-	if err != nil {
+	var (
+		xid   TransactionID
+		xidCh = make(chan TransactionID, 1)
+		errCh = make(chan error, 1)
+	)
+	go func(xidCh chan<- TransactionID, errCh chan<- error) {
+		var xid TransactionID
+		n, err := randomRead(xid[:])
+		if err != nil {
+			errCh <- err
+			return
+		}
+		if n != 4 {
+			errCh <- errors.New("invalid random sequence for transaction ID: smaller than 32 bits")
+		}
+		xidCh <- xid
+	}(xidCh, errCh)
+	select {
+	case err := <-errCh:
 		return xid, err
+	case xid = <-xidCh:
+		return xid, nil
+	case <-time.After(DefaultCryptoRandTimeout):
+		return xid, fmt.Errorf("timed out after %s while trying to generate TransactionID. Not enough entropy?", DefaultCryptoRandTimeout)
 	}
-	if n != 4 {
-		return xid, errors.New("invalid random sequence for transaction ID: smaller than 32 bits")
-	}
-	return xid, err
+	return xid, nil
 }
 
 // New creates a new DHCPv4 structure and fill it up with default values. It

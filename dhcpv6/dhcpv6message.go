@@ -6,33 +6,76 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-const MessageHeaderSize = 4
+// Package-level constants
+const (
+	MessageHeaderSize        = 4
+	DefaultCryptoRandTimeout = 3 * time.Second
+)
 
+// DHCPv6Message implements the DHCPv6 interface for DHCPv6 messages.
 type DHCPv6Message struct {
 	messageType   MessageType
 	transactionID TransactionID
 	options       Options
 }
 
-var randomRead = rand.Read
+func init() {
+	setRandomRead(rand.Read)
+}
+
+var (
+	randomReadFunc  func([]byte) (int, error)
+	randomReadMutex sync.Mutex
+)
+
+func setRandomRead(f func([]byte) (int, error)) {
+	randomReadMutex.Lock()
+	defer randomReadMutex.Unlock()
+	randomReadFunc = f
+}
+
+func randomRead(b []byte) (int, error) {
+	randomReadMutex.Lock()
+	defer randomReadMutex.Unlock()
+	return randomReadFunc(b)
+}
 
 // GenerateTransactionID generates a random 3-byte transaction ID.
 func GenerateTransactionID() (TransactionID, error) {
-	var tid TransactionID
-	n, err := randomRead(tid[:])
-	if err != nil {
-		return tid, err
+	var (
+		xid   TransactionID
+		xidCh = make(chan TransactionID, 1)
+		errCh = make(chan error, 1)
+	)
+	go func(xidCh chan<- TransactionID, errCh chan<- error) {
+		var xid TransactionID
+		n, err := randomRead(xid[:])
+		if err != nil {
+			errCh <- err
+			return
+		}
+		if n != len(xid) {
+			errCh <- fmt.Errorf("invalid random sequence: shorter than 3 bytes")
+			return
+		}
+		xidCh <- xid
+	}(xidCh, errCh)
+	select {
+	case err := <-errCh:
+		return xid, err
+	case xid = <-xidCh:
+		return xid, nil
+	case <-time.After(DefaultCryptoRandTimeout):
+		return xid, fmt.Errorf("timed out after %s while trying to generate TransactionID. Not enough entropy?", DefaultCryptoRandTimeout)
 	}
-	if n != len(tid) {
-		return tid, fmt.Errorf("invalid random sequence: shorter than 3 bytes")
-	}
-	return tid, nil
+	return xid, nil
 }
 
 // GetTime returns a time integer suitable for DUID-LLT, i.e. the current time counted

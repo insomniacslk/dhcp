@@ -1,12 +1,71 @@
 package dhcpv4
 
 import (
+	"crypto/rand"
+	"encoding/binary"
+	"errors"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+func randomReadMock(value []byte, n int, err error) func([]byte) (int, error) {
+	return func(b []byte) (int, error) {
+		copy(b, value)
+		return n, err
+	}
+}
+
+type GenerateTransactionIDTestSuite struct {
+	suite.Suite
+	random []byte
+}
+
+func (s *GenerateTransactionIDTestSuite) SetupTest() {
+	s.random = make([]byte, 16)
+}
+
+func (s *GenerateTransactionIDTestSuite) TearDownTest() {
+	setRandomRead(rand.Read)
+}
+
+func (s *GenerateTransactionIDTestSuite) TestErrors() {
+	// Error is returned from random number generator
+	e := errors.New("mocked error")
+	setRandomRead(randomReadMock(s.random, 0, e))
+	_, err := GenerateTransactionID()
+	s.Assert().Equal(e, err)
+
+	// Less than 4 bytes are generated
+	setRandomRead(randomReadMock(s.random, 2, nil))
+	_, err = GenerateTransactionID()
+	s.Assert().EqualError(err, "invalid random sequence for transaction ID: smaller than 32 bits")
+}
+
+func (s *GenerateTransactionIDTestSuite) TestSuccess() {
+	binary.BigEndian.PutUint32(s.random, 0x01020304)
+	setRandomRead(randomReadMock(s.random, 4, nil))
+	tid, err := GenerateTransactionID()
+	s.Require().NoError(err)
+	s.Assert().Equal(TransactionID{0x1, 0x2, 0x3, 0x04}, tid)
+}
+
+func (s *GenerateTransactionIDTestSuite) TestTimeout() {
+	setRandomRead(func([]byte) (int, error) {
+		time.Sleep(DefaultCryptoRandTimeout * 2)
+		return 0, nil
+	})
+	_, err := GenerateTransactionID()
+	s.Require().Error(err)
+}
+
+func TestGenerateTransactionIDTestSuite(t *testing.T) {
+	suite.Run(t, new(GenerateTransactionIDTestSuite))
+}
 
 func TestGetExternalIPv4Addrs(t *testing.T) {
 	addrs4and6 := []net.Addr{

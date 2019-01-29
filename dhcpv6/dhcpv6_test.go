@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -29,29 +30,38 @@ func (s *GenerateTransactionIDTestSuite) SetupTest() {
 	s.random = make([]byte, 16)
 }
 
-func (s *GenerateTransactionIDTestSuite) TearDown() {
-	randomRead = rand.Read
+func (s *GenerateTransactionIDTestSuite) TearDownTest() {
+	setRandomRead(rand.Read)
 }
 
 func (s *GenerateTransactionIDTestSuite) TestErrors() {
 	// Error is returned from random number generator
 	e := errors.New("mocked error")
-	randomRead = randomReadMock(s.random, 0, e)
+	setRandomRead(randomReadMock(s.random, 0, e))
 	_, err := GenerateTransactionID()
 	s.Assert().Equal(e, err)
 
 	// Less than 4 bytes are generated
-	randomRead = randomReadMock(s.random, 2, nil)
+	setRandomRead(randomReadMock(s.random, 2, nil))
 	_, err = GenerateTransactionID()
 	s.Assert().EqualError(err, "invalid random sequence: shorter than 3 bytes")
 }
 
 func (s *GenerateTransactionIDTestSuite) TestSuccess() {
 	binary.BigEndian.PutUint32(s.random, 0x01020300)
-	randomRead = randomReadMock(s.random, 3, nil)
-	tid, err := GenerateTransactionID()
+	setRandomRead(randomReadMock(s.random, 3, nil))
+	xid, err := GenerateTransactionID()
 	s.Require().NoError(err)
-	s.Assert().Equal(TransactionID{0x1, 0x2, 0x3}, tid)
+	s.Assert().Equal(TransactionID{0x1, 0x2, 0x3}, xid)
+}
+
+func (s *GenerateTransactionIDTestSuite) TestTimeout() {
+	setRandomRead(func([]byte) (int, error) {
+		time.Sleep(DefaultCryptoRandTimeout * 2)
+		return 0, nil
+	})
+	_, err := GenerateTransactionID()
+	s.Require().Error(err)
 }
 
 func TestGenerateTransactionIDTestSuite(t *testing.T) {
