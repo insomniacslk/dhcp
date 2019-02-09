@@ -6,15 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptRFC3004UserClassToBytes(t *testing.T) {
-	opt := OptRFC3004UserClass(Strings([]string{"linuxboot"}))
-	data := opt.Value.ToBytes()
-	expected := []byte{
-		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	require.Equal(t, expected, data)
-}
-
 func TestParseStringsMultiple(t *testing.T) {
 	var opt Strings
 	expected := []byte{
@@ -46,7 +37,22 @@ func TestParseStrings(t *testing.T) {
 	require.Equal(t, "linuxboot", opt[0])
 }
 
-func TestStringsToBytesMultiple(t *testing.T) {
+func TestParseStringsZeroLength(t *testing.T) {
+	var opt Strings
+	err := opt.FromBytes([]byte{0, 0})
+	require.Error(t, err)
+}
+
+func TestOptRFC3004UserClass(t *testing.T) {
+	opt := OptRFC3004UserClass(Strings([]string{"linuxboot"}))
+	data := opt.Value.ToBytes()
+	expected := []byte{
+		9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	require.Equal(t, expected, data)
+}
+
+func TestOptRFC3004UserClassMultiple(t *testing.T) {
 	opt := OptRFC3004UserClass(
 		[]string{
 			"linuxboot",
@@ -59,10 +65,4 @@ func TestStringsToBytesMultiple(t *testing.T) {
 		4, 't', 'e', 's', 't',
 	}
 	require.Equal(t, expected, data)
-}
-
-func TestParseOptUserClassZeroLength(t *testing.T) {
-	var opt Strings
-	err := opt.FromBytes([]byte{0, 0})
-	require.Error(t, err)
 }
