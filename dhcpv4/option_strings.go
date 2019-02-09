@@ -7,8 +7,13 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
+// String represents an option encapsulating a list of strings in IPv4 DHCP as
+// specified in RFC 3004
+//
+// Strings implements the OptionValue type.
 type Strings []string
 
+// FromBytes parses Strings from a DHCP packet as specified by RFC 3004.
 func (o *Strings) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 	if buf.Len() == 0 {
@@ -26,6 +31,7 @@ func (o *Strings) FromBytes(data []byte) error {
 	return buf.FinError()
 }
 
+// ToBytes marshals Strings to a DHCP packet as specified by RFC 3004.
 func (o Strings) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	for _, uc := range o {
@@ -35,6 +41,7 @@ func (o Strings) ToBytes() []byte {
 	return buf.Data()
 }
 
+// String returns a human-readable representation of a list of Strings.
 func (o Strings) String() string {
 	return strings.Join(o, ", ")
 }
@@ -42,7 +49,7 @@ func (o Strings) String() string {
 // OptRFC3004UserClass returns a new user class option according to RFC 3004.
 func OptRFC3004UserClass(v []string) Option {
 	return Option{
-		Code: OptionUserClassInformation,
+		Code:  OptionUserClassInformation,
 		Value: Strings(v),
 	}
 }
