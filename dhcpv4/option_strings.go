@@ -7,7 +7,7 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
-// String represents an option encapsulating a list of strings in IPv4 DHCP as
+// Strings represents an option encapsulating a list of strings in IPv4 DHCP as
 // specified in RFC 3004
 //
 // Strings implements the OptionValue type.
