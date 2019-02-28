@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
@@ -16,9 +15,9 @@ const MessageHeaderSize = 4
 
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
-	messageType   MessageType
-	transactionID TransactionID
-	options       Options
+	MessageType   MessageType
+	TransactionID TransactionID
+	Options       Options
 }
 
 var randomRead = rand.Read
@@ -44,36 +43,36 @@ func GetTime() uint32 {
 }
 
 // NewSolicitWithCID creates a new SOLICIT message with CID.
-func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
-	d, err := NewMessage()
+func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
+	m, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
-	d.(*Message).SetMessage(MessageTypeSolicit)
-	d.AddOption(&OptClientId{Cid: duid})
+	m.MessageType = MessageTypeSolicit
+	m.AddOption(&OptClientId{Cid: duid})
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
 	})
-	d.AddOption(oro)
-	d.AddOption(&OptElapsedTime{})
+	m.AddOption(oro)
+	m.AddOption(&OptElapsedTime{})
 	// FIXME use real values for IA_NA
 	iaNa := &OptIANA{}
 	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
 	iaNa.T1 = 0xe10
 	iaNa.T2 = 0x1518
-	d.AddOption(iaNa)
+	m.AddOption(iaNa)
 	// Apply modifiers
 	for _, mod := range modifiers {
-		d = mod(d)
+		mod(m)
 	}
-	return d, nil
+	return m, nil
 }
 
 // NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
 // given network interface's hardware address and current time
-func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error) {
+func NewSolicitForInterface(ifname string, modifiers ...Modifier) (*Message, error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
@@ -88,21 +87,18 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error
 }
 
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
-func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if solicit == nil {
+func NewAdvertiseFromSolicit(sol *Message, modifiers ...Modifier) (*Message, error) {
+	if sol == nil {
 		return nil, errors.New("SOLICIT cannot be nil")
 	}
-	if solicit.Type() != MessageTypeSolicit {
+	if sol.Type() != MessageTypeSolicit {
 		return nil, errors.New("The passed SOLICIT must have SOLICIT type set")
 	}
-	sol, ok := solicit.(*Message)
-	if !ok {
-		return nil, errors.New("The passed SOLICIT must be of Message type")
-	}
 	// build ADVERTISE from SOLICIT
-	adv := Message{}
-	adv.SetMessage(MessageTypeAdvertise)
-	adv.SetTransactionID(sol.TransactionID())
+	adv := &Message{
+		MessageType:   MessageTypeAdvertise,
+		TransactionID: sol.TransactionID,
+	}
 	// add Client ID
 	cid := sol.GetOneOption(OptionClientID)
 	if cid == nil {
@@ -111,30 +107,26 @@ func NewAdvertiseFromSolicit(solicit DHCPv6, modifiers ...Modifier) (DHCPv6, err
 	adv.AddOption(cid)
 
 	// apply modifiers
-	d := DHCPv6(&adv)
 	for _, mod := range modifiers {
-		d = mod(d)
+		mod(adv)
 	}
-	return d, nil
+	return adv, nil
 }
 
 // NewRequestFromAdvertise creates a new REQUEST packet based on an ADVERTISE
 // packet options.
-func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if advertise == nil {
-		return nil, fmt.Errorf("ADVERTISE cannot be nil")
+func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, error) {
+	if adv == nil {
+		return nil, errors.New("ADVERTISE cannot be nil")
 	}
-	if advertise.Type() != MessageTypeAdvertise {
+	if adv.MessageType != MessageTypeAdvertise {
 		return nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
 	}
-	adv, ok := advertise.(*Message)
-	if !ok {
-		return nil, fmt.Errorf("The passed ADVERTISE must be of Message type")
-	}
 	// build REQUEST from ADVERTISE
-	req := Message{}
-	req.SetMessage(MessageTypeRequest)
-	req.SetTransactionID(adv.TransactionID())
+	req := &Message{
+		MessageType:   MessageTypeRequest,
+		TransactionID: adv.TransactionID,
+	}
 	// add Client ID
 	cid := adv.GetOneOption(OptionClientID)
 	if cid == nil {
@@ -170,102 +162,70 @@ func NewRequestFromAdvertise(advertise DHCPv6, modifiers ...Modifier) (DHCPv6, e
 	}
 
 	// apply modifiers
-	d := DHCPv6(&req)
 	for _, mod := range modifiers {
-		d = mod(d)
+		mod(req)
 	}
-	return d, nil
+	return req, nil
 }
 
 // NewReplyFromMessage creates a new REPLY packet based on a
 // Message. The function is to be used when generating a reply to
 // REQUEST, CONFIRM, RENEW, REBIND, RELEASE and INFORMATION-REQUEST packets.
-func NewReplyFromMessage(message DHCPv6, modifiers ...Modifier) (DHCPv6, error) {
-	if message == nil {
+func NewReplyFromMessage(msg *Message, modifiers ...Modifier) (*Message, error) {
+	if msg == nil {
 		return nil, errors.New("Message cannot be nil")
 	}
-	switch message.Type() {
+	switch msg.Type() {
 	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew,
 		MessageTypeRebind, MessageTypeRelease, MessageTypeInformationRequest:
 	default:
 		return nil, errors.New("Cannot create REPLY from the passed message type set")
 	}
-	msg, ok := message.(*Message)
-	if !ok {
-		return nil, errors.New("The passed MESSAGE must be of Message type")
-	}
+
 	// build REPLY from MESSAGE
-	rep := Message{}
-	rep.SetMessage(MessageTypeReply)
-	rep.SetTransactionID(msg.TransactionID())
+	rep := &Message{
+		MessageType:   MessageTypeReply,
+		TransactionID: msg.TransactionID,
+	}
 	// add Client ID
-	cid := message.GetOneOption(OptionClientID)
+	cid := msg.GetOneOption(OptionClientID)
 	if cid == nil {
 		return nil, errors.New("Client ID cannot be nil when building REPLY")
 	}
 	rep.AddOption(cid)
 
 	// apply modifiers
-	d := DHCPv6(&rep)
 	for _, mod := range modifiers {
-		d = mod(d)
+		mod(rep)
 	}
-	return d, nil
+	return rep, nil
 }
 
-// Type is the DHCPv6 message type.
-func (d *Message) Type() MessageType {
-	return d.messageType
-}
-
-// SetMessage sets the DHCP message type.
-func (d *Message) SetMessage(messageType MessageType) {
-	msgString := messageType.String()
-	if msgString == "" {
-		log.Printf("Warning: unknown DHCPv6 message type: %v", messageType)
-	}
-	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		log.Printf("Warning: using a RELAY message type with a non-relay message: %v (%v)",
-			msgString, messageType)
-	}
-	d.messageType = messageType
-}
-
-// TransactionID returns this message's transaction id.
-func (d *Message) TransactionID() TransactionID {
-	return d.transactionID
-}
-
-// SetTransactionID sets this message's transaction id.
-func (d *Message) SetTransactionID(tid TransactionID) {
-	d.transactionID = tid
-}
-
-// SetOptions replaces this message's options.
-func (d *Message) SetOptions(options []Option) {
-	d.options = options
+// Type returns this message's message type.
+func (m Message) Type() MessageType {
+	return m.MessageType
 }
 
 // AddOption adds an option to this message.
-func (d *Message) AddOption(option Option) {
-	d.options.Add(option)
+func (m *Message) AddOption(option Option) {
+	m.Options.Add(option)
 }
 
 // UpdateOption updates the existing options with the passed option, adding it
 // at the end if not present already
-func (d *Message) UpdateOption(option Option) {
-	d.options.Update(option)
+func (m *Message) UpdateOption(option Option) {
+	m.Options.Update(option)
 }
 
 // IsNetboot returns true if the machine is trying to netboot. It checks if
 // "boot file" is one of the requested options, which is useful for
 // SOLICIT/REQUEST packet types, it also checks if the "boot file" option is
 // included in the packet, which is useful for ADVERTISE/REPLY packet.
-func (d *Message) IsNetboot() bool {
-	if d.IsOptionRequested(OptionBootfileURL) {
+func (m *Message) IsNetboot() bool {
+	if m.IsOptionRequested(OptionBootfileURL) {
 		return true
 	}
-	if optbf := d.GetOneOption(OptionBootfileURL); optbf != nil {
+	if optbf := m.GetOneOption(OptionBootfileURL); optbf != nil {
 		return true
 	}
 	return false
@@ -273,8 +233,8 @@ func (d *Message) IsNetboot() bool {
 
 // IsOptionRequested takes an OptionCode and returns true if that option is
 // within the requested options of the DHCPv6 message.
-func (d *Message) IsOptionRequested(requested OptionCode) bool {
-	for _, optoro := range d.GetOption(OptionORO) {
+func (m *Message) IsOptionRequested(requested OptionCode) bool {
+	for _, optoro := range m.GetOption(OptionORO) {
 		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
 			if o == requested {
 				return true
@@ -285,26 +245,25 @@ func (d *Message) IsOptionRequested(requested OptionCode) bool {
 }
 
 // String returns a short human-readable string for this message.
-func (d *Message) String() string {
-	return fmt.Sprintf("Message(messageType=%v transactionID=%s, %d options)",
-		d.Type().String(), d.TransactionID(), len(d.options),
-	)
+func (m *Message) String() string {
+	return fmt.Sprintf("Message(messageType=%s transactionID=%s, %d options)",
+		m.MessageType, m.TransactionID, len(m.Options))
 }
 
 // Summary prints all options associated with this message.
-func (d *Message) Summary() string {
+func (m *Message) Summary() string {
 	ret := fmt.Sprintf(
 		"Message\n"+
-			"  messageType=%v\n"+
+			"  messageType=%s\n"+
 			"  transactionid=%s\n",
-		d.Type().String(),
-		d.TransactionID(),
+		m.MessageType,
+		m.TransactionID,
 	)
 	ret += "  options=["
-	if len(d.options) > 0 {
+	if len(m.Options) > 0 {
 		ret += "\n"
 	}
-	for _, opt := range d.options {
+	for _, opt := range m.Options {
 		ret += fmt.Sprintf("    %v\n", opt.String())
 	}
 	ret += "  ]\n"
@@ -313,31 +272,26 @@ func (d *Message) Summary() string {
 
 // ToBytes returns the serialized version of this message as defined by RFC
 // 3315, Section 5.
-func (d *Message) ToBytes() []byte {
+func (m *Message) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.Write8(uint8(d.messageType))
-	buf.WriteBytes(d.transactionID[:])
-	buf.WriteBytes(d.options.ToBytes())
+	buf.Write8(uint8(m.MessageType))
+	buf.WriteBytes(m.TransactionID[:])
+	buf.WriteBytes(m.Options.ToBytes())
 	return buf.Data()
 }
 
-// Options returns the current set of options associated with this message.
-func (d *Message) Options() []Option {
-	return d.options
-}
-
 // GetOption returns the options associated with the code.
-func (d *Message) GetOption(code OptionCode) []Option {
-	return d.options.Get(code)
+func (m *Message) GetOption(code OptionCode) []Option {
+	return m.Options.Get(code)
 }
 
 // GetOneOption returns the first associated option with the code from this
 // message.
-func (d *Message) GetOneOption(code OptionCode) Option {
-	return d.options.GetOne(code)
+func (m *Message) GetOneOption(code OptionCode) Option {
+	return m.Options.GetOne(code)
 }
 
 // IsRelay returns whether this is a relay message or not.
-func (d *Message) IsRelay() bool {
+func (m *Message) IsRelay() bool {
 	return false
 }

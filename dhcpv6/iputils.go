@@ -74,7 +74,7 @@ func ExtractMAC(packet DHCPv6) (net.HardwareAddr, error) {
 		if err != nil {
 			return nil, err
 		}
-		ip := inner.(*RelayMessage).PeerAddr()
+		ip := inner.(*RelayMessage).PeerAddr
 		if mac, err := GetMacAddressFromEUI64(ip); err == nil {
 			return mac, nil
 		}

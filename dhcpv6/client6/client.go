@@ -65,7 +65,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv6.Modifier) ([]dhcpv6
 			return conversation, err
 		}
 	}
-	request, reply, err := c.Request(ifname, advertise, modifiers...)
+	request, reply, err := c.Request(ifname, advertise.(*dhcpv6.Message), modifiers...)
 	if request != nil {
 		conversation = append(conversation, request)
 	}
@@ -172,7 +172,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 			// if a regular message, check the transaction ID first
 			// XXX should this unpack relay messages and check the XID of the
 			// inner packet too?
-			if msg.TransactionID() != recvMsg.TransactionID() {
+			if msg.TransactionID != recvMsg.TransactionID {
 				// different XID, we don't want this packet for sure
 				continue
 			}
@@ -196,7 +196,7 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
-		solicit = mod(solicit)
+		mod(solicit)
 	}
 	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
 	return solicit, advertise, err
@@ -205,13 +205,13 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 // Request sends a Request built from an Advertise. It returns the Request, a
 // Reply (if not nil), and an error if any. The modifiers will be applied to
 // the Request before sending it, see modifiers.go
-func (c *Client) Request(ifname string, advertise dhcpv6.DHCPv6, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
 	request, err := dhcpv6.NewRequestFromAdvertise(advertise)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
-		request = mod(request)
+		mod(request)
 	}
 	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
 	return request, reply, err

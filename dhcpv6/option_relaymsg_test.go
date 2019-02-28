@@ -76,15 +76,15 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if mType := r.Type(); mType != MessageTypeRelayForward {
 		t.Fatalf("Invalid messge type for relay. Expected %v, got %v", MessageTypeRelayForward, mType)
 	}
-	if len(r.options) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.options))
+	if len(r.Options) != 1 {
+		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.Options))
 	}
-	if code := r.options[0].Code(); code != OptionRelayMsg {
+	if code := r.Options[0].Code(); code != OptionRelayMsg {
 		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
 			OptionRelayMsg, code,
 		)
 	}
-	opt := r.options[0]
+	opt := r.Options[0]
 	ro, ok := opt.(*OptRelayMsg)
 	if !ok {
 		t.Fatalf("Invalid option type. Expected OptRelayMsg, got %v",
@@ -103,13 +103,13 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 		)
 	}
 	xid := TransactionID{0xaa, 0xbb, 0xcc}
-	if tID := innerDHCP.TransactionID(); tID != xid {
+	if tID := innerDHCP.TransactionID; tID != xid {
 		t.Fatalf("Invalid inner DHCP transaction ID. Expected 0xaabbcc, got %v", tID)
 	}
-	if len(innerDHCP.options) != 1 {
-		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.options))
+	if len(innerDHCP.Options) != 1 {
+		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.Options))
 	}
-	innerOpt := innerDHCP.options[0]
+	innerOpt := innerDHCP.Options[0]
 	eto, ok := innerOpt.(*OptElapsedTime)
 	if !ok {
 		t.Fatalf("Invalid inner option type. Expected OptElapsedTime, got %v",

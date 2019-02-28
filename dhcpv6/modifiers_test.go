@@ -46,7 +46,7 @@ func TestWithRequestedOptions(t *testing.T) {
 	oro := opt.(*OptRequestedOption)
 	require.ElementsMatch(t, oro.RequestedOptions(), []OptionCode{OptionClientID})
 	// Check if already set options are preserved
-	m = WithRequestedOptions(OptionServerID)(m)
+	WithRequestedOptions(OptionServerID)(m)
 	opt = m.GetOneOption(OptionORO)
 	require.NotNil(t, opt)
 	oro = opt.(*OptRequestedOption)
@@ -54,22 +54,24 @@ func TestWithRequestedOptions(t *testing.T) {
 }
 
 func TestWithIANA(t *testing.T) {
-	d := WithIANA(OptIAAddress{
+	var d Message
+	WithIANA(OptIAAddress{
 		IPv6Addr:          net.ParseIP("::1"),
 		PreferredLifetime: 3600,
 		ValidLifetime:     5200,
-	})(&Message{})
-	require.Equal(t, 1, len(d.Options()))
-	require.Equal(t, OptionIANA, d.Options()[0].Code())
+	})(&d)
+	require.Equal(t, 1, len(d.Options))
+	require.Equal(t, OptionIANA, d.Options[0].Code())
 }
 
 func TestWithDNS(t *testing.T) {
-	d := WithDNS([]net.IP{
+	var d Message
+	WithDNS([]net.IP{
 		net.ParseIP("fe80::1"),
 		net.ParseIP("fe80::2"),
-	}...)(&Message{})
-	require.Equal(t, 1, len(d.Options()))
-	dns := d.Options()[0].(*OptDNSRecursiveNameServer)
+	}...)(&d)
+	require.Equal(t, 1, len(d.Options))
+	dns := d.Options[0].(*OptDNSRecursiveNameServer)
 	log.Printf("DNS %+v", dns)
 	require.Equal(t, OptionDNSRecursiveNameServer, dns.Code())
 	require.Equal(t, 2, len(dns.NameServers))
@@ -79,12 +81,13 @@ func TestWithDNS(t *testing.T) {
 }
 
 func TestWithDomainSearchList(t *testing.T) {
-	d := WithDomainSearchList([]string{
+	var d Message
+	WithDomainSearchList([]string{
 		"slackware.it",
 		"dhcp.slackware.it",
-	}...)(&Message{})
-	require.Equal(t, 1, len(d.Options()))
-	osl := d.Options()[0].(*OptDomainSearchList)
+	}...)(&d)
+	require.Equal(t, 1, len(d.Options))
+	osl := d.Options[0].(*OptDomainSearchList)
 	require.Equal(t, OptionDomainSearchList, osl.Code())
 	require.NotNil(t, osl.DomainSearchList)
 	labels := osl.DomainSearchList.Labels

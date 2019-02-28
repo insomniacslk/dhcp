@@ -31,8 +31,7 @@ func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.Message {
 	if err != nil {
 		log.Panic(err)
 	}
-	adv := d.(*dhcpv6.Message)
-	return adv
+	return d
 }
 
 func TestGetNetConfFromPacketv6Invalid(t *testing.T) {
