@@ -43,8 +43,8 @@ func main() {
 		LinkLayerAddr: mac,
 	}
 	// As suggested above, an alternative is to call
-	// dhcpv6.NewSolicitForInterface("eth0", dhcpv6.WithCLientID(duid))
-	msg = dhcpv6.WithClientID(duid)(msg)
+	// dhcpv6.NewSolicitForInterface("eth0", dhcpv6.WithClientID(duid))
+	dhcpv6.WithClientID(duid)(msg)
 
 	// Now encapsulate the message in a DHCPv6 relay.
 	// As per RFC3315, the link-address and peer-address have

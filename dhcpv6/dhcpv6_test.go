@@ -63,8 +63,8 @@ func TestNewMessage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, d)
 	require.Equal(t, MessageTypeSolicit, d.Type())
-	require.NotEqual(t, 0, d.(*Message).transactionID)
-	require.Empty(t, d.(*Message).options)
+	require.NotEqual(t, 0, d.TransactionID)
+	require.Empty(t, d.Options)
 }
 
 func TestDecapsulateRelayIndex(t *testing.T) {
@@ -80,17 +80,17 @@ func TestDecapsulateRelayIndex(t *testing.T) {
 	require.NoError(t, err)
 	relay, ok := first.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(1))
-	require.Equal(t, relay.LinkAddr(), net.IPv6loopback)
-	require.Equal(t, relay.PeerAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(1))
+	require.Equal(t, relay.LinkAddr, net.IPv6loopback)
+	require.Equal(t, relay.PeerAddr, net.IPv6linklocalallnodes)
 
 	second, err := DecapsulateRelayIndex(r3, 1)
 	require.NoError(t, err)
 	relay, ok = second.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(0))
-	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
-	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(0))
+	require.Equal(t, relay.LinkAddr, net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr, net.IPv6interfacelocalallnodes)
 
 	third, err := DecapsulateRelayIndex(r3, 2)
 	require.NoError(t, err)
@@ -101,46 +101,27 @@ func TestDecapsulateRelayIndex(t *testing.T) {
 	require.NoError(t, err)
 	relay, ok = rfirst.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(0))
-	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
-	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(0))
+	require.Equal(t, relay.LinkAddr, net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr, net.IPv6interfacelocalallnodes)
 
 	_, err = DecapsulateRelayIndex(r3, -2)
 	require.Error(t, err)
 }
 
-func TestSettersAndGetters(t *testing.T) {
-	d := Message{}
-	// Message
-	d.SetMessage(MessageTypeSolicit)
-	require.Equal(t, MessageTypeSolicit, d.Type())
-	d.SetMessage(MessageTypeAdvertise)
-	require.Equal(t, MessageTypeAdvertise, d.Type())
-
-	// TransactionID
-	xid := TransactionID{0xa, 0xb, 0xc}
-	d.SetTransactionID(xid)
-	require.Equal(t, xid, d.TransactionID())
-
-	// Options
-	require.Empty(t, d.Options())
-	expectedOptions := []Option{&OptionGeneric{OptionCode: 0, OptionData: []byte{}}}
-	d.SetOptions(expectedOptions)
-	require.Equal(t, expectedOptions, d.Options())
-}
-
 func TestAddOption(t *testing.T) {
 	d := Message{}
-	require.Empty(t, d.Options())
+	require.Empty(t, d.Options)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
-	require.Equal(t, []Option{&opt}, d.Options())
+	require.Equal(t, Options{&opt}, d.Options)
 }
 
 func TestToBytes(t *testing.T) {
-	d := Message{}
-	d.SetMessage(MessageTypeSolicit)
-	d.SetTransactionID(TransactionID{0xa, 0xb, 0xc})
+	d := Message{
+		MessageType:   MessageTypeSolicit,
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+	}
 	d.AddOption(&OptionGeneric{OptionCode: 0, OptionData: []byte{}})
 
 	bytes := d.ToBytes()
@@ -157,24 +138,25 @@ func TestFromAndToBytes(t *testing.T) {
 }
 
 func TestNewAdvertiseFromSolicit(t *testing.T) {
-	s := Message{}
-	s.SetMessage(MessageTypeSolicit)
-	xid := TransactionID{0xa, 0xb, 0xc}
-	s.SetTransactionID(xid)
+	s := Message{
+		MessageType:   MessageTypeSolicit,
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+	}
 	cid := OptClientId{}
 	s.AddOption(&cid)
 	duid := Duid{}
 
 	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, a.(*Message).TransactionID(), s.TransactionID())
+	require.Equal(t, a.TransactionID, s.TransactionID)
 	require.Equal(t, a.Type(), MessageTypeAdvertise)
 }
 
 func TestNewReplyFromMessage(t *testing.T) {
-	msg := Message{}
-	xid := TransactionID{0xa, 0xb, 0xc}
-	msg.SetTransactionID(xid)
+	msg := Message{
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+		MessageType:   MessageTypeConfirm,
+	}
 	cid := OptClientId{}
 	msg.AddOption(&cid)
 	sid := OptServerId{}
@@ -182,42 +164,37 @@ func TestNewReplyFromMessage(t *testing.T) {
 	sid.Sid = duid
 	msg.AddOption(&sid)
 
-	msg.SetMessage(MessageTypeConfirm)
 	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRenew)
+	msg.MessageType = MessageTypeRenew
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRebind)
+	msg.MessageType = MessageTypeRebind
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRelease)
+	msg.MessageType = MessageTypeRelease
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeInformationRequest)
+	msg.MessageType = MessageTypeInformationRequest
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeSolicit)
+	msg.MessageType = MessageTypeSolicit
 	rep, err = NewReplyFromMessage(&msg)
-	require.Error(t, err)
-
-	relay := RelayMessage{}
-	rep, err = NewReplyFromMessage(&relay)
 	require.Error(t, err)
 }
 
@@ -286,7 +263,7 @@ func TestGetTransactionIDMessage(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(message)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.(*Message).TransactionID())
+	require.Equal(t, transactionID, message.TransactionID)
 }
 
 func TestGetTransactionIDRelay(t *testing.T) {
@@ -296,7 +273,7 @@ func TestGetTransactionIDRelay(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(relay)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.(*Message).TransactionID())
+	require.Equal(t, transactionID, message.TransactionID)
 }
 
 // TODO test NewMessageTypeSolicit

@@ -13,20 +13,18 @@ import (
 type DHCPv6 interface {
 	Type() MessageType
 	ToBytes() []byte
-	Options() []Option
 	String() string
 	Summary() string
 	IsRelay() bool
 	GetOption(code OptionCode) []Option
 	GetOneOption(code OptionCode) Option
-	SetOptions(options []Option)
 	AddOption(Option)
 	UpdateOption(Option)
 }
 
 // Modifier defines the signature for functions that can modify DHCPv6
 // structures. This is used to simplify packet manipulation
-type Modifier func(d DHCPv6) DHCPv6
+type Modifier func(d DHCPv6)
 
 // MessageFromBytes parses a DHCPv6 message from a byte stream.
 func MessageFromBytes(data []byte) (*Message, error) {
@@ -38,10 +36,10 @@ func MessageFromBytes(data []byte) (*Message, error) {
 	}
 
 	d := &Message{
-		messageType: messageType,
+		MessageType: messageType,
 	}
-	buf.ReadBytes(d.transactionID[:])
-	if err := d.options.FromBytes(buf.Data()); err != nil {
+	buf.ReadBytes(d.TransactionID[:])
+	if err := d.Options.FromBytes(buf.Data()); err != nil {
 		return nil, err
 	}
 	return d, nil
@@ -57,14 +55,14 @@ func RelayMessageFromBytes(data []byte) (*RelayMessage, error) {
 	}
 
 	d := &RelayMessage{
-		messageType: messageType,
-		hopCount:    buf.Read8(),
+		MessageType: messageType,
+		HopCount:    buf.Read8(),
 	}
-	d.linkAddr = net.IP(buf.CopyN(net.IPv6len))
-	d.peerAddr = net.IP(buf.CopyN(net.IPv6len))
+	d.LinkAddr = net.IP(buf.CopyN(net.IPv6len))
+	d.PeerAddr = net.IP(buf.CopyN(net.IPv6len))
 
 	// TODO: fail if no OptRelayMessage is present.
-	if err := d.options.FromBytes(buf.Data()); err != nil {
+	if err := d.Options.FromBytes(buf.Data()); err != nil {
 		return nil, err
 	}
 	return d, nil
@@ -83,21 +81,20 @@ func FromBytes(data []byte) (DHCPv6, error) {
 }
 
 // NewMessage creates a new DHCPv6 message with default options
-func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
+func NewMessage(modifiers ...Modifier) (*Message, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
 	}
-	msg := Message{
-		messageType:   MessageTypeSolicit,
-		transactionID: tid,
+	msg := &Message{
+		MessageType:   MessageTypeSolicit,
+		TransactionID: tid,
 	}
 	// apply modifiers
-	d := DHCPv6(&msg)
 	for _, mod := range modifiers {
-		d = mod(d)
+		mod(msg)
 	}
-	return d, nil
+	return msg, nil
 }
 
 // DecapsulateRelay extracts the content of a relay message. It does not recurse
@@ -153,20 +150,20 @@ func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
 // EncapsulateRelay creates a RelayMessage message containing the passed DHCPv6
 // message as payload. The passed message type must be  either RELAY_FORW or
 // RELAY_REPL
-func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (DHCPv6, error) {
+func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (*RelayMessage, error) {
 	if mType != MessageTypeRelayForward && mType != MessageTypeRelayReply {
 		return nil, fmt.Errorf("Message type must be either RELAY_FORW or RELAY_REPL")
 	}
 	outer := RelayMessage{
-		messageType: mType,
-		linkAddr:    linkAddr,
-		peerAddr:    peerAddr,
+		MessageType: mType,
+		LinkAddr:    linkAddr,
+		PeerAddr:    peerAddr,
 	}
 	if d.IsRelay() {
 		relay := d.(*RelayMessage)
-		outer.hopCount = relay.hopCount + 1
+		outer.HopCount = relay.HopCount + 1
 	} else {
-		outer.hopCount = 0
+		outer.HopCount = 0
 	}
 	orm := OptRelayMsg{relayMessage: d}
 	outer.AddOption(&orm)
@@ -175,7 +172,7 @@ func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (D
 
 // IsUsingUEFI function takes a DHCPv6 message and returns true if
 // the machine trying to netboot is using UEFI of false if it is not.
-func IsUsingUEFI(msg DHCPv6) bool {
+func IsUsingUEFI(msg *Message) bool {
 	// RFC 4578 says:
 	// As of the writing of this document, the following pre-boot
 	//    architecture types have been requested.
@@ -215,7 +212,7 @@ func IsUsingUEFI(msg DHCPv6) bool {
 // in case of relay
 func GetTransactionID(packet DHCPv6) (TransactionID, error) {
 	if message, ok := packet.(*Message); ok {
-		return message.TransactionID(), nil
+		return message.TransactionID, nil
 	}
 	if relay, ok := packet.(*RelayMessage); ok {
 		message, err := relay.GetInnerMessage()
