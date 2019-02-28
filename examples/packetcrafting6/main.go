@@ -11,7 +11,7 @@ import (
 func main() {
 	// In this example we create and manipulate a DHCPv6 solicit packet
 	// and encapsulate it in a relay packet. To to this, we use
-	// `dhcpv6.DHCPv6Message` and `dhcpv6.DHCPv6Relay`, two structures
+	// `dhcpv6.Message` and `dhcpv6.DHCPv6Relay`, two structures
 	// that implement the `dhcpv6.DHCPv6` interface.
 	// Then print the wire-format representation of the packet.
 

@@ -28,9 +28,9 @@ func WithServerID(duid Duid) Modifier {
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
 func WithNetboot(d DHCPv6) DHCPv6 {
-	msg, ok := d.(*DHCPv6Message)
+	msg, ok := d.(*Message)
 	if !ok {
-		log.Printf("WithNetboot: not a DHCPv6Message")
+		log.Printf("WithNetboot: not a Message")
 		return d
 	}
 	// add OptionBootfileURL and OptionBootfileParam

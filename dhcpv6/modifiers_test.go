@@ -58,7 +58,7 @@ func TestWithIANA(t *testing.T) {
 		IPv6Addr:          net.ParseIP("::1"),
 		PreferredLifetime: 3600,
 		ValidLifetime:     5200,
-	})(&DHCPv6Message{})
+	})(&Message{})
 	require.Equal(t, 1, len(d.Options()))
 	require.Equal(t, OptionIANA, d.Options()[0].Code())
 }
@@ -67,7 +67,7 @@ func TestWithDNS(t *testing.T) {
 	d := WithDNS([]net.IP{
 		net.ParseIP("fe80::1"),
 		net.ParseIP("fe80::2"),
-	}...)(&DHCPv6Message{})
+	}...)(&Message{})
 	require.Equal(t, 1, len(d.Options()))
 	dns := d.Options()[0].(*OptDNSRecursiveNameServer)
 	log.Printf("DNS %+v", dns)
@@ -82,7 +82,7 @@ func TestWithDomainSearchList(t *testing.T) {
 	d := WithDomainSearchList([]string{
 		"slackware.it",
 		"dhcp.slackware.it",
-	}...)(&DHCPv6Message{})
+	}...)(&Message{})
 	require.Equal(t, 1, len(d.Options()))
 	osl := d.Options()[0].(*OptDomainSearchList)
 	require.Equal(t, OptionDomainSearchList, osl.Code())

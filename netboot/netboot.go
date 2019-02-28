@@ -93,7 +93,7 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*NetConf, string, erro
 	if reply == nil {
 		return nil, "", errors.New("no REPLY received")
 	}
-	netconf, err := GetNetConfFromPacketv6(reply.(*dhcpv6.DHCPv6Message))
+	netconf, err := GetNetConfFromPacketv6(reply.(*dhcpv6.Message))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot get netconf from packet: %v", err)
 	}

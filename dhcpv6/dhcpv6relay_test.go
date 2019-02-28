@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDHCPv6Relay(t *testing.T) {
+func TestRelayMessage(t *testing.T) {
 	ll := net.IP{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xaa, 0xbb, 0xcc, 0xff, 0xfe, 0xdd, 0xee, 0xff}
 	ma := net.IP{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}
-	r := DHCPv6Relay{
+	r := RelayMessage{
 		messageType: MessageTypeRelayForward,
 		hopCount:    10,
 		linkAddr:    ll,
@@ -36,8 +36,8 @@ func TestDHCPv6Relay(t *testing.T) {
 	}
 }
 
-func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
-	r := DHCPv6Relay{}
+func TestRelayMessageSettersAndGetters(t *testing.T) {
+	r := RelayMessage{}
 	// set and get message type
 	r.SetMessageType(MessageTypeRelayReply)
 	if mt := r.Type(); mt != MessageTypeRelayReply {
@@ -59,14 +59,14 @@ func TestDHCPv6RelaySettersAndGetters(t *testing.T) {
 		t.Fatalf("Invalid peer address. Expected %v, got %v", net.IPv6loopback, pa)
 	}
 	// set and get options
-	oneOpt := []Option{&OptRelayMsg{relayMessage: &DHCPv6Message{}}}
+	oneOpt := []Option{&OptRelayMsg{relayMessage: &Message{}}}
 	r.SetOptions(oneOpt)
 	if opts := r.Options(); len(opts) != 1 || opts[0] != oneOpt[0] {
 		t.Fatalf("Invalid options. Expected %v, got %v", oneOpt, opts)
 	}
 }
 
-func TestDHCPv6RelayToBytes(t *testing.T) {
+func TestRelayMessageToBytes(t *testing.T) {
 	expected := []byte{
 		12,                                                      // MessageTypeRelayForward
 		1,                                                       // hop count
@@ -83,14 +83,14 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 		0, 2, // length
 		0, 0,
 	}
-	r := DHCPv6Relay{
+	r := RelayMessage{
 		messageType: MessageTypeRelayForward,
 		hopCount:    1,
 		linkAddr:    net.IPv6interfacelocalallnodes,
 		peerAddr:    net.IPv6linklocalallrouters,
 	}
 	opt := OptRelayMsg{
-		relayMessage: &DHCPv6Message{
+		relayMessage: &Message{
 			messageType:   MessageTypeSolicit,
 			transactionID: TransactionID{0xaa, 0xbb, 0xcc},
 			options: []Option{
@@ -109,7 +109,7 @@ func TestDHCPv6RelayToBytes(t *testing.T) {
 
 func TestNewRelayRepFromRelayForw(t *testing.T) {
 	// create a new relay forward
-	rf := DHCPv6Relay{}
+	rf := RelayMessage{}
 	rf.SetMessageType(MessageTypeRelayForward)
 	rf.SetPeerAddr(net.IPv6linklocalallrouters)
 	rf.SetLinkAddr(net.IPv6interfacelocalallnodes)
@@ -128,7 +128,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	require.NoError(t, err)
 	rr, err := NewRelayReplFromRelayForw(&rf, a)
 	require.NoError(t, err)
-	relay := rr.(*DHCPv6Relay)
+	relay := rr.(*RelayMessage)
 	require.Equal(t, rr.Type(), MessageTypeRelayReply)
 	require.Equal(t, relay.HopCount(), rf.HopCount())
 	require.Equal(t, relay.PeerAddr(), rf.PeerAddr())
