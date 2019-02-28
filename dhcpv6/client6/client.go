@@ -59,7 +59,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv6.Modifier) ([]dhcpv6
 
 	// Decapsulate advertise if it's relayed before passing it to Request
 	if advertise.IsRelay() {
-		advertiseRelay := advertise.(*dhcpv6.DHCPv6Relay)
+		advertiseRelay := advertise.(*dhcpv6.RelayMessage)
 		advertise, err = advertiseRelay.GetInnerMessage()
 		if err != nil {
 			return conversation, err
@@ -153,7 +153,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 		isMessage bool
 	)
 	defer conn.Close()
-	msg, ok := packet.(*dhcpv6.DHCPv6Message)
+	msg, ok := packet.(*dhcpv6.Message)
 	if ok {
 		isMessage = true
 	}
@@ -168,7 +168,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 			// skip non-DHCP packets
 			continue
 		}
-		if recvMsg, ok := adv.(*dhcpv6.DHCPv6Message); ok && isMessage {
+		if recvMsg, ok := adv.(*dhcpv6.Message); ok && isMessage {
 			// if a regular message, check the transaction ID first
 			// XXX should this unpack relay messages and check the XID of the
 			// inner packet too?

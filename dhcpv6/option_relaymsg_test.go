@@ -67,9 +67,9 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r, ok := d.(*DHCPv6Relay)
+	r, ok := d.(*RelayMessage)
 	if !ok {
-		t.Fatalf("Invalid DHCPv6 type. Expected DHCPv6Relay, got %v",
+		t.Fatalf("Invalid DHCPv6 type. Expected RelayMessage, got %v",
 			reflect.TypeOf(d),
 		)
 	}
@@ -91,9 +91,9 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 			reflect.TypeOf(ro),
 		)
 	}
-	innerDHCP, ok := ro.RelayMessage().(*DHCPv6Message)
+	innerDHCP, ok := ro.RelayMessage().(*Message)
 	if !ok {
-		t.Fatalf("Invalid relay message type. Expected DHCPv6Message, got %v",
+		t.Fatalf("Invalid relay message type. Expected Message, got %v",
 			reflect.TypeOf(innerDHCP),
 		)
 	}
@@ -182,7 +182,7 @@ func TestRelayMsgString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"relaymsg=DHCPv6Message",
+		"relaymsg=Message",
 		"String() should contain the relaymsg contents",
 	)
 }

@@ -31,7 +31,7 @@ type NetConf struct {
 
 // GetNetConfFromPacketv6 extracts network configuration information from a DHCPv6
 // Reply packet and returns a populated NetConf structure
-func GetNetConfFromPacketv6(d *dhcpv6.DHCPv6Message) (*NetConf, error) {
+func GetNetConfFromPacketv6(d *dhcpv6.Message) (*NetConf, error) {
 	opt := d.GetOneOption(dhcpv6.OptionIANA)
 	if opt == nil {
 		return nil, errors.New("No option IA NA found")
