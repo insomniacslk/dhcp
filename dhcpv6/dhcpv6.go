@@ -33,7 +33,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	messageType := MessageType(buf.Read8())
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		d := DHCPv6Relay{
+		d := RelayMessage{
 			messageType: messageType,
 			hopCount:    buf.Read8(),
 		}
@@ -46,7 +46,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 		}
 		return &d, nil
 	} else {
-		d := DHCPv6Message{
+		d := Message{
 			messageType: messageType,
 		}
 		buf.ReadBytes(d.transactionID[:])
@@ -63,7 +63,7 @@ func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg := DHCPv6Message{
+	msg := Message{
 		messageType:   MessageTypeSolicit,
 		transactionID: tid,
 	}
@@ -125,20 +125,20 @@ func DecapsulateRelayIndex(l DHCPv6, index int) (DHCPv6, error) {
 	return l, nil
 }
 
-// EncapsulateRelay creates a DHCPv6Relay message containing the passed DHCPv6
+// EncapsulateRelay creates a RelayMessage message containing the passed DHCPv6
 // message as payload. The passed message type must be  either RELAY_FORW or
 // RELAY_REPL
 func EncapsulateRelay(d DHCPv6, mType MessageType, linkAddr, peerAddr net.IP) (DHCPv6, error) {
 	if mType != MessageTypeRelayForward && mType != MessageTypeRelayReply {
 		return nil, fmt.Errorf("Message type must be either RELAY_FORW or RELAY_REPL")
 	}
-	outer := DHCPv6Relay{
+	outer := RelayMessage{
 		messageType: mType,
 		linkAddr:    linkAddr,
 		peerAddr:    peerAddr,
 	}
 	if d.IsRelay() {
-		relay := d.(*DHCPv6Relay)
+		relay := d.(*RelayMessage)
 		outer.hopCount = relay.hopCount + 1
 	} else {
 		outer.hopCount = 0
@@ -189,10 +189,10 @@ func IsUsingUEFI(msg DHCPv6) bool {
 // GetTransactionID returns a transactionID of a message or its inner message
 // in case of relay
 func GetTransactionID(packet DHCPv6) (TransactionID, error) {
-	if message, ok := packet.(*DHCPv6Message); ok {
+	if message, ok := packet.(*Message); ok {
 		return message.TransactionID(), nil
 	}
-	if relay, ok := packet.(*DHCPv6Relay); ok {
+	if relay, ok := packet.(*RelayMessage); ok {
 		message, err := relay.GetInnerMessage()
 		if err != nil {
 			return TransactionID{0, 0, 0}, err

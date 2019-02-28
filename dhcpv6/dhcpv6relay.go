@@ -10,7 +10,9 @@ import (
 
 const RelayHeaderSize = 34
 
-type DHCPv6Relay struct {
+// RelayMessage is a DHCPv6 relay agent message as defined by RFC 3315 Section
+// 7.
+type RelayMessage struct {
 	messageType MessageType
 	hopCount    uint8
 	linkAddr    net.IP
@@ -18,25 +20,24 @@ type DHCPv6Relay struct {
 	options     Options
 }
 
-func (r *DHCPv6Relay) Type() MessageType {
+// Type is this relay message's types.
+func (r *RelayMessage) Type() MessageType {
 	return r.messageType
 }
 
-func (r *DHCPv6Relay) MessageTypeToString() string {
-	return r.messageType.String()
-}
-
-func (r *DHCPv6Relay) String() string {
+// String prints a short human-readable relay message.
+func (r *RelayMessage) String() string {
 	ret := fmt.Sprintf(
-		"DHCPv6Relay(messageType=%v hopcount=%v, linkaddr=%v, peeraddr=%v, %d options)",
+		"RelayMessage(messageType=%v hopcount=%v, linkaddr=%v, peeraddr=%v, %d options)",
 		r.Type().String(), r.hopCount, r.linkAddr, r.peerAddr, len(r.options),
 	)
 	return ret
 }
 
-func (r *DHCPv6Relay) Summary() string {
+// Summary prints all options associated with this relay message.
+func (r *RelayMessage) Summary() string {
 	ret := fmt.Sprintf(
-		"DHCPv6Relay\n"+
+		"RelayMessage\n"+
 			"  messageType=%v\n"+
 			"  hopcount=%v\n"+
 			"  linkaddr=%v\n"+
@@ -52,8 +53,8 @@ func (r *DHCPv6Relay) Summary() string {
 }
 
 // ToBytes returns the serialized version of this relay message as defined by
-// RFC 3315, Section 6.
-func (r *DHCPv6Relay) ToBytes() []byte {
+// RFC 3315, Section 7.
+func (r *RelayMessage) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(make([]byte, 0, RelayHeaderSize))
 	buf.Write8(byte(r.messageType))
 	buf.Write8(byte(r.hopCount))
@@ -63,72 +64,86 @@ func (r *DHCPv6Relay) ToBytes() []byte {
 	return buf.Data()
 }
 
-func (r *DHCPv6Relay) SetMessageType(messageType MessageType) {
+// SetMessageType sets the message type of this relay message.
+func (r *RelayMessage) SetMessageType(messageType MessageType) {
 	// not enforcing if message type is not a RELAY_FORW or a RELAY_REPL message
 	r.messageType = messageType
 }
 
-func (r *DHCPv6Relay) HopCount() uint8 {
+// HopCount returns the hop count.
+func (r *RelayMessage) HopCount() uint8 {
 	return r.hopCount
 }
 
-func (r *DHCPv6Relay) SetHopCount(hopCount uint8) {
+// SetHopCount sets the hop count.
+func (r *RelayMessage) SetHopCount(hopCount uint8) {
 	r.hopCount = hopCount
 }
 
-func (r *DHCPv6Relay) LinkAddr() net.IP {
+// LinkAddr returns the link address for this relay message.
+func (r *RelayMessage) LinkAddr() net.IP {
 	return r.linkAddr
 }
 
-func (r *DHCPv6Relay) SetLinkAddr(linkAddr net.IP) {
+// SetLinkAddr sets the link address.
+func (r *RelayMessage) SetLinkAddr(linkAddr net.IP) {
 	r.linkAddr = linkAddr
 }
 
-func (r *DHCPv6Relay) PeerAddr() net.IP {
+// PeerAddr returns the peer address for this relay message.
+func (r *RelayMessage) PeerAddr() net.IP {
 	return r.peerAddr
 }
 
-func (r *DHCPv6Relay) SetPeerAddr(peerAddr net.IP) {
+// SetPeerAddr sets the peer address.
+func (r *RelayMessage) SetPeerAddr(peerAddr net.IP) {
 	r.peerAddr = peerAddr
 }
 
-func (r *DHCPv6Relay) Options() []Option {
+// Options returns the current set of options associated with this message.
+func (r *RelayMessage) Options() []Option {
 	return r.options
 }
 
-func (r *DHCPv6Relay) GetOption(code OptionCode) []Option {
+// GetOption returns the options associated with the code.
+func (r *RelayMessage) GetOption(code OptionCode) []Option {
 	return r.options.Get(code)
 }
 
-func (r *DHCPv6Relay) GetOneOption(code OptionCode) Option {
+// GetOneOption returns the first associated option with the code from this
+// message.
+func (r *RelayMessage) GetOneOption(code OptionCode) Option {
 	return r.options.GetOne(code)
 }
 
-func (r *DHCPv6Relay) SetOptions(options []Option) {
+// SetOptions replaces this message's options.
+func (r *RelayMessage) SetOptions(options []Option) {
 	r.options = options
 }
 
-func (r *DHCPv6Relay) AddOption(option Option) {
+// AddOption adds an option to this message.
+func (r *RelayMessage) AddOption(option Option) {
 	r.options.Add(option)
 }
 
 // UpdateOption replaces the first option of the same type as the specified one.
-func (r *DHCPv6Relay) UpdateOption(option Option) {
+func (r *RelayMessage) UpdateOption(option Option) {
 	r.options.Update(option)
 }
 
-func (r *DHCPv6Relay) IsRelay() bool {
+// IsRelay returns whether this is a relay message or not.
+func (r *RelayMessage) IsRelay() bool {
 	return true
 }
 
-// Recurse into a relay message and extract and return the inner DHCPv6Message.
-// Return nil if none found (e.g. not a relay message).
-func (d *DHCPv6Relay) GetInnerMessage() (DHCPv6, error) {
+// GetInnerMessage recurses into a relay message and extract and return the
+// inner Message.  Return nil if none found (e.g. not a relay message).
+func (r *RelayMessage) GetInnerMessage() (DHCPv6, error) {
 	var (
 		p   DHCPv6
 		err error
 	)
-	p = d
+	p = r
 	for {
 		if !p.IsRelay() {
 			return p, nil
@@ -154,9 +169,9 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 	if relayForw == nil {
 		return nil, errors.New("Relay message cannot be nil")
 	}
-	relay, ok := relayForw.(*DHCPv6Relay)
+	relay, ok := relayForw.(*RelayMessage)
 	if !ok {
-		return nil, errors.New("Not a DHCPv6Relay")
+		return nil, errors.New("Not a RelayMessage")
 	}
 	if relay.Type() != MessageTypeRelayForward {
 		return nil, errors.New("The passed packet is not of type MessageTypeRelayForward")
@@ -177,7 +192,7 @@ func NewRelayReplFromRelayForw(relayForw, msg DHCPv6) (DHCPv6, error) {
 			return nil, err
 		}
 		if decap.IsRelay() {
-			relay = decap.(*DHCPv6Relay)
+			relay = decap.(*RelayMessage)
 		} else {
 			break
 		}
