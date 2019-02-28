@@ -28,32 +28,57 @@ type DHCPv6 interface {
 // structures. This is used to simplify packet manipulation
 type Modifier func(d DHCPv6) DHCPv6
 
+// MessageFromBytes parses a DHCPv6 message from a byte stream.
+func MessageFromBytes(data []byte) (*Message, error) {
+	buf := uio.NewBigEndianBuffer(data)
+	messageType := MessageType(buf.Read8())
+
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
+		return nil, fmt.Errorf("wrong message type")
+	}
+
+	d := &Message{
+		messageType: messageType,
+	}
+	buf.ReadBytes(d.transactionID[:])
+	if err := d.options.FromBytes(buf.Data()); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// RelayMessageFromBytes parses a relay message from a byte stream.
+func RelayMessageFromBytes(data []byte) (*RelayMessage, error) {
+	buf := uio.NewBigEndianBuffer(data)
+	messageType := MessageType(buf.Read8())
+
+	if messageType != MessageTypeRelayForward && messageType != MessageTypeRelayReply {
+		return nil, fmt.Errorf("wrong message type")
+	}
+
+	d := &RelayMessage{
+		messageType: messageType,
+		hopCount:    buf.Read8(),
+	}
+	d.linkAddr = net.IP(buf.CopyN(net.IPv6len))
+	d.peerAddr = net.IP(buf.CopyN(net.IPv6len))
+
+	// TODO: fail if no OptRelayMessage is present.
+	if err := d.options.FromBytes(buf.Data()); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+
+// FromBytes reads a DHCPv6 message from a byte stream.
 func FromBytes(data []byte) (DHCPv6, error) {
 	buf := uio.NewBigEndianBuffer(data)
 	messageType := MessageType(buf.Read8())
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		d := RelayMessage{
-			messageType: messageType,
-			hopCount:    buf.Read8(),
-		}
-		d.linkAddr = net.IP(buf.CopyN(net.IPv6len))
-		d.peerAddr = net.IP(buf.CopyN(net.IPv6len))
-
-		// TODO fail if no OptRelayMessage is present
-		if err := d.options.FromBytes(buf.Data()); err != nil {
-			return nil, err
-		}
-		return &d, nil
+		return RelayMessageFromBytes(data)
 	} else {
-		d := Message{
-			messageType: messageType,
-		}
-		buf.ReadBytes(d.transactionID[:])
-		if err := d.options.FromBytes(buf.Data()); err != nil {
-			return nil, err
-		}
-		return &d, nil
+		return MessageFromBytes(data)
 	}
 }
 
