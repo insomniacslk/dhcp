@@ -16,6 +16,8 @@ type DHCPv6 interface {
 	String() string
 	Summary() string
 	IsRelay() bool
+	GetInnerMessage() (*Message, error)
+
 	GetOption(code OptionCode) []Option
 	GetOneOption(code OptionCode) Option
 	AddOption(Option)

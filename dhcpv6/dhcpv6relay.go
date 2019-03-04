@@ -91,20 +91,20 @@ func (r *RelayMessage) IsRelay() bool {
 }
 
 // GetInnerMessage recurses into a relay message and extract and return the
-// inner Message.  Return nil if none found (e.g. not a relay message).
-func (r *RelayMessage) GetInnerMessage() (DHCPv6, error) {
+// inner Message. Return nil if none found (e.g. not a relay message).
+func (r *RelayMessage) GetInnerMessage() (*Message, error) {
 	var (
 		p   DHCPv6
 		err error
 	)
 	p = r
 	for {
-		if !p.IsRelay() {
-			return p, nil
-		}
 		p, err = DecapsulateRelay(p)
 		if err != nil {
 			return nil, err
+		}
+		if m, ok := p.(*Message); ok {
+			return m, nil
 		}
 	}
 }
