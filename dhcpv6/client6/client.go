@@ -199,7 +199,11 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
-	solicit, err := dhcpv6.NewSolicitForInterface(ifname)
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, nil, err
+	}
+	solicit, err := dhcpv6.NewSolicit(iface.HardwareAddr)
 	if err != nil {
 		return nil, nil, err
 	}

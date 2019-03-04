@@ -15,9 +15,14 @@ func main() {
 	// that implement the `dhcpv6.DHCPv6` interface.
 	// Then print the wire-format representation of the packet.
 
+	iface, err := net.InterfaceByName("eth0")
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create the DHCPv6 Solicit first, using the interface "eth0"
 	// to get the MAC address
-	msg, err := dhcpv6.NewSolicitForInterface("eth0")
+	msg, err := dhcpv6.NewSolicit(iface.HardwareAddr)
 	if err != nil {
 		log.Fatal(err)
 	}

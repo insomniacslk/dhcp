@@ -16,6 +16,11 @@ type DHCPv6 interface {
 	String() string
 	Summary() string
 	IsRelay() bool
+
+	// GetInnerMessage returns the innermost encapsulated DHCPv6 message.
+	//
+	// If it is already a message, it will be returned. If it is a relay
+	// message, the encapsulated message will be recursively extracted.
 	GetInnerMessage() (*Message, error)
 
 	GetOption(code OptionCode) []Option
@@ -108,11 +113,11 @@ func DecapsulateRelay(l DHCPv6) (DHCPv6, error) {
 	}
 	opt := l.GetOneOption(OptionRelayMsg)
 	if opt == nil {
-		return nil, fmt.Errorf("No OptRelayMsg found")
+		return nil, fmt.Errorf("malformed Relay message: no OptRelayMsg found")
 	}
 	relayOpt := opt.(*OptRelayMsg)
 	if relayOpt.RelayMessage() == nil {
-		return nil, fmt.Errorf("Relay message cannot be nil")
+		return nil, fmt.Errorf("malformed Relay message: encapsulated message is empty")
 	}
 	return relayOpt.RelayMessage(), nil
 }

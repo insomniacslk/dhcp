@@ -99,6 +99,11 @@ func WithDomainSearchList(searchlist ...string) Modifier {
 	}
 }
 
+// WithRapidCommit adds the rapid commit option to a message.
+func WithRapidCommit(d DHCPv6) {
+	d.UpdateOption(&OptionGeneric{OptionCode: OptionRapidCommit})
+}
+
 // WithRequestedOptions adds requested options to the packet
 func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 	return func(d DHCPv6) {
