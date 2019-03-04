@@ -1,62 +1,58 @@
 package server6
 
 import (
+	"context"
 	"log"
 	"net"
 	"testing"
-	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/insomniacslk/dhcp/dhcpv6/client6"
+	"github.com/insomniacslk/dhcp/dhcpv6/nclient6"
 	"github.com/insomniacslk/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
 
+type fakeUnconnectedConn struct {
+	*net.UDPConn
+}
+
+func (f fakeUnconnectedConn) WriteTo(b []byte, _ net.Addr) (int, error) {
+	return f.UDPConn.Write(b)
+}
+
+func (f fakeUnconnectedConn) ReadFrom(b []byte) (int, net.Addr, error) {
+	n, err := f.Read(b)
+	return n, nil, err
+}
+
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
-func setUpClientAndServer(handler Handler) (*client6.Client, *Server) {
-	laddr := net.UDPAddr{
+func setUpClientAndServer(handler Handler) (*nclient6.Client, *Server) {
+	laddr := &net.UDPAddr{
 		IP:   net.ParseIP("::1"),
 		Port: 0,
 	}
-	s := NewServer(laddr, handler)
-	go s.ActivateAndServe()
+	s, err := NewServer(laddr, handler)
+	if err != nil {
+		panic(err)
+	}
+	go s.Serve()
 
-	c := client6.NewClient()
-	c.LocalAddr = &net.UDPAddr{
-		IP: net.ParseIP("::1"),
+	clientConn, err := net.DialUDP("udp6", &net.UDPAddr{IP: net.ParseIP("::1")}, s.conn.LocalAddr().(*net.UDPAddr))
+	if err != nil {
+		panic(err)
 	}
-	for {
-		if s.LocalAddr() != nil {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-		log.Printf("Waiting for server to run...")
-	}
-	c.RemoteAddr = &net.UDPAddr{
-		IP:   net.ParseIP("::1"),
-		Port: s.LocalAddr().(*net.UDPAddr).Port,
+
+	c, err := nclient6.New(net.HardwareAddr{1, 2, 3, 4, 5, 6},
+		nclient6.WithConn(fakeUnconnectedConn{clientConn}))
+	if err != nil {
+		panic(err)
 	}
 
 	return c, s
 }
 
-func TestNewServer(t *testing.T) {
-	laddr := net.UDPAddr{
-		IP:   net.ParseIP("::1"),
-		Port: 0,
-	}
-	handler := func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {}
-	s := NewServer(laddr, handler)
-	defer s.Close()
-
-	require.NotNil(t, s)
-	require.Nil(t, s.conn)
-	require.Equal(t, laddr, s.localAddr)
-	require.NotNil(t, s.Handler)
-}
-
-func TestServerActivateAndServe(t *testing.T) {
+func TestServer(t *testing.T) {
 	handler := func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
 		msg := m.(*dhcpv6.Message)
 		adv, err := dhcpv6.NewAdvertiseFromSolicit(msg)
@@ -68,6 +64,7 @@ func TestServerActivateAndServe(t *testing.T) {
 			log.Printf("Cannot reply to client: %v", err)
 		}
 	}
+
 	c, s := setUpClientAndServer(handler)
 	defer s.Close()
 
@@ -75,6 +72,6 @@ func TestServerActivateAndServe(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEqual(t, 0, len(ifaces))
 
-	_, _, err = c.Solicit(ifaces[0].Name)
+	_, err = c.Solicit(context.Background(), dhcpv6.WithRapidCommit)
 	require.NoError(t, err)
 }

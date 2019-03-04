@@ -70,18 +70,14 @@ func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
 	return m, nil
 }
 
-// NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
+// NewSolicit creates a new SOLICIT message with DUID-LLT, using the
 // given network interface's hardware address and current time
-func NewSolicitForInterface(ifname string, modifiers ...Modifier) (*Message, error) {
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return nil, err
-	}
+func NewSolicit(ifaceHWAddr net.HardwareAddr, modifiers ...Modifier) (*Message, error) {
 	duid := Duid{
 		Type:          DUID_LLT,
 		HwType:        iana.HWTypeEthernet,
 		Time:          GetTime(),
-		LinkLayerAddr: iface.HardwareAddr,
+		LinkLayerAddr: ifaceHWAddr,
 	}
 	return NewSolicitWithCID(duid, modifiers...)
 }
