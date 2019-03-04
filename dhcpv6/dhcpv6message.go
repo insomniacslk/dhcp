@@ -206,6 +206,11 @@ func (m Message) Type() MessageType {
 	return m.MessageType
 }
 
+// GetInnerMessage returns the message itself.
+func (m *Message) GetInnerMessage() (*Message, error) {
+	return m, nil
+}
+
 // AddOption adds an option to this message.
 func (m *Message) AddOption(option Option) {
 	m.Options.Add(option)
