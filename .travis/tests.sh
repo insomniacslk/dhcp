@@ -28,7 +28,7 @@ done
 
 # Skip go1.9 for this check. rtr7/router7 depends on miekg/dns, which does not
 # support go1.9
-if [ "$TRAVIS_GO_VERSION" = "1.9" ]
+if [[ "$TRAVIS_GO_VERSION" =~ ^1.(9|10|11)$ ]]
 then
     exit 0
 fi

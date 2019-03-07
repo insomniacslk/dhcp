@@ -144,8 +144,14 @@ func IfUp(ifname string, timeout time.Duration) (netlink.Link, error) {
 			return nil, fmt.Errorf("cannot get interface %q by name: %v", ifname, err)
 		}
 
-		// if the interface is up, return
-		if iface.Attrs().OperState == netlink.OperUp {
+		// If the interface is up, return. According to kernel documentation OperState may
+		// be either Up or Unknown:
+		//   Interface is in RFC2863 operational state UP or UNKNOWN. This is for
+		//   backward compatibility, routing daemons, dhcp clients can use this
+		//   flag to determine whether they should use the interface.
+		// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
+		operState := iface.Attrs().OperState
+		if operState == netlink.OperUp || operState == netlink.OperUnknown {
 			// XXX despite the OperUp state, upon the first attempt I
 			// consistently get a "cannot assign requested address" error. This
 			// may be a bug in the netlink library. Need to investigate more.
