@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
 // CircuitID represents the structure of network vendor interface formats
@@ -32,6 +33,32 @@ var circuitRegexs = []*regexp.Regexp{
 	regexp.MustCompile(".*(?P<slot>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Juniper bundle interface ae52.0
 	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
+}
+
+
+func ParseCircuitId(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
+	
+	relayOptions := packet.RelayAgentInfo() 
+
+	if relayOptions == nil {
+		return nil, fmt.Errorf("No Relay options found in the dhcpv4 pkt")
+	}
+	
+	if relayOptions.Options == nil {
+		return nil, fmt.Errorf("No relay agent suboptions found in the dhcpv4 pkt")
+	}
+
+	// As per RFC 3046 sub-Option 1 is circuit-id. Look at 2.0 section in that RFC
+	// https://tools.ietf.org/html/rfc3046 
+	circuitIdData := string(relayOptions.Options[1])
+	if circuitIdData == "" {
+		return nil, fmt.Errorf("RelayOptions contains no circuitId")
+	}
+	circuitId, err := matchCircuitId(circuitIdData)
+	if err != nil {
+		return nil, err
+	}
+	return circuitId, nil
 }
 
 func matchCircuitId(circuitId string) (*CircuitID, error) {
