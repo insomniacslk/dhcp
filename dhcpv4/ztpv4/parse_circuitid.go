@@ -35,42 +35,41 @@ var circuitRegexs = []*regexp.Regexp{
 	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
 }
 
-
+// ParseCircuitId will parse dhcpv4 packet and return CircuitID info
 func ParseCircuitId(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
-	
+	// CircuitId info is stored as sub-option field in RelayAgentInformationOption
 	relayOptions := packet.RelayAgentInfo() 
 
 	if relayOptions == nil {
-		return nil, fmt.Errorf("No Relay options found in the dhcpv4 pkt")
+		return nil, fmt.Errorf("No relay agent information option found in the dhcpv4 pkt")
 	}
 	
 	if relayOptions.Options == nil {
-		return nil, fmt.Errorf("No relay agent suboptions found in the dhcpv4 pkt")
+		return nil, fmt.Errorf("No relay agent information suboptions found in the dhcpv4 pkt")
 	}
 
 	// As per RFC 3046 sub-Option 1 is circuit-id. Look at 2.0 section in that RFC
 	// https://tools.ietf.org/html/rfc3046 
-	circuitIdData := string(relayOptions.Options[1])
-	if circuitIdData == "" {
-		return nil, fmt.Errorf("RelayOptions contains no circuitId")
+	circuitIdStr := string(relayOptions.Options[1])
+	if circuitIdStr == "" {
+		return nil, fmt.Errorf("no circuit-id suboption found in dhcpv4 packet")
 	}
-	circuitId, err := matchCircuitId(circuitIdData)
+	circuitId, err := matchCircuitId(circuitIdStr)
 	if err != nil {
 		return nil, err
 	}
 	return circuitId, nil
 }
 
-func matchCircuitId(circuitId string) (*CircuitID, error) {
+func matchCircuitId(circuitIdStr string) (*CircuitID, error) {
 
 	for _, re := range circuitRegexs {
 
-		match := re.FindStringSubmatch(circuitId)
+		match := re.FindStringSubmatch(circuitIdStr)
 		if len(match) == 0 {
 			continue
 		}
 
-		//matchMap := map[string]string{}
 		c := CircuitID{}
 		for i, k := range re.SubexpNames() {
 			switch k {
@@ -89,7 +88,7 @@ func matchCircuitId(circuitId string) (*CircuitID, error) {
 		
 		return &c, nil
 	}
-	return nil, fmt.Errorf("Unable to match circuit id : %s with listed regexes of interface types", circuitId)
+	return nil, fmt.Errorf("Unable to match circuit id : %s with listed regexes of interface types", circuitIdStr)
 }
 
 // FormatCircuitID is the CircuitID format we send in our Bootfile URL for ZTP devices 

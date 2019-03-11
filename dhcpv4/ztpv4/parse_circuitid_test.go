@@ -32,7 +32,9 @@ func TestMatchCircuitID(t *testing.T) {
 				t.Errorf("unexpected failure: %v", err)
 			}
 			if circuit != nil {
-				require.Equal(t, tc.want, circuit, "comparing remoteID data")
+				require.Equal(t, tc.want, circuit, "comparing CircuitID")
+			} else {
+				require.Equal(t, tc.want, circuit, "comparing CircuitID")
 			}
 		})
 	}
@@ -59,7 +61,7 @@ func TestFormatCircuitID(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			circuit := tc.circuit.FormatCircuitID()
-			require.Equal(t, tc.want, circuit, "FormatRemoteID data")
+			require.Equal(t, tc.want, circuit, "FormatCircuitID data")
 		})
 	}
 
@@ -99,11 +101,10 @@ func TestPraseCircuitId(t *testing.T) {
 				t.Errorf("Testcase Failed %v", err)
 			}
 			if c != nil {
-				require.Equal(t, *tc.want, *c, "ZTPCircuitId")
+				require.Equal(t, *tc.want, *c, "Comparing DHCPv4 Relay Agent Info CircuitId")
 			} else {
-				require.Equal(t, tc.want, c, "ZTPCircuitId")
+				require.Equal(t, tc.want, c, "Comparing DHCPv4 Relay Agent Info CircuitId")
 			}
-
 		})
 	}
 }
