@@ -27,7 +27,7 @@ func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.Message {
 	if err != nil {
 		log.Panic(err)
 	}
-	adv, err := dhcpv6.NewAdvertiseFromSolicit(sol.(*Message), modifiers...)
+	adv, err := dhcpv6.NewAdvertiseFromSolicit(sol.(*dhcpv6.Message), modifiers...)
 	if err != nil {
 		log.Panic(err)
 	}
