@@ -43,36 +43,36 @@ func GetTime() uint32 {
 }
 
 // NewSolicitWithCID creates a new SOLICIT message with CID.
-func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
-	m, err := NewMessage()
+func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (DHCPv6, error) {
+	d, err := NewMessage()
 	if err != nil {
 		return nil, err
 	}
-	m.MessageType = MessageTypeSolicit
-	m.AddOption(&OptClientId{Cid: duid})
+	d.(*Message).MessageType = MessageTypeSolicit
+	d.AddOption(&OptClientId{Cid: duid})
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
 	})
-	m.AddOption(oro)
-	m.AddOption(&OptElapsedTime{})
+	d.AddOption(oro)
+	d.AddOption(&OptElapsedTime{})
 	// FIXME use real values for IA_NA
 	iaNa := &OptIANA{}
 	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
 	iaNa.T1 = 0xe10
 	iaNa.T2 = 0x1518
-	m.AddOption(iaNa)
+	d.AddOption(iaNa)
 	// Apply modifiers
 	for _, mod := range modifiers {
-		mod(m)
+		d = mod(d)
 	}
-	return m, nil
+	return d, nil
 }
 
 // NewSolicitForInterface creates a new SOLICIT message with DUID-LLT, using the
 // given network interface's hardware address and current time
-func NewSolicitForInterface(ifname string, modifiers ...Modifier) (*Message, error) {
+func NewSolicitForInterface(ifname string, modifiers ...Modifier) (DHCPv6, error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func NewSolicitForInterface(ifname string, modifiers ...Modifier) (*Message, err
 }
 
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
-func NewAdvertiseFromSolicit(sol *Message, modifiers ...Modifier) (*Message, error) {
+func NewAdvertiseFromSolicit(sol *Message, modifiers ...Modifier) (DHCPv6, error) {
 	if sol == nil {
 		return nil, errors.New("SOLICIT cannot be nil")
 	}
@@ -107,15 +107,16 @@ func NewAdvertiseFromSolicit(sol *Message, modifiers ...Modifier) (*Message, err
 	adv.AddOption(cid)
 
 	// apply modifiers
+	d := DHCPv6(adv)
 	for _, mod := range modifiers {
-		mod(adv)
+		d = mod(d)
 	}
-	return adv, nil
+	return d, nil
 }
 
 // NewRequestFromAdvertise creates a new REQUEST packet based on an ADVERTISE
 // packet options.
-func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, error) {
+func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (DHCPv6, error) {
 	if adv == nil {
 		return nil, errors.New("ADVERTISE cannot be nil")
 	}
@@ -162,16 +163,17 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 	}
 
 	// apply modifiers
+	d := DHCPv6(req)
 	for _, mod := range modifiers {
-		mod(req)
+		d = mod(d)
 	}
-	return req, nil
+	return d, nil
 }
 
 // NewReplyFromMessage creates a new REPLY packet based on a
 // Message. The function is to be used when generating a reply to
 // REQUEST, CONFIRM, RENEW, REBIND, RELEASE and INFORMATION-REQUEST packets.
-func NewReplyFromMessage(msg *Message, modifiers ...Modifier) (*Message, error) {
+func NewReplyFromMessage(msg *Message, modifiers ...Modifier) (DHCPv6, error) {
 	if msg == nil {
 		return nil, errors.New("Message cannot be nil")
 	}
@@ -195,10 +197,11 @@ func NewReplyFromMessage(msg *Message, modifiers ...Modifier) (*Message, error) 
 	rep.AddOption(cid)
 
 	// apply modifiers
+	d := DHCPv6(rep)
 	for _, mod := range modifiers {
-		mod(rep)
+		d = mod(d)
 	}
-	return rep, nil
+	return d, nil
 }
 
 // Type returns this message's message type.

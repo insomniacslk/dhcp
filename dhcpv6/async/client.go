@@ -210,7 +210,7 @@ func (c *Client) remoteAddr() (*net.UDPAddr, error) {
 // Returns a future which resolves to response and error.
 func (c *Client) Send(message dhcpv6.DHCPv6, modifiers ...dhcpv6.Modifier) *promise.Future {
 	for _, mod := range modifiers {
-		mod(message)
+		message = mod(message)
 	}
 
 	transactionID, err := dhcpv6.GetTransactionID(message)

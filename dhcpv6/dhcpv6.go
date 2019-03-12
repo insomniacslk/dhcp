@@ -83,7 +83,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 }
 
 // NewMessage creates a new DHCPv6 message with default options
-func NewMessage(modifiers ...Modifier) (*Message, error) {
+func NewMessage(modifiers ...Modifier) (DHCPv6, error) {
 	tid, err := GenerateTransactionID()
 	if err != nil {
 		return nil, err
@@ -93,10 +93,11 @@ func NewMessage(modifiers ...Modifier) (*Message, error) {
 		TransactionID: tid,
 	}
 	// apply modifiers
+	d := DHCPv6(msg)
 	for _, mod := range modifiers {
-		mod(msg)
+		d = mod(d)
 	}
-	return msg, nil
+	return d, nil
 }
 
 // DecapsulateRelay extracts the content of a relay message. It does not recurse

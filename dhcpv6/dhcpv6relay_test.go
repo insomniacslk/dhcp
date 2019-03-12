@@ -87,8 +87,8 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rf.AddOption(&OptRemoteId{})
 
 	// create the inner message
-	s, err := NewMessage()
-	require.NoError(t, err)
+	s := &Message{}
+	s.MessageType = MessageTypeSolicit
 	s.AddOption(&OptClientId{})
 	orm := OptRelayMsg{}
 	orm.SetRelayMessage(s)
@@ -96,7 +96,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 
 	a, err := NewAdvertiseFromSolicit(s)
 	require.NoError(t, err)
-	rr, err := NewRelayReplFromRelayForw(&rf, a)
+	rr, err := NewRelayReplFromRelayForw(&rf, a.(*Message))
 	require.NoError(t, err)
 	relay := rr.(*RelayMessage)
 	require.Equal(t, rr.Type(), MessageTypeRelayReply)
@@ -109,7 +109,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, m, a)
 
-	rr, err = NewRelayReplFromRelayForw(nil, a)
+	rr, err = NewRelayReplFromRelayForw(nil, a.(*Message))
 	require.Error(t, err)
 	rr, err = NewRelayReplFromRelayForw(&rf, nil)
 	require.Error(t, err)

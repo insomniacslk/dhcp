@@ -196,7 +196,7 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
-		mod(solicit)
+		solicit = mod(solicit)
 	}
 	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
 	return solicit, advertise, err
@@ -211,7 +211,7 @@ func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
-		mod(request)
+		request = mod(request)
 	}
 	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
 	return request, reply, err

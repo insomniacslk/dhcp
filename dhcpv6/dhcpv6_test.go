@@ -63,8 +63,8 @@ func TestNewMessage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, d)
 	require.Equal(t, MessageTypeSolicit, d.Type())
-	require.NotEqual(t, 0, d.TransactionID)
-	require.Empty(t, d.Options)
+	require.NotEqual(t, 0, d.(*Message).TransactionID)
+	require.Empty(t, d.(*Message).Options)
 }
 
 func TestDecapsulateRelayIndex(t *testing.T) {
@@ -148,7 +148,7 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 
 	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, a.TransactionID, s.TransactionID)
+	require.Equal(t, a.(*Message).TransactionID, s.TransactionID)
 	require.Equal(t, a.Type(), MessageTypeAdvertise)
 }
 
@@ -166,31 +166,31 @@ func TestNewReplyFromMessage(t *testing.T) {
 
 	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.TransactionID, msg.TransactionID)
+	require.Equal(t, rep.(*Message).TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRenew
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.TransactionID, msg.TransactionID)
+	require.Equal(t, rep.(*Message).TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRebind
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.TransactionID, msg.TransactionID)
+	require.Equal(t, rep.(*Message).TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRelease
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.TransactionID, msg.TransactionID)
+	require.Equal(t, rep.(*Message).TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeInformationRequest
 	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.TransactionID, msg.TransactionID)
+	require.Equal(t, rep.(*Message).TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeSolicit
@@ -263,7 +263,7 @@ func TestGetTransactionIDMessage(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(message)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.TransactionID)
+	require.Equal(t, transactionID, message.(*Message).TransactionID)
 }
 
 func TestGetTransactionIDRelay(t *testing.T) {
@@ -273,7 +273,7 @@ func TestGetTransactionIDRelay(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(relay)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.TransactionID)
+	require.Equal(t, transactionID, message.(*Message).TransactionID)
 }
 
 // TODO test NewMessageTypeSolicit
