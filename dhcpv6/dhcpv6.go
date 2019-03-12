@@ -26,7 +26,7 @@ type DHCPv6 interface {
 
 // Modifier defines the signature for functions that can modify DHCPv6
 // structures. This is used to simplify packet manipulation
-type Modifier func(d DHCPv6)
+type Modifier func(d DHCPv6) DHCPv6
 
 // MessageFromBytes parses a DHCPv6 message from a byte stream.
 func MessageFromBytes(data []byte) (*Message, error) {
