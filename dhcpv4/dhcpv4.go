@@ -225,13 +225,17 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 	// find server IP address
 	serverIP := offer.ServerIdentifier()
 	if serverIP == nil {
-		return nil, errors.New("Missing Server IP Address in DHCP Offer")
+		if offer.ServerIPAddr == nil || offer.ServerIPAddr.IsUnspecified() {
+			return nil, fmt.Errorf("missing Server IP Address in DHCP Offer")
+		}
+		serverIP = offer.ServerIPAddr
 	}
 
 	return New(PrependModifiers(modifiers,
 		WithReply(offer),
 		WithMessageType(MessageTypeRequest),
 		WithServerIP(serverIP),
+		WithClientIP(offer.ClientIPAddr),
 		WithOption(OptRequestedIPAddress(offer.YourIPAddr)),
 		WithOption(OptServerIdentifier(serverIP)),
 	)...)
