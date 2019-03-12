@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.DHCPv6Message {
+func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.Message {
 	hwaddr, err := net.ParseMAC("aa:bb:cc:dd:ee:ff")
 	if err != nil {
 		log.Panic(err)
@@ -31,8 +31,7 @@ func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.DHCPv6Message {
 	if err != nil {
 		log.Panic(err)
 	}
-	adv := d.(*dhcpv6.DHCPv6Message)
-	return adv
+	return d
 }
 
 func TestGetNetConfFromPacketv6Invalid(t *testing.T) {

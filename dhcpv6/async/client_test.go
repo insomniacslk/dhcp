@@ -15,7 +15,7 @@ import (
 const retries = 5
 
 // solicit creates new solicit based on the mac address
-func solicit(input string) (dhcpv6.DHCPv6, error) {
+func solicit(input string) (*dhcpv6.Message, error) {
 	mac, err := net.ParseMAC(input)
 	if err != nil {
 		return nil, err

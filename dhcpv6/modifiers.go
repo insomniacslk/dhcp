@@ -10,28 +10,26 @@ import (
 
 // WithClientID adds a client ID option to a DHCPv6 packet
 func WithClientID(duid Duid) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		cid := OptClientId{Cid: duid}
 		d.UpdateOption(&cid)
-		return d
 	}
 }
 
 // WithServerID adds a client ID option to a DHCPv6 packet
 func WithServerID(duid Duid) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		sid := OptServerId{Sid: duid}
 		d.UpdateOption(&sid)
-		return d
 	}
 }
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
-func WithNetboot(d DHCPv6) DHCPv6 {
-	msg, ok := d.(*DHCPv6Message)
+func WithNetboot(d DHCPv6) {
+	msg, ok := d.(*Message)
 	if !ok {
-		log.Printf("WithNetboot: not a DHCPv6Message")
-		return d
+		log.Printf("WithNetboot: not a Message")
+		return
 	}
 	// add OptionBootfileURL and OptionBootfileParam
 	opt := msg.GetOneOption(OptionORO)
@@ -43,32 +41,30 @@ func WithNetboot(d DHCPv6) DHCPv6 {
 	oro.AddRequestedOption(OptionBootfileURL)
 	oro.AddRequestedOption(OptionBootfileParam)
 	msg.UpdateOption(oro)
-	return d
+	return
 }
 
 // WithUserClass adds a user class option to the packet
 func WithUserClass(uc []byte) Modifier {
 	// TODO let the user specify multiple user classes
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		ouc := OptUserClass{UserClasses: [][]byte{uc}}
 		d.AddOption(&ouc)
-		return d
 	}
 }
 
 // WithArchType adds an arch type option to the packet
 func WithArchType(at iana.Arch) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		ao := OptClientArchType{ArchTypes: []iana.Arch{at}}
 		d.AddOption(&ao)
-		return d
 	}
 }
 
 // WithIANA adds or updates an OptIANA option with the provided IAAddress
 // options
 func WithIANA(addrs ...OptIAAddress) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		opt := d.GetOneOption(OptionIANA)
 		if opt == nil {
 			opt = &OptIANA{}
@@ -78,37 +74,34 @@ func WithIANA(addrs ...OptIAAddress) Modifier {
 			iaNa.AddOption(&addr)
 		}
 		d.UpdateOption(iaNa)
-		return d
 	}
 }
 
 // WithDNS adds or updates an OptDNSRecursiveNameServer
 func WithDNS(dnses ...net.IP) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		odns := OptDNSRecursiveNameServer{
 			NameServers: append([]net.IP{}, dnses[:]...),
 		}
 		d.UpdateOption(&odns)
-		return d
 	}
 }
 
 // WithDomainSearchList adds or updates an OptDomainSearchList
 func WithDomainSearchList(searchlist ...string) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		osl := OptDomainSearchList{
 			DomainSearchList: &rfc1035label.Labels{
 				Labels: searchlist,
 			},
 		}
 		d.UpdateOption(&osl)
-		return d
 	}
 }
 
 // WithRequestedOptions adds requested options to the packet
 func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
-	return func(d DHCPv6) DHCPv6 {
+	return func(d DHCPv6) {
 		opt := d.GetOneOption(OptionORO)
 		if opt == nil {
 			opt = &OptRequestedOption{}
@@ -118,6 +111,5 @@ func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
 			oro.AddRequestedOption(optionCode)
 		}
 		d.UpdateOption(oro)
-		return d
 	}
 }

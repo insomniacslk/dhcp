@@ -63,12 +63,12 @@ func TestNewMessage(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, d)
 	require.Equal(t, MessageTypeSolicit, d.Type())
-	require.NotEqual(t, 0, d.(*DHCPv6Message).transactionID)
-	require.Empty(t, d.(*DHCPv6Message).options)
+	require.NotEqual(t, 0, d.TransactionID)
+	require.Empty(t, d.Options)
 }
 
 func TestDecapsulateRelayIndex(t *testing.T) {
-	m := DHCPv6Message{}
+	m := Message{}
 	r1, err := EncapsulateRelay(&m, MessageTypeRelayForward, net.IPv6linklocalallnodes, net.IPv6interfacelocalallnodes)
 	require.NoError(t, err)
 	r2, err := EncapsulateRelay(r1, MessageTypeRelayForward, net.IPv6loopback, net.IPv6linklocalallnodes)
@@ -78,69 +78,50 @@ func TestDecapsulateRelayIndex(t *testing.T) {
 
 	first, err := DecapsulateRelayIndex(r3, 0)
 	require.NoError(t, err)
-	relay, ok := first.(*DHCPv6Relay)
+	relay, ok := first.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(1))
-	require.Equal(t, relay.LinkAddr(), net.IPv6loopback)
-	require.Equal(t, relay.PeerAddr(), net.IPv6linklocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(1))
+	require.Equal(t, relay.LinkAddr, net.IPv6loopback)
+	require.Equal(t, relay.PeerAddr, net.IPv6linklocalallnodes)
 
 	second, err := DecapsulateRelayIndex(r3, 1)
 	require.NoError(t, err)
-	relay, ok = second.(*DHCPv6Relay)
+	relay, ok = second.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(0))
-	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
-	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(0))
+	require.Equal(t, relay.LinkAddr, net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr, net.IPv6interfacelocalallnodes)
 
 	third, err := DecapsulateRelayIndex(r3, 2)
 	require.NoError(t, err)
-	_, ok = third.(*DHCPv6Message)
+	_, ok = third.(*Message)
 	require.True(t, ok)
 
 	rfirst, err := DecapsulateRelayIndex(r3, -1)
 	require.NoError(t, err)
-	relay, ok = rfirst.(*DHCPv6Relay)
+	relay, ok = rfirst.(*RelayMessage)
 	require.True(t, ok)
-	require.Equal(t, relay.HopCount(), uint8(0))
-	require.Equal(t, relay.LinkAddr(), net.IPv6linklocalallnodes)
-	require.Equal(t, relay.PeerAddr(), net.IPv6interfacelocalallnodes)
+	require.Equal(t, relay.HopCount, uint8(0))
+	require.Equal(t, relay.LinkAddr, net.IPv6linklocalallnodes)
+	require.Equal(t, relay.PeerAddr, net.IPv6interfacelocalallnodes)
 
 	_, err = DecapsulateRelayIndex(r3, -2)
 	require.Error(t, err)
 }
 
-func TestSettersAndGetters(t *testing.T) {
-	d := DHCPv6Message{}
-	// Message
-	d.SetMessage(MessageTypeSolicit)
-	require.Equal(t, MessageTypeSolicit, d.Type())
-	d.SetMessage(MessageTypeAdvertise)
-	require.Equal(t, MessageTypeAdvertise, d.Type())
-
-	// TransactionID
-	xid := TransactionID{0xa, 0xb, 0xc}
-	d.SetTransactionID(xid)
-	require.Equal(t, xid, d.TransactionID())
-
-	// Options
-	require.Empty(t, d.Options())
-	expectedOptions := []Option{&OptionGeneric{OptionCode: 0, OptionData: []byte{}}}
-	d.SetOptions(expectedOptions)
-	require.Equal(t, expectedOptions, d.Options())
-}
-
 func TestAddOption(t *testing.T) {
-	d := DHCPv6Message{}
-	require.Empty(t, d.Options())
+	d := Message{}
+	require.Empty(t, d.Options)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
-	require.Equal(t, []Option{&opt}, d.Options())
+	require.Equal(t, Options{&opt}, d.Options)
 }
 
 func TestToBytes(t *testing.T) {
-	d := DHCPv6Message{}
-	d.SetMessage(MessageTypeSolicit)
-	d.SetTransactionID(TransactionID{0xa, 0xb, 0xc})
+	d := Message{
+		MessageType:   MessageTypeSolicit,
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+	}
 	d.AddOption(&OptionGeneric{OptionCode: 0, OptionData: []byte{}})
 
 	bytes := d.ToBytes()
@@ -157,24 +138,25 @@ func TestFromAndToBytes(t *testing.T) {
 }
 
 func TestNewAdvertiseFromSolicit(t *testing.T) {
-	s := DHCPv6Message{}
-	s.SetMessage(MessageTypeSolicit)
-	xid := TransactionID{0xa, 0xb, 0xc}
-	s.SetTransactionID(xid)
+	s := Message{
+		MessageType:   MessageTypeSolicit,
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+	}
 	cid := OptClientId{}
 	s.AddOption(&cid)
 	duid := Duid{}
 
 	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, a.(*DHCPv6Message).TransactionID(), s.TransactionID())
+	require.Equal(t, a.TransactionID, s.TransactionID)
 	require.Equal(t, a.Type(), MessageTypeAdvertise)
 }
 
-func TestNewReplyFromDHCPv6Message(t *testing.T) {
-	msg := DHCPv6Message{}
-	xid := TransactionID{0xa, 0xb, 0xc}
-	msg.SetTransactionID(xid)
+func TestNewReplyFromMessage(t *testing.T) {
+	msg := Message{
+		TransactionID: TransactionID{0xa, 0xb, 0xc},
+		MessageType:   MessageTypeConfirm,
+	}
 	cid := OptClientId{}
 	msg.AddOption(&cid)
 	sid := OptServerId{}
@@ -182,42 +164,37 @@ func TestNewReplyFromDHCPv6Message(t *testing.T) {
 	sid.Sid = duid
 	msg.AddOption(&sid)
 
-	msg.SetMessage(MessageTypeConfirm)
-	rep, err := NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRenew)
-	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	msg.MessageType = MessageTypeRenew
+	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRebind)
-	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	msg.MessageType = MessageTypeRebind
+	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeRelease)
-	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	msg.MessageType = MessageTypeRelease
+	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeInformationRequest)
-	rep, err = NewReplyFromDHCPv6Message(&msg, WithServerID(duid))
+	msg.MessageType = MessageTypeInformationRequest
+	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)
-	require.Equal(t, rep.(*DHCPv6Message).TransactionID(), msg.TransactionID())
+	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
-	msg.SetMessage(MessageTypeSolicit)
-	rep, err = NewReplyFromDHCPv6Message(&msg)
-	require.Error(t, err)
-
-	relay := DHCPv6Relay{}
-	rep, err = NewReplyFromDHCPv6Message(&relay)
+	msg.MessageType = MessageTypeSolicit
+	rep, err = NewReplyFromMessage(&msg)
 	require.Error(t, err)
 }
 
@@ -254,28 +231,28 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 }
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
-	msg := DHCPv6Message{}
+	msg := Message{}
 	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.EFI_BC}}
 	msg.AddOption(&opt)
 	require.True(t, IsUsingUEFI(&msg))
 }
 
 func TestIsUsingUEFIArchTypeFalse(t *testing.T) {
-	msg := DHCPv6Message{}
+	msg := Message{}
 	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.INTEL_X86PC}}
 	msg.AddOption(&opt)
 	require.False(t, IsUsingUEFI(&msg))
 }
 
 func TestIsUsingUEFIUserClassTrue(t *testing.T) {
-	msg := DHCPv6Message{}
+	msg := Message{}
 	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeUEFI")}}
 	msg.AddOption(&opt)
 	require.True(t, IsUsingUEFI(&msg))
 }
 
 func TestIsUsingUEFIUserClassFalse(t *testing.T) {
-	msg := DHCPv6Message{}
+	msg := Message{}
 	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeLegacy")}}
 	msg.AddOption(&opt)
 	require.False(t, IsUsingUEFI(&msg))
@@ -286,7 +263,7 @@ func TestGetTransactionIDMessage(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(message)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+	require.Equal(t, transactionID, message.TransactionID)
 }
 
 func TestGetTransactionIDRelay(t *testing.T) {
@@ -296,7 +273,7 @@ func TestGetTransactionIDRelay(t *testing.T) {
 	require.NoError(t, err)
 	transactionID, err := GetTransactionID(relay)
 	require.NoError(t, err)
-	require.Equal(t, transactionID, message.(*DHCPv6Message).TransactionID())
+	require.Equal(t, transactionID, message.TransactionID)
 }
 
 // TODO test NewMessageTypeSolicit

@@ -58,7 +58,8 @@ func TestNewServer(t *testing.T) {
 
 func TestServerActivateAndServe(t *testing.T) {
 	handler := func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
-		adv, err := dhcpv6.NewAdvertiseFromSolicit(m)
+		msg := m.(*dhcpv6.Message)
+		adv, err := dhcpv6.NewAdvertiseFromSolicit(msg)
 		if err != nil {
 			log.Printf("NewAdvertiseFromSolicit failed: %v", err)
 			return
