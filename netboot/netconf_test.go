@@ -31,7 +31,7 @@ func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.Message {
 	if err != nil {
 		log.Panic(err)
 	}
-	adv := d.(*dhcpv6.DHCPv6Message)
+	adv := d.(*dhcpv6.Message)
 	return adv
 }
 
