@@ -45,10 +45,6 @@ func ParseCircuitID(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
 		return nil, fmt.Errorf("No relay agent information option found in the dhcpv4 pkt")
 	}
 
-	if len(relayOptions.Options) == 0 {
-		return nil, fmt.Errorf("No relay agent information suboptions found in the dhcpv4 pkt")
-	}
-
 	// As per RFC 3046 sub-Option 1 is circuit-id. Look at 2.0 section in that RFC
 	// https://tools.ietf.org/html/rfc3046
 	circuitIdStr := string(relayOptions.Options.Get(dhcpv4.AgentCircuitIDSubOption))
