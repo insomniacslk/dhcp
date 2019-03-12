@@ -1,11 +1,9 @@
 package server4
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
@@ -36,7 +34,7 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
-func handler(conn net.PacketConn, peer net.Addr, m dhcpv4.DHCPv4) {
+func handler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 	// this function will just print the received DHCPv4 message, without replying
 	log.Print(m.Summary())
 }
@@ -46,12 +44,14 @@ func main() {
 		IP:   net.ParseIP("127.0.0.1"),
 		Port: 67,
 	}
-	server := dhcpv4.NewServer(laddr, handler)
-
-	defer server.Close()
-	if err := server.ActivateAndServe(); err != nil {
-		log.Panic(err)
+	server, err := dhcpv4.NewServer(laddr, handler)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	// This never returns. If you want to do other stuff, dump it into a
+	// goroutine.
+	server.Serve()
 }
 
 */
@@ -66,98 +66,61 @@ type Server struct {
 	connMutex  sync.Mutex
 	shouldStop chan bool
 	Handler    Handler
-	localAddr  net.UDPAddr
 }
 
-// LocalAddr returns the local address of the listening socket, or nil if not
-// listening
-func (s *Server) LocalAddr() net.Addr {
-	s.connMutex.Lock()
-	defer s.connMutex.Unlock()
-	if s.conn == nil {
-		return nil
-	}
-	return s.conn.LocalAddr()
-}
-
-// ActivateAndServe starts the DHCPv4 server. The listener will run in
-// background, and can be interrupted with `Server.Close`.
-func (s *Server) ActivateAndServe() error {
-	s.connMutex.Lock()
-	if s.conn != nil {
-		// this may panic if s.conn is closed but not reset properly. For that
-		// you should use `Server.Close`.
-		s.Close()
-	}
-	conn, err := net.ListenUDP("udp4", &s.localAddr)
-	if err != nil {
-		s.connMutex.Unlock()
-		return err
-	}
-	s.conn = conn
-	s.connMutex.Unlock()
-	var (
-		pc *net.UDPConn
-		ok bool
-	)
-	if pc, ok = s.conn.(*net.UDPConn); !ok {
-		return fmt.Errorf("error: not an UDPConn")
-	}
-	if pc == nil {
-		return fmt.Errorf("ActivateAndServe: invalid nil PacketConn")
-	}
-	log.Printf("Server listening on %s", pc.LocalAddr())
+// Serve serves requests.
+func (s *Server) Serve() {
+	log.Printf("Server listening on %s", s.conn.LocalAddr())
 	log.Print("Ready to handle requests")
 	for {
-		select {
-		case <-s.shouldStop:
-			break
-		case <-time.After(time.Millisecond):
-		}
-		pc.SetReadDeadline(time.Now().Add(time.Second))
 		rbuf := make([]byte, 4096) // FIXME this is bad
-		n, peer, err := pc.ReadFrom(rbuf)
+		n, peer, err := s.conn.ReadFrom(rbuf)
 		if err != nil {
-			switch err.(type) {
-			case net.Error:
-				if !err.(net.Error).Timeout() {
-					return err
-				}
-				// if timeout, silently skip and continue
-			default:
-				// complain and continue
-				log.Printf("Error reading from packet conn: %v", err)
-			}
-			continue
+			log.Printf("Error reading from packet conn: %v", err)
+			return
 		}
 		log.Printf("Handling request from %v", peer)
+
 		m, err := dhcpv4.FromBytes(rbuf[:n])
 		if err != nil {
 			log.Printf("Error parsing DHCPv4 request: %v", err)
 			continue
 		}
-		go s.Handler(pc, peer, m)
+		go s.Handler(s.conn, peer, m)
 	}
 }
 
 // Close sends a termination request to the server, and closes the UDP listener
 func (s *Server) Close() error {
-	s.shouldStop <- true
-	s.connMutex.Lock()
-	defer s.connMutex.Unlock()
-	if s.conn != nil {
-		ret := s.conn.Close()
-		s.conn = nil
-		return ret
+	return s.conn.Close()
+}
+
+// ServerOpt adds optional configuration to a server.
+type ServerOpt func(s *Server)
+
+// WithConn configures the server with the given connection.
+func WithConn(c net.PacketConn) ServerOpt {
+	return func(s *Server) {
+		s.conn = c
 	}
-	return nil
 }
 
 // NewServer initializes and returns a new Server object
-func NewServer(addr net.UDPAddr, handler Handler) *Server {
-	return &Server{
-		localAddr:  addr,
+func NewServer(addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
+	s := &Server{
 		Handler:    handler,
 		shouldStop: make(chan bool, 1),
 	}
+
+	for _, o := range opt {
+		o(s)
+	}
+	if s.conn == nil {
+		var err error
+		s.conn, err = net.ListenUDP("udp4", addr)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return s, nil
 }
