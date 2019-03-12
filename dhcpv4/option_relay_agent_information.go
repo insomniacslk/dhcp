@@ -50,9 +50,8 @@ func (o raiSubOptionCode) String() string {
 	return fmt.Sprintf("unknown (%d)", o)
 }
 
-const (
-	AgentCircuitIDSubOption raiSubOptionCode = 1
-)
+// The Agent Circuit ID SubOption as per https://tools.ietf.org/html/rfc3046#section-2.0
+const AgentCircuitIDSubOption raiSubOptionCode = 1
 
 var raiSubOptionCodeToString = map[raiSubOptionCode]string{
 	AgentCircuitIDSubOption: "Agent Circuit ID Sub-option",

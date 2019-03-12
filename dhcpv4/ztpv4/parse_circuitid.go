@@ -36,7 +36,7 @@ var circuitRegexs = []*regexp.Regexp{
 	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
 }
 
-// ParseCircuitId will parse dhcpv4 packet and return CircuitID info
+// ParseCircuitID will parse dhcpv4 packet and return CircuitID info
 func ParseCircuitID(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
 	// CircuitId info is stored as sub-option field in RelayAgentInformationOption
 	relayOptions := packet.RelayAgentInfo()
