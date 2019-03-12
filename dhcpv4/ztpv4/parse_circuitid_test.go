@@ -67,7 +67,7 @@ func TestFormatCircuitID(t *testing.T) {
 
 }
 
-func TestParseCircuitId(t *testing.T) {
+func TestParseCircuitID(t *testing.T) {
 	tt := []struct {
 		name    string
 		circuit []byte

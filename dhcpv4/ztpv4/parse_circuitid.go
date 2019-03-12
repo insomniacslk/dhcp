@@ -45,7 +45,7 @@ func ParseCircuitID(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
 		return nil, fmt.Errorf("No relay agent information option found in the dhcpv4 pkt")
 	}
 
-	if relayOptions.Options == nil {
+	if len(relayOptions.Options) == 0 {
 		return nil, fmt.Errorf("No relay agent information suboptions found in the dhcpv4 pkt")
 	}
 
