@@ -26,7 +26,8 @@ func solicit(input string) (*dhcpv6.Message, error) {
 		Time:          dhcpv6.GetTime(),
 		LinkLayerAddr: mac,
 	}
-	return dhcpv6.NewSolicitWithCID(duid)
+	s, _ := dhcpv6.NewSolicitWithCID(duid)
+	return s.(*Message), nil
 }
 
 // server creates a server which responds with a predefined response
