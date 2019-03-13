@@ -203,7 +203,7 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 	for _, mod := range modifiers {
 		mod(solicit)
 	}
-	if c.PeerIP != nil {
+	if c.PeerAddr != nil {
 		solicit, err = dhcpv6.EncapsulateRelay(solicit, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
 		if err != nil {
 			return nil, nil, err
@@ -228,7 +228,7 @@ func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...
 	for _, mod := range modifiers {
 		mod(request)
 	}
-	if c.PeerIP != nil {
+	if c.PeerAddr != nil {
 		request, err = dhcpv6.EncapsulateRelay(request, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
 		if err != nil {
 			return nil, nil, err
