@@ -36,3 +36,23 @@ func (r *RelayOptions) FromBytes(data []byte) error {
 func OptRelayAgentInfo(o ...Option) Option {
 	return Option{Code: OptionRelayAgentInformation, Value: RelayOptions{OptionsFromList(o...)}}
 }
+
+type raiSubOptionCode uint8
+
+func (o raiSubOptionCode) Code() uint8 {
+	return uint8(o)
+}
+
+func (o raiSubOptionCode) String() string {
+	if s, ok := raiSubOptionCodeToString[o]; ok {
+		return s
+	}
+	return fmt.Sprintf("unknown (%d)", o)
+}
+
+// AgentCircuitIDSubOption as per https://tools.ietf.org/html/rfc3046#section-2.0
+const AgentCircuitIDSubOption raiSubOptionCode = 1
+
+var raiSubOptionCodeToString = map[raiSubOptionCode]string{
+	AgentCircuitIDSubOption: "Agent Circuit ID Sub-option",
+}
