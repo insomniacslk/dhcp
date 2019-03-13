@@ -88,11 +88,11 @@ func WithOption(opt Option) Modifier {
 // WithUserClass adds a user class option to the packet.
 // The rfc parameter allows you to specify if the userclass should be
 // rfc compliant or not. More details in issue #113
-func WithUserClass(uc []byte, rfc bool) Modifier {
+func WithUserClass(uc string, rfc bool) Modifier {
 	// TODO let the user specify multiple user classes
 	return func(d *DHCPv4) {
 		if rfc {
-			d.UpdateOption(OptRFC3004UserClass([][]byte{uc}))
+			d.UpdateOption(OptRFC3004UserClass([]string{uc}))
 		} else {
 			d.UpdateOption(OptUserClass(uc))
 		}

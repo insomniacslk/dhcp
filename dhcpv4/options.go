@@ -330,7 +330,12 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 		d = &u
 
 	case OptionUserClassInformation:
-		d = &UserClass{}
+		var s Strings
+		d = &s
+		if s.FromBytes(data) != nil {
+			var s String
+			d = &s
+		}
 
 	case OptionVendorIdentifyingVendorClass:
 		d = &VIVCIdentifiers{}

@@ -72,3 +72,8 @@ func OptTFTPServerName(name string) Option {
 func OptClassIdentifier(name string) Option {
 	return Option{Code: OptionClassIdentifier, Value: String(name)}
 }
+
+// OptUserClass returns a new DHCPv4 User Class option.
+func OptUserClass(name string) Option {
+	return Option{Code: OptionUserClassInformation, Value: String(name)}
+}

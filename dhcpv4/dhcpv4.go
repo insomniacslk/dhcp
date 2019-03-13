@@ -666,16 +666,16 @@ func (d *DHCPv4) SubnetMask() net.IPMask {
 // UserClass returns the user class if present.
 //
 // The user class information option is defined by RFC 3004.
-func (d *DHCPv4) UserClass() *UserClass {
+func (d *DHCPv4) UserClass() []string {
 	v := d.Options.Get(OptionUserClassInformation)
 	if v == nil {
 		return nil
 	}
-	var uc UserClass
+	var uc Strings
 	if err := uc.FromBytes(v); err != nil {
-		return nil
+		return []string{GetString(OptionUserClassInformation, d.Options)}
 	}
-	return &uc
+	return uc
 }
 
 // VIVC returns the vendor-identifying vendor class option if present.

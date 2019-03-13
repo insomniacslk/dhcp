@@ -45,7 +45,7 @@ func TestWithOptionModifier(t *testing.T) {
 }
 
 func TestUserClassModifier(t *testing.T) {
-	d, err := New(WithUserClass([]byte("linuxboot"), false))
+	d, err := New(WithUserClass("linuxboot", false))
 	require.NoError(t, err)
 
 	expected := []byte{
@@ -55,7 +55,7 @@ func TestUserClassModifier(t *testing.T) {
 }
 
 func TestUserClassModifierRFC(t *testing.T) {
-	d, err := New(WithUserClass([]byte("linuxboot"), true))
+	d, err := New(WithUserClass("linuxboot", true))
 	require.NoError(t, err)
 
 	expected := []byte{
