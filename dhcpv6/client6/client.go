@@ -29,6 +29,7 @@ type Client struct {
 	WriteTimeout time.Duration
 	LocalAddr    net.Addr
 	RemoteAddr   net.Addr
+	PeerAddr     net.IP
 }
 
 // NewClient returns a Client with default settings
@@ -191,12 +192,22 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
-	solicit, err := dhcpv6.NewSolicitForInterface(ifname)
+	var (
+		solicit	dhcpv6.DHCPv6
+		err	error
+	)
+	solicit, err = dhcpv6.NewSolicitForInterface(ifname)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		mod(solicit)
+	}
+	if c.PeerIP != nil {
+		solicit, err = dhcpv6.EncapsulateRelay(solicit, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
 	return solicit, advertise, err
@@ -206,12 +217,22 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 // Reply (if not nil), and an error if any. The modifiers will be applied to
 // the Request before sending it, see modifiers.go
 func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
-	request, err := dhcpv6.NewRequestFromAdvertise(advertise)
+	var (
+		request	dhcpv6.DHCPv6
+		err	error
+	)
+	request, err = dhcpv6.NewRequestFromAdvertise(advertise)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		mod(request)
+	}
+	if c.PeerIP != nil {
+		request, err = dhcpv6.EncapsulateRelay(request, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
 	return request, reply, err
