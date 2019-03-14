@@ -25,11 +25,11 @@ var (
 
 // Client implements a DHCPv6 client
 type Client struct {
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	LocalAddr    net.Addr
-	RemoteAddr   net.Addr
-	PeerAddr     net.IP
+	ReadTimeout   time.Duration
+	WriteTimeout  time.Duration
+	LocalAddr     net.Addr
+	RemoteAddr    net.Addr
+	SimulateRelay bool
 }
 
 // NewClient returns a Client with default settings
@@ -81,18 +81,6 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	if packet == nil {
 		return nil, fmt.Errorf("Packet to send cannot be nil")
 	}
-	if expectedType == dhcpv6.MessageTypeNone {
-		// infer the expected type from the packet being sent
-		if packet.Type() == dhcpv6.MessageTypeSolicit {
-			expectedType = dhcpv6.MessageTypeAdvertise
-		} else if packet.Type() == dhcpv6.MessageTypeRequest {
-			expectedType = dhcpv6.MessageTypeReply
-		} else if packet.Type() == dhcpv6.MessageTypeRelayForward {
-			expectedType = dhcpv6.MessageTypeRelayReply
-		} else if packet.Type() == dhcpv6.MessageTypeLeaseQuery {
-			expectedType = dhcpv6.MessageTypeLeaseQueryReply
-		} // and probably more
-	}
 	// if no LocalAddr is specified, get the interface's link-local address
 	var laddr net.UDPAddr
 	if c.LocalAddr == nil {
@@ -107,6 +95,25 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 		} else {
 			return nil, fmt.Errorf("Invalid local address: not a net.UDPAddr: %v", c.LocalAddr)
 		}
+	}
+	if c.SimulateRelay {
+		var err error
+		packet, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if expectedType == dhcpv6.MessageTypeNone {
+		// infer the expected type from the packet being sent
+		if packet.Type() == dhcpv6.MessageTypeSolicit {
+			expectedType = dhcpv6.MessageTypeAdvertise
+		} else if packet.Type() == dhcpv6.MessageTypeRequest {
+			expectedType = dhcpv6.MessageTypeReply
+		} else if packet.Type() == dhcpv6.MessageTypeRelayForward {
+			expectedType = dhcpv6.MessageTypeRelayReply
+		} else if packet.Type() == dhcpv6.MessageTypeLeaseQuery {
+			expectedType = dhcpv6.MessageTypeLeaseQueryReply
+		} // and probably more
 	}
 
 	// if no RemoteAddr is specified, use AllDHCPRelayAgentsAndServers
@@ -192,22 +199,12 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
 func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
-	var (
-		solicit	dhcpv6.DHCPv6
-		err	error
-	)
-	solicit, err = dhcpv6.NewSolicitForInterface(ifname)
+	solicit, err := dhcpv6.NewSolicitForInterface(ifname)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		mod(solicit)
-	}
-	if c.PeerAddr != nil {
-		solicit, err = dhcpv6.EncapsulateRelay(solicit, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
-		if err != nil {
-			return nil, nil, err
-		}
 	}
 	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
 	return solicit, advertise, err
@@ -217,22 +214,12 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 // Reply (if not nil), and an error if any. The modifiers will be applied to
 // the Request before sending it, see modifiers.go
 func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
-	var (
-		request	dhcpv6.DHCPv6
-		err	error
-	)
-	request, err = dhcpv6.NewRequestFromAdvertise(advertise)
+	request, err := dhcpv6.NewRequestFromAdvertise(advertise)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, mod := range modifiers {
 		mod(request)
-	}
-	if c.PeerAddr != nil {
-		request, err = dhcpv6.EncapsulateRelay(request, dhcpv6.MessageTypeRelayForward, net.IPv6zero, c.PeerAddr)
-		if err != nil {
-			return nil, nil, err
-		}
 	}
 	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
 	return request, reply, err
