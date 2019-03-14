@@ -95,3 +95,21 @@ func TestParseOptClassIdentifier(t *testing.T) {
 	m, _ = New()
 	require.Equal(t, "", m.ClassIdentifier())
 }
+
+func TestOptUserClass(t *testing.T) {
+	o := OptUserClass("linuxboot")
+	require.Equal(t, OptionUserClassInformation, o.Code, "Code")
+	expected := []byte{
+		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	require.Equal(t, expected, o.Value.ToBytes(), "ToBytes")
+	require.Equal(t, "User Class Information: linuxboot", o.String())
+}
+
+func TestParseOptUserClass(t *testing.T) {
+	m, _ := New(WithUserClass("linuxboot", false))
+	require.Equal(t, []string{"linuxboot"}, m.UserClass())
+
+	m, _ = New()
+	require.Equal(t, 0, len(m.UserClass()))
+}
