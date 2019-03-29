@@ -26,7 +26,7 @@ func randPort() int {
 	// can't use port 0 with raw sockets, so until we implement
 	// a non-raw-sockets client for non-static ports, we have to
 	// deal with this "randomness"
-	return 1024 + rand.Intn(65536-1024)
+	return 32*1024 + rand.Intn(65536-32*1024)
 }
 
 // DORAHandler is a server handler suitable for DORA transactions
