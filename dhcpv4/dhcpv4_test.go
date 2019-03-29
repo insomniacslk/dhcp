@@ -1,6 +1,7 @@
 package dhcpv4
 
 import (
+	"bytes"
 	"net"
 	"testing"
 
@@ -152,15 +153,18 @@ func TestNewToBytes(t *testing.T) {
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ClientHwAddr
 	}
 	// ServerHostName
-	for i := 0; i < 64; i++ {
-		expected = append(expected, 0)
-	}
+	expected = append(expected, bytes.Repeat([]byte{0}, 64)...)
 	// BootFileName
-	for i := 0; i < 128; i++ {
-		expected = append(expected, 0)
-	}
+	expected = append(expected, bytes.Repeat([]byte{0}, 128)...)
+
 	// Magic Cookie
 	expected = append(expected, magicCookie[:]...)
+
+	// Minimum message length padding.
+	//
+	// 236 + 4 byte cookie + 59 bytes padding + 1 byte end.
+	expected = append(expected, bytes.Repeat([]byte{0}, 59)...)
+
 	// End
 	expected = append(expected, 0xff)
 
