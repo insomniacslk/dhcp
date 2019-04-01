@@ -25,10 +25,11 @@ var (
 
 // Client implements a DHCPv6 client
 type Client struct {
-	ReadTimeout  time.Duration
-	WriteTimeout time.Duration
-	LocalAddr    net.Addr
-	RemoteAddr   net.Addr
+	ReadTimeout   time.Duration
+	WriteTimeout  time.Duration
+	LocalAddr     net.Addr
+	RemoteAddr    net.Addr
+	SimulateRelay bool
 }
 
 // NewClient returns a Client with default settings
@@ -80,18 +81,6 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	if packet == nil {
 		return nil, fmt.Errorf("Packet to send cannot be nil")
 	}
-	if expectedType == dhcpv6.MessageTypeNone {
-		// infer the expected type from the packet being sent
-		if packet.Type() == dhcpv6.MessageTypeSolicit {
-			expectedType = dhcpv6.MessageTypeAdvertise
-		} else if packet.Type() == dhcpv6.MessageTypeRequest {
-			expectedType = dhcpv6.MessageTypeReply
-		} else if packet.Type() == dhcpv6.MessageTypeRelayForward {
-			expectedType = dhcpv6.MessageTypeRelayReply
-		} else if packet.Type() == dhcpv6.MessageTypeLeaseQuery {
-			expectedType = dhcpv6.MessageTypeLeaseQueryReply
-		} // and probably more
-	}
 	// if no LocalAddr is specified, get the interface's link-local address
 	var laddr net.UDPAddr
 	if c.LocalAddr == nil {
@@ -106,6 +95,25 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 		} else {
 			return nil, fmt.Errorf("Invalid local address: not a net.UDPAddr: %v", c.LocalAddr)
 		}
+	}
+	if c.SimulateRelay {
+		var err error
+		packet, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if expectedType == dhcpv6.MessageTypeNone {
+		// infer the expected type from the packet being sent
+		if packet.Type() == dhcpv6.MessageTypeSolicit {
+			expectedType = dhcpv6.MessageTypeAdvertise
+		} else if packet.Type() == dhcpv6.MessageTypeRequest {
+			expectedType = dhcpv6.MessageTypeReply
+		} else if packet.Type() == dhcpv6.MessageTypeRelayForward {
+			expectedType = dhcpv6.MessageTypeRelayReply
+		} else if packet.Type() == dhcpv6.MessageTypeLeaseQuery {
+			expectedType = dhcpv6.MessageTypeLeaseQueryReply
+		} // and probably more
 	}
 
 	// if no RemoteAddr is specified, use AllDHCPRelayAgentsAndServers
