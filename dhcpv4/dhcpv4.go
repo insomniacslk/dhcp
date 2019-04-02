@@ -429,6 +429,8 @@ func writeIP(b *uio.Lexer, ip net.IP) {
 	if ip == nil {
 		b.WriteBytes(zeros[:])
 	} else {
+		// Converting IP to 4 byte format
+		ip = ip.To4()
 		b.WriteBytes(ip[:net.IPv4len])
 	}
 }

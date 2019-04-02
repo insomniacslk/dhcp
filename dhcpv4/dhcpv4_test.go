@@ -7,6 +7,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/u-root/pkg/uio"
 )
 
 func TestGetExternalIPv4Addrs(t *testing.T) {
@@ -335,4 +336,13 @@ func TestSummary(t *testing.T) {
 		"  options:\n" +
 		"    DHCP Message Type: INFORM\n"
 	require.Equal(t, want, packet.Summary())
+}
+
+func Test_withIP(t *testing.T) {
+	buff := uio.NewBigEndianBuffer(make([]byte, 0, 20))
+	// Converting a string into IP, ip1 will be in 16 byte format
+	ip1 := net.ParseIP("10.0.0.1")
+	writeIP(buff, ip1)
+	b := buff.Buffer
+	require.Equal(t, b.Len(), 4, "Testing no of bytes written by writeIP func")
 }
