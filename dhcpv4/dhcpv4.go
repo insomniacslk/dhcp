@@ -17,7 +17,6 @@ package dhcpv4
 
 import (
 	"bytes"
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
@@ -26,6 +25,7 @@ import (
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
