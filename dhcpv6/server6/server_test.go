@@ -12,15 +12,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type fakeUnconnectedConn struct {
+// Turns a connected UDP conn into an "unconnected" UDP conn.
+type unconnectedConn struct {
 	*net.UDPConn
 }
 
-func (f fakeUnconnectedConn) WriteTo(b []byte, _ net.Addr) (int, error) {
+func (f unconnectedConn) WriteTo(b []byte, _ net.Addr) (int, error) {
 	return f.UDPConn.Write(b)
 }
 
-func (f fakeUnconnectedConn) ReadFrom(b []byte) (int, net.Addr, error) {
+func (f unconnectedConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	n, err := f.Read(b)
 	return n, nil, err
 }
@@ -43,12 +44,10 @@ func setUpClientAndServer(handler Handler) (*nclient6.Client, *Server) {
 		panic(err)
 	}
 
-	c, err := nclient6.New(net.HardwareAddr{1, 2, 3, 4, 5, 6},
-		nclient6.WithConn(fakeUnconnectedConn{clientConn}))
+	c, err := nclient6.NewWithConn(unconnectedConn{clientConn}, net.HardwareAddr{1, 2, 3, 4, 5, 6})
 	if err != nil {
 		panic(err)
 	}
-
 	return c, s
 }
 
