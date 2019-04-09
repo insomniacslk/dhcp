@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/vishvananda/netlink"
+	"github.com/jsimonetti/rtnetlink"
+	"golang.org/x/sys/unix"
 )
 
 // AddrConf holds a single IP address configuration for a NIC
@@ -136,30 +136,45 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 }
 
 // IfUp brings up an interface by name, and waits for it to come up until a timeout expires
-func IfUp(ifname string, timeout time.Duration) (netlink.Link, error) {
+func IfUp(ifname string, timeout time.Duration) (*net.Interface, error) {
 	start := time.Now()
+	conn, err := rtnetlink.Dial(nil)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
 	for time.Since(start) < timeout {
-		iface, err := netlink.LinkByName(ifname)
+		iface, err := net.InterfaceByName(ifname)
 		if err != nil {
-			return nil, fmt.Errorf("cannot get interface %q by name: %v", ifname, err)
+			return nil, err
 		}
-
 		// If the interface is up, return. According to kernel documentation OperState may
 		// be either Up or Unknown:
 		//   Interface is in RFC2863 operational state UP or UNKNOWN. This is for
 		//   backward compatibility, routing daemons, dhcp clients can use this
 		//   flag to determine whether they should use the interface.
 		// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
-		operState := iface.Attrs().OperState
-		if operState == netlink.OperUp || operState == netlink.OperUnknown {
+		msg, err := conn.Link.Get(uint32(iface.Index))
+		if err != nil {
+			return nil, err
+		}
+		operState := msg.Attributes.OperationalState
+		if operState == rtnetlink.OperStateUp || operState == rtnetlink.OperStateUnknown {
 			// XXX despite the OperUp state, upon the first attempt I
-			// consistently get a "cannot assign requested address" error. This
-			// may be a bug in the netlink library. Need to investigate more.
+			// consistently get a "cannot assign requested address" error. Need
+			// to investigate more.
 			time.Sleep(time.Second)
 			return iface, nil
 		}
 		// otherwise try to bring it up
-		if err := netlink.LinkSetUp(iface); err != nil {
+		err = conn.Link.Set(&rtnetlink.LinkMessage{
+			Family: unix.AF_UNSPEC,
+			Type:   unix.ARPHRD_NETROM,
+			Index:  uint32(iface.Index),
+			Flags:  unix.IFF_UP,
+			Change: unix.IFF_UP,
+		})
+		if err != nil {
 			return nil, fmt.Errorf("interface %q: %v can't make it up: %v", ifname, iface, err)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -172,21 +187,34 @@ func IfUp(ifname string, timeout time.Duration) (netlink.Link, error) {
 // ConfigureInterface configures a network interface with the configuration held by a
 // NetConf structure
 func ConfigureInterface(ifname string, netconf *NetConf) error {
-	iface, err := netlink.LinkByName(ifname)
+	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
-		return fmt.Errorf("error getting interface information for %s: %v", ifname, err)
+		return err
 	}
+	conn, err := rtnetlink.Dial(nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
 	// configure interfaces
 	for _, addr := range netconf.Addresses {
-		dest := &netlink.Addr{
-			IPNet:       &addr.IPNet,
-			PreferedLft: addr.PreferredLifetime,
-			ValidLft:    addr.ValidLifetime,
+		family := unix.AF_INET6
+		if addr.IPNet.IP.To4() != nil {
+			family = unix.AF_INET
 		}
-		if err := netlink.AddrReplace(iface, dest); err != nil {
-			if os.IsExist(err) {
-				return fmt.Errorf("cannot configure %s on %s,%d,%d: %v", ifname, addr.IPNet, addr.PreferredLifetime, addr.ValidLifetime, err)
-			}
+		ones, _ := addr.IPNet.Mask.Size()
+		err := conn.Address.New(&rtnetlink.AddressMessage{
+			Family:       uint8(family),
+			PrefixLength: uint8(ones),
+			Scope:        unix.RT_SCOPE_UNIVERSE,
+			Index:        uint32(iface.Index),
+			Attributes: rtnetlink.AddressAttributes{
+				Address: addr.IPNet.IP,
+				Local:   addr.IPNet.IP,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("cannot configure %s on %s: %v", ifname, addr.IPNet, err)
 		}
 	}
 	// configure /etc/resolv.conf
@@ -201,13 +229,10 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 		return fmt.Errorf("could not write resolv.conf file %v", err)
 	}
 
+	// FIXME wut? No IPv6 here?
 	// add default route information for v4 space. only one default route is allowed
 	// so ignore the others if there are multiple ones
 	if len(netconf.Routers) > 0 {
-		iface, err = netlink.LinkByName(ifname)
-		if err != nil {
-			return fmt.Errorf("could not obtain interface when adding default route: %v", err)
-		}
 		// if there is a default v4 route, remove it, as we want to add the one we just got during
 		// the dhcp transaction. if the route is not present, which is the final state we want,
 		// an error is returned so ignore it
@@ -219,14 +244,35 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 		// a client would want to add before initiating the DHCP transaction in order not to fail with
 		// ENETUNREACH. If this default route has a specific metric assigned, it doesn't get removed.
 		// The code doesn't remove any other default route (i.e. gw != 0.0.0.0).
-		route := netlink.Route{LinkIndex: iface.Attrs().Index, Dst: dst, Src: net.IPv4(0, 0, 0, 0)}
-		netlink.RouteDel(&route)
+		err := conn.Route.Delete(&rtnetlink.RouteMessage{
+			Family:   unix.AF_INET,
+			Table:    unix.RT_TABLE_MAIN,
+			Protocol: unix.RTPROT_UNSPEC,
+			Scope:    unix.RT_SCOPE_NOWHERE,
+			Type:     unix.RTN_UNSPEC,
+			Attributes: rtnetlink.RouteAttributes{
+				Dst: net.IPv4zero,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("could not delete default route on interface %s: %v", ifname, err)
+			return err
+		}
 
 		src := netconf.Addresses[0].IPNet.IP
-		route = netlink.Route{LinkIndex: iface.Attrs().Index, Dst: dst, Src: src, Gw: netconf.Routers[0]}
-		err = netlink.RouteAdd(&route)
+		// TODO handle the remaining Routers if more than one
+		err = conn.Route.Add(&rtnetlink.RouteMessage{
+			Family: unix.AF_INET,
+			Attributes: rtnetlink.RouteAttributes{
+				Dst:      dst.IP,
+				Src:      src,
+				Gateway:  netconf.Routers[0],
+				OutIface: uint32(iface.Index),
+				Table:    unix.RT_TABLE_MAIN,
+			},
+		})
 		if err != nil {
-			return fmt.Errorf("could not add default route (%+v) to interface %s: %v", route, iface.Attrs().Name, err)
+			return fmt.Errorf("could not add gateway %s to interface %s: %v", netconf.Routers[0], ifname, err)
 		}
 	}
 
