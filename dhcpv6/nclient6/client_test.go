@@ -55,9 +55,9 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv6.Message, opt ...C
 		panic(err)
 	}
 
-	o := []ClientOpt{WithConn(clientRawConn), WithRetry(1), WithTimeout(2 * time.Second)}
+	o := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
 	o = append(o, opt...)
-	mc, err := New(net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
+	mc, err := NewWithConn(clientRawConn, net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
 	if err != nil {
 		panic(err)
 	}
