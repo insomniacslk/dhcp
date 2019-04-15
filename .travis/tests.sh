@@ -13,13 +13,13 @@ for d in $(go list ./... | grep -v vendor); do
         rm profile.out
     fi
     # integration tests
-    go test -c -tags=integration -race -coverprofile=profile.out -covermode=atomic $d
+    go test -c -cover -tags=integration -race -covermode=atomic $d
     testbin="./$(basename $d).test"
     # only run it if it was built - i.e. if there are integ tests
-    test -x "${testbin}" && sudo "./${testbin}"
+    test -x "${testbin}" && sudo "./${testbin}" -test.coverprofile=profile.out
     if [ -f profile.out ]; then
         cat profile.out >> coverage.txt
-        rm profile.out
+        rm -f profile.out
     fi
 done
 
