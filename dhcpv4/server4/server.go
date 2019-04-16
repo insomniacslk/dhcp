@@ -3,24 +3,27 @@ package server4
 import (
 	"log"
 	"net"
-	"sync"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 )
 
 /*
   To use the DHCPv4 server code you have to call NewServer with two arguments:
+  - an address to listen on, and
   - a handler function, that will be called every time a valid DHCPv4 packet is
-    received, and
-  - an address to listen on.
+    received.
+
+  The address to listen on is used to know IP address, port and optionally the
+  scope to create and UDP socket to listen on for DHCPv4 traffic.
 
   The handler is a function that takes as input a packet connection, that can be
   used to reply to the client; a peer address, that identifies the client sending
   the request, and the DHCPv4 packet itself. Just implement your custom logic in
   the handler.
 
-  The address to listen on is used to know IP address, port and optionally the
-  scope to create and UDP socket to listen on for DHCPv4 traffic.
+  Optionally, NewServer can receive options that will modify the server object.
+  Some options already exist, for example WithConn. If this option is passed with
+  a valid connection, the listening address argument is ignored.
 
   Example program:
 
@@ -32,6 +35,7 @@ import (
 	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/server4"
 )
 
 func handler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
@@ -44,7 +48,7 @@ func main() {
 		IP:   net.ParseIP("127.0.0.1"),
 		Port: 67,
 	}
-	server, err := dhcpv4.NewServer(laddr, handler)
+	server, err := server4.NewServer(&laddr, handler)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,22 +66,22 @@ type Handler func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4)
 
 // Server represents a DHCPv4 server object
 type Server struct {
-	conn       net.PacketConn
-	connMutex  sync.Mutex
-	shouldStop chan bool
-	Handler    Handler
+	conn    net.PacketConn
+	Handler Handler
 }
 
 // Serve serves requests.
-func (s *Server) Serve() {
+func (s *Server) Serve() error {
 	log.Printf("Server listening on %s", s.conn.LocalAddr())
 	log.Print("Ready to handle requests")
+
+	defer s.Close()
 	for {
 		rbuf := make([]byte, 4096) // FIXME this is bad
 		n, peer, err := s.conn.ReadFrom(rbuf)
 		if err != nil {
 			log.Printf("Error reading from packet conn: %v", err)
-			return
+			return err
 		}
 		log.Printf("Handling request from %v", peer)
 
@@ -108,8 +112,7 @@ func WithConn(c net.PacketConn) ServerOpt {
 // NewServer initializes and returns a new Server object
 func NewServer(addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
 	s := &Server{
-		Handler:    handler,
-		shouldStop: make(chan bool, 1),
+		Handler: handler,
 	}
 
 	for _, o := range opt {
@@ -117,10 +120,11 @@ func NewServer(addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, e
 	}
 	if s.conn == nil {
 		var err error
-		s.conn, err = net.ListenUDP("udp4", addr)
+		conn, err := net.ListenUDP("udp4", addr)
 		if err != nil {
 			return nil, err
 		}
+		s.conn = conn
 	}
 	return s, nil
 }
