@@ -83,7 +83,10 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*
 	if err != nil {
 		t.Fatal(err)
 	}
-	c := nclient4.NewWithConn(clientConn, iface.HardwareAddr, nclient4.WithServerAddr(&saddr))
+	c, err := nclient4.NewWithConn(clientConn, iface.HardwareAddr, nclient4.WithServerAddr(&saddr))
+	if err != nil {
+		t.Fatal(err)
+	}
 	return c, s
 }
 
