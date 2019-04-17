@@ -55,7 +55,10 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv4.DHCPv4, opts ...C
 
 	o := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
 	o = append(o, opts...)
-	mc := NewWithConn(clientConn, net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
+	mc, err := NewWithConn(clientConn, net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
+	if err != nil {
+		panic(err)
+	}
 
 	h := &handler{responses: responses}
 	s, err := server4.NewServer(nil, h.handle, server4.WithConn(serverConn))
