@@ -64,6 +64,9 @@ func TestParseOptBootFileName(t *testing.T) {
 
 	m, _ = New()
 	require.Equal(t, "", m.BootFileNameOption())
+
+	m, _ = New(WithGeneric(OptionBootfileName, []byte{'t', 'e', 's', 't', 0}))
+	require.Equal(t, "test", m.BootFileNameOption())
 }
 
 func TestOptTFTPServerName(t *testing.T) {
@@ -79,6 +82,9 @@ func TestParseOptTFTPServerName(t *testing.T) {
 
 	m, _ = New()
 	require.Equal(t, "", m.TFTPServerName())
+
+	m, _ = New(WithGeneric(OptionTFTPServerName, []byte{'t', 'e', 's', 't', 0}))
+	require.Equal(t, "test", m.TFTPServerName())
 }
 
 func TestOptClassIdentifier(t *testing.T) {
