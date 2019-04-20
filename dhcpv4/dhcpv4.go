@@ -242,6 +242,12 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 		WithClientIP(offer.ClientIPAddr),
 		WithOption(OptRequestedIPAddress(offer.YourIPAddr)),
 		WithOption(OptServerIdentifier(serverIP)),
+		WithRequestedOptions(
+			OptionSubnetMask,
+			OptionRouter,
+			OptionDomainName,
+			OptionDomainNameServer,
+		),
 	)...)
 }
 
@@ -574,14 +580,16 @@ func (d *DHCPv4) RootPath() string {
 //
 // The Bootfile Name option is described by RFC 2132, Section 9.5.
 func (d *DHCPv4) BootFileNameOption() string {
-	return GetString(OptionBootfileName, d.Options)
+	name := GetString(OptionBootfileName, d.Options)
+	return strings.TrimRight(name, "\x00")
 }
 
 // TFTPServerName parses the DHCPv4 TFTP Server Name option if present.
 //
 // The TFTP Server Name option is described by RFC 2132, Section 9.4.
 func (d *DHCPv4) TFTPServerName() string {
-	return GetString(OptionTFTPServerName, d.Options)
+	name := GetString(OptionTFTPServerName, d.Options)
+	return strings.TrimRight(name, "\x00")
 }
 
 // ClassIdentifier parses the DHCPv4 Class Identifier option if present.

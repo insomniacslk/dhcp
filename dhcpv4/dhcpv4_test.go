@@ -229,6 +229,12 @@ func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	require.Equal(t, MessageTypeRequest, req.MessageType())
 	require.False(t, req.IsUnicast())
 	require.True(t, req.IsBroadcast())
+	// Following options are standard in other dhcp clients (isc-dhclient/udhcp) and required
+	// for final ACK to have all info for a proper lease setup (like used in u-root/pkgs/dhclient).
+	require.True(t, req.IsOptionRequested(OptionRouter))
+	require.True(t, req.IsOptionRequested(OptionSubnetMask))
+	require.True(t, req.IsOptionRequested(OptionDomainName))
+	require.True(t, req.IsOptionRequested(OptionDomainNameServer))
 
 	// Unicast request
 	offer.SetUnicast()
