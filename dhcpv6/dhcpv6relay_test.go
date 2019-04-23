@@ -90,7 +90,6 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	s, err := NewMessage()
 	require.NoError(t, err)
 	s.AddOption(&OptClientId{})
-	WithIAID([4]byte{1, 2, 3, 4})(s)
 	orm := OptRelayMsg{}
 	orm.SetRelayMessage(s)
 	rf.AddOption(&orm)
