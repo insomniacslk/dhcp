@@ -77,6 +77,21 @@ func WithIANA(addrs ...OptIAAddress) Modifier {
 	}
 }
 
+// WithIAID updates an OptIANA option with the provided IAID
+func WithIAID(iaid [4]byte) Modifier {
+	return func(d DHCPv6) {
+		opt := d.GetOneOption(OptionIANA)
+		if opt == nil {
+			opt = &OptIANA{
+				Options: Options{},
+			}
+		}
+		iaNa := opt.(*OptIANA)
+		copy(iaNa.IaId[:], iaid[:])
+		d.UpdateOption(iaNa)
+	}
+}
+
 // WithDNS adds or updates an OptDNSRecursiveNameServer
 func WithDNS(dnses ...net.IP) Modifier {
 	return func(d DHCPv6) {

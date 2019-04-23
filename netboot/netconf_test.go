@@ -7,27 +7,20 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
-func getAdv(modifiers ...dhcpv6.Modifier) *dhcpv6.Message {
+func getAdv(advModifiers ...dhcpv6.Modifier) *dhcpv6.Message {
 	hwaddr, err := net.ParseMAC("aa:bb:cc:dd:ee:ff")
 	if err != nil {
 		log.Panic(err)
 	}
 
-	duid := dhcpv6.Duid{
-		Type:          dhcpv6.DUID_LLT,
-		HwType:        iana.HWTypeEthernet,
-		Time:          dhcpv6.GetTime(),
-		LinkLayerAddr: hwaddr,
-	}
-	sol, err := dhcpv6.NewSolicitWithCID(duid, modifiers...)
+	sol, err := dhcpv6.NewSolicit(hwaddr)
 	if err != nil {
 		log.Panic(err)
 	}
-	d, err := dhcpv6.NewAdvertiseFromSolicit(sol, modifiers...)
+	d, err := dhcpv6.NewAdvertiseFromSolicit(sol, advModifiers...)
 	if err != nil {
 		log.Panic(err)
 	}

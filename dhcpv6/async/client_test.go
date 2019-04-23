@@ -8,7 +8,6 @@ import (
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/dhcpv6/client6"
-	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
@@ -20,13 +19,7 @@ func solicit(input string) (*dhcpv6.Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	duid := dhcpv6.Duid{
-		Type:          dhcpv6.DUID_LLT,
-		HwType:        iana.HWTypeEthernet,
-		Time:          dhcpv6.GetTime(),
-		LinkLayerAddr: mac,
-	}
-	return dhcpv6.NewSolicitWithCID(duid)
+	return dhcpv6.NewSolicit(mac)
 }
 
 // server creates a server which responds with a predefined response
