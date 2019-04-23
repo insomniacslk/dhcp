@@ -144,6 +144,7 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 	cid := OptClientId{}
 	s.AddOption(&cid)
 	duid := Duid{}
+	WithIAID([4]byte{1, 2, 3, 4})(&s)
 
 	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
 	require.NoError(t, err)
@@ -207,7 +208,7 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 		LinkLayerAddr: hwAddr,
 	}
 
-	s, err := NewSolicitWithCID(duid)
+	s, err := NewSolicitWithCID(duid, hwAddr)
 	require.NoError(t, err)
 
 	require.Equal(t, s.Type(), MessageTypeSolicit)
@@ -227,6 +228,14 @@ func TestNewMessageTypeSolicitWithCID(t *testing.T) {
 	require.Contains(t, opts, OptionDNSRecursiveNameServer)
 	require.Contains(t, opts, OptionDomainSearchList)
 	require.Equal(t, len(opts), 2)
+
+	// Check IA_NA
+	iaid := [4]byte{hwAddr[2], hwAddr[3], hwAddr[4], hwAddr[5]}
+	iaNaOption := s.GetOneOption(OptionIANA)
+	require.NotNil(t, iaNaOption)
+	iaNa, ok := iaNaOption.(*OptIANA)
+	require.True(t, ok)
+	require.Equal(t, iaid, iaNa.IaId)
 }
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
