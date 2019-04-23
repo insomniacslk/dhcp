@@ -43,7 +43,7 @@ func GetTime() uint32 {
 }
 
 // NewSolicitWithCID creates a new SOLICIT message with CID.
-func NewSolicitWithCID(duid Duid, hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error) {
+func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
 	m, err := NewMessage()
 	if err != nil {
 		return nil, err
@@ -57,13 +57,12 @@ func NewSolicitWithCID(duid Duid, hwaddr net.HardwareAddr, modifiers ...Modifier
 	})
 	m.AddOption(oro)
 	m.AddOption(&OptElapsedTime{})
-	if len(hwaddr) < 4 {
-		return nil, errors.New("short hardware addrss: less than 4 bytes")
-	}
-	l := len(hwaddr)
-	var iaid [4]byte
-	copy(iaid[:], hwaddr[l-4:l])
-	modifiers = append([]Modifier{WithIAID(iaid)}, modifiers...)
+	// FIXME use real values for IA_NA
+	iaNa := &OptIANA{}
+	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
+	iaNa.T1 = 0xe10
+	iaNa.T2 = 0x1518
+	m.AddOption(iaNa)
 	// Apply modifiers
 	for _, mod := range modifiers {
 		mod(m)
@@ -80,7 +79,7 @@ func NewSolicit(ifaceHWAddr net.HardwareAddr, modifiers ...Modifier) (*Message, 
 		Time:          GetTime(),
 		LinkLayerAddr: ifaceHWAddr,
 	}
-	return NewSolicitWithCID(duid, ifaceHWAddr, modifiers...)
+	return NewSolicitWithCID(duid, modifiers...)
 }
 
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
@@ -102,12 +101,6 @@ func NewAdvertiseFromSolicit(sol *Message, modifiers ...Modifier) (*Message, err
 		return nil, errors.New("Client ID cannot be nil in SOLICIT when building ADVERTISE")
 	}
 	adv.AddOption(cid)
-	// add IA_NA
-	iaNa := sol.GetOneOption(OptionIANA)
-	if iaNa == nil {
-		return nil, fmt.Errorf("IA_NA cannot be nil in SOLICIT when building ADVERTISE")
-	}
-	adv.AddOption(iaNa)
 
 	// apply modifiers
 	for _, mod := range modifiers {
