@@ -42,8 +42,15 @@ func GetTime() uint32 {
 	return uint32((now.Nanoseconds() / 1000000000) % 0xffffffff)
 }
 
-// NewSolicitWithCID creates a new SOLICIT message with CID.
-func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
+// NewSolicit creates a new SOLICIT message, using the given hardware address to
+// derive the IAID in the IA_NA option.
+func NewSolicit(hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error) {
+	duid := Duid{
+		Type:          DUID_LLT,
+		HwType:        iana.HWTypeEthernet,
+		Time:          GetTime(),
+		LinkLayerAddr: hwaddr,
+	}
 	m, err := NewMessage()
 	if err != nil {
 		return nil, err
@@ -57,29 +64,18 @@ func NewSolicitWithCID(duid Duid, modifiers ...Modifier) (*Message, error) {
 	})
 	m.AddOption(oro)
 	m.AddOption(&OptElapsedTime{})
-	// FIXME use real values for IA_NA
-	iaNa := &OptIANA{}
-	iaNa.IaId = [4]byte{0xfa, 0xce, 0xb0, 0x0c}
-	iaNa.T1 = 0xe10
-	iaNa.T2 = 0x1518
-	m.AddOption(iaNa)
+	if len(hwaddr) < 4 {
+		return nil, errors.New("short hardware addrss: less than 4 bytes")
+	}
+	l := len(hwaddr)
+	var iaid [4]byte
+	copy(iaid[:], hwaddr[l-4:l])
+	modifiers = append([]Modifier{WithIAID(iaid)}, modifiers...)
 	// Apply modifiers
 	for _, mod := range modifiers {
 		mod(m)
 	}
 	return m, nil
-}
-
-// NewSolicit creates a new SOLICIT message with DUID-LLT, using the
-// given network interface's hardware address and current time
-func NewSolicit(ifaceHWAddr net.HardwareAddr, modifiers ...Modifier) (*Message, error) {
-	duid := Duid{
-		Type:          DUID_LLT,
-		HwType:        iana.HWTypeEthernet,
-		Time:          GetTime(),
-		LinkLayerAddr: ifaceHWAddr,
-	}
-	return NewSolicitWithCID(duid, modifiers...)
 }
 
 // NewAdvertiseFromSolicit creates a new ADVERTISE packet based on an SOLICIT packet.
