@@ -13,6 +13,7 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/jsimonetti/rtnetlink"
+	"github.com/jsimonetti/rtnetlink/rtnl"
 	"github.com/mdlayher/netlink"
 )
 
@@ -138,10 +139,17 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 }
 
 // IfUp brings up an interface by name, and waits for it to come up until a timeout expires
-func IfUp(ifname string, timeout time.Duration) (*net.Interface, error) {
+func IfUp(ifname string, timeout time.Duration) (_ *net.Interface, err error) {
 	start := time.Now()
-	var rt RTNL
-	defer rt.Close()
+	rt, err := rtnl.Dial(nil)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if cerr := rt.Close(); cerr != nil {
+			err = cerr
+		}
+	}()
 	for time.Since(start) < timeout {
 		iface, err := net.InterfaceByName(ifname)
 		if err != nil {
@@ -153,7 +161,7 @@ func IfUp(ifname string, timeout time.Duration) (*net.Interface, error) {
 		//   backward compatibility, routing daemons, dhcp clients can use this
 		//   flag to determine whether they should use the interface.
 		// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
-		operState, err := rt.GetLinkState(iface.Index)
+		operState, err := getOperState(iface.Index)
 		if err != nil {
 			return nil, err
 		}
@@ -165,8 +173,7 @@ func IfUp(ifname string, timeout time.Duration) (*net.Interface, error) {
 			return iface, nil
 		}
 		// otherwise try to bring it up
-		err = rt.SetLinkState(iface.Index, true)
-		if err != nil {
+		if err := rt.LinkUp(iface); err != nil {
 			return nil, fmt.Errorf("interface %q: %v can't bring it up: %v", ifname, iface, err)
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -178,16 +185,23 @@ func IfUp(ifname string, timeout time.Duration) (*net.Interface, error) {
 
 // ConfigureInterface configures a network interface with the configuration held by a
 // NetConf structure
-func ConfigureInterface(ifname string, netconf *NetConf) error {
+func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return err
 	}
-	var rt RTNL
-	defer rt.Close()
+	rt, err := rtnl.Dial(nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if cerr := rt.Close(); err != nil {
+			err = cerr
+		}
+	}()
 	// configure interfaces
 	for _, addr := range netconf.Addresses {
-		if err := rt.SetAddr(iface.Index, addr.IPNet); err != nil {
+		if err := rt.AddrAdd(iface, &addr.IPNet); err != nil {
 			return fmt.Errorf("cannot configure %s on %s: %v", ifname, addr.IPNet, err)
 		}
 	}
@@ -218,7 +232,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 		// a client would want to add before initiating the DHCP transaction in order not to fail with
 		// ENETUNREACH. If this default route has a specific metric assigned, it doesn't get removed.
 		// The code doesn't remove any other default route (i.e. gw != 0.0.0.0).
-		if err := rt.RouteDel(net.IPv4zero); err != nil {
+		if err := rt.RouteDel(iface, net.IPNet{IP: net.IPv4zero}); err != nil {
 			switch err := err.(type) {
 			case *netlink.OpError:
 				// ignore the error if it's -EEXIST or -ESRCH
@@ -232,7 +246,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) error {
 
 		src := netconf.Addresses[0].IPNet
 		// TODO handle the remaining Routers if more than one
-		if err := rt.RouteAdd(iface.Index, dst, src, netconf.Routers[0]); err != nil {
+		if err := rt.RouteAddSrc(iface, dst, &src, netconf.Routers[0]); err != nil {
 			return fmt.Errorf("could not add gateway %s for src %s dst %s to interface %s: %v", netconf.Routers[0], src, dst, ifname, err)
 		}
 	}
