@@ -197,7 +197,7 @@ func (c *Client) receive(_ dhcpv6.DHCPv6) {
 
 func (c *Client) remoteAddr() (*net.UDPAddr, error) {
 	if c.RemoteAddr == nil {
-		return &net.UDPAddr{IP: client6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}, nil
+		return &net.UDPAddr{IP: dhcpv6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}, nil
 	}
 
 	if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {

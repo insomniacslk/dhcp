@@ -58,6 +58,7 @@ import (
 	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"golang.org/x/net/ipv6"
 )
 
 // Handler is a type that defines the handler function to be called every time a
@@ -111,8 +112,12 @@ func WithConn(conn net.PacketConn) ServerOpt {
 	}
 }
 
-// NewServer initializes and returns a new Server object
-func NewServer(addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
+// NewServer initializes and returns a new Server object, listening on `addr`,
+// and joining the multicast group ff02::1:2 . If `addr` is nil, IPv6 unspec is
+// used. If `WithConn` is used with a non-nil address, `addr` and `ifname` have
+// no effect. In such case, joining the multicast group is the caller's
+// responsibility.
+func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
 	s := &Server{
 		handler: handler,
 	}
@@ -122,8 +127,27 @@ func NewServer(addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, e
 	}
 
 	if s.conn == nil {
+		// no connection provided by the user, create a new one
 		conn, err := net.ListenUDP("udp6", addr)
 		if err != nil {
+			return nil, err
+		}
+		// join multicast group on the specified interface
+		var iface *net.Interface
+		if ifname == "" {
+			iface = nil
+		} else {
+			iface, err = net.InterfaceByName(ifname)
+			if err != nil {
+				return nil, err
+			}
+		}
+		group := net.UDPAddr{
+			IP:   dhcpv6.AllDHCPRelayAgentsAndServers,
+			Port: dhcpv6.DefaultServerPort,
+		}
+		p := ipv6.NewPacketConn(conn)
+		if err := p.JoinGroup(iface, &group); err != nil {
 			return nil, err
 		}
 		s.conn = conn

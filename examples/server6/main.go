@@ -18,7 +18,7 @@ func main() {
 		IP:   net.ParseIP("::1"),
 		Port: dhcpv6.DefaultServerPort,
 	}
-	server, err := server6.NewServer(laddr, handler)
+	server, err := server6.NewServer("", laddr, handler)
 	if err != nil {
 		log.Fatal(err)
 	}

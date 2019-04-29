@@ -17,12 +17,6 @@ const (
 	MaxUDPReceivedPacketSize  = 8192            // arbitrary size. Theoretically could be up to 65kb
 )
 
-// Broadcast destination IP addresses as defined by RFC 3315
-var (
-	AllDHCPRelayAgentsAndServers = net.ParseIP("ff02::1:2")
-	AllDHCPServers               = net.ParseIP("ff05::1:3")
-)
-
 // Client implements a DHCPv6 client
 type Client struct {
 	ReadTimeout   time.Duration
@@ -119,7 +113,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	// if no RemoteAddr is specified, use AllDHCPRelayAgentsAndServers
 	var raddr net.UDPAddr
 	if c.RemoteAddr == nil {
-		raddr = net.UDPAddr{IP: AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}
+		raddr = net.UDPAddr{IP: dhcpv6.AllDHCPRelayAgentsAndServers, Port: dhcpv6.DefaultServerPort}
 	} else {
 		if addr, ok := c.RemoteAddr.(*net.UDPAddr); ok {
 			raddr = *addr
