@@ -33,7 +33,7 @@ func setUpClientAndServer(handler Handler) (*nclient6.Client, *Server) {
 		IP:   net.ParseIP("::1"),
 		Port: 0,
 	}
-	s, err := NewServer(laddr, handler)
+	s, err := NewServer("lo", laddr, handler)
 	if err != nil {
 		panic(err)
 	}
