@@ -1,13 +1,13 @@
 package dhcpv6
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
-	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
