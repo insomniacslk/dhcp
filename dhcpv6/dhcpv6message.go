@@ -161,17 +161,23 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 }
 
 // NewReplyFromMessage creates a new REPLY packet based on a
-// Message. The function is to be used when generating a reply to
-// REQUEST, CONFIRM, RENEW, REBIND, RELEASE and INFORMATION-REQUEST packets.
+// Message. The function is to be used when generating a reply to a SOLICIT with
+// rapid-commit, REQUEST, CONFIRM, RENEW, REBIND, RELEASE and INFORMATION-REQUEST
+// packets.
 func NewReplyFromMessage(msg *Message, modifiers ...Modifier) (*Message, error) {
 	if msg == nil {
-		return nil, errors.New("Message cannot be nil")
+		return nil, errors.New("message cannot be nil")
 	}
 	switch msg.Type() {
+	case MessageTypeSolicit:
+		if msg.GetOneOption(OptionRapidCommit) == nil {
+			return nil, errors.New("cannot create REPLY from a SOLICIT without rapid-commit option")
+		}
+		modifiers = append([]Modifier{WithRapidCommit}, modifiers...)
 	case MessageTypeRequest, MessageTypeConfirm, MessageTypeRenew,
 		MessageTypeRebind, MessageTypeRelease, MessageTypeInformationRequest:
 	default:
-		return nil, errors.New("Cannot create REPLY from the passed message type set")
+		return nil, errors.New("cannot create REPLY from the passed message type set")
 	}
 
 	// build REPLY from MESSAGE
