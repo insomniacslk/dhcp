@@ -96,7 +96,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 		if err != nil {
 			return nil, err
 		}
-		// Add RemoteID option to ecapsulated Packet 
+		// Add RemoteID option to ecapsulated Packet
 		if remOpt := packet.GetOneOption(dhcpv6.OptionRemoteID); remOpt != nil {
 			encapPacket.AddOption(remOpt)
 		}
