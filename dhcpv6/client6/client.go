@@ -92,10 +92,15 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	}
 	if c.SimulateRelay {
 		var err error
-		packet, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
+		encapPacket, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
 		if err != nil {
 			return nil, err
 		}
+		// Add RemoteID option to ecapsulated Packet 
+		if remOpt := packet.GetOneOption(dhcpv6.OptionRemoteID); remOpt != nil {
+			encapPacket.AddOption(remOpt)
+		}
+		packet = encapPacket
 	}
 	if expectedType == dhcpv6.MessageTypeNone {
 		// infer the expected type from the packet being sent
