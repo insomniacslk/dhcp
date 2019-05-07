@@ -92,7 +92,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	}
 	if c.SimulateRelay {
 		var err error
-		encapPacket, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
+		encapPacket, err := dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
 		if err != nil {
 			return nil, err
 		}
