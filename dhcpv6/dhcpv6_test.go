@@ -193,12 +193,12 @@ func TestNewReplyFromMessage(t *testing.T) {
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeSolicit
-	rep, err = NewReplyFromMessage(&msg)
+	_, err = NewReplyFromMessage(&msg)
 	require.Error(t, err)
 
 	msg.MessageType = MessageTypeSolicit
 	msg.AddOption(&OptionGeneric{OptionCode: OptionRapidCommit})
-	rep, err = NewReplyFromMessage(&msg)
+	_, err = NewReplyFromMessage(&msg)
 	require.NoError(t, err)
 	msg.Options.Del(OptionRapidCommit)
 }

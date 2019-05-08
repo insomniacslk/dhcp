@@ -29,7 +29,7 @@ func TestOptIAPrefix(t *testing.T) {
 	if pr := opt.PrefixLength(); pr != 36 {
 		t.Fatalf("Invalid Prefix Length. Expected 36, got %v", pr)
 	}
-	if ip := opt.IPv6Prefix(); !bytes.Equal(ip, net.IPv6loopback) {
+	if ip := opt.IPv6Prefix(); !ip.Equal(net.IPv6loopback) {
 		t.Fatalf("Invalid Prefix Length. Expected %v, got %v", net.IPv6loopback, ip)
 	}
 }

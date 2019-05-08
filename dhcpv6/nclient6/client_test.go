@@ -109,6 +109,12 @@ func newPacket(xid dhcpv6.TransactionID) *dhcpv6.Message {
 	return p
 }
 
+func withBufferCap(n int) ClientOpt {
+	return func(c *Client) {
+		c.bufferCap = n
+	}
+}
+
 func TestSendAndReadUntil(t *testing.T) {
 	for _, tt := range []struct {
 		desc   string
