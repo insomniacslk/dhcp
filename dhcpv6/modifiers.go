@@ -41,7 +41,6 @@ func WithNetboot(d DHCPv6) {
 	oro.AddRequestedOption(OptionBootfileURL)
 	oro.AddRequestedOption(OptionBootfileParam)
 	msg.UpdateOption(oro)
-	return
 }
 
 // WithUserClass adds a user class option to the packet
