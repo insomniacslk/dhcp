@@ -3,6 +3,7 @@ package async
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -143,14 +144,20 @@ func (c *Client) send(packet dhcpv6.DHCPv6) {
 
 	raddr, err := c.remoteAddr()
 	if err != nil {
-		p.Reject(err)
+		_ = p.Reject(err)
+		log.Printf("Warning: cannot get remote address :%v", err)
 		return
 	}
 
-	c.connection.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
+	if err := c.connection.SetWriteDeadline(time.Now().Add(c.WriteTimeout)); err != nil {
+		_ = p.Reject(err)
+		log.Printf("Warning: cannot set write deadline :%v", err)
+		return
+	}
 	_, err = c.connection.WriteTo(packet.ToBytes(), raddr)
 	if err != nil {
-		p.Reject(err)
+		_ = p.Reject(err)
+		log.Printf("Warning: cannot write to %s :%v", raddr, err)
 		return
 	}
 
@@ -163,7 +170,9 @@ func (c *Client) receive(_ dhcpv6.DHCPv6) {
 		received dhcpv6.DHCPv6
 	)
 
-	c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout))
+	if err := c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout)); err != nil {
+		log.Printf("Warning: cannot set read deadline :%v", err)
+	}
 	for {
 		buffer := make([]byte, client6.MaxUDPReceivedPacketSize)
 		n, _, _, _, err := c.connection.ReadMsgUDP(buffer, oobdata)
@@ -190,7 +199,7 @@ func (c *Client) receive(_ dhcpv6.DHCPv6) {
 	c.packetsLock.Lock()
 	if p, ok := c.packets[transactionID]; ok {
 		delete(c.packets, transactionID)
-		p.Resolve(received)
+		_ = p.Resolve(received)
 	}
 	c.packetsLock.Unlock()
 }
