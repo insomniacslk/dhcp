@@ -24,6 +24,7 @@ type Client struct {
 	LocalAddr     net.Addr
 	RemoteAddr    net.Addr
 	SimulateRelay bool
+	RelayOptions  dhcpv6.Options // These options will be added to relay message if SimulateRelay is true
 }
 
 // NewClient returns a Client with default settings
@@ -92,15 +93,14 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	}
 	if c.SimulateRelay {
 		var err error
-		encapPacket, err := dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
+		packet, err = dhcpv6.EncapsulateRelay(packet, dhcpv6.MessageTypeRelayForward, net.IPv6zero, laddr.IP)
 		if err != nil {
 			return nil, err
 		}
-		// Add RemoteID option to ecapsulated Packet
-		if remOpt := packet.GetOneOption(dhcpv6.OptionRemoteID); remOpt != nil {
-			encapPacket.AddOption(remOpt)
+		// Add Relay Options to ecapsulated Packet
+		for _, opt := range c.RelayOptions {
+			packet.UpdateOption(opt)
 		}
-		packet = encapPacket
 	}
 	if expectedType == dhcpv6.MessageTypeNone {
 		// infer the expected type from the packet being sent
