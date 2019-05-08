@@ -26,7 +26,9 @@ func serve(ctx context.Context, addr *net.UDPAddr, response *dhcpv4.DHCPv4) erro
 			case <-ctx.Done():
 				return
 			default:
-				conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+				if err := conn.SetReadDeadline(time.Now().Add(1 * time.Second)); err != nil {
+					panic(err)
+				}
 				n, _, _, src, err := conn.ReadMsgUDP(buffer, oobdata)
 				if err != nil {
 					continue
@@ -35,7 +37,9 @@ func serve(ctx context.Context, addr *net.UDPAddr, response *dhcpv4.DHCPv4) erro
 				if err != nil {
 					continue
 				}
-				conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
+				if err := conn.SetWriteDeadline(time.Now().Add(1 * time.Second)); err != nil {
+					panic(err)
+				}
 				_, err = conn.WriteTo(response.ToBytes(), src)
 				if err != nil {
 					continue

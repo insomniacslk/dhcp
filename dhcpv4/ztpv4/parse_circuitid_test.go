@@ -45,7 +45,6 @@ func TestFormatCircuitID(t *testing.T) {
 		name    string
 		circuit *CircuitID
 		want    string
-		fail    bool
 	}{
 		{name: "empty", circuit: &CircuitID{}, want: ",,,,"},
 		{name: "juniperQFX pattern", circuit: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}, want: "0,0,0,0,"},
