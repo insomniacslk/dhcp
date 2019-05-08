@@ -33,10 +33,10 @@ const (
 	// minPacketLen is the minimum DHCP header length.
 	minPacketLen = 236
 
-	// Maximum length of the ClientHWAddr (client hardware address) according to
-	// RFC 2131, Section 2. This is the link-layer destination a server
-	// must send responses to.
-	maxHWAddrLen = 16
+	// MaxHWAddrLen is the maximum hardware address length of the ClientHWAddr
+	// (client hardware address) according to RFC 2131, Section 2. This is the
+	// link-layer destination a server must send responses to.
+	MaxHWAddrLen = 16
 
 	// MaxMessageSize is the maximum size in bytes that a DHCPv4 packet can hold.
 	MaxMessageSize = 576

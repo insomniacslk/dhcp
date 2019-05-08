@@ -37,7 +37,7 @@ func (h *handler) handle(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 
 	if len(h.responses) > 0 {
 		for _, resp := range h.responses[0] {
-			conn.WriteTo(resp.ToBytes(), peer)
+			_, _ = conn.WriteTo(resp.ToBytes(), peer)
 		}
 		h.responses = h.responses[1:]
 	}
@@ -65,7 +65,9 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv4.DHCPv4, opts ...C
 	if err != nil {
 		panic(err)
 	}
-	go s.Serve()
+	go func() {
+		_ = s.Serve()
+	}()
 
 	return mc, serverConn
 }
@@ -77,7 +79,7 @@ func ComparePacket(got *dhcpv4.DHCPv4, want *dhcpv4.DHCPv4) error {
 	if (want == nil || got == nil) && (got != want) {
 		return fmt.Errorf("packet got %v, want %v", got, want)
 	}
-	if bytes.Compare(got.ToBytes(), want.ToBytes()) != 0 {
+	if !bytes.Equal(got.ToBytes(), want.ToBytes()) {
 		return fmt.Errorf("packet got %v, want %v", got, want)
 	}
 	return nil
@@ -266,8 +268,8 @@ func TestSimpleSendAndReadDiscardGarbage(t *testing.T) {
 	defer mc.Close()
 
 	// Too short for valid DHCPv4 packet.
-	udpConn.WriteTo([]byte{0x01}, nil)
-	udpConn.WriteTo([]byte{0x01, 0x2}, nil)
+	_, _ = udpConn.WriteTo([]byte{0x01}, nil)
+	_, _ = udpConn.WriteTo([]byte{0x01, 0x2}, nil)
 
 	rcvd, err := mc.SendAndRead(ctx, DefaultServers, pkt, nil)
 	if err != nil {

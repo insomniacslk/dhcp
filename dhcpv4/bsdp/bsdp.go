@@ -93,7 +93,7 @@ func NewInformListForInterface(ifname string, replyPort uint16) (*Packet, error)
 	if err != nil {
 		return nil, fmt.Errorf("could not get local IPv4 addr for %s: %v", iface.Name, err)
 	}
-	if localIPs == nil || len(localIPs) == 0 {
+	if len(localIPs) == 0 {
 		return nil, fmt.Errorf("could not get local IPv4 addr for %s", iface.Name)
 	}
 	return NewInformList(iface.HardwareAddr, localIPs[0], replyPort)

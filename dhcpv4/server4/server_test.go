@@ -77,7 +77,9 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*
 	if err != nil {
 		t.Fatal(err)
 	}
-	go s.Serve()
+	go func() {
+		_ = s.Serve()
+	}()
 
 	clientConn, err := nclient4.NewIPv4UDPConn("", caddr.Port)
 	if err != nil {
