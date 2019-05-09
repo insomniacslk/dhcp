@@ -247,7 +247,10 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
 func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
-	return New(PrependModifiers(modifiers, WithReply(request))...)
+	return New(PrependModifiers(modifiers,
+		WithReply(request),
+		WithGatewayIP(request.GatewayIPAddr),
+	)...)
 }
 
 // FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an
