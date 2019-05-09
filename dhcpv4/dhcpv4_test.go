@@ -256,7 +256,6 @@ func TestNewReplyFromRequest(t *testing.T) {
 	reply, err := NewReplyFromRequest(discover)
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID, reply.TransactionID)
-	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
 }
 
 func TestNewReplyFromRequestWithModifier(t *testing.T) {
@@ -267,7 +266,6 @@ func TestNewReplyFromRequestWithModifier(t *testing.T) {
 	reply, err := NewReplyFromRequest(discover, userClass)
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID, reply.TransactionID)
-	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {
