@@ -49,7 +49,6 @@ func WithReply(request *DHCPv4) Modifier {
 		d.TransactionID = request.TransactionID
 		d.ClientHWAddr = request.ClientHWAddr
 		d.Flags = request.Flags
-		d.GatewayIPAddr = request.GatewayIPAddr
 	}
 }
 

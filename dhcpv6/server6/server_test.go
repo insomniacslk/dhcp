@@ -37,7 +37,9 @@ func setUpClientAndServer(handler Handler) (*nclient6.Client, *Server) {
 	if err != nil {
 		panic(err)
 	}
-	go s.Serve()
+	go func() {
+		_ = s.Serve()
+	}()
 
 	clientConn, err := net.DialUDP("udp6", &net.UDPAddr{IP: net.ParseIP("::1")}, s.conn.LocalAddr().(*net.UDPAddr))
 	if err != nil {

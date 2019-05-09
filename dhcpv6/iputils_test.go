@@ -148,13 +148,13 @@ func Test_ExtractMAC(t *testing.T) {
 	// no client ID
 	solicit, err = NewMessage()
 	require.NoError(t, err)
-	mac, err = ExtractMAC(solicit)
+	_, err = ExtractMAC(solicit)
 	require.Error(t, err)
 
 	// DUID is not DuidLL or DuidLLT
 	duid = Duid{}
 	solicit, err = NewMessage(WithClientID(duid))
 	require.NoError(t, err)
-	mac, err = ExtractMAC(solicit)
+	_, err = ExtractMAC(solicit)
 	require.Error(t, err)
 }

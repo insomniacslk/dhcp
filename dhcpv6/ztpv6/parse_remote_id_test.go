@@ -36,7 +36,6 @@ func TestFormatCircuitID(t *testing.T) {
 		name    string
 		circuit *CircuitID
 		want    string
-		fail    bool
 	}{
 		{name: "empty", circuit: &CircuitID{}, want: ",,,,"},
 		{name: "Arista format Port/Vlan", circuit: &CircuitID{Port: "13", Vlan: "2001"}, want: ",,13,,2001"},

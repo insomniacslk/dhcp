@@ -25,10 +25,10 @@ func TestRelayMessage(t *testing.T) {
 	if hc := r.HopCount; hc != 10 {
 		t.Fatalf("Invalid hop count. Expected 10, got %v", hc)
 	}
-	if la := r.LinkAddr; !bytes.Equal(la, ll) {
+	if la := r.LinkAddr; !la.Equal(ll) {
 		t.Fatalf("Invalid link address. Expected %v, got %v", ll, la)
 	}
-	if pa := r.PeerAddr; !bytes.Equal(pa, ma) {
+	if pa := r.PeerAddr; !pa.Equal(ma) {
 		t.Fatalf("Invalid peer address. Expected %v, got %v", ma, pa)
 	}
 	if opts := r.Options; len(opts) != 0 {
@@ -109,8 +109,8 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, m, a)
 
-	rr, err = NewRelayReplFromRelayForw(nil, a)
+	_, err = NewRelayReplFromRelayForw(nil, a)
 	require.Error(t, err)
-	rr, err = NewRelayReplFromRelayForw(&rf, nil)
+	_, err = NewRelayReplFromRelayForw(&rf, nil)
 	require.Error(t, err)
 }

@@ -216,13 +216,14 @@ func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	require.NoError(t, err)
 	offer.SetBroadcast()
 	offer.UpdateOption(OptMessageType(MessageTypeOffer))
-	req, err := NewRequestFromOffer(offer)
+	_, err = NewRequestFromOffer(offer)
 	require.Error(t, err)
 
 	// Now add the option so it doesn't error out.
 	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
 
 	// Broadcast request
+	var req *DHCPv4
 	req, err = NewRequestFromOffer(offer)
 	require.NoError(t, err)
 	require.Equal(t, MessageTypeRequest, req.MessageType())
@@ -255,7 +256,6 @@ func TestNewReplyFromRequest(t *testing.T) {
 	reply, err := NewReplyFromRequest(discover)
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID, reply.TransactionID)
-	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
 }
 
 func TestNewReplyFromRequestWithModifier(t *testing.T) {
@@ -266,7 +266,6 @@ func TestNewReplyFromRequestWithModifier(t *testing.T) {
 	reply, err := NewReplyFromRequest(discover, userClass)
 	require.NoError(t, err)
 	require.Equal(t, discover.TransactionID, reply.TransactionID)
-	require.Equal(t, discover.GatewayIPAddr, reply.GatewayIPAddr)
 }
 
 func TestDHCPv4MessageTypeNil(t *testing.T) {

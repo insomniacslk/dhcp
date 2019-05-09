@@ -3,6 +3,7 @@ package async
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -138,14 +139,18 @@ func (c *Client) send(packet *dhcpv4.DHCPv4) {
 
 	raddr, err := c.remoteAddr()
 	if err != nil {
-		p.Reject(err)
+		_ = p.Reject(err)
 		return
 	}
 
-	c.connection.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
+	if err := c.connection.SetWriteDeadline(time.Now().Add(c.WriteTimeout)); err != nil {
+		log.Printf("Warning: cannot set write deadline: %v", err)
+		return
+	}
 	_, err = c.connection.WriteTo(packet.ToBytes(), raddr)
 	if err != nil {
-		p.Reject(err)
+		_ = p.Reject(err)
+		log.Printf("Warning: cannot write to %s: %v", raddr, err)
 		return
 	}
 
@@ -158,7 +163,10 @@ func (c *Client) receive(_ *dhcpv4.DHCPv4) {
 		received *dhcpv4.DHCPv4
 	)
 
-	c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout))
+	if err := c.connection.SetReadDeadline(time.Now().Add(c.ReadTimeout)); err != nil {
+		log.Printf("Warning: cannot set write deadline: %v", err)
+		return
+	}
 	for {
 		buffer := make([]byte, client4.MaxUDPReceivedPacketSize)
 		n, _, _, _, err := c.connection.ReadMsgUDP(buffer, oobdata)
@@ -177,7 +185,7 @@ func (c *Client) receive(_ *dhcpv4.DHCPv4) {
 	c.packetsLock.Lock()
 	if p, ok := c.packets[received.TransactionID]; ok {
 		delete(c.packets, received.TransactionID)
-		p.Resolve(received)
+		_ = p.Resolve(received)
 	}
 	c.packetsLock.Unlock()
 }

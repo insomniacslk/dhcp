@@ -153,5 +153,5 @@ func parseOption(code dhcpv4.OptionCode, data []byte) fmt.Stringer {
 	if d != nil && d.FromBytes(data) == nil {
 		return d
 	}
-	return dhcpv4.OptionGeneric{data}
+	return dhcpv4.OptionGeneric{Data: data}
 }

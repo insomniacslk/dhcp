@@ -22,7 +22,7 @@ func TestGetReplyPort(t *testing.T) {
 	require.Equal(t, uint16(1234), port)
 
 	o = VendorOptions{dhcpv4.Options{}}
-	port, err = o.ReplyPort()
+	_, err = o.ReplyPort()
 	require.Error(t, err, "no reply port present")
 }
 
@@ -40,7 +40,7 @@ func TestGetServerPriority(t *testing.T) {
 	require.Equal(t, uint16(1234), prio)
 
 	o = VendorOptions{dhcpv4.Options{}}
-	prio, err = o.ServerPriority()
+	_, err = o.ServerPriority()
 	require.Error(t, err, "no server prio present")
 }
 
@@ -73,19 +73,19 @@ func TestGetVersion(t *testing.T) {
 	require.Equal(t, ver, Version1_1)
 
 	o = VendorOptions{dhcpv4.Options{}}
-	ver, err = o.Version()
+	_, err = o.Version()
 	require.Error(t, err, "no version present")
 
 	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{}}}
-	ver, err = o.Version()
+	_, err = o.Version()
 	require.Error(t, err, "empty version field")
 
 	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{1}}}
-	ver, err = o.Version()
+	_, err = o.Version()
 	require.Error(t, err, "version option too short")
 
 	o = VendorOptions{dhcpv4.Options{OptionVersion.Code(): []byte{1, 2, 3}}}
-	ver, err = o.Version()
+	_, err = o.Version()
 	require.Error(t, err, "version option too long")
 }
 

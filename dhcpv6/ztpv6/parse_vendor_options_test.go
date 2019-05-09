@@ -9,10 +9,10 @@ import (
 
 func TestParseVendorData(t *testing.T) {
 	tt := []struct {
-		name         string
-		vc, hostname string
-		want         *VendorData
-		fail         bool
+		name string
+		vc   string
+		want *VendorData
+		fail bool
 	}{
 		{name: "empty", fail: true},
 		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true, want: nil},

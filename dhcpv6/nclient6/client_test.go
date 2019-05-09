@@ -18,6 +18,7 @@ import (
 	"github.com/hugelgupf/socketpair"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 	"github.com/insomniacslk/dhcp/dhcpv6/server6"
+	"github.com/stretchr/testify/require"
 )
 
 type handler struct {
@@ -41,7 +42,9 @@ func (h *handler) handle(conn net.PacketConn, peer net.Addr, msg dhcpv6.DHCPv6) 
 		resps := h.responses[0]
 		// What should we send in response?
 		for _, resp := range resps {
-			conn.WriteTo(resp.ToBytes(), peer)
+			if _, err := conn.WriteTo(resp.ToBytes(), peer); err != nil {
+				panic(err)
+			}
 		}
 		h.responses = h.responses[1:]
 	}
@@ -69,7 +72,11 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv6.Message, opt ...C
 	if err != nil {
 		panic(err)
 	}
-	go s.Serve()
+	go func() {
+		if err := s.Serve(); err != nil {
+			panic(err)
+		}
+	}()
 
 	return mc, serverRawConn
 }
@@ -81,7 +88,7 @@ func ComparePacket(got *dhcpv6.Message, want *dhcpv6.Message) error {
 	if (want == nil || got == nil) && (got != want) {
 		return fmt.Errorf("packet got %v, want %v", got, want)
 	}
-	if bytes.Compare(got.ToBytes(), want.ToBytes()) != 0 {
+	if !bytes.Equal(got.ToBytes(), want.ToBytes()) {
 		return fmt.Errorf("packet got %v, want %v", got, want)
 	}
 	return nil
@@ -107,6 +114,12 @@ func newPacket(xid dhcpv6.TransactionID) *dhcpv6.Message {
 	}
 	p.TransactionID = xid
 	return p
+}
+
+func withBufferCap(n int) ClientOpt {
+	return func(c *Client) {
+		c.bufferCap = n
+	}
 }
 
 func TestSendAndReadUntil(t *testing.T) {
@@ -198,7 +211,8 @@ func TestSimpleSendAndReadDiscardGarbage(t *testing.T) {
 	defer mc.Close()
 
 	// Too short for valid DHCPv4 packet.
-	udpConn.WriteTo([]byte{0x01}, nil)
+	_, err := udpConn.WriteTo([]byte{0x01}, nil)
+	require.NoError(t, err)
 
 	rcvd, err := mc.SendAndRead(context.Background(), AllDHCPServers, pkt, nil)
 	if err != nil {

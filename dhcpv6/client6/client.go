@@ -146,7 +146,9 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 	}
 
 	// send the packet out
-	conn.SetWriteDeadline(time.Now().Add(c.WriteTimeout))
+	if err := conn.SetWriteDeadline(time.Now().Add(c.WriteTimeout)); err != nil {
+		return nil, err
+	}
 	_, err = conn.WriteTo(packet.ToBytes(), &raddr)
 	if err != nil {
 		return nil, err
@@ -154,7 +156,9 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 
 	// wait for a reply
 	oobdata := []byte{} // ignoring oob data
-	conn.SetReadDeadline(time.Now().Add(c.ReadTimeout))
+	if err := conn.SetReadDeadline(time.Now().Add(c.ReadTimeout)); err != nil {
+		return nil, err
+	}
 	var (
 		adv       dhcpv6.DHCPv6
 		isMessage bool
