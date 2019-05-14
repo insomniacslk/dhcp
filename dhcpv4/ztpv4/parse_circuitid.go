@@ -51,9 +51,7 @@ func ParseCircuitID(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
 	cid := relayOptions.Options.Get(dhcpv4.AgentCircuitIDSubOption)
 	// Some Vendor like Arista sends SHIFT IN character i.e. 0x000f before circuitid
 	// remove it before matching against regexps.
-	if bytes.HasPrefix(cid, []byte{0x00, 0x0f}) {
-		cid = bytes.TrimPrefix(cid, []byte{0x00, 0x0f}) 
-	}
+	cid = bytes.TrimPrefix(cid, []byte{0x00, 0x0f}) 
 	circuitIdStr := string(cid)
 	if circuitIdStr == "" {
 		return nil, fmt.Errorf("no circuit-id suboption found in dhcpv4 packet")
