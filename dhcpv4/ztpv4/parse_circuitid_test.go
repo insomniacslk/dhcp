@@ -24,6 +24,7 @@ func TestMatchCircuitID(t *testing.T) {
 		{name: "Cisco pattern", circuit: "Gi1/10:2020", want: &CircuitID{Slot: "1", Port: "10", Vlan: "2020"}},
 		{name: "Cisco Nexus pattern", circuit: "Ethernet1/3", want: &CircuitID{Slot: "1", Port: "3"}},
 		{name: "Juniper Bundle Pattern", circuit: "ae52.0", want: &CircuitID{Port: "52", SubPort: "0"}},
+		{name: "Juniper EX device pattern", circuit: "ge-0/0/0.0:RANDOMCHAR", want: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -86,6 +87,7 @@ func TestParseCircuitID(t *testing.T) {
 		{name: "Cisco Nexus pattern", circuit: []byte("Ethernet1/3"), want: &CircuitID{Slot: "1", Port: "3"}},
 		{name: "Juniper Bundle Pattern", circuit: []byte("ae52.0"), want: &CircuitID{Port: "52", SubPort: "0"}},
 		{name: "Arista Vlan pattern 1 with SHIFT IN", circuit: []byte("\x00\x0fEthernet14:Vlan2001"), want: &CircuitID{Port: "14", Vlan: "Vlan2001"}},
+		{name: "juniperEX pattern", circuit: []byte("ge-0/0/0.0:RANDOMCHAR"), want: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
