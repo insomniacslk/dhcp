@@ -1,7 +1,6 @@
 package ztpv4
 
 import (
-	"bytes"
 	"fmt"
 	"regexp"
 
@@ -25,12 +24,13 @@ var circuitRegexs = []*regexp.Regexp{
 	// Juniper EX ge-0/0/0.0
 	regexp.MustCompile("^ge-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+).*"),
 	// Arista Ethernet3/17/1
-	regexp.MustCompile("^Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
+	// Sometimes Arista prepend circuit id type(1 byte) and length(1 byte) not useing ^
+	regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Juniper QFX et-1/0/61
 	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Arista Ethernet14:Vlan2001
 	// Arista Ethernet10:2020
-	regexp.MustCompile("^Ethernet(?P<port>[0-9]+):(?P<vlan>.*)$"),
+	regexp.MustCompile("Ethernet(?P<port>[0-9]+):(?P<vlan>.*)$"),
 	// Cisco Gi1/10:2020
 	regexp.MustCompile("^Gi(?P<slot>[0-9]+)/(?P<port>[0-9]+):(?P<vlan>.*)$"),
 	// Nexus Ethernet1/3
@@ -50,11 +50,7 @@ func ParseCircuitID(packet *dhcpv4.DHCPv4) (*CircuitID, error) {
 
 	// As per RFC 3046 sub-Option 1 is circuit-id. Look at 2.0 section in that RFC
 	// https://tools.ietf.org/html/rfc3046
-	cid := relayOptions.Options.Get(dhcpv4.AgentCircuitIDSubOption)
-	// Some Vendor like Arista sends SHIFT IN character i.e. 0x000f before circuitid
-	// remove it before matching against regexps.
-	cid = bytes.TrimPrefix(cid, []byte{0x00, 0x0f}) 
-	circuitIdStr := string(cid)
+	circuitIdStr := string(relayOptions.Options.Get(dhcpv4.AgentCircuitIDSubOption))
 	if circuitIdStr == "" {
 		return nil, fmt.Errorf("no circuit-id suboption found in dhcpv4 packet")
 	}
