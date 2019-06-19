@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"strings"
 	"sync"
@@ -67,7 +68,7 @@ type Client struct {
 	ifaceHWAddr net.HardwareAddr
 	conn        net.PacketConn
 	timeout     time.Duration
-	retry       int
+	retries     uint
 
 	// bufferCap is the channel capacity for each TransactionID.
 	bufferCap int
@@ -112,7 +113,7 @@ func NewWithConn(conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts ...Clie
 	c := &Client{
 		ifaceHWAddr: ifaceHWAddr,
 		timeout:     defaultTimeout,
-		retry:       defaultRetries,
+		retries:     defaultRetries,
 		serverAddr:  DefaultServers,
 		bufferCap:   defaultBufferCap,
 		conn:        conn,
@@ -233,10 +234,12 @@ func withBufferCap(n int) ClientOpt {
 
 // WithRetry configures the number of retransmissions to attempt.
 //
+// Negative retries means infinite retries.
+//
 // Default is 3.
 func WithRetry(r int) ClientOpt {
 	return func(c *Client) {
-		c.retry = r
+		c.retries = u
 	}
 }
 
@@ -386,15 +389,15 @@ func (c *Client) retryFn(fn func(timeout time.Duration) error) error {
 	timeout := c.timeout
 
 	// Each retry takes the amount of timeout at worst.
-	for i := 0; i < c.retry || c.retry < 0; i++ {
+	for i := uint(0); int(i) < c.retries || c.retries <= 0; i++ {
 		switch err := fn(timeout); err {
 		case nil:
 			// Got it!
 			return nil
 
 		case errDeadlineExceeded:
-			// Double timeout, then retry.
-			timeout *= 2
+			// Exponential backoff.
+			timeout = time.Duration(rand.Intn(1<<i)-1) * c.timeout
 
 		default:
 			return err
