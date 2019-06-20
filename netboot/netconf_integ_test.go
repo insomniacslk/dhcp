@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// this assumes that eth0 exists and is configurable
-var ifname = "eth0"
+// Travis-CI uses ens4, and this test assumes that such interface
+// exists and is configurable. If you are running this test locally,
+// you may need to adjust this value.
+var ifname = "ens4"
 
 func TestIfUp(t *testing.T) {
 	iface, err := IfUp(ifname, 2*time.Second)
