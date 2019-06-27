@@ -291,7 +291,6 @@ func TestNewDiscovery(t *testing.T) {
 	require.Equal(t, OpcodeBootRequest, m.OpCode)
 	require.Equal(t, iana.HWTypeEthernet, m.HWType)
 	require.Equal(t, hwAddr, m.ClientHWAddr)
-	require.True(t, m.IsBroadcast())
 	require.True(t, m.Options.Has(OptionParameterRequestList))
 }
 
