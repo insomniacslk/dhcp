@@ -1,5 +1,6 @@
 # dhcp
 [![Build Status](https://travis-ci.org/insomniacslk/dhcp.svg?branch=master)](https://travis-ci.org/insomniacslk/dhcp)
+[![GoDoc](https://godoc.org/github.com/insomniacslk/dhcp?status.svg)](https://godoc.org/github.com/insomniacslk/dhcp)
 [![codecov](https://codecov.io/gh/insomniacslk/dhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/insomniacslk/dhcp)
 [![Go Report Card](https://goreportcard.com/badge/github.com/insomniacslk/dhcp)](https://goreportcard.com/report/github.com/insomniacslk/dhcp)
 
