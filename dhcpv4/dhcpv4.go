@@ -26,7 +26,6 @@ import (
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/insomniacslk/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -122,7 +121,8 @@ func GenerateTransactionID() (TransactionID, error) {
 	var xid TransactionID
 	ctx, cancel := context.WithTimeout(context.Background(), RandomTimeout)
 	defer cancel()
-	n, err := rand.ReadContext(ctx, xid[:])
+	urand := &UrandomRead{}
+	n, err := urand.ReadContext(ctx, xid[:])
 	if err != nil {
 		return xid, fmt.Errorf("could not get random number: %v", err)
 	}
@@ -507,7 +507,7 @@ func (d *DHCPv4) ToBytes() []byte {
 	return buf.Data()
 }
 
-// GetBroadcastAddress returns the DHCPv4 Broadcast Address value in d.
+// BroadcastAddress returns the DHCPv4 Broadcast Address value in d.
 //
 // The broadcast address option is described in RFC 2132, Section 5.3.
 func (d *DHCPv4) BroadcastAddress() net.IP {
