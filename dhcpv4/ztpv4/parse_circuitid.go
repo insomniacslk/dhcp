@@ -24,7 +24,7 @@ var circuitRegexs = []*regexp.Regexp{
 	// Juniper EX ge-0/0/0.0
 	regexp.MustCompile("^ge-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+).*"),
 	// Arista Ethernet3/17/1
-	// Sometimes Arista prepend circuit id type(1 byte) and length(1 byte) not useing ^
+	// Sometimes Arista prepend circuit id type(1 byte) and length(1 byte) not using ^
 	regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Juniper QFX et-1/0/61
 	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
