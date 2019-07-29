@@ -50,7 +50,7 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv4.DHCPv4, opts ...C
 		panic(err)
 	}
 
-	clientConn := NewBroadcastUDPConn(clientRawConn, &net.UDPAddr{IP: net.IPv4zero, Port: ClientPort})
+	clientConn := NewBroadcastUDPConn(clientRawConn, &net.UDPAddr{Port: ClientPort})
 	serverConn := NewBroadcastUDPConn(serverRawConn, &net.UDPAddr{Port: ServerPort})
 
 	o := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
