@@ -73,7 +73,7 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*
 		IP:   loAddr,
 		Port: randPort(),
 	}
-	s, err := NewServer(iface.Name, &saddr, handler)
+	s, err := NewServer("", &saddr, handler)
 	if err != nil {
 		t.Fatal(err)
 	}
