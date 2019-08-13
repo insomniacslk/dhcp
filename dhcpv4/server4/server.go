@@ -133,7 +133,7 @@ func NewServer(addr *net.UDPAddr, handler Handler, iface string, opt ...ServerOp
 	}
 	if s.conn == nil {
 		var err error
-		conn, err := dhcpv4.BindToInterface(iface, addr.String())
+		conn, err := dhcpv4.BindConnectionToInterface(addr.String(), iface)
 		if err != nil {
 			return nil, err
 		}

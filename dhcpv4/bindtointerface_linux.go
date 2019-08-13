@@ -8,7 +8,7 @@ import (
 	"syscall"
 )
 
-func BindToInterface(laddr string, ifname string) (c net.PacketConn, e error) {
+func BindConnectionToInterface(laddr string, ifname string) (c net.PacketConn, e error) {
 	addr, err := net.ResolveUDPAddr("udp4", laddr)
 	if err != nil {
 		return nil, err
