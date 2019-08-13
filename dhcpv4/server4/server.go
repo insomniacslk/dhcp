@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
 )
 
 /*
@@ -123,7 +124,7 @@ func WithConn(c net.PacketConn) ServerOpt {
 }
 
 // NewServer initializes and returns a new Server object
-func NewServer(addr *net.UDPAddr, handler Handler, iface string, opt ...ServerOpt) (*Server, error) {
+func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
 	s := &Server{
 		Handler: handler,
 	}
@@ -133,7 +134,7 @@ func NewServer(addr *net.UDPAddr, handler Handler, iface string, opt ...ServerOp
 	}
 	if s.conn == nil {
 		var err error
-		conn, err := dhcpv4.BindConnectionToInterface(addr.String(), iface)
+		conn, err := nclient4.NewIPv4UDPConn(ifname, addr.Port)
 		if err != nil {
 			return nil, err
 		}
