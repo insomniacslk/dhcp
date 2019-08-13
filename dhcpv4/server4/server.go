@@ -5,7 +5,6 @@ import (
 	"net"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
 )
 
 /*
@@ -134,7 +133,7 @@ func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerO
 	}
 	if s.conn == nil {
 		var err error
-		conn, err := nclient4.NewIPv4UDPConn(ifname, addr.Port)
+		conn, err := NewIPv4UDPConn(ifname, addr.Port)
 		if err != nil {
 			return nil, err
 		}
