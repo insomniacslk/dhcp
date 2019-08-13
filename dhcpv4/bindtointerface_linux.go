@@ -8,6 +8,7 @@ import (
 	"syscall"
 )
 
+//BindConnectionToInterface binds the interface and the connection
 func BindConnectionToInterface(laddr string, ifname string) (c net.PacketConn, e error) {
 	addr, err := net.ResolveUDPAddr("udp4", laddr)
 	if err != nil {
