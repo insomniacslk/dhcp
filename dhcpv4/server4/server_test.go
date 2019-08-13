@@ -81,7 +81,7 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*
 		_ = s.Serve()
 	}()
 
-	clientConn, err := dhcpv4.NewIPv4UDPConn("", caddr.Port)
+	clientConn, err := NewIPv4UDPConn("", caddr.Port)
 	if err != nil {
 		t.Fatal(err)
 	}
