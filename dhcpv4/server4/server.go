@@ -131,13 +131,13 @@ func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerO
 	for _, o := range opt {
 		o(s)
 	}
-	if s.conn == nil {
+	if s.Conn == nil {
 		var err error
 		conn, err := NewIPv4UDPConn(ifname, addr.Port)
 		if err != nil {
 			return nil, err
 		}
-		s.conn = conn
+		s.Conn = conn
 	}
 	return s, nil
 }
