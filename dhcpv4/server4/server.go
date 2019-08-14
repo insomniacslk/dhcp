@@ -66,19 +66,19 @@ type Handler func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4)
 
 // Server represents a DHCPv4 server object
 type Server struct {
-	conn    net.PacketConn
+	Conn    net.PacketConn
 	Handler Handler
 }
 
 // Serve serves requests.
 func (s *Server) Serve() error {
-	log.Printf("Server listening on %s", s.conn.LocalAddr())
+	log.Printf("Server listening on %s", s.Conn.LocalAddr())
 	log.Print("Ready to handle requests")
 
 	defer s.Close()
 	for {
 		rbuf := make([]byte, 4096) // FIXME this is bad
-		n, peer, err := s.conn.ReadFrom(rbuf)
+		n, peer, err := s.Conn.ReadFrom(rbuf)
 		if err != nil {
 			log.Printf("Error reading from packet conn: %v", err)
 			return err
@@ -103,13 +103,13 @@ func (s *Server) Serve() error {
 				Port: upeer.Port,
 			}
 		}
-		go s.Handler(s.conn, upeer, m)
+		go s.Handler(s.Conn, upeer, m)
 	}
 }
 
 // Close sends a termination request to the server, and closes the UDP listener.
 func (s *Server) Close() error {
-	return s.conn.Close()
+	return s.Conn.Close()
 }
 
 // ServerOpt adds optional configuration to a server.
@@ -118,7 +118,7 @@ type ServerOpt func(s *Server)
 // WithConn configures the server with the given connection.
 func WithConn(c net.PacketConn) ServerOpt {
 	return func(s *Server) {
-		s.conn = c
+		s.Conn = c
 	}
 }
 
