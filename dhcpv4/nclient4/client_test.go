@@ -61,7 +61,7 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv4.DHCPv4, opts ...C
 	}
 
 	h := &handler{responses: responses}
-	s, err := server4.NewServer(nil, h.handle, server4.WithConn(serverConn))
+	s, err := server4.NewServer("", nil, h.handle, server4.WithConn(serverConn))
 	if err != nil {
 		panic(err)
 	}
