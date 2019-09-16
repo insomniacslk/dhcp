@@ -310,9 +310,13 @@ func TestNewInform(t *testing.T) {
 func TestIsOptionRequested(t *testing.T) {
 	pkt, err := New()
 	require.NoError(t, err)
+	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
+
+	optprl := OptParameterRequestList(OptionRouter, OptionDomainName)
+	pkt.UpdateOption(optprl)
 	require.False(t, pkt.IsOptionRequested(OptionDomainNameServer))
 
-	optprl := OptParameterRequestList(OptionDomainNameServer)
+	optprl = OptParameterRequestList(OptionDomainNameServer)
 	pkt.UpdateOption(optprl)
 	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
 }
