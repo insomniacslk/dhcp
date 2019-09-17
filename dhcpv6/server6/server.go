@@ -126,31 +126,46 @@ func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerO
 		o(s)
 	}
 
-	if s.conn == nil {
-		// no connection provided by the user, create a new one
-		conn, err := net.ListenUDP("udp6", addr)
+	if s.conn != nil {
+		return s, nil
+	}
+
+	var err error
+	// no connection provided by the user, create a new one
+	s.conn, err = net.ListenUDP("udp6", addr)
+	if err != nil {
+		return nil, err
+	}
+
+	var iface *net.Interface
+	if ifname == "" {
+		iface = nil
+	} else {
+		iface, err = net.InterfaceByName(ifname)
 		if err != nil {
 			return nil, err
 		}
-		// join multicast group on the specified interface
-		var iface *net.Interface
-		if ifname == "" {
-			iface = nil
-		} else {
-			iface, err = net.InterfaceByName(ifname)
-			if err != nil {
-				return nil, err
-			}
-		}
-		group := net.UDPAddr{
-			IP:   dhcpv6.AllDHCPRelayAgentsAndServers,
-			Port: dhcpv6.DefaultServerPort,
-		}
-		p := ipv6.NewPacketConn(conn)
-		if err := p.JoinGroup(iface, &group); err != nil {
+	}
+
+	p := ipv6.NewPacketConn(s.conn)
+	if addr.IP.IsMulticast() {
+		if err := p.JoinGroup(iface, addr); err != nil {
 			return nil, err
 		}
-		s.conn = conn
+	} else if addr.IP.IsUnspecified() && addr.Port == dhcpv6.DefaultServerPort {
+		// For wildcard addresses on the correct port, listen on both multicast
+		// addresses defined in the RFC as a "default" behaviour
+		for _, g := range []net.IP{dhcpv6.AllDHCPRelayAgentsAndServers, dhcpv6.AllDHCPServers} {
+			group := net.UDPAddr{
+				IP:   g,
+				Port: dhcpv6.DefaultServerPort,
+			}
+			if err := p.JoinGroup(iface, &group); err != nil {
+				return nil, err
+			}
+
+		}
 	}
+
 	return s, nil
 }
