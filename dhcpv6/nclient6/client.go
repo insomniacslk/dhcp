@@ -234,12 +234,21 @@ func WithBroadcastAddr(n *net.UDPAddr) ClientOpt {
 // Matcher matches DHCP packets.
 type Matcher func(*dhcpv6.Message) bool
 
-// IsMessageType returns a matcher that checks for the message type.
+// IsMessageType returns a matcher that checks for one of several message
+// types.  It is most efficient to put the most likely type first.
 //
 // If t is MessageTypeNone, all packets are matched.
-func IsMessageType(t dhcpv6.MessageType) Matcher {
+func IsMessageType(t dhcpv6.MessageType, tt ...dhcpv6.MessageType) Matcher {
 	return func(p *dhcpv6.Message) bool {
-		return p.MessageType == t || t == dhcpv6.MessageTypeNone
+		if p.MessageType == t || t == dhcpv6.MessageTypeNone {
+			return true
+		}
+		for _, mt := range tt {
+			if p.MessageType == mt {
+				return true
+			}
+		}
+		return false
 	}
 }
 
@@ -250,7 +259,7 @@ func (c *Client) RapidSolicit(ctx context.Context, modifiers ...dhcpv6.Modifier)
 	if err != nil {
 		return nil, err
 	}
-	msg, err := c.SendAndRead(ctx, c.serverAddr, solicit, IsMessageType(dhcpv6.MessageTypeReply))
+	msg, err := c.SendAndRead(ctx, c.serverAddr, solicit, IsMessageType(dhcpv6.MessageTypeReply, dhcpv6.MessageTypeAdvertise))
 	if err != nil {
 		return nil, err
 	}
