@@ -112,9 +112,14 @@ func WithConn(conn net.PacketConn) ServerOpt {
 	}
 }
 
-// NewServer initializes and returns a new Server object, listening on `addr`,
-// and joining the multicast group ff02::1:2 . If `addr` is nil, IPv6 unspec is
-// used. If `WithConn` is used with a non-nil address, `addr` and `ifname` have
+// NewServer initializes and returns a new Server object, listening on `addr`.
+// * If `addr` is a multicast group, the group will be additionally joined
+// * If `addr` is the wildcard address on the DHCPv6 server port (`[::]:547), the
+//   multicast groups All_DHCP_Relay_Agents_and_Servers(`[ff02::1:2]`) and
+//   All_DHCP_Servers(`[ff05::1:3]:547`) will be joined.
+// * If `addr` is nil, IPv6 unspec on the DHCP server port is used and the above
+//   behaviour applies
+// If `WithConn` is used with a non-nil address, `addr` and `ifname` have
 // no effect. In such case, joining the multicast group is the caller's
 // responsibility.
 func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerOpt) (*Server, error) {
@@ -125,32 +130,54 @@ func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerO
 	for _, o := range opt {
 		o(s)
 	}
+	if s.conn != nil {
+		return s, nil
+	}
 
-	if s.conn == nil {
-		// no connection provided by the user, create a new one
-		conn, err := net.ListenUDP("udp6", addr)
+	if addr == nil {
+		addr = &net.UDPAddr{
+			IP:   net.IPv6unspecified,
+			Port: dhcpv6.DefaultServerPort,
+		}
+	}
+
+	var (
+		err   error
+		iface *net.Interface
+	)
+	if ifname == "" {
+		iface = nil
+	} else {
+		iface, err = net.InterfaceByName(ifname)
 		if err != nil {
 			return nil, err
 		}
-		// join multicast group on the specified interface
-		var iface *net.Interface
-		if ifname == "" {
-			iface = nil
-		} else {
-			iface, err = net.InterfaceByName(ifname)
-			if err != nil {
-				return nil, err
-			}
-		}
-		group := net.UDPAddr{
-			IP:   dhcpv6.AllDHCPRelayAgentsAndServers,
-			Port: dhcpv6.DefaultServerPort,
-		}
-		p := ipv6.NewPacketConn(conn)
-		if err := p.JoinGroup(iface, &group); err != nil {
+	}
+	// no connection provided by the user, create a new one
+	s.conn, err = NewIPv6UDPConn(ifname, addr)
+	if err != nil {
+		return nil, err
+	}
+
+	p := ipv6.NewPacketConn(s.conn)
+	if addr.IP.IsMulticast() {
+		if err := p.JoinGroup(iface, addr); err != nil {
 			return nil, err
 		}
-		s.conn = conn
+	} else if addr.IP.IsUnspecified() && addr.Port == dhcpv6.DefaultServerPort {
+		// For wildcard addresses on the correct port, listen on both multicast
+		// addresses defined in the RFC as a "default" behaviour
+		for _, g := range []net.IP{dhcpv6.AllDHCPRelayAgentsAndServers, dhcpv6.AllDHCPServers} {
+			group := net.UDPAddr{
+				IP:   g,
+				Port: dhcpv6.DefaultServerPort,
+			}
+			if err := p.JoinGroup(iface, &group); err != nil {
+				return nil, err
+			}
+
+		}
 	}
+
 	return s, nil
 }
