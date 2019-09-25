@@ -164,7 +164,7 @@ func NewServer(ifname string, addr *net.UDPAddr, handler Handler, opt ...ServerO
 		if err := p.JoinGroup(iface, addr); err != nil {
 			return nil, err
 		}
-	} else if addr.IP.IsUnspecified() && addr.Port == dhcpv6.DefaultServerPort {
+	} else if (addr.IP == nil || addr.IP.IsUnspecified()) && addr.Port == dhcpv6.DefaultServerPort {
 		// For wildcard addresses on the correct port, listen on both multicast
 		// addresses defined in the RFC as a "default" behaviour
 		for _, g := range []net.IP{dhcpv6.AllDHCPRelayAgentsAndServers, dhcpv6.AllDHCPServers} {
