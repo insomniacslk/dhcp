@@ -17,8 +17,8 @@ func TestIsNetboot(t *testing.T) {
 	require.True(t, msg2.IsNetboot())
 
 	msg3 := Message{}
-	optbf := OptBootFileURL{}
-	msg3.AddOption(&optbf)
+	optbf := OptBootFileURL("")
+	msg3.AddOption(optbf)
 	require.True(t, msg3.IsNetboot())
 }
 
