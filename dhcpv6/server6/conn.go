@@ -15,7 +15,7 @@ import (
 // As a bonus, you can actually listen on a multicast address instead of being punted to the wildcard
 //
 // The interface must already be configured.
-func NewIPv6UDPConn(iface string, addr *net.UDPAddr) (net.PacketConn, error) {
+func NewIPv6UDPConn(iface string, addr *net.UDPAddr) (*net.UDPConn, error) {
 	fd, err := unix.Socket(unix.AF_INET6, unix.SOCK_DGRAM, unix.IPPROTO_UDP)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get a UDP socket: %v", err)
@@ -58,5 +58,13 @@ func NewIPv6UDPConn(iface string, addr *net.UDPAddr) (net.PacketConn, error) {
 		return nil, fmt.Errorf("cannot bind to address %v: %v", addr, err)
 	}
 
-	return net.FilePacketConn(f)
+	conn, err := net.FilePacketConn(f)
+	if err != nil {
+		return nil, err
+	}
+	udpconn, ok := conn.(*net.UDPConn)
+	if !ok {
+		return nil, errors.New("BUG(dhcp6): incorrect socket type, expected UDP")
+	}
+	return udpconn, nil
 }
