@@ -140,6 +140,8 @@ func TestFromAndToBytes(t *testing.T) {
 func TestFromBytesInvalid(t *testing.T) {
 	expected := [][]byte{
 		{},
+		{30},
+		{12},
 	}
 	t.Parallel()
 	for i, packet := range expected {
