@@ -79,6 +79,9 @@ func RelayMessageFromBytes(data []byte) (*RelayMessage, error) {
 func FromBytes(data []byte) (DHCPv6, error) {
 	buf := uio.NewBigEndianBuffer(data)
 	messageType := MessageType(buf.Read8())
+	if buf.Error() != nil {
+		return nil, buf.Error()
+	}
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
 		return RelayMessageFromBytes(data)

@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"net"
+	"strconv"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -134,6 +135,19 @@ func TestFromAndToBytes(t *testing.T) {
 	require.NoError(t, err)
 	toBytes := d.ToBytes()
 	require.Equal(t, expected, toBytes)
+}
+
+func TestFromBytesInvalid(t *testing.T) {
+	expected := [][]byte{
+		{},
+	}
+	t.Parallel()
+	for i, packet := range expected {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			_, err := FromBytes(packet)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestNewAdvertiseFromSolicit(t *testing.T) {
