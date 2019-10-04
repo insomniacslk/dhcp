@@ -144,6 +144,7 @@ func New(modifiers ...Modifier) (*DHCPv4, error) {
 	d := DHCPv4{
 		OpCode:        OpcodeBootRequest,
 		HWType:        iana.HWTypeEthernet,
+		ClientHWAddr:  make(net.HardwareAddr, 6),
 		HopCount:      0,
 		TransactionID: xid,
 		NumSeconds:    0,
@@ -476,9 +477,6 @@ func (d *DHCPv4) ToBytes() []byte {
 
 	// HwAddrLen
 	hlen := uint8(len(d.ClientHWAddr))
-	if hlen == 0 && d.HWType == iana.HWTypeEthernet {
-		hlen = 6
-	}
 	buf.Write8(hlen)
 	buf.Write8(d.HopCount)
 	buf.WriteBytes(d.TransactionID[:])

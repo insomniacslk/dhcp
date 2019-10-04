@@ -354,7 +354,7 @@ func TestSummary(t *testing.T) {
 		"  your IP: 0.0.0.0\n" +
 		"  server IP: 0.0.0.0\n" +
 		"  gateway IP: 0.0.0.0\n" +
-		"  client MAC: \n" +
+		"  client MAC: 00:00:00:00:00:00\n" +
 		"  server hostname: \n" +
 		"  bootfile name: \n" +
 		"  options:\n" +
