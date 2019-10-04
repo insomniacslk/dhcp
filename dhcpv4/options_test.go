@@ -194,9 +194,25 @@ func TestOptionsMarshal(t *testing.T) {
 				5, 1, 10,
 			),
 		},
+		{
+			// Test 0-length options
+			opts: Options{
+				80: []byte{},
+			},
+			want: []byte{80, 0},
+		},
+		{
+			// Test special options, handled by the message marshalling code
+			// and ignored by the options marshalling code
+			opts: Options{
+				0:   []byte{}, // Padding
+				255: []byte{}, // End of options
+			},
+			want: nil, // not written out
+		},
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
-			require.Equal(t, uio.ToBigEndian(tt.opts), tt.want)
+			require.Equal(t, tt.want, uio.ToBigEndian(tt.opts))
 		})
 	}
 }
