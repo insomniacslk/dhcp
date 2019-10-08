@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -179,6 +180,17 @@ func TestNewToBytes(t *testing.T) {
 	d.TransactionID = TransactionID{0x11, 0x22, 0x33, 0x44}
 	got := d.ToBytes()
 	require.Equal(t, expected, got)
+}
+
+func TestToBytesStringTooLong(t *testing.T) {
+	d, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.ServerHostName = strings.Repeat("a", 256)
+	d.BootFileName = strings.Repeat("a", 256)
+
+	require.NotPanics(t, func() { _ = d.ToBytes() })
 }
 
 func TestGetOption(t *testing.T) {

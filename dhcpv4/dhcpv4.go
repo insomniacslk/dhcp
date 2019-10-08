@@ -492,13 +492,11 @@ func (d *DHCPv4) ToBytes() []byte {
 	copy(buf.WriteN(16), d.ClientHWAddr)
 
 	var sname [64]byte
-	copy(sname[:], []byte(d.ServerHostName))
-	sname[len(d.ServerHostName)] = 0
+	copy(sname[:63], []byte(d.ServerHostName))
 	buf.WriteBytes(sname[:])
 
 	var file [128]byte
-	copy(file[:], []byte(d.BootFileName))
-	file[len(d.BootFileName)] = 0
+	copy(file[:127], []byte(d.BootFileName))
 	buf.WriteBytes(file[:])
 
 	// The magic cookie.
