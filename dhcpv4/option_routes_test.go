@@ -16,9 +16,9 @@ func mustParseIPNet(s string) *net.IPNet {
 
 func TestParseRoutes(t *testing.T) {
 	for _, tt := range []struct {
-		p    []byte
-		want Routes
-		err  error
+		p       []byte
+		want    Routes
+		wantErr bool
 	}{
 		{
 			p: []byte{32, 10, 2, 3, 4, 0, 0, 0, 0},
@@ -51,10 +51,14 @@ func TestParseRoutes(t *testing.T) {
 				},
 			},
 		},
+		{
+			p:       []byte{64, 10, 2, 3, 4},
+			wantErr: true, // Mask length 64 > 32
+		},
 	} {
 		var r Routes
-		if err := r.FromBytes(tt.p); err != tt.err {
-			t.Errorf("FromBytes(%v) = %v, want %v", tt.p, err, tt.err)
+		if err := r.FromBytes(tt.p); (err != nil) != tt.wantErr {
+			t.Errorf("FromBytes(%v) Unexpected error state: %v", tt.p, err)
 		}
 
 		if !reflect.DeepEqual(r, tt.want) {
