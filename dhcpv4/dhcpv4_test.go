@@ -3,6 +3,7 @@ package dhcpv4
 import (
 	"bytes"
 	"net"
+	"strconv"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -80,16 +81,18 @@ func TestFromBytes(t *testing.T) {
 	// above
 }
 
-func TestFromBytesZeroLength(t *testing.T) {
-	data := []byte{}
-	_, err := FromBytes(data)
-	require.Error(t, err)
-}
-
-func TestFromBytesShortLength(t *testing.T) {
-	data := []byte{1, 1, 6, 0}
-	_, err := FromBytes(data)
-	require.Error(t, err)
+func TestFromBytesGenericInvalid(t *testing.T) {
+	data := [][]byte{
+		{},
+		{1, 1, 6, 0},
+	}
+	t.Parallel()
+	for i, packet := range data {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			_, err := FromBytes(packet)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestFromBytesInvalidOptions(t *testing.T) {
