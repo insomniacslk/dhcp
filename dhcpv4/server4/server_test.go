@@ -116,3 +116,14 @@ func TestServer(t *testing.T) {
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
 	}
 }
+
+func TestBadAddrFamily(t *testing.T) {
+	saddr := &net.UDPAddr{
+		IP:   net.IPv6loopback,
+		Port: 0,
+	}
+	_, err := NewServer("", saddr, DORAHandler)
+	if err == nil {
+		t.Fatal("Expected server4.NewServer to fail with an IPv6 address")
+	}
+}

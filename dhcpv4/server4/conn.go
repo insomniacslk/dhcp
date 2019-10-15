@@ -43,6 +43,9 @@ func NewIPv4UDPConn(iface string, addr *net.UDPAddr) (*net.UDPConn, error) {
 	}
 	// Bind to the port.
 	saddr := unix.SockaddrInet4{Port: addr.Port}
+	if addr.IP != nil && addr.IP.To4() == nil {
+		return nil, fmt.Errorf("wrong address family (expected v4) for %s", addr.IP)
+	}
 	copy(saddr.Addr[:], addr.IP.To4())
 	if err := unix.Bind(fd, &saddr); err != nil {
 		return nil, fmt.Errorf("cannot bind to port %d: %v", addr.Port, err)
