@@ -22,13 +22,6 @@ func init() {
 	rand.Seed(time.Now().UTC().UnixNano())
 }
 
-func randPort() int {
-	// can't use port 0 with raw sockets, so until we implement
-	// a non-raw-sockets client for non-static ports, we have to
-	// deal with this "randomness"
-	return 32*1024 + rand.Intn(65536-32*1024)
-}
-
 // DORAHandler is a server handler suitable for DORA transactions
 func DORAHandler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 	if m == nil {
@@ -65,27 +58,28 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*nclient4.Client, *Server) {
 	// strong assumption, I know
 	loAddr := net.ParseIP("127.0.0.1")
-	saddr := net.UDPAddr{
+	saddr := &net.UDPAddr{
 		IP:   loAddr,
-		Port: randPort(),
+		Port: 0,
 	}
 	caddr := net.UDPAddr{
 		IP:   loAddr,
-		Port: randPort(),
+		Port: 0,
 	}
-	s, err := NewServer("", &saddr, handler)
+	s, err := NewServer("", saddr, handler)
 	if err != nil {
 		t.Fatal(err)
 	}
 	go func() {
 		_ = s.Serve()
 	}()
+	saddr = s.conn.LocalAddr().(*net.UDPAddr)
 
-	clientConn, err := NewIPv4UDPConn("", caddr.Port)
+	clientConn, err := NewIPv4UDPConn("", &caddr)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c, err := nclient4.NewWithConn(clientConn, iface.HardwareAddr, nclient4.WithServerAddr(&saddr))
+	c, err := nclient4.NewWithConn(clientConn, iface.HardwareAddr, nclient4.WithServerAddr(saddr))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,5 +114,16 @@ func TestServer(t *testing.T) {
 	for _, p := range []*dhcpv4.DHCPv4{offer, ack} {
 		require.Equal(t, xid, p.TransactionID)
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
+	}
+}
+
+func TestBadAddrFamily(t *testing.T) {
+	saddr := &net.UDPAddr{
+		IP:   net.IPv6loopback,
+		Port: 0,
+	}
+	_, err := NewServer("", saddr, DORAHandler)
+	if err == nil {
+		t.Fatal("Expected server4.NewServer to fail with an IPv6 address")
 	}
 }
