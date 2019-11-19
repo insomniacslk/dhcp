@@ -43,14 +43,12 @@ func WithGatewayIP(ip net.IP) Modifier {
 	}
 }
 
-//WithRelayOptions copies the relay options from the request to the reply
-func WithRelayOptions(request *DHCPv4) Modifier {
+// WithRelayAgentInfo copies the relay options from the request to the reply.
+func WithRelayAgentInfo(request *DHCPv4) Modifier {
 	return func(d *DHCPv4) {
 		// If request has Relay Agent Info copy it to the reply
-		if request.Options.Has(OptionRelayAgentInformation) {
-			relayopt := request.Options.Get(OptionRelayAgentInformation)
-			opt := OptGeneric(OptionRelayAgentInformation, relayopt)
-			d.Options.Update(opt)
+		if relayOpt := request.RelayAgentInfo(); relayOpt != nil {
+			d.UpdateOption(dhcpv4.Option{Code: dhcpv4.OptionRelayAgentInformation, Value: relayOpt})
 		}
 	}
 }
