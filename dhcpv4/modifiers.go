@@ -48,7 +48,7 @@ func WithRelayAgentInfo(request *DHCPv4) Modifier {
 	return func(d *DHCPv4) {
 		// If request has Relay Agent Info copy it to the reply
 		if relayOpt := request.RelayAgentInfo(); relayOpt != nil {
-			d.UpdateOption(dhcpv4.Option{Code: dhcpv4.OptionRelayAgentInformation, Value: relayOpt})
+			d.UpdateOption(Option{Code: OptionRelayAgentInformation, Value: relayOpt})
 		}
 	}
 }
