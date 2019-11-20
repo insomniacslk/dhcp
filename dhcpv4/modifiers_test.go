@@ -162,3 +162,22 @@ func TestWithRouter(t *testing.T) {
 	ortr := d.Router()
 	require.Equal(t, rtr, ortr[0])
 }
+
+func TestWithRelayAgentInfo(t *testing.T) {
+	req, _ := New(WithGeneric(OptionRelayAgentInformation, []byte{
+		1, 5, 'l', 'i', 'n', 'u', 'x',
+		2, 4, 'b', 'o', 'o', 't',
+	}))
+	req.OpCode = OpcodeBootRequest
+
+	resp, _ := NewReplyFromRequest(req)
+
+	opt := resp.RelayAgentInfo()
+	require.NotNil(t, opt)
+	require.Equal(t, len(opt.Options), 2)
+
+	circuit := opt.Get(GenericOptionCode(1))
+	remote := opt.Get(GenericOptionCode(2))
+	require.Equal(t, circuit, []byte("linux"))
+	require.Equal(t, remote, []byte("boot"))
+}
