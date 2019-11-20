@@ -72,18 +72,13 @@ type Server struct {
 
 // Serve serves requests.
 func (s *Server) Serve() error {
-	log.Printf("Server listening on %s", s.conn.LocalAddr())
-	log.Print("Ready to handle requests")
-
 	defer s.Close()
 	for {
 		rbuf := make([]byte, 4096) // FIXME this is bad
 		n, peer, err := s.conn.ReadFrom(rbuf)
 		if err != nil {
-			log.Printf("Error reading from packet conn: %v", err)
 			return err
 		}
-		log.Printf("Handling request from %v", peer)
 
 		m, err := dhcpv4.FromBytes(rbuf[:n])
 		if err != nil {
