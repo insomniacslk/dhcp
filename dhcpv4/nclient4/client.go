@@ -362,6 +362,15 @@ func WithUnicast(srcAddr *net.UDPAddr) ClientOpt {
 	}
 }
 
+// WithHWAddr tells to the Client to receive messages destinated to selected
+// hardware address
+func WithHWAddr(hwAddr net.HardwareAddr) ClientOpt {
+	return func(c *Client) (err error) {
+		c.ifaceHWAddr = hwAddr
+		return
+	}
+}
+
 func withBufferCap(n int) ClientOpt {
 	return func(c *Client) (err error) {
 		c.bufferCap = n
