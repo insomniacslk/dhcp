@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/u-root/u-root/pkg/ulog"
 )
 
 const (
@@ -76,58 +77,39 @@ type pendingCh struct {
 
 // Logger is a handler which will be used to output logging messages
 type Logger interface {
-	// PrintMessage print _all_ DHCP messages
-	PrintMessage(prefix string, message *dhcpv4.DHCPv4)
+	ulog.Logger
 
-	// Printf is use to print the rest debugging information
-	Printf(format string, v ...interface{})
+	// PrintMessage is used to print _all_ DHCP messages.
+	PrintMessage(prefix string, message *dhcpv4.DHCPv4)
 }
 
-// EmptyLogger prints nothing
+// EmptyLogger prints nothing.
 type EmptyLogger struct{}
 
-// Printf is just a dummy function that does nothing
-func (e EmptyLogger) Printf(format string, v ...interface{}) {}
-
-// PrintMessage is just a dummy function that does nothing
+func (e EmptyLogger) Printf(format string, v ...interface{})             {}
+func (e EmptyLogger) Print(v ...interface{})                             {}
 func (e EmptyLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {}
 
-// Printfer is used for actual output of the logger. For example *log.Logger is a Printfer.
-type Printfer interface {
-	// Printf is the function for logging output. Arguments are handled in the manner of fmt.Printf.
-	Printf(format string, v ...interface{})
-}
-
-// ShortSummaryLogger is a wrapper for Printfer to implement interface Logger.
+// ShortSummaryLogger is a wrapper for ulog.Logger to implement interface Logger.
 // DHCP messages are printed in the short format.
 type ShortSummaryLogger struct {
-	// Printfer is used for actual output of the logger
-	Printfer
+	// Logger is used for actual output of the logger.
+	ulog.Logger
 }
 
-// Printf prints a log message as-is via predefined Printfer
-func (s ShortSummaryLogger) Printf(format string, v ...interface{}) {
-	s.Printfer.Printf(format, v...)
-}
-
-// PrintMessage prints a DHCP message in the short format via predefined Printfer
+// PrintMessage prints a DHCP message in the short format via predefined ulog.Logger.
 func (s ShortSummaryLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {
 	s.Printf("%s: %s", prefix, message)
 }
 
-// DebugLogger is a wrapper for Printfer to implement interface Logger.
+// DebugLogger is a wrapper for ulog.Logger to implement interface Logger.
 // DHCP messages are printed in the long format.
 type DebugLogger struct {
-	// Printfer is used for actual output of the logger
-	Printfer
+	// Logger is used for actual output of the logger
+	ulog.Logger
 }
 
-// Printf prints a log message as-is via predefined Printfer
-func (d DebugLogger) Printf(format string, v ...interface{}) {
-	d.Printfer.Printf(format, v...)
-}
-
-// PrintMessage prints a DHCP message in the long format via predefined Printfer
+// PrintMessage prints a DHCP message in the long format via predefined ulog.Logger
 func (d DebugLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {
 	d.Printf("%s: %s", prefix, message.Summary())
 }
@@ -317,22 +299,16 @@ func WithTimeout(d time.Duration) ClientOpt {
 
 // WithSummaryLogger logs one-line DHCPv4 message summaries when sent & received.
 func WithSummaryLogger() ClientOpt {
-	return func(c *Client) (err error) {
-		c.logger = ShortSummaryLogger{
-			Printfer: log.New(os.Stderr, "[dhcpv4] ", log.LstdFlags),
-		}
-		return
-	}
+	return WithLogger(ShortSummaryLogger{
+		Logger: log.New(os.Stderr, "[dhcpv4] ", log.LstdFlags),
+	})
 }
 
 // WithDebugLogger logs multi-line full DHCPv4 messages when sent & received.
 func WithDebugLogger() ClientOpt {
-	return func(c *Client) (err error) {
-		c.logger = DebugLogger{
-			Printfer: log.New(os.Stderr, "[dhcpv4] ", log.LstdFlags),
-		}
-		return
-	}
+	return WithLogger(DebugLogger{
+		Logger: log.New(os.Stderr, "[dhcpv4] ", log.LstdFlags),
+	})
 }
 
 // WithLogger set the logger (see interface Logger).
