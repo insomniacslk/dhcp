@@ -29,6 +29,15 @@ func (mo MessageOptions) ArchTypes() iana.Archs {
 	return opt.(*optClientArchType).Archs
 }
 
+// ClientID returns the client identifier option.
+func (mo MessageOptions) ClientID() *Duid {
+	opt := mo.GetOne(OptionClientID)
+	if opt == nil {
+		return nil
+	}
+	return &opt.(*optClientID).Duid
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
@@ -72,7 +81,7 @@ func NewSolicit(hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error
 		return nil, err
 	}
 	m.MessageType = MessageTypeSolicit
-	m.AddOption(&OptClientId{Cid: duid})
+	m.AddOption(OptClientID(duid))
 	oro := new(OptRequestedOption)
 	oro.SetRequestedOptions([]OptionCode{
 		OptionDNSRecursiveNameServer,

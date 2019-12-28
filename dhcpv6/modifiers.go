@@ -11,8 +11,7 @@ import (
 // WithClientID adds a client ID option to a DHCPv6 packet
 func WithClientID(duid Duid) Modifier {
 	return func(d DHCPv6) {
-		cid := OptClientId{Cid: duid}
-		d.UpdateOption(&cid)
+		d.UpdateOption(OptClientID(duid))
 	}
 }
 

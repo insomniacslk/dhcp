@@ -40,7 +40,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	)
 	switch code {
 	case OptionClientID:
-		opt, err = ParseOptClientId(optData)
+		opt, err = parseOptClientID(optData)
 	case OptionServerID:
 		opt, err = ParseOptServerId(optData)
 	case OptionIANA:
