@@ -9,7 +9,7 @@ import (
 )
 
 func TestRelayMsgParseOptRelayMsg(t *testing.T) {
-	opt, err := ParseOptRelayMsg([]byte{
+	opt, err := parseOptRelayMsg([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -77,22 +77,14 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if mType := r.Type(); mType != MessageTypeRelayForward {
 		t.Fatalf("Invalid messge type for relay. Expected %v, got %v", MessageTypeRelayForward, mType)
 	}
-	if len(r.Options) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.Options))
+	if len(r.Options.Options) != 1 {
+		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.Options.Options))
 	}
-	if code := r.Options[0].Code(); code != OptionRelayMsg {
-		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
-			OptionRelayMsg, code,
-		)
+	ro := r.Options.RelayMessage()
+	if ro == nil {
+		t.Fatalf("No relay message")
 	}
-	opt := r.Options[0]
-	ro, ok := opt.(*OptRelayMsg)
-	if !ok {
-		t.Fatalf("Invalid option type. Expected OptRelayMsg, got %v",
-			reflect.TypeOf(ro),
-		)
-	}
-	innerDHCP, ok := ro.RelayMessage().(*Message)
+	innerDHCP, ok := ro.(*Message)
 	if !ok {
 		t.Fatalf("Invalid relay message type. Expected Message, got %v",
 			reflect.TypeOf(innerDHCP),
@@ -156,7 +148,7 @@ func TestSample(t *testing.T) {
 }
 
 func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
-	_, err := ParseOptRelayMsg([]byte{
+	_, err := parseOptRelayMsg([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -166,7 +158,7 @@ func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
 }
 
 func TestRelayMsgString(t *testing.T) {
-	opt, err := ParseOptRelayMsg([]byte{
+	opt, err := parseOptRelayMsg([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -177,7 +169,7 @@ func TestRelayMsgString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"relaymsg=Message",
+		"RelayMsg: Message",
 		"String() should contain the relaymsg contents",
 	)
 }

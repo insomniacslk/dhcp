@@ -10,6 +10,26 @@ import (
 
 const RelayHeaderSize = 34
 
+// RelayOptions are the options valid for RelayForw and RelayRepl messages.
+//
+// RFC 3315 Appendix B defines them to be InterfaceID and RelayMsg options; RFC
+// 4649 also adds the RemoteID option.
+type RelayOptions struct {
+	Options
+}
+
+// RelayMessage returns the message embedded.
+func (ro RelayOptions) RelayMessage() DHCPv6 {
+	opt := ro.Options.GetOne(OptionRelayMsg)
+	if opt == nil {
+		return nil
+	}
+	if relayOpt, ok := opt.(*optRelayMsg); ok {
+		return relayOpt.Msg
+	}
+	return nil
+}
+
 // RelayMessage is a DHCPv6 relay agent message as defined by RFC 3315 Section
 // 7.
 type RelayMessage struct {
@@ -17,7 +37,7 @@ type RelayMessage struct {
 	HopCount    uint8
 	LinkAddr    net.IP
 	PeerAddr    net.IP
-	Options     Options
+	Options     RelayOptions
 }
 
 func write16(b *uio.Lexer, ip net.IP) {
@@ -38,7 +58,7 @@ func (r *RelayMessage) Type() MessageType {
 func (r *RelayMessage) String() string {
 	ret := fmt.Sprintf(
 		"RelayMessage(messageType=%s hopcount=%d, linkaddr=%s, peeraddr=%s, %d options)",
-		r.Type(), r.HopCount, r.LinkAddr, r.PeerAddr, len(r.Options),
+		r.Type(), r.HopCount, r.LinkAddr, r.PeerAddr, len(r.Options.Options),
 	)
 	return ret
 }
