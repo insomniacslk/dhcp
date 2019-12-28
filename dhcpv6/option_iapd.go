@@ -7,13 +7,46 @@ import (
 	"github.com/u-root/u-root/pkg/uio"
 )
 
+// PDOptions are options used with the IAPD (prefix delegation) option.
+//
+// RFC 3633 describes that IA_PD-options may contain the IAPrefix option and
+// the StatusCode option.
+type PDOptions struct {
+	Options
+}
+
+// Prefixes are the prefixes associated with this delegation.
+func (po PDOptions) Prefixes() []*OptIAPrefix {
+	opts := po.Options.Get(OptionIAPrefix)
+	pre := make([]*OptIAPrefix, 0, len(opts))
+	for _, o := range opts {
+		if iap, ok := o.(*OptIAPrefix); ok {
+			pre = append(pre, iap)
+		}
+	}
+	return pre
+}
+
+// Status returns the status code associated with this option.
+func (po PDOptions) Status() *OptStatusCode {
+	opt := po.Options.GetOne(OptionStatusCode)
+	if opt == nil {
+		return nil
+	}
+	sc, ok := opt.(*OptStatusCode)
+	if !ok {
+		return nil
+	}
+	return sc
+}
+
 // OptIAPD implements the identity association for prefix
 // delegation option defined by RFC 3633, Section 9.
 type OptIAPD struct {
 	IaId    [4]byte
 	T1      time.Duration
 	T2      time.Duration
-	Options Options
+	Options PDOptions
 }
 
 // Code returns the option code
@@ -37,7 +70,7 @@ func (op *OptIAPD) ToBytes() []byte {
 
 // String returns a string representation of the OptIAPD data
 func (op *OptIAPD) String() string {
-	return fmt.Sprintf("OptIAPD{IAID=%v, t1=%v, t2=%v, options=%v}",
+	return fmt.Sprintf("IAPD: {IAID=%v, t1=%v, t2=%v, Options=[%v]}",
 		op.IaId, op.T1, op.T2, op.Options)
 }
 

@@ -110,12 +110,12 @@ func TestWithDHCP4oDHCP6Server(t *testing.T) {
 
 func TestWithIAPD(t *testing.T) {
 	var d Message
-	prefix := OptIAPrefix{
+	_, pre, _ := net.ParseCIDR("2001:DB8:7689::/48")
+	prefix := &OptIAPrefix{
 		PreferredLifetime: 3600,
 		ValidLifetime:     5200,
+		Prefix:            pre,
 	}
-	prefix.SetPrefixLength(48)
-	prefix.SetIPv6Prefix(net.ParseIP("2001:DB8:7689::"))
 	WithIAPD([4]byte{1, 2, 3, 4}, prefix)(&d)
 	opt := d.Options.IAPD()
 	require.Equal(t, 1, len(opt))
