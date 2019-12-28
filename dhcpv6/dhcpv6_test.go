@@ -242,14 +242,10 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 	require.Equal(t, cduid, &duid)
 
 	// Check ORO
-	oroOption := s.GetOneOption(OptionORO)
-	require.NotNil(t, oroOption)
-	oro, ok := oroOption.(*OptRequestedOption)
-	require.True(t, ok)
-	opts := oro.RequestedOptions()
-	require.Contains(t, opts, OptionDNSRecursiveNameServer)
-	require.Contains(t, opts, OptionDomainSearchList)
-	require.Equal(t, len(opts), 2)
+	oro := s.Options.RequestedOptions()
+	require.Contains(t, oro, OptionDNSRecursiveNameServer)
+	require.Contains(t, oro, OptionDomainSearchList)
+	require.Equal(t, len(oro), 2)
 
 	// Check IA_NA
 	iaid := [4]byte{hwAddr[2], hwAddr[3], hwAddr[4], hwAddr[5]}

@@ -11,9 +11,7 @@ func TestIsNetboot(t *testing.T) {
 	require.False(t, msg1.IsNetboot())
 
 	msg2 := Message{}
-	optro := OptRequestedOption{}
-	optro.AddRequestedOption(OptionBootfileURL)
-	msg2.AddOption(&optro)
+	msg2.AddOption(OptRequestedOption(OptionBootfileURL))
 	require.True(t, msg2.IsNetboot())
 
 	msg3 := Message{}
@@ -27,8 +25,6 @@ func TestIsOptionRequested(t *testing.T) {
 	require.False(t, msg1.IsOptionRequested(OptionDNSRecursiveNameServer))
 
 	msg2 := Message{}
-	optro := OptRequestedOption{}
-	optro.AddRequestedOption(OptionDNSRecursiveNameServer)
-	msg2.AddOption(&optro)
+	msg2.AddOption(OptRequestedOption(OptionDNSRecursiveNameServer))
 	require.True(t, msg2.IsOptionRequested(OptionDNSRecursiveNameServer))
 }
