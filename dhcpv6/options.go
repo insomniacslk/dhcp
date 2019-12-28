@@ -48,7 +48,9 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionIAAddr:
 		opt, err = ParseOptIAAddress(optData)
 	case OptionORO:
-		opt, err = ParseOptRequestedOption(optData)
+		var o optRequestedOption
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionElapsedTime:
 		opt, err = ParseOptElapsedTime(optData)
 	case OptionRelayMsg:

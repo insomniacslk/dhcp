@@ -1,7 +1,6 @@
 package dhcpv6
 
 import (
-	"log"
 	"net"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -27,21 +26,7 @@ func WithServerID(duid Duid) Modifier {
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
 func WithNetboot(d DHCPv6) {
-	msg, ok := d.(*Message)
-	if !ok {
-		log.Printf("WithNetboot: not a Message")
-		return
-	}
-	// add OptionBootfileURL and OptionBootfileParam
-	opt := msg.GetOneOption(OptionORO)
-	if opt == nil {
-		opt = &OptRequestedOption{}
-	}
-	// TODO only add options if they are not there already
-	oro := opt.(*OptRequestedOption)
-	oro.AddRequestedOption(OptionBootfileURL)
-	oro.AddRequestedOption(OptionBootfileParam)
-	msg.UpdateOption(oro)
+	WithRequestedOptions(OptionBootfileURL, OptionBootfileParam)(d)
 }
 
 // WithFQDN adds a fully qualified domain name option to the packet
@@ -129,16 +114,14 @@ func WithRapidCommit(d DHCPv6) {
 }
 
 // WithRequestedOptions adds requested options to the packet
-func WithRequestedOptions(optionCodes ...OptionCode) Modifier {
+func WithRequestedOptions(codes ...OptionCode) Modifier {
 	return func(d DHCPv6) {
-		opt := d.GetOneOption(OptionORO)
-		if opt == nil {
-			opt = &OptRequestedOption{}
+		if msg, ok := d.(*Message); ok {
+			oro := msg.Options.RequestedOptions()
+			for _, c := range codes {
+				oro.Add(c)
+			}
+			d.UpdateOption(OptRequestedOption(oro...))
 		}
-		oro := opt.(*OptRequestedOption)
-		for _, optionCode := range optionCodes {
-			oro.AddRequestedOption(optionCode)
-		}
-		d.UpdateOption(oro)
 	}
 }

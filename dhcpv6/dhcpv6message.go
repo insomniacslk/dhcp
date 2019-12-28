@@ -79,6 +79,19 @@ func (mo MessageOptions) Status() *OptStatusCode {
 	return sc
 }
 
+// RequestedOptions returns the Options Requested Option.
+func (mo MessageOptions) RequestedOptions() OptionCodes {
+	opt := mo.Options.GetOne(OptionORO)
+	if opt == nil {
+		return nil
+	}
+	oro, ok := opt.(*optRequestedOption)
+	if !ok {
+		return nil
+	}
+	return oro.OptionCodes
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
@@ -123,12 +136,10 @@ func NewSolicit(hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error
 	}
 	m.MessageType = MessageTypeSolicit
 	m.AddOption(OptClientID(duid))
-	oro := new(OptRequestedOption)
-	oro.SetRequestedOptions([]OptionCode{
+	m.AddOption(OptRequestedOption(
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
-	})
-	m.AddOption(oro)
+	))
 	m.AddOption(&OptElapsedTime{})
 	if len(hwaddr) < 4 {
 		return nil, errors.New("short hardware addrss: less than 4 bytes")
@@ -205,13 +216,10 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
 	}
 	req.AddOption(iana)
-	// add OptRequestedOption
-	oro := OptRequestedOption{}
-	oro.SetRequestedOptions([]OptionCode{
+	req.AddOption(OptRequestedOption(
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
-	})
-	req.AddOption(&oro)
+	))
 	// add OPTION_VENDOR_CLASS, only if present in the original request
 	// TODO implement OptionVendorClass
 	vClass := adv.GetOneOption(OptionVendorClass)
@@ -303,14 +311,7 @@ func (m *Message) IsNetboot() bool {
 // IsOptionRequested takes an OptionCode and returns true if that option is
 // within the requested options of the DHCPv6 message.
 func (m *Message) IsOptionRequested(requested OptionCode) bool {
-	for _, optoro := range m.GetOption(OptionORO) {
-		for _, o := range optoro.(*OptRequestedOption).RequestedOptions() {
-			if o == requested {
-				return true
-			}
-		}
-	}
-	return false
+	return m.Options.RequestedOptions().Contains(requested)
 }
 
 // String returns a short human-readable string for this message.
