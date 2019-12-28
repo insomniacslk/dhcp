@@ -9,7 +9,7 @@ import (
 
 func TestOptBootFileURL(t *testing.T) {
 	expected := "https://insomniac.slackware.it"
-	opt, err := ParseOptBootFileURL([]byte(expected))
+	opt, err := parseOptBootFileURL([]byte(expected))
 	if err != nil {
 		t.Fatal(err)
 	}
