@@ -66,6 +66,19 @@ func (mo MessageOptions) OneIANA() *OptIANA {
 	return ianas[0]
 }
 
+// Status returns the status code associated with this option.
+func (mo MessageOptions) Status() *OptStatusCode {
+	opt := mo.Options.GetOne(OptionStatusCode)
+	if opt == nil {
+		return nil
+	}
+	sc, ok := opt.(*OptStatusCode)
+	if !ok {
+		return nil
+	}
+	return sc
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
