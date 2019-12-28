@@ -8,19 +8,21 @@ import (
 	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
+// WithOption adds the specific option to the DHCPv6 message.
+func WithOption(o Option) Modifier {
+	return func(d DHCPv6) {
+		d.UpdateOption(o)
+	}
+}
+
 // WithClientID adds a client ID option to a DHCPv6 packet
 func WithClientID(duid Duid) Modifier {
-	return func(d DHCPv6) {
-		d.UpdateOption(OptClientID(duid))
-	}
+	return WithOption(OptClientID(duid))
 }
 
 // WithServerID adds a client ID option to a DHCPv6 packet
 func WithServerID(duid Duid) Modifier {
-	return func(d DHCPv6) {
-		sid := OptServerId{Sid: duid}
-		d.UpdateOption(&sid)
-	}
+	return WithOption(OptServerID(duid))
 }
 
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.

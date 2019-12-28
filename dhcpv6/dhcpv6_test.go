@@ -180,9 +180,7 @@ func TestNewReplyFromMessage(t *testing.T) {
 	}
 	var duid Duid
 	msg.AddOption(OptClientID(duid))
-	sid := OptServerId{}
-	sid.Sid = Duid{}
-	msg.AddOption(&sid)
+	msg.AddOption(OptServerID(duid))
 
 	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
 	require.NoError(t, err)

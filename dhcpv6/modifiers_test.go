@@ -29,10 +29,8 @@ func TestWithServerID(t *testing.T) {
 	}
 	m, err := NewMessage(WithServerID(duid))
 	require.NoError(t, err)
-	opt := m.GetOneOption(OptionServerID)
-	require.NotNil(t, opt)
-	sid := opt.(*OptServerId)
-	require.Equal(t, sid.Sid, duid)
+	sid := m.Options.ServerID()
+	require.Equal(t, sid, &duid)
 }
 
 func TestWithRequestedOptions(t *testing.T) {

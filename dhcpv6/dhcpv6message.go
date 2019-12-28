@@ -38,6 +38,15 @@ func (mo MessageOptions) ClientID() *Duid {
 	return &opt.(*optClientID).Duid
 }
 
+// ServerID returns the server identifier option.
+func (mo MessageOptions) ServerID() *Duid {
+	opt := mo.GetOne(OptionServerID)
+	if opt == nil {
+		return nil
+	}
+	return &opt.(*optServerID).Duid
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
