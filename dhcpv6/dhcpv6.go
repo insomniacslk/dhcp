@@ -204,13 +204,9 @@ func IsUsingUEFI(msg *Message) bool {
 	//               7    EFI BC
 	//               8    EFI Xscale
 	//               9    EFI x86-64
-	if opt := msg.GetOneOption(OptionClientArchType); opt != nil {
-		optat := opt.(*OptClientArchType)
-		for _, at := range optat.ArchTypes {
-			// TODO investigate if other types are appropriate
-			if at == iana.EFI_BC || at == iana.EFI_X86_64 {
-				return true
-			}
+	if archTypes := msg.Options.ArchTypes(); archTypes != nil {
+		if archTypes.Contains(iana.EFI_BC) || archTypes.Contains(iana.EFI_X86_64) {
+			return true
 		}
 	}
 	if opt := msg.GetOneOption(OptionUserClass); opt != nil {

@@ -63,9 +63,11 @@ func TestRelayMessageToBytes(t *testing.T) {
 		relayMessage: &Message{
 			MessageType:   MessageTypeSolicit,
 			TransactionID: TransactionID{0xaa, 0xbb, 0xcc},
-			Options: []Option{
-				&OptElapsedTime{
-					ElapsedTime: 0,
+			Options: MessageOptions{
+				Options: []Option{
+					&OptElapsedTime{
+						ElapsedTime: 0,
+					},
 				},
 			},
 		},

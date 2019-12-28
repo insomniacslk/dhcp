@@ -114,7 +114,7 @@ func TestAddOption(t *testing.T) {
 	require.Empty(t, d.Options)
 	opt := OptionGeneric{OptionCode: 0, OptionData: []byte{}}
 	d.AddOption(&opt)
-	require.Equal(t, Options{&opt}, d.Options)
+	require.Equal(t, Options{&opt}, d.Options.Options)
 }
 
 func TestToBytes(t *testing.T) {
@@ -269,15 +269,13 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
 	msg := Message{}
-	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.EFI_BC}}
-	msg.AddOption(&opt)
+	msg.AddOption(OptClientArchType(iana.EFI_BC))
 	require.True(t, IsUsingUEFI(&msg))
 }
 
 func TestIsUsingUEFIArchTypeFalse(t *testing.T) {
 	msg := Message{}
-	opt := OptClientArchType{ArchTypes: []iana.Arch{iana.INTEL_X86PC}}
-	msg.AddOption(&opt)
+	msg.AddOption(OptClientArchType(iana.INTEL_X86PC))
 	require.False(t, IsUsingUEFI(&msg))
 }
 
