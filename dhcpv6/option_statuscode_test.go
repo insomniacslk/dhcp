@@ -15,7 +15,7 @@ func TestParseOptStatusCode(t *testing.T) {
 	opt, err := ParseOptStatusCode(data)
 	require.NoError(t, err)
 	require.Equal(t, iana.StatusUseMulticast, opt.StatusCode)
-	require.Equal(t, []byte("use multicast"), opt.StatusMessage)
+	require.Equal(t, "use multicast", opt.StatusMessage)
 }
 
 func TestOptStatusCodeToBytes(t *testing.T) {
@@ -24,8 +24,8 @@ func TestOptStatusCodeToBytes(t *testing.T) {
 		's', 'u', 'c', 'c', 'e', 's', 's',
 	}
 	opt := OptStatusCode{
-		iana.StatusSuccess,
-		[]byte("success"),
+		StatusCode:    iana.StatusSuccess,
+		StatusMessage: "success",
 	}
 	actual := opt.ToBytes()
 	require.Equal(t, expected, actual)
@@ -47,7 +47,7 @@ func TestOptStatusCodeString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"code=UseMulticast (5), message=use multicast",
+		"Code: UseMulticast (5); Message: use multicast",
 		"String() should contain the code and message",
 	)
 }
