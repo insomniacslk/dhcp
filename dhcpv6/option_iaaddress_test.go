@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -17,8 +18,8 @@ func TestOptIAAddressParse(t *testing.T) {
 	opt, err := ParseOptIAAddress(data)
 	require.NoError(t, err)
 	require.Equal(t, net.IP(ipaddr), opt.IPv6Addr)
-	require.Equal(t, uint32(0x0a0b0c0d), opt.PreferredLifetime)
-	require.Equal(t, uint32(0x0e0f0102), opt.ValidLifetime)
+	require.Equal(t, 0x0a0b0c0d*time.Second, opt.PreferredLifetime)
+	require.Equal(t, 0x0e0f0102*time.Second, opt.ValidLifetime)
 }
 
 func TestOptIAAddressParseInvalidTooShort(t *testing.T) {
@@ -51,8 +52,8 @@ func TestOptIAAddressToBytes(t *testing.T) {
 	}...)
 	opt := OptIAAddress{
 		IPv6Addr:          net.IP(ipBytes),
-		PreferredLifetime: 0x0a0b0c0d,
-		ValidLifetime:     0x0e0f0102,
+		PreferredLifetime: 0x0a0b0c0d * time.Second,
+		ValidLifetime:     0x0e0f0102 * time.Second,
 		Options: []Option{
 			&OptElapsedTime{
 				ElapsedTime: 0xaabb,
@@ -65,8 +66,8 @@ func TestOptIAAddressToBytes(t *testing.T) {
 func TestOptIAAddressString(t *testing.T) {
 	ipaddr := []byte{0x24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	data := append(ipaddr, []byte{
-		0xa, 0xb, 0xc, 0xd, // preferred lifetime
-		0xe, 0xf, 0x1, 0x2, // valid lifetime
+		0x00, 0x00, 0x00, 70, // preferred lifetime
+		0x00, 0x00, 0x00, 50, // valid lifetime
 		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}...)
 	opt, err := ParseOptIAAddress(data)
@@ -80,12 +81,12 @@ func TestOptIAAddressString(t *testing.T) {
 	)
 	require.Contains(
 		t, str,
-		"preferredlifetime=168496141",
+		"preferredlifetime=1m10s",
 		"String() should return the preferredlifetime",
 	)
 	require.Contains(
 		t, str,
-		"validlifetime=235864322",
+		"validlifetime=50s",
 		"String() should return the validlifetime",
 	)
 }
