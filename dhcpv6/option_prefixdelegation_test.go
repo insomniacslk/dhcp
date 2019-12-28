@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +23,8 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, OptionIAPD, opt.Code())
 	require.Equal(t, [4]byte{1, 0, 0, 0}, opt.IaId)
-	require.Equal(t, uint32(1), opt.T1)
-	require.Equal(t, uint32(2), opt.T2)
+	require.Equal(t, time.Second, opt.T1)
+	require.Equal(t, 2*time.Second, opt.T2)
 }
 
 func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidLength(t *testing.T) {
@@ -106,15 +107,15 @@ func TestOptIAForPrefixDelegationDelOption(t *testing.T) {
 
 func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 	oaddr := OptIAPrefix{}
-	oaddr.PreferredLifetime = 0xaabbccdd
-	oaddr.ValidLifetime = 0xeeff0011
+	oaddr.PreferredLifetime = 0xaabbccdd * time.Second
+	oaddr.ValidLifetime = 0xeeff0011 * time.Second
 	oaddr.SetPrefixLength(36)
 	oaddr.SetIPv6Prefix(net.IPv6loopback)
 
 	opt := OptIAForPrefixDelegation{}
 	opt.IaId = [4]byte{1, 2, 3, 4}
-	opt.T1 = 12345
-	opt.T2 = 54321
+	opt.T1 = 12345 * time.Second
+	opt.T2 = 54321 * time.Second
 	opt.Options = append(opt.Options, &oaddr)
 
 	expected := []byte{
@@ -152,7 +153,7 @@ func TestOptIAForPrefixDelegationString(t *testing.T) {
 	)
 	require.Contains(
 		t, str,
-		"t1=1, t2=2",
+		"t1=1s, t2=2s",
 		"String() should return the T1/T2 options",
 	)
 	require.Contains(

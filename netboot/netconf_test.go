@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
@@ -43,8 +44,8 @@ func TestGetNetConfFromPacketv6NoDNS(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
 		dhcpv6.OptIAAddress{
 			IPv6Addr:          net.ParseIP("::1"),
-			PreferredLifetime: 3600,
-			ValidLifetime:     5200,
+			PreferredLifetime: 3600 * time.Second,
+			ValidLifetime:     5200 * time.Second,
 		},
 	}
 	adv := getAdv(dhcpv6.WithIANA(addrs...))
@@ -56,8 +57,8 @@ func TestGetNetConfFromPacketv6NoSearchList(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
 		dhcpv6.OptIAAddress{
 			IPv6Addr:          net.ParseIP("::1"),
-			PreferredLifetime: 3600,
-			ValidLifetime:     5200,
+			PreferredLifetime: 3600 * time.Second,
+			ValidLifetime:     5200 * time.Second,
 		},
 	}
 	adv := getAdv(
@@ -72,8 +73,8 @@ func TestGetNetConfFromPacketv6(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
 		dhcpv6.OptIAAddress{
 			IPv6Addr:          net.ParseIP("::1"),
-			PreferredLifetime: 3600,
-			ValidLifetime:     5200,
+			PreferredLifetime: 3600 * time.Second,
+			ValidLifetime:     5200 * time.Second,
 		},
 	}
 	adv := getAdv(
@@ -86,8 +87,8 @@ func TestGetNetConfFromPacketv6(t *testing.T) {
 	// check addresses
 	require.Equal(t, 1, len(netconf.Addresses))
 	require.Equal(t, net.ParseIP("::1"), netconf.Addresses[0].IPNet.IP)
-	require.Equal(t, 3600, netconf.Addresses[0].PreferredLifetime)
-	require.Equal(t, 5200, netconf.Addresses[0].ValidLifetime)
+	require.Equal(t, 3600*time.Second, netconf.Addresses[0].PreferredLifetime)
+	require.Equal(t, 5200*time.Second, netconf.Addresses[0].ValidLifetime)
 	// check DNSes
 	require.Equal(t, 1, len(netconf.DNSServers))
 	require.Equal(t, net.ParseIP("fe80::1"), netconf.DNSServers[0])
@@ -212,8 +213,8 @@ func TestGetNetConfFromPacketv4(t *testing.T) {
 	// check addresses
 	require.Equal(t, 1, len(netconf.Addresses))
 	require.Equal(t, net.ParseIP("10.0.0.1"), netconf.Addresses[0].IPNet.IP)
-	require.Equal(t, 0, netconf.Addresses[0].PreferredLifetime)
-	require.Equal(t, 5200, netconf.Addresses[0].ValidLifetime)
+	require.Equal(t, time.Duration(0), netconf.Addresses[0].PreferredLifetime)
+	require.Equal(t, 5200*time.Second, netconf.Addresses[0].ValidLifetime)
 	// check DNSes
 	require.Equal(t, 2, len(netconf.DNSServers))
 	require.Equal(t, net.ParseIP("10.10.0.1").To4(), netconf.DNSServers[0])
