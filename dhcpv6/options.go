@@ -52,7 +52,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		err = o.FromBytes(optData)
 		opt = &o
 	case OptionElapsedTime:
-		opt, err = ParseOptElapsedTime(optData)
+		opt, err = parseOptElapsedTime(optData)
 	case OptionRelayMsg:
 		opt, err = ParseOptRelayMsg(optData)
 	case OptionStatusCode:

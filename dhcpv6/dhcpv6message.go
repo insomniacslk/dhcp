@@ -116,6 +116,20 @@ func (mo MessageOptions) BootFileURL() string {
 	return ""
 }
 
+// ElapsedTime returns the Elapsed Time option as defined by RFC 3315 Section 22.9.
+//
+// ElapsedTime returns a duration of 0 if the option is not present.
+func (mo MessageOptions) ElapsedTime() time.Duration {
+	opt := mo.Options.GetOne(OptionElapsedTime)
+	if opt == nil {
+		return 0
+	}
+	if t, ok := opt.(*optElapsedTime); ok {
+		return t.ElapsedTime
+	}
+	return 0
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
@@ -164,7 +178,7 @@ func NewSolicit(hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
 	))
-	m.AddOption(&OptElapsedTime{})
+	m.AddOption(OptElapsedTime(0))
 	if len(hwaddr) < 4 {
 		return nil, errors.New("short hardware addrss: less than 4 bytes")
 	}
@@ -233,7 +247,7 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 	}
 	req.AddOption(sid)
 	// add Elapsed Time
-	req.AddOption(&OptElapsedTime{})
+	req.AddOption(OptElapsedTime(0))
 	// add IA_NA
 	iana := adv.Options.OneIANA()
 	if iana == nil {

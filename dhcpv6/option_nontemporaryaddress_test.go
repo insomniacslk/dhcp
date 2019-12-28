@@ -46,14 +46,14 @@ func TestOptIANAGetOneOption(t *testing.T) {
 		IPv6Addr: net.ParseIP("::1"),
 	}
 	opt := OptIANA{
-		Options: []Option{&OptElapsedTime{}, oaddr},
+		Options: []Option{OptElapsedTime(0), oaddr},
 	}
 	require.Equal(t, oaddr, opt.GetOneOption(OptionIAAddr))
 }
 
 func TestOptIANAAddOption(t *testing.T) {
 	opt := OptIANA{}
-	opt.AddOption(&OptElapsedTime{})
+	opt.AddOption(OptElapsedTime(0))
 	require.Equal(t, 1, len(opt.Options))
 	require.Equal(t, OptionElapsedTime, opt.Options[0].Code())
 }
@@ -63,7 +63,7 @@ func TestOptIANAGetOneOptionMissingOpt(t *testing.T) {
 		IPv6Addr: net.ParseIP("::1"),
 	}
 	opt := OptIANA{
-		Options: []Option{&OptElapsedTime{}, oaddr},
+		Options: []Option{OptElapsedTime(0), oaddr},
 	}
 	require.Equal(t, nil, opt.GetOneOption(OptionDNSRecursiveNameServer))
 }
@@ -93,16 +93,14 @@ func TestOptIANAToBytes(t *testing.T) {
 		T1:   12345 * time.Second,
 		T2:   54321 * time.Second,
 		Options: []Option{
-			&OptElapsedTime{
-				ElapsedTime: 0xaabb,
-			},
+			OptElapsedTime(10 * time.Millisecond),
 		},
 	}
 	expected := []byte{
 		1, 2, 3, 4, // IA ID
 		0, 0, 0x30, 0x39, // T1 = 12345
 		0, 0, 0xd4, 0x31, // T2 = 54321
-		0, 8, 0, 2, 0xaa, 0xbb,
+		0, 8, 0, 2, 0x00, 0x01,
 	}
 	require.Equal(t, expected, opt.ToBytes())
 }
