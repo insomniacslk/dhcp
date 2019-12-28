@@ -91,7 +91,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	// create the inner message
 	s, err := NewMessage()
 	require.NoError(t, err)
-	s.AddOption(&OptClientId{})
+	s.AddOption(OptClientID(Duid{}))
 	orm := OptRelayMsg{}
 	orm.SetRelayMessage(s)
 	rf.AddOption(&orm)

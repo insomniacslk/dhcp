@@ -165,11 +165,9 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 		MessageType:   MessageTypeSolicit,
 		TransactionID: TransactionID{0xa, 0xb, 0xc},
 	}
-	cid := OptClientId{}
-	s.AddOption(&cid)
-	duid := Duid{}
+	s.AddOption(OptClientID(Duid{}))
 
-	a, err := NewAdvertiseFromSolicit(&s, WithServerID(duid))
+	a, err := NewAdvertiseFromSolicit(&s, WithServerID(Duid{}))
 	require.NoError(t, err)
 	require.Equal(t, a.TransactionID, s.TransactionID)
 	require.Equal(t, a.Type(), MessageTypeAdvertise)
@@ -180,11 +178,10 @@ func TestNewReplyFromMessage(t *testing.T) {
 		TransactionID: TransactionID{0xa, 0xb, 0xc},
 		MessageType:   MessageTypeConfirm,
 	}
-	cid := OptClientId{}
-	msg.AddOption(&cid)
+	var duid Duid
+	msg.AddOption(OptClientID(duid))
 	sid := OptServerId{}
-	duid := Duid{}
-	sid.Sid = duid
+	sid.Sid = Duid{}
 	msg.AddOption(&sid)
 
 	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
@@ -242,11 +239,9 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 
 	require.Equal(t, s.Type(), MessageTypeSolicit)
 	// Check CID
-	cidOption := s.GetOneOption(OptionClientID)
-	require.NotNil(t, cidOption)
-	cid, ok := cidOption.(*OptClientId)
-	require.True(t, ok)
-	require.Equal(t, cid.Cid, duid)
+	cduid := s.Options.ClientID()
+	require.NotNil(t, cduid)
+	require.Equal(t, cduid, &duid)
 
 	// Check ORO
 	oroOption := s.GetOneOption(OptionORO)
