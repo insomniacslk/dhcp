@@ -54,7 +54,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionElapsedTime:
 		opt, err = parseOptElapsedTime(optData)
 	case OptionRelayMsg:
-		opt, err = ParseOptRelayMsg(optData)
+		opt, err = parseOptRelayMsg(optData)
 	case OptionStatusCode:
 		opt, err = ParseOptStatusCode(optData)
 	case OptionUserClass:
