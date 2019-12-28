@@ -92,6 +92,18 @@ func (mo MessageOptions) RequestedOptions() OptionCodes {
 	return oro.OptionCodes
 }
 
+// DNS returns the DNS Recursive Name Server option as defined by RFC 3646.
+func (mo MessageOptions) DNS() []net.IP {
+	opt := mo.Options.GetOne(OptionDNSRecursiveNameServer)
+	if opt == nil {
+		return nil
+	}
+	if dns, ok := opt.(*optDNS); ok {
+		return dns.NameServers
+	}
+	return nil
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType

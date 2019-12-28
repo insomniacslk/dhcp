@@ -88,12 +88,7 @@ func WithIAID(iaid [4]byte) Modifier {
 
 // WithDNS adds or updates an OptDNSRecursiveNameServer
 func WithDNS(dnses ...net.IP) Modifier {
-	return func(d DHCPv6) {
-		odns := OptDNSRecursiveNameServer{
-			NameServers: append([]net.IP{}, dnses[:]...),
-		}
-		d.UpdateOption(&odns)
-	}
+	return WithOption(OptDNS(dnses...))
 }
 
 // WithDomainSearchList adds or updates an OptDomainSearchList

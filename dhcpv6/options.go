@@ -66,7 +66,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionInterfaceID:
 		opt, err = ParseOptInterfaceId(optData)
 	case OptionDNSRecursiveNameServer:
-		opt, err = ParseOptDNSRecursiveNameServer(optData)
+		opt, err = parseOptDNS(optData)
 	case OptionDomainSearchList:
 		opt, err = ParseOptDomainSearchList(optData)
 	case OptionIAPD:
