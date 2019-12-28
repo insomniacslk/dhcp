@@ -60,15 +60,13 @@ func GetNetConfFromPacketv6(d *dhcpv6.Message) (*NetConf, error) {
 		})
 	}
 	// get DNS configuration
-	opt = d.GetOneOption(dhcpv6.OptionDNSRecursiveNameServer)
-	if opt == nil {
-		return nil, errors.New("No option DNS Recursive Name Servers found ")
+	dns := d.Options.DNS()
+	if len(dns) == 0 {
+		return nil, errors.New("no option DNS Recursive Name Servers found")
 	}
-	odnsserv := opt.(*dhcpv6.OptDNSRecursiveNameServer)
-	// TODO should this be copied?
-	netconf.DNSServers = odnsserv.NameServers
+	netconf.DNSServers = dns
 
-	opt = d.GetOneOption(dhcpv6.OptionDomainSearchList)
+	opt := d.GetOneOption(dhcpv6.OptionDomainSearchList)
 	if opt != nil {
 		odomains := opt.(*dhcpv6.OptDomainSearchList)
 		// TODO should this be copied?

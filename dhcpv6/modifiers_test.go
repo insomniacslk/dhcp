@@ -58,18 +58,17 @@ func TestWithIANA(t *testing.T) {
 
 func TestWithDNS(t *testing.T) {
 	var d Message
-	WithDNS([]net.IP{
+	WithDNS(
 		net.ParseIP("fe80::1"),
 		net.ParseIP("fe80::2"),
-	}...)(&d)
+	)(&d)
 	require.Equal(t, 1, len(d.Options.Options))
-	dns := d.Options.Options[0].(*OptDNSRecursiveNameServer)
+	dns := d.Options.DNS()
 	log.Printf("DNS %+v", dns)
-	require.Equal(t, OptionDNSRecursiveNameServer, dns.Code())
-	require.Equal(t, 2, len(dns.NameServers))
-	require.Equal(t, net.ParseIP("fe80::1"), dns.NameServers[0])
-	require.Equal(t, net.ParseIP("fe80::2"), dns.NameServers[1])
-	require.NotEqual(t, net.ParseIP("fe80::1"), dns.NameServers[1])
+	require.Equal(t, 2, len(dns))
+	require.Equal(t, net.ParseIP("fe80::1"), dns[0])
+	require.Equal(t, net.ParseIP("fe80::2"), dns[1])
+	require.NotEqual(t, net.ParseIP("fe80::1"), dns[1])
 }
 
 func TestWithDomainSearchList(t *testing.T) {
