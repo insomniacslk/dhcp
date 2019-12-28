@@ -7,31 +7,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptInterfaceId(t *testing.T) {
+func TestParseOptInterfaceID(t *testing.T) {
 	expected := []byte("DSLAM01 eth2/1/01/21")
-	opt, err := ParseOptInterfaceId(expected)
+	opt, err := parseOptInterfaceID(expected)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if url := opt.InterfaceID(); !bytes.Equal(url, expected) {
+	if url := opt.ID; !bytes.Equal(url, expected) {
 		t.Fatalf("Invalid Interface ID. Expected %v, got %v", expected, url)
 	}
 }
 
-func TestOptInterfaceIdToBytes(t *testing.T) {
-	interfaceId := []byte("DSLAM01 eth2/1/01/21")
-	opt := OptInterfaceId{}
-	opt.SetInterfaceID(interfaceId)
-	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, interfaceId) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", interfaceId, toBytes)
+func TestOptInterfaceID(t *testing.T) {
+	want := []byte("DSLAM01 eth2/1/01/21")
+	opt := OptInterfaceID(want)
+	if got := opt.ToBytes(); !bytes.Equal(got, want) {
+		t.Fatalf("%s.ToBytes() = %v, want %v", opt, got, want)
 	}
-}
 
-func TestOptInterfaceIdString(t *testing.T) {
-	interfaceId := []byte("DSLAM01 eth2/1/01/21")
-	opt := OptInterfaceId{}
-	opt.SetInterfaceID(interfaceId)
 	require.Contains(
 		t,
 		opt.String(),

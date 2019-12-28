@@ -90,7 +90,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rf.MessageType = MessageTypeRelayForward
 	rf.PeerAddr = net.IPv6linklocalallrouters
 	rf.LinkAddr = net.IPv6interfacelocalallnodes
-	rf.AddOption(&OptInterfaceId{})
+	rf.AddOption(OptInterfaceID(nil))
 	rf.AddOption(&OptRemoteId{})
 
 	// create the inner message
