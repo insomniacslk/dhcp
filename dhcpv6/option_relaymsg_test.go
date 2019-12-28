@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -62,7 +63,7 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
 		0, 2, // option length
-		0x11, 0x22, // option value
+		0x00, 0x01, // option value
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -109,14 +110,8 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if len(innerDHCP.Options.Options) != 1 {
 		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.Options.Options))
 	}
-	innerOpt := innerDHCP.Options.Options[0]
-	eto, ok := innerOpt.(*OptElapsedTime)
-	if !ok {
-		t.Fatalf("Invalid inner option type. Expected OptElapsedTime, got %v",
-			reflect.TypeOf(innerOpt),
-		)
-	}
-	if eTime := eto.ElapsedTime; eTime != 0x1122 {
+	eTime := innerDHCP.Options.ElapsedTime()
+	if eTime != 10*time.Millisecond {
 		t.Fatalf("Invalid elapsed time. Expected 0x1122, got 0x%04x", eTime)
 	}
 }

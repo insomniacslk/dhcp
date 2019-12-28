@@ -41,7 +41,7 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 		0xee, 0xff, 0x00, 0x11, // validLifetime
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
-		0, 8, 0, 2, 0xaa, 0xbb, // options
+		0, 8, 0, 2, 0x00, 0x01, // options
 	}
 	opt := OptIAPrefix{
 		PreferredLifetime: 0xaabbccdd * time.Second,
@@ -49,7 +49,7 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 		prefixLength:      36,
 		ipv6Prefix:        net.IPv6zero,
 	}
-	opt.Options = append(opt.Options, &OptElapsedTime{ElapsedTime: 0xaabb})
+	opt.Options.Add(OptElapsedTime(10 * time.Millisecond))
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, buf) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
