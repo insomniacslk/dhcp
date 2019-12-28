@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
+func TestOptIAPDParseOptIAPD(t *testing.T) {
 	data := []byte{
 		1, 0, 0, 0, // IAID
 		0, 0, 0, 1, // T1
@@ -19,7 +19,7 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 		36,                                             // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
 	}
-	opt, err := ParseOptIAForPrefixDelegation(data)
+	opt, err := ParseOptIAPD(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionIAPD, opt.Code())
 	require.Equal(t, [4]byte{1, 0, 0, 0}, opt.IaId)
@@ -27,17 +27,17 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegation(t *testing.T) {
 	require.Equal(t, 2*time.Second, opt.T2)
 }
 
-func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidLength(t *testing.T) {
+func TestOptIAPDParseOptIAPDInvalidLength(t *testing.T) {
 	data := []byte{
 		1, 0, 0, 0, // IAID
 		0, 0, 0, 1, // T1
 		// truncated from here
 	}
-	_, err := ParseOptIAForPrefixDelegation(data)
+	_, err := ParseOptIAPD(data)
 	require.Error(t, err)
 }
 
-func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidOptions(t *testing.T) {
+func TestOptIAPDParseOptIAPDInvalidOptions(t *testing.T) {
 	data := []byte{
 		1, 0, 0, 0, // IAID
 		0, 0, 0, 1, // T1
@@ -48,71 +48,18 @@ func TestOptIAForPrefixDelegationParseOptIAForPrefixDelegationInvalidOptions(t *
 		36,                                          // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // IAPrefix ipv6Prefix missing last byte
 	}
-	_, err := ParseOptIAForPrefixDelegation(data)
+	_, err := ParseOptIAPD(data)
 	require.Error(t, err)
 }
 
-func TestOptIAForPrefixDelegationGetOneOption(t *testing.T) {
-	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
-		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                                             // prefixLength
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
-	}
-	oaddr, err := ParseOptIAPrefix(buf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	opt := OptIAForPrefixDelegation{}
-	opt.Options = append(opt.Options, oaddr)
-	require.Equal(t, oaddr, opt.GetOneOption(OptionIAPrefix))
-}
-
-func TestOptIAForPrefixDelegationGetOneOptionMissingOpt(t *testing.T) {
-	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
-		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                                             // prefixLength
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
-	}
-	oaddr, err := ParseOptIAPrefix(buf)
-	if err != nil {
-		t.Fatal(err)
-	}
-	opt := OptIAForPrefixDelegation{}
-	opt.Options = append(opt.Options, oaddr)
-	require.Equal(t, nil, opt.GetOneOption(OptionDNSRecursiveNameServer))
-}
-
-func TestOptIAForPrefixDelegationDelOption(t *testing.T) {
-	optiana1 := OptIAForPrefixDelegation{}
-	optiana2 := OptIAForPrefixDelegation{}
-	optiaaddr := OptIAPrefix{}
-	optsc := OptStatusCode{}
-
-	optiana1.Options = append(optiana1.Options, &optsc)
-	optiana1.Options = append(optiana1.Options, &optiaaddr)
-	optiana1.Options = append(optiana1.Options, &optiaaddr)
-	optiana1.DelOption(OptionIAPrefix)
-	require.Equal(t, len(optiana1.Options), 1)
-	require.Equal(t, optiana1.Options[0], &optsc)
-
-	optiana2.Options = append(optiana2.Options, &optiaaddr)
-	optiana2.Options = append(optiana2.Options, &optsc)
-	optiana2.Options = append(optiana2.Options, &optiaaddr)
-	optiana2.DelOption(OptionIAPrefix)
-	require.Equal(t, len(optiana2.Options), 1)
-	require.Equal(t, optiana2.Options[0], &optsc)
-}
-
-func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
+func TestOptIAPDToBytes(t *testing.T) {
 	oaddr := OptIAPrefix{}
 	oaddr.PreferredLifetime = 0xaabbccdd * time.Second
 	oaddr.ValidLifetime = 0xeeff0011 * time.Second
 	oaddr.SetPrefixLength(36)
 	oaddr.SetIPv6Prefix(net.IPv6loopback)
 
-	opt := OptIAForPrefixDelegation{}
+	opt := OptIAPD{}
 	opt.IaId = [4]byte{1, 2, 3, 4}
 	opt.T1 = 12345 * time.Second
 	opt.T2 = 54321 * time.Second
@@ -131,7 +78,7 @@ func TestOptIAForPrefixDelegationToBytes(t *testing.T) {
 	require.Equal(t, expected, opt.ToBytes())
 }
 
-func TestOptIAForPrefixDelegationString(t *testing.T) {
+func TestOptIAPDString(t *testing.T) {
 	data := []byte{
 		1, 0, 0, 0, // IAID
 		0, 0, 0, 1, // T1
@@ -142,7 +89,7 @@ func TestOptIAForPrefixDelegationString(t *testing.T) {
 		36,                                             // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
 	}
-	opt, err := ParseOptIAForPrefixDelegation(data)
+	opt, err := ParseOptIAPD(data)
 	require.NoError(t, err)
 
 	str := opt.String()
