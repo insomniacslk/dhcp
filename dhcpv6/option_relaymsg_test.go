@@ -106,10 +106,10 @@ func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
 	if tID := innerDHCP.TransactionID; tID != xid {
 		t.Fatalf("Invalid inner DHCP transaction ID. Expected 0xaabbcc, got %v", tID)
 	}
-	if len(innerDHCP.Options) != 1 {
-		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.Options))
+	if len(innerDHCP.Options.Options) != 1 {
+		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.Options.Options))
 	}
-	innerOpt := innerDHCP.Options[0]
+	innerOpt := innerDHCP.Options.Options[0]
 	eto, ok := innerOpt.(*OptElapsedTime)
 	if !ok {
 		t.Fatalf("Invalid inner option type. Expected OptElapsedTime, got %v",

@@ -13,11 +13,27 @@ import (
 
 const MessageHeaderSize = 4
 
+// MessageOptions are the options that may appear in a normal DHCPv6 message.
+//
+// RFC 3315 Appendix B lists the valid options that can be used.
+type MessageOptions struct {
+	Options
+}
+
+// ArchTypes returns the architecture type option.
+func (mo MessageOptions) ArchTypes() iana.Archs {
+	opt := mo.GetOne(OptionClientArchType)
+	if opt == nil {
+		return nil
+	}
+	return opt.(*optClientArchType).Archs
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
 	TransactionID TransactionID
-	Options       Options
+	Options       MessageOptions
 }
 
 var randomRead = rand.Read
@@ -250,7 +266,7 @@ func (m *Message) IsOptionRequested(requested OptionCode) bool {
 // String returns a short human-readable string for this message.
 func (m *Message) String() string {
 	return fmt.Sprintf("Message(messageType=%s transactionID=%s, %d options)",
-		m.MessageType, m.TransactionID, len(m.Options))
+		m.MessageType, m.TransactionID, len(m.Options.Options))
 }
 
 // Summary prints all options associated with this message.
@@ -263,10 +279,10 @@ func (m *Message) Summary() string {
 		m.TransactionID,
 	)
 	ret += "  options=["
-	if len(m.Options) > 0 {
+	if len(m.Options.Options) > 0 {
 		ret += "\n"
 	}
-	for _, opt := range m.Options {
+	for _, opt := range m.Options.Options {
 		ret += fmt.Sprintf("    %v\n", opt.String())
 	}
 	ret += "  ]\n"

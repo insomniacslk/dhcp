@@ -60,8 +60,8 @@ func TestWithIANA(t *testing.T) {
 		PreferredLifetime: 3600,
 		ValidLifetime:     5200,
 	})(&d)
-	require.Equal(t, 1, len(d.Options))
-	require.Equal(t, OptionIANA, d.Options[0].Code())
+	require.Equal(t, 1, len(d.Options.Options))
+	require.Equal(t, OptionIANA, d.Options.Options[0].Code())
 }
 
 func TestWithDNS(t *testing.T) {
@@ -70,8 +70,8 @@ func TestWithDNS(t *testing.T) {
 		net.ParseIP("fe80::1"),
 		net.ParseIP("fe80::2"),
 	}...)(&d)
-	require.Equal(t, 1, len(d.Options))
-	dns := d.Options[0].(*OptDNSRecursiveNameServer)
+	require.Equal(t, 1, len(d.Options.Options))
+	dns := d.Options.Options[0].(*OptDNSRecursiveNameServer)
 	log.Printf("DNS %+v", dns)
 	require.Equal(t, OptionDNSRecursiveNameServer, dns.Code())
 	require.Equal(t, 2, len(dns.NameServers))
@@ -86,8 +86,8 @@ func TestWithDomainSearchList(t *testing.T) {
 		"slackware.it",
 		"dhcp.slackware.it",
 	}...)(&d)
-	require.Equal(t, 1, len(d.Options))
-	osl := d.Options[0].(*OptDomainSearchList)
+	require.Equal(t, 1, len(d.Options.Options))
+	osl := d.Options.Options[0].(*OptDomainSearchList)
 	require.Equal(t, OptionDomainSearchList, osl.Code())
 	require.NotNil(t, osl.DomainSearchList)
 	labels := osl.DomainSearchList.Labels
