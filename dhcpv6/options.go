@@ -82,7 +82,9 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionClientArchType:
 		opt, err = parseOptClientArchType(optData)
 	case OptionNII:
-		opt, err = ParseOptNetworkInterfaceId(optData)
+		var o OptNetworkInterfaceID
+		err = o.FromBytes(optData)
+		opt = &o
 	case Option4RD:
 		opt, err = ParseOpt4RD(optData)
 	case Option4RDMapRule:
