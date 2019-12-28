@@ -42,6 +42,18 @@ func (ro RelayOptions) InterfaceID() []byte {
 	return nil
 }
 
+// RemoteID returns the remote ID in this relay message.
+func (ro RelayOptions) RemoteID() *OptRemoteID {
+	opt := ro.Options.GetOne(OptionRemoteID)
+	if opt == nil {
+		return nil
+	}
+	if rid, ok := opt.(*OptRemoteID); ok {
+		return rid
+	}
+	return nil
+}
+
 // RelayMessage is a DHCPv6 relay agent message as defined by RFC 3315 Section
 // 7.
 type RelayMessage struct {

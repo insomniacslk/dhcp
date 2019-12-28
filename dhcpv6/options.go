@@ -74,7 +74,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionIAPrefix:
 		opt, err = ParseOptIAPrefix(optData)
 	case OptionRemoteID:
-		opt, err = ParseOptRemoteId(optData)
+		opt, err = ParseOptRemoteID(optData)
 	case OptionFQDN:
 		opt, err = ParseOptFQDN(optData)
 	case OptionBootfileURL:

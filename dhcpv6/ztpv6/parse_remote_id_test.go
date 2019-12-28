@@ -64,16 +64,14 @@ func TestParseRemoteID(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			packet, err := dhcpv6.NewMessage()
-			if err != nil {
-				t.Fatalf("failed to creat dhcpv6 packet object: %v", err)
+			m := &dhcpv6.RelayMessage{
+				MessageType: dhcpv6.MessageTypeRelayForward,
 			}
-			opt := dhcpv6.OptRemoteId{}
-			opt.SetRemoteID(tc.circuit)
-			opt.SetEnterpriseNumber(1234)
-			packet.AddOption(&opt)
+			// Has to be a well-formed relay message with the OptRelayMsg.
+			m.Options.Add(dhcpv6.OptRelayMessage(&dhcpv6.Message{}))
+			m.Options.Add(&dhcpv6.OptRemoteID{RemoteID: tc.circuit, EnterpriseNumber: 1234})
 
-			circuit, err := ParseRemoteId(packet)
+			circuit, err := ParseRemoteID(m)
 			if err != nil && !tc.fail {
 				t.Errorf("unexpected failure: %v", err)
 			}
