@@ -35,15 +35,15 @@ type NetConf struct {
 // GetNetConfFromPacketv6 extracts network configuration information from a DHCPv6
 // Reply packet and returns a populated NetConf structure
 func GetNetConfFromPacketv6(d *dhcpv6.Message) (*NetConf, error) {
-	opt := d.GetOneOption(dhcpv6.OptionIANA)
-	if opt == nil {
-		return nil, errors.New("No option IA NA found")
+	iana := d.Options.OneIANA()
+	if iana == nil {
+		return nil, errors.New("no option IA NA found")
 	}
 	netconf := NetConf{}
+
 	// get IP configuration
-	oiana := opt.(*dhcpv6.OptIANA)
 	iaaddrs := make([]*dhcpv6.OptIAAddress, 0)
-	for _, o := range oiana.Options {
+	for _, o := range iana.Options {
 		if o.Code() == dhcpv6.OptionIAAddr {
 			iaaddrs = append(iaaddrs, o.(*dhcpv6.OptIAAddress))
 		}
