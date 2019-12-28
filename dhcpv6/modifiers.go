@@ -72,30 +72,32 @@ func WithArchType(at iana.Arch) Modifier {
 // options
 func WithIANA(addrs ...OptIAAddress) Modifier {
 	return func(d DHCPv6) {
-		opt := d.GetOneOption(OptionIANA)
-		if opt == nil {
-			opt = &OptIANA{}
+		if msg, ok := d.(*Message); ok {
+			iana := msg.Options.OneIANA()
+			if iana == nil {
+				iana = &OptIANA{}
+			}
+			for _, addr := range addrs {
+				iana.AddOption(&addr)
+			}
+			msg.UpdateOption(iana)
 		}
-		iaNa := opt.(*OptIANA)
-		for _, addr := range addrs {
-			iaNa.AddOption(&addr)
-		}
-		d.UpdateOption(iaNa)
 	}
 }
 
 // WithIAID updates an OptIANA option with the provided IAID
 func WithIAID(iaid [4]byte) Modifier {
 	return func(d DHCPv6) {
-		opt := d.GetOneOption(OptionIANA)
-		if opt == nil {
-			opt = &OptIANA{
-				Options: Options{},
+		if msg, ok := d.(*Message); ok {
+			iana := msg.Options.OneIANA()
+			if iana == nil {
+				iana = &OptIANA{
+					Options: Options{},
+				}
 			}
+			copy(iana.IaId[:], iaid[:])
+			d.UpdateOption(iana)
 		}
-		iaNa := opt.(*OptIANA)
-		copy(iaNa.IaId[:], iaid[:])
-		d.UpdateOption(iaNa)
 	}
 }
 

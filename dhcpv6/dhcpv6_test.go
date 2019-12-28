@@ -253,11 +253,9 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 
 	// Check IA_NA
 	iaid := [4]byte{hwAddr[2], hwAddr[3], hwAddr[4], hwAddr[5]}
-	iaNaOption := s.GetOneOption(OptionIANA)
-	require.NotNil(t, iaNaOption)
-	iaNa, ok := iaNaOption.(*OptIANA)
-	require.True(t, ok)
-	require.Equal(t, iaid, iaNa.IaId)
+	iana := s.Options.OneIANA()
+	require.NotNil(t, iana)
+	require.Equal(t, iaid, iana.IaId)
 }
 
 func TestIsUsingUEFIArchTypeTrue(t *testing.T) {

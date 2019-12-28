@@ -47,6 +47,25 @@ func (mo MessageOptions) ServerID() *Duid {
 	return &opt.(*optServerID).Duid
 }
 
+// IANA returns all Identity Association for Non-temporary Address options.
+func (mo MessageOptions) IANA() []*OptIANA {
+	opts := mo.Get(OptionIANA)
+	var ianas []*OptIANA
+	for _, o := range opts {
+		ianas = append(ianas, o.(*OptIANA))
+	}
+	return ianas
+}
+
+// OneIANA returns the first IANA option.
+func (mo MessageOptions) OneIANA() *OptIANA {
+	ianas := mo.IANA()
+	if len(ianas) == 0 {
+		return nil
+	}
+	return ianas[0]
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
@@ -168,11 +187,11 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 	// add Elapsed Time
 	req.AddOption(&OptElapsedTime{})
 	// add IA_NA
-	iaNa := adv.GetOneOption(OptionIANA)
-	if iaNa == nil {
+	iana := adv.Options.OneIANA()
+	if iana == nil {
 		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
 	}
-	req.AddOption(iaNa)
+	req.AddOption(iana)
 	// add OptRequestedOption
 	oro := OptRequestedOption{}
 	oro.SetRequestedOptions([]OptionCode{
