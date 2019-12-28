@@ -96,7 +96,7 @@ func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifie
 // ConversationToNetconf extracts network configuration and boot file URL from a
 // DHCPv6 4-way conversation and returns them, or an error if any.
 func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*BootConf, error) {
-	var advertise, reply, optionsSource *dhcpv6.Message
+	var advertise, reply *dhcpv6.Message
 	for _, m := range conversation {
 		switch m.Type() {
 		case dhcpv6.MessageTypeAdvertise:
@@ -118,20 +118,16 @@ func ConversationToNetconf(conversation []dhcpv6.DHCPv6) (*BootConf, error) {
 
 	if u := reply.Options.BootFileURL(); len(u) > 0 {
 		bootconf.BootfileURL = u
-		optionsSource = reply
+		bootconf.BootfileParam = reply.Options.BootFileParam()
 	} else {
 		log.Printf("no bootfile URL option found in REPLY, fallback to ADVERTISE's value")
 		if u := advertise.Options.BootFileURL(); len(u) > 0 {
 			bootconf.BootfileURL = u
-			optionsSource = advertise
+			bootconf.BootfileParam = advertise.Options.BootFileParam()
 		}
 	}
 	if len(bootconf.BootfileURL) == 0 {
 		return nil, errors.New("no bootfile URL option found")
-	}
-
-	if bootfileParamOption := optionsSource.GetOneOption(dhcpv6.OptionBootfileParam); bootfileParamOption != nil {
-		bootconf.BootfileParam = bootfileParamOption.(dhcpv6.OptBootFileParam)
 	}
 	return bootconf, nil
 }

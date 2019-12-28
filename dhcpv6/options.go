@@ -80,7 +80,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionBootfileURL:
 		opt, err = parseOptBootFileURL(optData)
 	case OptionBootfileParam:
-		opt, err = ParseOptBootFileParam(optData)
+		opt, err = parseOptBootFileParam(optData)
 	case OptionClientArchType:
 		opt, err = parseOptClientArchType(optData)
 	case OptionNII:
