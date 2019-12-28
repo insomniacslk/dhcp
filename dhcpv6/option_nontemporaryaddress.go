@@ -32,8 +32,8 @@ type IdentityOptions struct {
 	Options
 }
 
-// Address returns the addresses assigned to the identity.
-func (io IdentityOptions) Address() []*OptIAAddress {
+// Addresses returns the addresses assigned to the identity.
+func (io IdentityOptions) Addresses() []*OptIAAddress {
 	opts := io.Options.Get(OptionIAAddr)
 	var iaAddrs []*OptIAAddress
 	for _, o := range opts {
@@ -44,7 +44,7 @@ func (io IdentityOptions) Address() []*OptIAAddress {
 
 // OneAddress returns one address (of potentially many) assigned to the identity.
 func (io IdentityOptions) OneAddress() *OptIAAddress {
-	a := io.Address()
+	a := io.Addresses()
 	if len(a) == 0 {
 		return nil
 	}
