@@ -25,20 +25,22 @@ type CircuitID struct {
 }
 
 // ParseRemoteId will parse the RemoteId Option data for Vendor Specific data
-func ParseRemoteId(packet dhcpv6.DHCPv6) (*CircuitID, error) {
+func ParseRemoteID(packet dhcpv6.DHCPv6) (*CircuitID, error) {
 	// Need to decapsulate the packet after multiple relays in order to reach RemoteId data
 	inner, err := dhcpv6.DecapsulateRelayIndex(packet, -1)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decapsulate relay index: %v", err)
 	}
 
-	if rid := inner.GetOneOption(dhcpv6.OptionRemoteID); rid != nil {
-		remoteID := string(rid.(*dhcpv6.OptRemoteId).RemoteID())
-		circ, err := matchCircuitId(remoteID)
-		if err != nil {
-			return nil, err
+	if rm, ok := inner.(*dhcpv6.RelayMessage); ok {
+		if rid := rm.Options.RemoteID(); rid != nil {
+			remoteID := string(rid.RemoteID)
+			circ, err := matchCircuitId(remoteID)
+			if err != nil {
+				return nil, err
+			}
+			return circ, nil
 		}
-		return circ, nil
 	}
 	return nil, errors.New("failed to parse RemoteID option data")
 }
