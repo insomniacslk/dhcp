@@ -116,6 +116,18 @@ func (mo MessageOptions) BootFileURL() string {
 	return ""
 }
 
+// BootFileParam returns the Boot File Param option as defined by RFC 5970.
+func (mo MessageOptions) BootFileParam() []string {
+	opt := mo.Options.GetOne(OptionBootfileParam)
+	if opt == nil {
+		return nil
+	}
+	if u, ok := opt.(optBootFileParam); ok {
+		return []string(u)
+	}
+	return nil
+}
+
 // ElapsedTime returns the Elapsed Time option as defined by RFC 3315 Section 22.9.
 //
 // ElapsedTime returns a duration of 0 if the option is not present.
