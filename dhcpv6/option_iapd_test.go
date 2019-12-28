@@ -53,17 +53,20 @@ func TestOptIAPDParseOptIAPDInvalidOptions(t *testing.T) {
 }
 
 func TestOptIAPDToBytes(t *testing.T) {
-	oaddr := OptIAPrefix{}
-	oaddr.PreferredLifetime = 0xaabbccdd * time.Second
-	oaddr.ValidLifetime = 0xeeff0011 * time.Second
-	oaddr.SetPrefixLength(36)
-	oaddr.SetIPv6Prefix(net.IPv6loopback)
-
-	opt := OptIAPD{}
-	opt.IaId = [4]byte{1, 2, 3, 4}
-	opt.T1 = 12345 * time.Second
-	opt.T2 = 54321 * time.Second
-	opt.Options = append(opt.Options, &oaddr)
+	oaddr := OptIAPrefix{
+		PreferredLifetime: 0xaabbccdd * time.Second,
+		ValidLifetime:     0xeeff0011 * time.Second,
+		Prefix: &net.IPNet{
+			Mask: net.CIDRMask(36, 128),
+			IP:   net.IPv6loopback,
+		},
+	}
+	opt := OptIAPD{
+		IaId:    [4]byte{1, 2, 3, 4},
+		T1:      12345 * time.Second,
+		T2:      54321 * time.Second,
+		Options: PDOptions{[]Option{&oaddr}},
+	}
 
 	expected := []byte{
 		1, 2, 3, 4, // IA ID
@@ -105,7 +108,7 @@ func TestOptIAPDString(t *testing.T) {
 	)
 	require.Contains(
 		t, str,
-		"options=[",
+		"Options=[",
 		"String() should return a list of options",
 	)
 }

@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"bytes"
 	"net"
+	"reflect"
 	"testing"
 	"time"
 
@@ -15,23 +16,22 @@ func TestOptIAPrefix(t *testing.T) {
 		0xee, 0xff, 0x00, 0x11, // validLifetime
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
-		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}
 	opt, err := ParseOptIAPrefix(buf)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pl := opt.PreferredLifetime; pl != 0xaabbccdd*time.Second {
-		t.Fatalf("Invalid Preferred Lifetime. Expected 0xaabbccdd, got %v", pl)
+	want := &OptIAPrefix{
+		PreferredLifetime: 0xaabbccdd * time.Second,
+		ValidLifetime:     0xeeff0011 * time.Second,
+		Prefix: &net.IPNet{
+			Mask: net.CIDRMask(36, 128),
+			IP:   net.IPv6loopback,
+		},
+		Options: PrefixOptions{[]Option{}},
 	}
-	if vl := opt.ValidLifetime; vl != 0xeeff0011*time.Second {
-		t.Fatalf("Invalid Valid Lifetime. Expected 0xeeff0011, got %v", vl)
-	}
-	if pr := opt.PrefixLength(); pr != 36 {
-		t.Fatalf("Invalid Prefix Length. Expected 36, got %v", pr)
-	}
-	if ip := opt.IPv6Prefix(); !ip.Equal(net.IPv6loopback) {
-		t.Fatalf("Invalid Prefix Length. Expected %v, got %v", net.IPv6loopback, ip)
+	if !reflect.DeepEqual(want, opt) {
+		t.Errorf("parseIAPrefix = %v, want %v", opt, want)
 	}
 }
 
@@ -46,10 +46,12 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 	opt := OptIAPrefix{
 		PreferredLifetime: 0xaabbccdd * time.Second,
 		ValidLifetime:     0xeeff0011 * time.Second,
-		prefixLength:      36,
-		ipv6Prefix:        net.IPv6zero,
+		Prefix: &net.IPNet{
+			Mask: net.CIDRMask(36, 128),
+			IP:   net.IPv6zero,
+		},
+		Options: PrefixOptions{[]Option{OptElapsedTime(10 * time.Millisecond)}},
 	}
-	opt.Options.Add(OptElapsedTime(10 * time.Millisecond))
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, buf) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
@@ -63,8 +65,7 @@ func TestOptIAPrefixToBytesDefault(t *testing.T) {
 		0,                                              // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
 	}
-	opt := OptIAPrefix{
-	}
+	opt := OptIAPrefix{}
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, buf) {
 		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
@@ -96,17 +97,17 @@ func TestOptIAPrefixString(t *testing.T) {
 	str := opt.String()
 	require.Contains(
 		t, str,
-		"ipv6prefix=2001:db8::",
+		"Prefix=2001:db8::/36",
 		"String() should return the ipv6addr",
 	)
 	require.Contains(
 		t, str,
-		"preferredlifetime=1m",
+		"PreferredLifetime=1m",
 		"String() should return the preferredlifetime",
 	)
 	require.Contains(
 		t, str,
-		"validlifetime=50s",
+		"ValidLifetime=50s",
 		"String() should return the validlifetime",
 	)
 }
