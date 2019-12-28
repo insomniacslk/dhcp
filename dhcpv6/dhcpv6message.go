@@ -104,6 +104,18 @@ func (mo MessageOptions) DNS() []net.IP {
 	return nil
 }
 
+// BootFileURL returns the Boot File URL option as defined by RFC 5970.
+func (mo MessageOptions) BootFileURL() string {
+	opt := mo.Options.GetOne(OptionBootfileURL)
+	if opt == nil {
+		return ""
+	}
+	if u, ok := opt.(optBootFileURL); ok {
+		return string(u)
+	}
+	return ""
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
