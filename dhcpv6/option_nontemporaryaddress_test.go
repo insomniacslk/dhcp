@@ -3,6 +3,7 @@ package dhcpv6
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -89,8 +90,8 @@ func TestOptIANADelOption(t *testing.T) {
 func TestOptIANAToBytes(t *testing.T) {
 	opt := OptIANA{
 		IaId: [4]byte{1, 2, 3, 4},
-		T1:   12345,
-		T2:   54321,
+		T1:   12345 * time.Second,
+		T2:   54321 * time.Second,
 		Options: []Option{
 			&OptElapsedTime{
 				ElapsedTime: 0xaabb,
@@ -124,7 +125,7 @@ func TestOptIANAString(t *testing.T) {
 	)
 	require.Contains(
 		t, str,
-		"t1=1, t2=2",
+		"t1=1s, t2=2s",
 		"String() should return the T1/T2 options",
 	)
 	require.Contains(
