@@ -81,15 +81,22 @@ func (mo MessageOptions) Status() *OptStatusCode {
 
 // RequestedOptions returns the Options Requested Option.
 func (mo MessageOptions) RequestedOptions() OptionCodes {
-	opt := mo.Options.GetOne(OptionORO)
-	if opt == nil {
+	// Technically, RFC 8415 states that ORO may only appear once in the
+	// area of a DHCP message. However, some proprietary clients have been
+	// observed sending more than one OptionORO.
+	//
+	// So we merge them.
+	opt := mo.Options.Get(OptionORO)
+	if len(opt) == 0 {
 		return nil
 	}
-	oro, ok := opt.(*optRequestedOption)
-	if !ok {
-		return nil
+	var oc OptionCodes
+	for _, o := range opt {
+		if oro, ok := o.(*optRequestedOption); ok {
+			oc = append(oc, oro.OptionCodes...)
+		}
 	}
-	return oro.OptionCodes
+	return oc
 }
 
 // DNS returns the DNS Recursive Name Server option as defined by RFC 3646.
