@@ -66,6 +66,25 @@ func (mo MessageOptions) OneIANA() *OptIANA {
 	return ianas[0]
 }
 
+// IAPD returns all Identity Association for Prefix Delegation options.
+func (mo MessageOptions) IAPD() []*OptIAForPrefixDelegation {
+	opts := mo.Get(OptionIAPD)
+	var ianas []*OptIAForPrefixDelegation
+	for _, o := range opts {
+		ianas = append(ianas, o.(*OptIAForPrefixDelegation))
+	}
+	return ianas
+}
+
+// OneIAPD returns the first IAPD option.
+func (mo MessageOptions) OneIAPD() *OptIAForPrefixDelegation {
+	iapds := mo.IAPD()
+	if len(iapds) == 0 {
+		return nil
+	}
+	return iapds[0]
+}
+
 // Status returns the status code associated with this option.
 func (mo MessageOptions) Status() *OptStatusCode {
 	opt := mo.Options.GetOne(OptionStatusCode)
