@@ -73,15 +73,11 @@ func TestWithDNS(t *testing.T) {
 
 func TestWithDomainSearchList(t *testing.T) {
 	var d Message
-	WithDomainSearchList([]string{
-		"slackware.it",
-		"dhcp.slackware.it",
-	}...)(&d)
+	WithDomainSearchList("slackware.it", "dhcp.slackware.it")(&d)
 	require.Equal(t, 1, len(d.Options.Options))
-	osl := d.Options.Options[0].(*OptDomainSearchList)
-	require.Equal(t, OptionDomainSearchList, osl.Code())
-	require.NotNil(t, osl.DomainSearchList)
-	labels := osl.DomainSearchList.Labels
+	osl := d.Options.DomainSearchList()
+	require.NotNil(t, osl)
+	labels := osl.Labels
 	require.Equal(t, 2, len(labels))
 	require.Equal(t, "slackware.it", labels[0])
 	require.Equal(t, "dhcp.slackware.it", labels[1])
