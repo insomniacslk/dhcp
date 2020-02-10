@@ -168,6 +168,18 @@ func (mo MessageOptions) ElapsedTime() time.Duration {
 	return 0
 }
 
+// FQDN returns the FQDN option as defined by RFC 4704.
+func (mo MessageOptions) FQDN() *OptFQDN {
+	opt := mo.Options.GetOne(OptionFQDN)
+	if opt == nil {
+		return nil
+	}
+	if fqdn, ok := opt.(*OptFQDN); ok {
+		return fqdn
+	}
+	return nil
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
