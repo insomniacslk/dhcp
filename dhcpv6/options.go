@@ -68,7 +68,7 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionDNSRecursiveNameServer:
 		opt, err = parseOptDNS(optData)
 	case OptionDomainSearchList:
-		opt, err = ParseOptDomainSearchList(optData)
+		opt, err = parseOptDomainSearchList(optData)
 	case OptionIAPD:
 		opt, err = ParseOptIAForPrefixDelegation(optData)
 	case OptionIAPrefix:

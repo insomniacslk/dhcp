@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
+	"github.com/insomniacslk/dhcp/rfc1035label"
 	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
@@ -126,6 +127,18 @@ func (mo MessageOptions) DNS() []net.IP {
 	}
 	if dns, ok := opt.(*optDNS); ok {
 		return dns.NameServers
+	}
+	return nil
+}
+
+// DomainSearchList returns the Domain List option as defined by RFC 3646.
+func (mo MessageOptions) DomainSearchList() *rfc1035label.Labels {
+	opt := mo.Options.GetOne(OptionDomainSearchList)
+	if opt == nil {
+		return nil
+	}
+	if dsl, ok := opt.(*optDomainSearchList); ok {
+		return dsl.DomainSearchList
 	}
 	return nil
 }

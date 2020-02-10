@@ -94,12 +94,11 @@ func WithDNS(dnses ...net.IP) Modifier {
 // WithDomainSearchList adds or updates an OptDomainSearchList
 func WithDomainSearchList(searchlist ...string) Modifier {
 	return func(d DHCPv6) {
-		osl := OptDomainSearchList{
-			DomainSearchList: &rfc1035label.Labels{
+		d.UpdateOption(OptDomainSearchList(
+			&rfc1035label.Labels{
 				Labels: searchlist,
 			},
-		}
-		d.UpdateOption(&osl)
+		))
 	}
 }
 
