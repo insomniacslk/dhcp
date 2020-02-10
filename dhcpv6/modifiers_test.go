@@ -90,8 +90,8 @@ func TestWithDomainSearchList(t *testing.T) {
 func TestWithFQDN(t *testing.T) {
 	var d Message
 	WithFQDN(4, "cnos.localhost")(&d)
-	require.Equal(t, 1, len(d.Options))
-	ofqdn := d.Options[0].(*OptFQDN)
+	require.Equal(t, 1, len(d.Options.Options))
+	ofqdn := d.Options.FQDN()
 	require.Equal(t, OptionFQDN, ofqdn.Code())
 	require.Equal(t, uint8(4), ofqdn.Flags)
 	require.Equal(t, "cnos.localhost", ofqdn.DomainName)
