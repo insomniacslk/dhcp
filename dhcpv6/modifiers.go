@@ -43,6 +43,14 @@ func WithNetboot(d DHCPv6) {
 	msg.UpdateOption(oro)
 }
 
+// WithFQDN adds a fully qualified domain name option to the packet
+func WithFQDN(flags uint8, domainname string) Modifier {
+	return func(d DHCPv6) {
+		ofqdn := OptFQDN{Flags: flags, DomainName: domainname}
+		d.AddOption(&ofqdn)
+	}
+}
+
 // WithUserClass adds a user class option to the packet
 func WithUserClass(uc []byte) Modifier {
 	// TODO let the user specify multiple user classes
