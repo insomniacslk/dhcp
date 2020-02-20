@@ -113,7 +113,13 @@ func (d debugLogger) PrintMessage(prefix string, message *dhcpv6.Message) {
 // NewIPv6UDPConn returns a UDP connection bound to both the interface and port
 // given based on a IPv6 DGRAM socket.
 func NewIPv6UDPConn(iface string, port int) (net.PacketConn, error) {
+	ip, err := dhcpv6.GetLinkLocalAddr(iface)
+	if err != nil {
+		return nil, err
+	}
+
 	return net.ListenUDP("udp6", &net.UDPAddr{
+		IP:   ip,
 		Port: port,
 		Zone: iface,
 	})
