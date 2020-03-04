@@ -129,3 +129,22 @@ func WithDHCP4oDHCP6Server(addrs ...net.IP) Modifier {
 		d.UpdateOption(&opt)
 	}
 }
+
+// WithIAPD adds or updates an IAPD option with the provided IAID and
+// prefix options to a DHCPv6 packet.
+func WithIAPD(iaid [4]byte, prefixes ...OptIAPrefix) Modifier {
+	return func(d DHCPv6) {
+		opt := d.GetOneOption(OptionIAPD)
+		if opt == nil {
+			opt = &OptIAForPrefixDelegation{}
+		}
+		iaPd := opt.(*OptIAForPrefixDelegation)
+
+		copy(iaPd.IaId[:], iaid[:])
+
+		for _, prefix := range prefixes {
+			iaPd.Options.Add(&prefix)
+		}
+		d.UpdateOption(iaPd)
+	}
+}
