@@ -56,6 +56,21 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 	}
 }
 
+func TestOptIAPrefixToBytesDefault(t *testing.T) {
+	buf := []byte{
+		0, 0, 0, 0, // preferredLifetime
+		0, 0, 0, 0, // validLifetime
+		0,                                              // prefixLength
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
+	}
+	opt := OptIAPrefix{
+	}
+	toBytes := opt.ToBytes()
+	if !bytes.Equal(toBytes, buf) {
+		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
+	}
+}
+
 func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
 	buf := []byte{
 		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
