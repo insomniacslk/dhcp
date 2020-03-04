@@ -193,6 +193,19 @@ func (mo MessageOptions) FQDN() *OptFQDN {
 	return nil
 }
 
+// DHCP4oDHCP6Server returns the DHCP 4o6 Server Address option as
+// defined by RFC 7341.
+func (mo MessageOptions) DHCP4oDHCP6Server() *OptDHCP4oDHCP6Server {
+	opt := mo.Options.GetOne(OptionDHCP4oDHCP6Server)
+	if opt == nil {
+		return nil
+	}
+	if server, ok := opt.(*OptDHCP4oDHCP6Server); ok {
+		return server
+	}
+	return nil
+}
+
 // Message represents a DHCPv6 Message as defined by RFC 3315 Section 6.
 type Message struct {
 	MessageType   MessageType
