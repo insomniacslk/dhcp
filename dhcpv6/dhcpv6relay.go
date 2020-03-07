@@ -20,6 +20,15 @@ type RelayMessage struct {
 	Options     Options
 }
 
+func write16(b *uio.Lexer, ip net.IP) {
+	if ip == nil || ip.To16() == nil {
+		var zeros [net.IPv6len]byte
+		b.WriteBytes(zeros[:])
+	} else {
+		b.WriteBytes(ip.To16())
+	}
+}
+
 // Type is this relay message's types.
 func (r *RelayMessage) Type() MessageType {
 	return r.MessageType
@@ -58,8 +67,8 @@ func (r *RelayMessage) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(make([]byte, 0, RelayHeaderSize))
 	buf.Write8(byte(r.MessageType))
 	buf.Write8(r.HopCount)
-	buf.WriteBytes(r.LinkAddr.To16())
-	buf.WriteBytes(r.PeerAddr.To16())
+	write16(buf, r.LinkAddr)
+	write16(buf, r.PeerAddr)
 	buf.WriteBytes(r.Options.ToBytes())
 	return buf.Data()
 }

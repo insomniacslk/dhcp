@@ -43,6 +43,16 @@ func TestOptIAAddressParseInvalidBrokenOptions(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestOptIAAddressToBytesDefault(t *testing.T) {
+	want := []byte{
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // IP
+		0, 0, 0, 0, // preferred lifetime
+		0, 0, 0, 0, // valid lifetime
+	}
+	opt := OptIAAddress{}
+	require.Equal(t, opt.ToBytes(), want)
+}
+
 func TestOptIAAddressToBytes(t *testing.T) {
 	ipBytes := []byte{0x24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	expected := append(ipBytes, []byte{

@@ -27,7 +27,7 @@ func (op *OptIAAddress) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *OptIAAddress) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	buf.WriteBytes(op.IPv6Addr.To16())
+	write16(buf, op.IPv6Addr)
 
 	t1 := Duration{op.PreferredLifetime}
 	t1.Marshal(buf)
