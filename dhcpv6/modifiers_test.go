@@ -92,3 +92,18 @@ func TestWithFQDN(t *testing.T) {
 	require.Equal(t, uint8(4), ofqdn.Flags)
 	require.Equal(t, "cnos.localhost", ofqdn.DomainName)
 }
+
+func TestWithDHCP4oDHCP6Server(t *testing.T) {
+	var d Message
+	WithDHCP4oDHCP6Server([]net.IP{
+		net.ParseIP("fe80::1"),
+		net.ParseIP("fe80::2"),
+	}...)(&d)
+	require.Equal(t, 1, len(d.Options.Options))
+	opt := d.Options.DHCP4oDHCP6Server()
+	require.Equal(t, OptionDHCP4oDHCP6Server, opt.Code())
+	require.Equal(t, 2, len(opt.DHCP4oDHCP6Servers))
+	require.Equal(t, net.ParseIP("fe80::1"), opt.DHCP4oDHCP6Servers[0])
+	require.Equal(t, net.ParseIP("fe80::2"), opt.DHCP4oDHCP6Servers[1])
+	require.NotEqual(t, net.ParseIP("fe80::1"), opt.DHCP4oDHCP6Servers[1])
+}
