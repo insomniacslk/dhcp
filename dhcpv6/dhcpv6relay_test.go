@@ -36,6 +36,17 @@ func TestRelayMessage(t *testing.T) {
 	}
 }
 
+func TestRelayMessageToBytesDefault(t *testing.T) {
+	want := []byte{
+		12,                                             // MessageTypeRelayForward
+		0,                                              // hop count
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // link addr
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // peer addr
+	}
+	r := RelayMessage{MessageType: MessageTypeRelayForward}
+	require.Equal(t, r.ToBytes(), want)
+}
+
 func TestRelayMessageToBytes(t *testing.T) {
 	expected := []byte{
 		12,                                                      // MessageTypeRelayForward
