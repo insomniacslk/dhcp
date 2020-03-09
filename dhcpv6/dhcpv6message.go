@@ -167,6 +167,30 @@ func (mo MessageOptions) BootFileParam() []string {
 	return nil
 }
 
+// UserClasses returns a list of user classes.
+func (mo MessageOptions) UserClasses() [][]byte {
+	opt := mo.Options.GetOne(OptionUserClass)
+	if opt == nil {
+		return nil
+	}
+	if t, ok := opt.(*OptUserClass); ok {
+		return t.UserClasses
+	}
+	return nil
+}
+
+// VendorOpts returns the enterprise number and a list of vendor options.
+func (mo MessageOptions) VendorOpts() (uint32, Options) {
+	opt := mo.Options.GetOne(OptionVendorOpts)
+	if opt == nil {
+		return 0, nil
+	}
+	if t, ok := opt.(*OptVendorOpts); ok {
+		return t.EnterpriseNumber, t.VendorOpts
+	}
+	return 0, nil
+}
+
 // ElapsedTime returns the Elapsed Time option as defined by RFC 3315 Section 22.9.
 //
 // ElapsedTime returns a duration of 0 if the option is not present.
