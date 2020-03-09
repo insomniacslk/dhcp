@@ -63,7 +63,7 @@ func WithIANA(addrs ...OptIAAddress) Modifier {
 				iana = &OptIANA{}
 			}
 			for _, addr := range addrs {
-				iana.AddOption(&addr)
+				iana.Options.Add(&addr)
 			}
 			msg.UpdateOption(iana)
 		}
@@ -77,7 +77,7 @@ func WithIAID(iaid [4]byte) Modifier {
 			iana := msg.Options.OneIANA()
 			if iana == nil {
 				iana = &OptIANA{
-					Options: Options{},
+					Options: IdentityOptions{Options: []Option{}},
 				}
 			}
 			copy(iana.IaId[:], iaid[:])
@@ -117,5 +117,15 @@ func WithRequestedOptions(codes ...OptionCode) Modifier {
 			}
 			d.UpdateOption(OptRequestedOption(oro...))
 		}
+	}
+}
+
+// WithDHCP4oDHCP6Server adds or updates an OptDHCP4oDHCP6Server
+func WithDHCP4oDHCP6Server(addrs ...net.IP) Modifier {
+	return func(d DHCPv6) {
+		opt := OptDHCP4oDHCP6Server{
+			DHCP4oDHCP6Servers: addrs,
+		}
+		d.UpdateOption(&opt)
 	}
 }
