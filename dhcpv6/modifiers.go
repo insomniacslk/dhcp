@@ -63,7 +63,7 @@ func WithIANA(addrs ...OptIAAddress) Modifier {
 				iana = &OptIANA{}
 			}
 			for _, addr := range addrs {
-				iana.AddOption(&addr)
+				iana.Options.Add(&addr)
 			}
 			msg.UpdateOption(iana)
 		}
@@ -77,7 +77,7 @@ func WithIAID(iaid [4]byte) Modifier {
 			iana := msg.Options.OneIANA()
 			if iana == nil {
 				iana = &OptIANA{
-					Options: Options{},
+					Options: IdentityOptions{Options: []Option{}},
 				}
 			}
 			copy(iana.IaId[:], iaid[:])

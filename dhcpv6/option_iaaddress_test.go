@@ -64,9 +64,9 @@ func TestOptIAAddressToBytes(t *testing.T) {
 		IPv6Addr:          net.IP(ipBytes),
 		PreferredLifetime: 0x0a0b0c0d * time.Second,
 		ValidLifetime:     0x0e0f0102 * time.Second,
-		Options: []Option{
+		Options: AddressOptions{[]Option{
 			OptElapsedTime(10 * time.Millisecond),
-		},
+		}},
 	}
 	require.Equal(t, expected, opt.ToBytes())
 }
@@ -84,17 +84,17 @@ func TestOptIAAddressString(t *testing.T) {
 	str := opt.String()
 	require.Contains(
 		t, str,
-		"ipv6addr=2401:203:405:607:809:a0b:c0d:e0f",
+		"IP=2401:203:405:607:809:a0b:c0d:e0f",
 		"String() should return the ipv6addr",
 	)
 	require.Contains(
 		t, str,
-		"preferredlifetime=1m10s",
+		"PreferredLifetime=1m10s",
 		"String() should return the preferredlifetime",
 	)
 	require.Contains(
 		t, str,
-		"validlifetime=50s",
+		"ValidLifetime=50s",
 		"String() should return the validlifetime",
 	)
 }
