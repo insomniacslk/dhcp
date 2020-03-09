@@ -119,3 +119,13 @@ func WithRequestedOptions(codes ...OptionCode) Modifier {
 		}
 	}
 }
+
+// WithDHCP4oDHCP6Server adds or updates an OptDHCP4oDHCP6Server
+func WithDHCP4oDHCP6Server(addrs ...net.IP) Modifier {
+	return func(d DHCPv6) {
+		opt := OptDHCP4oDHCP6Server{
+			DHCP4oDHCP6Servers: addrs,
+		}
+		d.UpdateOption(&opt)
+	}
+}
