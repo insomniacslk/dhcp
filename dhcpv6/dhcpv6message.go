@@ -378,6 +378,10 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 		return nil, fmt.Errorf("IA_NA cannot be nil in ADVERTISE when building REQUEST")
 	}
 	req.AddOption(iana)
+	// add IA_PD
+	if iaPd := adv.GetOneOption(OptionIAPD); iaPd != nil {
+		req.AddOption(iaPd)
+	}
 	req.AddOption(OptRequestedOption(
 		OptionDNSRecursiveNameServer,
 		OptionDomainSearchList,
