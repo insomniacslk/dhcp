@@ -107,3 +107,17 @@ func TestWithDHCP4oDHCP6Server(t *testing.T) {
 	require.Equal(t, net.ParseIP("fe80::2"), opt.DHCP4oDHCP6Servers[1])
 	require.NotEqual(t, net.ParseIP("fe80::1"), opt.DHCP4oDHCP6Servers[1])
 }
+
+func TestWithIAPD(t *testing.T) {
+	var d Message
+	prefix := OptIAPrefix{
+		PreferredLifetime: 3600,
+		ValidLifetime:     5200,
+	}
+	prefix.SetPrefixLength(48)
+	prefix.SetIPv6Prefix(net.ParseIP("2001:DB8:7689::"))
+	WithIAPD([4]byte{1, 2, 3, 4}, prefix)(&d)
+	opt := d.Options.IAPD()
+	require.Equal(t, 1, len(opt))
+	require.Equal(t, OptionIAPD, opt[0].Code())
+}
