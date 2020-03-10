@@ -90,7 +90,7 @@ func TestWithFQDN(t *testing.T) {
 	ofqdn := d.Options.FQDN()
 	require.Equal(t, OptionFQDN, ofqdn.Code())
 	require.Equal(t, uint8(4), ofqdn.Flags)
-	require.Equal(t, "cnos.localhost", ofqdn.DomainName)
+	require.Equal(t, "cnos.localhost", ofqdn.DomainName.Labels[0])
 }
 
 func TestWithDHCP4oDHCP6Server(t *testing.T) {

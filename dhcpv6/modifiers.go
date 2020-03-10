@@ -32,8 +32,12 @@ func WithNetboot(d DHCPv6) {
 // WithFQDN adds a fully qualified domain name option to the packet
 func WithFQDN(flags uint8, domainname string) Modifier {
 	return func(d DHCPv6) {
-		ofqdn := OptFQDN{Flags: flags, DomainName: domainname}
-		d.AddOption(&ofqdn)
+		d.UpdateOption(&OptFQDN{
+			Flags:      flags,
+			DomainName: &rfc1035label.Labels{
+				Labels: []string{domainname},
+			},
+		})
 	}
 }
 
