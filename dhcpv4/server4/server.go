@@ -66,34 +66,36 @@ type Handler func(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4)
 
 // Server represents a DHCPv4 server object
 type Server struct {
-	conn    net.PacketConn
+	conn net.PacketConn
+	logf func(format string, v ...interface{})
+
 	Handler Handler
 }
 
 // Serve serves requests.
 func (s *Server) Serve() error {
-	log.Printf("Server listening on %s", s.conn.LocalAddr())
-	log.Print("Ready to handle requests")
+	s.Logf("Server listening on %s", s.conn.LocalAddr())
+	s.Logf("Ready to handle requests")
 
 	defer s.Close()
 	for {
 		rbuf := make([]byte, 4096) // FIXME this is bad
 		n, peer, err := s.conn.ReadFrom(rbuf)
 		if err != nil {
-			log.Printf("Error reading from packet conn: %v", err)
+			s.Logf("Error reading from packet conn: %v", err)
 			return err
 		}
-		log.Printf("Handling request from %v", peer)
+		s.Logf("Handling request from %v", peer)
 
 		m, err := dhcpv4.FromBytes(rbuf[:n])
 		if err != nil {
-			log.Printf("Error parsing DHCPv4 request: %v", err)
+			s.Logf("Error parsing DHCPv4 request: %v", err)
 			continue
 		}
 
 		upeer, ok := peer.(*net.UDPAddr)
 		if !ok {
-			log.Printf("Not a UDP connection? Peer is %s", peer)
+			s.Logf("Not a UDP connection? Peer is %s", peer)
 			continue
 		}
 		// Set peer to broadcast if the client did not have an IP.
@@ -112,6 +114,15 @@ func (s *Server) Close() error {
 	return s.conn.Close()
 }
 
+// Logf is a helper function that redirects to the right logger.
+func (s *Server) Logf(format string, v ...interface{}) {
+	if s.logf != nil {
+		s.logf(format, v...)
+	} else {
+		log.Printf(format, v...)
+	}
+}
+
 // ServerOpt adds optional configuration to a server.
 type ServerOpt func(s *Server)
 
@@ -119,6 +130,14 @@ type ServerOpt func(s *Server)
 func WithConn(c net.PacketConn) ServerOpt {
 	return func(s *Server) {
 		s.conn = c
+	}
+}
+
+// WithLogf configures the logger that the server will use. If you don't set
+// this, then it will default to using the built-in golang log package.
+func WithLogf(logf func(format string, v ...interface{})) ServerOpt {
+	return func(s *Server) {
+		s.logf = logf
 	}
 }
 
