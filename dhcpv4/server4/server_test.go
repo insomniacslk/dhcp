@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/rand"
 	"net"
-	"sync"
 	"testing"
 	"time"
 
@@ -56,7 +55,7 @@ func DORAHandler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
 
 // utility function to set up a client and a server instance and run it in
 // background. The caller needs to call Server.Close() once finished.
-func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler, logger *customLogger) (*nclient4.Client, *Server) {
+func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler) (*nclient4.Client, *Server) {
 	// strong assumption, I know
 	loAddr := net.ParseIP("127.0.0.1")
 	saddr := &net.UDPAddr{
@@ -71,11 +70,6 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler, lo
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	if logger != nil {
-		s.logger = logger
-	}
-
 	go func() {
 		_ = s.Serve()
 	}()
@@ -92,30 +86,6 @@ func setUpClientAndServer(t *testing.T, iface net.Interface, handler Handler, lo
 	return c, s
 }
 
-type customLogger struct {
-	tb testing.TB
-	called bool
-	mux    sync.Mutex
-}
-
-func (s *customLogger) Printf(format string, v ...interface{}) {
-	s.mux.Lock()
-	s.called = true
-	s.mux.Unlock()
-	s.tb.Logf("===CustomLogger BEGIN===")
-	s.tb.Logf(format, v...)
-	s.tb.Logf("===CustomLogger END===")
-}
-
-func (s *customLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {
-	s.mux.Lock()
-	s.called = true
-	s.mux.Unlock()
-	s.tb.Logf("===CustomLogger BEGIN===")
-	s.tb.Logf("%s: %s", prefix, message)
-	s.tb.Logf("===CustomLogger END===")
-}
-
 func TestServer(t *testing.T) {
 	ifaces, err := interfaces.GetLoopbackInterfaces()
 	require.NoError(t, err)
@@ -126,7 +96,7 @@ func TestServer(t *testing.T) {
 	hwaddr := net.HardwareAddr{1, 2, 3, 4, 5, 6}
 	ifaces[0].HardwareAddr = hwaddr
 
-	c, s := setUpClientAndServer(t, ifaces[0], DORAHandler, nil)
+	c, s := setUpClientAndServer(t, ifaces[0], DORAHandler)
 	defer func() {
 		require.Nil(t, s.Close())
 	}()
@@ -156,85 +126,4 @@ func TestBadAddrFamily(t *testing.T) {
 	if err == nil {
 		t.Fatal("Expected server4.NewServer to fail with an IPv6 address")
 	}
-}
-
-func TestServerWithCustomLogger(t *testing.T) {
-	ifaces, err := interfaces.GetLoopbackInterfaces()
-	require.NoError(t, err)
-	require.NotEqual(t, 0, len(ifaces))
-
-	// lo has a HardwareAddr of "nil". The client will drop all packets
-	// that don't match the HWAddr of the client interface.
-	hwaddr := net.HardwareAddr{1, 2, 3, 4, 5, 6}
-	ifaces[0].HardwareAddr = hwaddr
-
-	c, s := setUpClientAndServer(t, ifaces[0], DORAHandler, &customLogger{
-		tb: t,
-	})
-	defer func() {
-		require.Nil(t, s.Close())
-	}()
-
-	xid := dhcpv4.TransactionID{0xaa, 0xbb, 0xcc, 0xdd}
-
-	modifiers := []dhcpv4.Modifier{
-		dhcpv4.WithTransactionID(xid),
-		dhcpv4.WithHwAddr(ifaces[0].HardwareAddr),
-	}
-
-	offer, ack, err := c.Request(context.Background(), modifiers...)
-	require.NoError(t, err)
-	require.NotNil(t, offer, ack)
-	for _, p := range []*dhcpv4.DHCPv4{offer, ack} {
-		require.Equal(t, xid, p.TransactionID)
-		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
-	}
-	go func() {
-		time.Sleep(time.Second * 5)
-		require.Equal(t, true, s.logger.(*customLogger).called)
-	}()
-}
-
-func TestServerInstantiationWithCustomLogger(t *testing.T) {
-	// strong assumption, I know
-	loAddr := net.ParseIP("127.0.0.1")
-	saddr := &net.UDPAddr{
-		IP:   loAddr,
-		Port: 0,
-	}
-	s, err := NewServer("", saddr, DORAHandler, WithLogger(&customLogger{
-		tb: t,
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	require.NotNil(t, s)
-}
-
-func TestServerInstantiationWithSummaryLogger(t *testing.T) {
-	// strong assumption, I know
-	loAddr := net.ParseIP("127.0.0.1")
-	saddr := &net.UDPAddr{
-		IP:   loAddr,
-		Port: 0,
-	}
-	s, err := NewServer("", saddr, DORAHandler, WithSummaryLogger())
-	if err != nil {
-		t.Fatal(err)
-	}
-	require.NotNil(t, s)
-}
-
-func TestServerInstantiationWithDebugLogger(t *testing.T) {
-	// strong assumption, I know
-	loAddr := net.ParseIP("127.0.0.1")
-	saddr := &net.UDPAddr{
-		IP:   loAddr,
-		Port: 0,
-	}
-	s, err := NewServer("", saddr, DORAHandler, WithDebugLogger())
-	if err != nil {
-		t.Fatal(err)
-	}
-	require.NotNil(t, s)
 }
