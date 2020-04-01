@@ -36,29 +36,36 @@ func ParseRemoteID(packet dhcpv6.DHCPv6) (*CircuitID, error) {
 		if rid := rm.Options.RemoteID(); rid != nil {
 			remoteID := string(rid.RemoteID)
 			circ, err := matchCircuitId(remoteID)
-			if err != nil {
-				return nil, err
+			if err == nil {
+				return circ, nil
 			}
-			return circ, nil
+		}
+		// if we fail to find circuit id from remote id try to use interface ID option
+		if iid := rm.Options.InterfaceID(); iid != nil {
+			interfaceID := string(iid)
+			circ, err := matchCircuitId(interfaceID)
+			if err == nil {
+				return circ, nil
+			}
 		}
 	}
-	return nil, errors.New("failed to parse RemoteID option data")
+	return nil, errors.New("failed to parse RemoteID and InterfaceID option data")
 }
 
-func matchCircuitId(remoteID string) (*CircuitID, error) {
+func matchCircuitId(circuitInfo string) (*CircuitID, error) {
 	var names, matches []string
 
 	switch {
-	case aristaPVPattern.MatchString(remoteID):
-		matches = aristaPVPattern.FindStringSubmatch(remoteID)
+	case aristaPVPattern.MatchString(circuitInfo):
+		matches = aristaPVPattern.FindStringSubmatch(circuitInfo)
 		names = aristaPVPattern.SubexpNames()
-	case aristaSMPPattern.MatchString(remoteID):
-		matches = aristaSMPPattern.FindStringSubmatch(remoteID)
+	case aristaSMPPattern.MatchString(circuitInfo):
+		matches = aristaSMPPattern.FindStringSubmatch(circuitInfo)
 		names = aristaSMPPattern.SubexpNames()
 	}
 
 	if len(matches) == 0 {
-		return nil, fmt.Errorf("no circuitId regex matches for %v", remoteID)
+		return nil, fmt.Errorf("no circuitId regex matches for %v", circuitInfo)
 	}
 
 	var circuit CircuitID
