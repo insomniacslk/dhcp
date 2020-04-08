@@ -68,19 +68,23 @@ type Handler func(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6)
 
 // Server represents a DHCPv6 server object
 type Server struct {
-	conn    net.PacketConn
-	handler Handler
-	logger  Logger
+	conn      net.PacketConn
+	handler   Handler
+	logger    Logger
+	closeFlag bool
 }
 
 // Serve starts the DHCPv6 server. The listener will run in background, and can
 // be interrupted with `Server.Close`.
-func (s *Server) Serve() error {
+func (s *Server) Serve() (err error) {
 	s.logger.Printf("Server listening on %s", s.conn.LocalAddr())
 	s.logger.Printf("Ready to handle requests")
 
-	defer s.Close()
-	for {
+	defer func() {
+		err = s.close()
+	}()
+	s.closeFlag = false
+	for !s.closeFlag {
 		rbuf := make([]byte, 4096) // FIXME this is bad
 		n, peer, err := s.conn.ReadFrom(rbuf)
 		if err != nil {
@@ -97,10 +101,15 @@ func (s *Server) Serve() error {
 
 		go s.handler(s.conn, peer, d)
 	}
+	return
 }
 
 // Close sends a termination request to the server, and closes the UDP listener
-func (s *Server) Close() error {
+func (s *Server) Close() {
+	s.closeFlag = true
+}
+
+func (s *Server) close() error {
 	return s.conn.Close()
 }
 
