@@ -354,10 +354,11 @@ func NewRequestFromAdvertise(adv *Message, modifiers ...Modifier) (*Message, err
 		return nil, fmt.Errorf("The passed ADVERTISE must have ADVERTISE type set")
 	}
 	// build REQUEST from ADVERTISE
-	req := &Message{
-		MessageType:   MessageTypeRequest,
-		TransactionID: adv.TransactionID,
+	req, err := NewMessage()
+	if err != nil {
+		return nil, err
 	}
+	req.MessageType = MessageTypeRequest
 	// add Client ID
 	cid := adv.GetOneOption(OptionClientID)
 	if cid == nil {
