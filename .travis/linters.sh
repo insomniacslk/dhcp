@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-go get github.com/golangci/golangci-lint/cmd/golangci-lint
-go install github.com/golangci/golangci-lint/cmd/golangci-lint
-golangci-lint run
+set -e
+
+GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint
+$GOPATH/bin/golangci-lint run
