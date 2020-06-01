@@ -121,3 +121,16 @@ func TestWithIAPD(t *testing.T) {
 	require.Equal(t, 1, len(opt))
 	require.Equal(t, OptionIAPD, opt[0].Code())
 }
+
+func TestWithClientLinkLayerAddress(t *testing.T) {
+	var d RelayMessage
+	mac, _ := net.ParseMAC("a4:83:e7:e3:df:88")
+	WithClientLinkLayerAddress(iana.HWTypeEthernet, mac)(&d)
+
+	opt := d.Options.GetOne(OptionClientLinkLayerAddr)
+	require.Equal(t, OptionClientLinkLayerAddr, opt.Code())
+
+	llt, lla := d.Options.ClientLinkLayerAddress()
+	require.Equal(t, iana.HWTypeEthernet, llt)
+	require.Equal(t, mac, lla)
+}
