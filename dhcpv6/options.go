@@ -87,6 +87,8 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		var o OptNetworkInterfaceID
 		err = o.FromBytes(optData)
 		opt = &o
+	case OptionClientLinkLayerAddr:
+		opt, err = parseOptClientLinkLayerAddress(optData)
 	case OptionDHCPv4Msg:
 		opt, err = ParseOptDHCPv4Msg(optData)
 	case OptionDHCP4oDHCP6Server:

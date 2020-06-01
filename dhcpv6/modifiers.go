@@ -152,3 +152,9 @@ func WithIAPD(iaid [4]byte, prefixes ...*OptIAPrefix) Modifier {
 		}
 	}
 }
+
+// WithClientLinkLayerAddress adds or updates the ClientLinkLayerAddress
+// option with provided HWType and HWAddress on a DHCPv6 packet
+func WithClientLinkLayerAddress(ht iana.HWType, lla net.HardwareAddr) Modifier {
+	return WithOption(OptClientLinkLayerAddress(ht, lla))
+}
