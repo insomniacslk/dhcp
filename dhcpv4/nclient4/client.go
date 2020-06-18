@@ -166,7 +166,7 @@ type Client struct {
 	//clientIdOptions is a list of DHCPv4 option code that DHCP server used to
 	//identify client other than the HWAddress,
 	//like client-id, option82/remote-id..etc
-	clientIdOptions dhcpv4.OptionCodeList
+	clientIDOptions dhcpv4.OptionCodeList
 
 	//lease info after DORA, nil before DORA
 	lease *DHCPv4ClientLease
@@ -201,7 +201,7 @@ func new(iface string, conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts .
 		pending:           make(map[dhcpv4.TransactionID]*pendingCh),
 		lease:             nil,
 		leaseApplyHandler: defaultLeaseApplyHandler,
-		clientIdOptions:   dhcpv4.OptionCodeList{},
+		clientIDOptions:   dhcpv4.OptionCodeList{},
 		ifName:            iface,
 	}
 
@@ -538,7 +538,7 @@ var errDeadlineExceeded = errors.New("INTERNAL ERROR: deadline exceeded")
 func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, p *dhcpv4.DHCPv4, match Matcher) (*dhcpv4.DHCPv4, error) {
 	var response *dhcpv4.DHCPv4
 	//check if the request packet has all options required by c.clientIdOptions
-	for _, optioncode := range c.clientIdOptions {
+	for _, optioncode := range c.clientIDOptions {
 		if len(p.Options.Get(optioncode)) == 0 {
 			err := fmt.Errorf("Option %v required for client identification is missing in request", optioncode)
 			return nil, err
