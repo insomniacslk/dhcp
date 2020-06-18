@@ -670,7 +670,7 @@ func (d *DHCPv4) IPAddressLeaseTime(def time.Duration) time.Duration {
 	return time.Duration(dur)
 }
 
-// IPAddressRenewTime returns the IP address renewal time or the given
+// IPAddressRenewalTime returns the IP address renewal time or the given
 // default duration if not present.
 //
 // The IP address renewal time option is described by RFC 2132, Section 9.11.
@@ -686,7 +686,7 @@ func (d *DHCPv4) IPAddressRenewalTime(def time.Duration) time.Duration {
 	return time.Duration(dur)
 }
 
-// IPAddressRenewTime returns the IP address rebinding time or the given
+// IPAddressRebindingTime returns the IP address rebinding time or the given
 // default duration if not present.
 //
 // The IP address rebinding time option is described by RFC 2132, Section 9.12.

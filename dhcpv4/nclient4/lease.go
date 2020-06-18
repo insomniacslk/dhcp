@@ -83,8 +83,8 @@ func (lease DHCPv4ClientLease) String() string {
 	const TIME_FMT = "01/02/2006 15:04:05.000"
 	rstr := fmt.Sprintf(FMTSTR, fmt.Sprintf("Interface:%v", lease.IfName), fmt.Sprintf("MAC:%v", lease.MACAddr))
 	rstr += fmt.Sprintf(FMTSTR, fmt.Sprintf("Svr:%v", lease.ServerAddr.IP), fmt.Sprintf("Created:%v", lease.CreationTime.Format(TIME_FMT)))
-	prefix_len, _ := lease.AssignedIPMask.Size()
-	rstr += fmt.Sprintf(FMTSTR, fmt.Sprintf("IP:%v/%v", lease.AssignedIP, prefix_len), fmt.Sprintf("Lease time:%v", lease.LeaseDuration))
+	prefixlen, _ := lease.AssignedIPMask.Size()
+	rstr += fmt.Sprintf(FMTSTR, fmt.Sprintf("IP:%v/%v", lease.AssignedIP, prefixlen), fmt.Sprintf("Lease time:%v", lease.LeaseDuration))
 	rstr += fmt.Sprintf(FMTSTR, fmt.Sprintf("Renew interval:%v", lease.RenewInterval), fmt.Sprintf("Rebind interval:%v", lease.RebindInterval))
 	rstr += fmt.Sprintf("Id options:\n%v", lease.IdOptions)
 	rstr += fmt.Sprintf("ACK options:\n%v", lease.AckOptions)
@@ -119,8 +119,8 @@ func defaultLeaseApplyHandler(l DHCPv4ClientLease, enable bool) error {
 		return err
 	}
 	plen, _ := l.AssignedIPMask.Size()
-	prefix_str := fmt.Sprintf("%v/%v", l.AssignedIP, plen)
-	naddr, err := netlink.ParseAddr(prefix_str)
+	prefixstr := fmt.Sprintf("%v/%v", l.AssignedIP, plen)
+	naddr, err := netlink.ParseAddr(prefixstr)
 	if err != nil {
 		return err
 	}
@@ -134,7 +134,7 @@ func defaultLeaseApplyHandler(l DHCPv4ClientLease, enable bool) error {
 
 }
 
-//Apply the lease, calling the c.leaseApplyHandler
+//ApplyLease apply/unapply the lease, call the c.leaseApplyHandler
 func (c *Client) ApplyLease(enable bool) error {
 	if c.lease == nil {
 		return fmt.Errorf("no lease to apply")
@@ -142,7 +142,7 @@ func (c *Client) ApplyLease(enable bool) error {
 	return c.leaseApplyHandler(c.GetLease(), enable)
 }
 
-//return the lease
+//GetLease return the lease
 func (c *Client) GetLease() (clease DHCPv4ClientLease) {
 	clease = *c.lease
 	clease.MACAddr = c.ifaceHWAddr
@@ -207,7 +207,7 @@ func (c *Client) RequestSavingLease(ctx context.Context, modifiers ...dhcpv4.Mod
 	c.lease.AckOptions = ack.Options
 	//update server address
 	c.serverAddr = &(net.UDPAddr{IP: ack.ServerIdentifier(), Port: 67})
-	c.ApplyLease(true)
+	err = c.ApplyLease(true)
 	return
 }
 
@@ -251,18 +251,18 @@ func (c *Client) Release() error {
 //NewWithLease return a Client with populated lease.
 //this function could be used to release a saved lease.
 func NewWithLease(clease DHCPv4ClientLease, opts ...ClientOpt) (*Client, error) {
-	clnt_opt_list := []ClientOpt{
+	clntoptlist := []ClientOpt{
 		WithServerAddr(&clease.ServerAddr),
 		WithHWAddr(clease.MACAddr),
 	}
-	clnt_opt_list = append(clnt_opt_list, opts...)
-	clnt, err := New(clease.IfName, clnt_opt_list...)
+	clntoptlist = append(clntoptlist, opts...)
+	clnt, err := New(clease.IfName, clntoptlist...)
 	if err != nil {
 		return nil, err
 	}
 	clnt.ifName = clease.IfName
 	clnt.lease = &clease
-	for optioncode, _ := range clease.IdOptions {
+	for optioncode := range clease.IdOptions {
 		clnt.clientIdOptions.Add(dhcpv4.GenericOptionCode(optioncode))
 	}
 	return clnt, nil
