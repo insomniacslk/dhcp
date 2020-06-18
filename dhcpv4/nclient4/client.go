@@ -162,6 +162,18 @@ type Client struct {
 	// TransactionID. receiveLoop uses this map to determine which channel
 	// to send a new DHCP message to.
 	pending map[dhcpv4.TransactionID]*pendingCh
+
+	//clientIdOptions is a list of DHCPv4 option code that DHCP server used to
+	//identify client other than the HWAddress,
+	//like client-id, option82/remote-id..etc
+	clientIdOptions dhcpv4.OptionCodeList
+
+	//lease info after DORA, nil before DORA
+	lease *DHCPv4ClientLease
+	//the handnler function for applying lease
+	leaseApplyHandler func(DHCPv4ClientLease, bool) error
+	//binding interface name
+	ifName string
 }
 
 // New returns a client usable with an unconfigured interface.
@@ -185,8 +197,12 @@ func new(iface string, conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts .
 		conn:        conn,
 		logger:      EmptyLogger{},
 
-		done:    make(chan struct{}),
-		pending: make(map[dhcpv4.TransactionID]*pendingCh),
+		done:              make(chan struct{}),
+		pending:           make(map[dhcpv4.TransactionID]*pendingCh),
+		lease:             nil,
+		leaseApplyHandler: defaultLeaseApplyHandler,
+		clientIdOptions:   dhcpv4.OptionCodeList{},
+		ifName:            iface,
 	}
 
 	for _, opt := range opts {
@@ -521,6 +537,15 @@ var errDeadlineExceeded = errors.New("INTERNAL ERROR: deadline exceeded")
 // ClientHWAddr is returned.
 func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, p *dhcpv4.DHCPv4, match Matcher) (*dhcpv4.DHCPv4, error) {
 	var response *dhcpv4.DHCPv4
+	//check if the request packet has all options required by c.clientIdOptions
+	for _, optioncode := range c.clientIdOptions {
+		if len(p.Options.Get(optioncode)) == 0 {
+			err := fmt.Errorf("Option %v required for client identification is missing in request", optioncode)
+			return nil, err
+		}
+
+	}
+
 	err := c.retryFn(func(timeout time.Duration) error {
 		ch, rem, err := c.send(dest, p)
 		if err != nil {
