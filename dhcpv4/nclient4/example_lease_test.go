@@ -1,18 +1,41 @@
-//this is an example for nclient4 with lease
+//this is an example for nclient4 with lease/release
 
-package nclient4_test
+package nclient4
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
+	"github.com/vishvananda/netlink"
 )
 
-func Example_dHCPv4ClientLease() {
-	ifname := "eth0"
-	remoteID := "client-1"
+//applyLease adding the assigned ip to the interface specified by ifname
+func applyLease(lease *nclient4.Lease, ifname string) error {
+	link, err := netlink.LinkByName(ifname)
+	if err != nil {
+		return err
+	}
+	prefixlen := 32
+	if ipmask := lease.ACK.SubnetMask(); ipmask != nil {
+		prefixlen, _ = ipmask.Size()
+
+	}
+	prefixstr := fmt.Sprintf("%v/%v", lease.ACK.YourIPAddr, prefixlen)
+	naddr, err := netlink.ParseAddr(prefixstr)
+	if err != nil {
+		return err
+	}
+	err = netlink.AddrReplace(link, naddr)
+	return err
+
+}
+
+func main() {
+	ifname := "eth1.200"
+	remoteid := "client-1"
 	var idoptlist dhcpv4.OptionCodeList
 	//specify option82 is part of client identification used by DHCPv4 server
 	idoptlist.Add(dhcpv4.OptionRelayAgentInformation)
@@ -22,17 +45,19 @@ func Example_dHCPv4ClientLease() {
 		log.Fatalf("failed to create dhcpv4 client,%v", err)
 	}
 	//adding option82/remote-id option to discovery and request
-	remoteIDSubOpt := dhcpv4.OptGeneric(dhcpv4.AgentRemoteIDSubOption, []byte(remoteID))
-	option82 := dhcpv4.OptRelayAgentInfo(remoteIDSubOpt)
-	_, _, err = clnt.RequestSavingLease(context.Background(), dhcpv4.WithOption(option82))
+	remoteidsubopt := dhcpv4.OptGeneric(dhcpv4.AgentRemoteIDSubOption, []byte(remoteid))
+	option82 := dhcpv4.OptRelayAgentInfo(remoteidsubopt)
+	_, lease, err := clnt.Request(context.Background(), dhcpv4.WithOption(option82))
 	if err != nil {
 		log.Fatal(err)
 	}
 	//print the lease
-	log.Printf("Got lease:\n%v", clnt.GetLease())
+	log.Printf("Got lease:\n%+v", lease)
+	//apply the lease
+	applyLease(lease, ifname)
 	//release the lease
 	log.Print("Releasing lease...")
-	err = clnt.Release()
+	err = clnt.Release(lease)
 	if err != nil {
 		log.Fatal(err)
 	}
