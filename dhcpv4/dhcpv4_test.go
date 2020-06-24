@@ -3,6 +3,8 @@ package dhcpv4
 import (
 	"bytes"
 	"net"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -80,16 +82,18 @@ func TestFromBytes(t *testing.T) {
 	// above
 }
 
-func TestFromBytesZeroLength(t *testing.T) {
-	data := []byte{}
-	_, err := FromBytes(data)
-	require.Error(t, err)
-}
-
-func TestFromBytesShortLength(t *testing.T) {
-	data := []byte{1, 1, 6, 0}
-	_, err := FromBytes(data)
-	require.Error(t, err)
+func TestFromBytesGenericInvalid(t *testing.T) {
+	data := [][]byte{
+		{},
+		{1, 1, 6, 0},
+	}
+	t.Parallel()
+	for i, packet := range data {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			_, err := FromBytes(packet)
+			require.Error(t, err)
+		})
+	}
 }
 
 func TestFromBytesInvalidOptions(t *testing.T) {
@@ -176,6 +180,17 @@ func TestNewToBytes(t *testing.T) {
 	d.TransactionID = TransactionID{0x11, 0x22, 0x33, 0x44}
 	got := d.ToBytes()
 	require.Equal(t, expected, got)
+}
+
+func TestToBytesStringTooLong(t *testing.T) {
+	d, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d.ServerHostName = strings.Repeat("a", 256)
+	d.BootFileName = strings.Repeat("a", 256)
+
+	require.NotPanics(t, func() { _ = d.ToBytes() })
 }
 
 func TestGetOption(t *testing.T) {
@@ -339,7 +354,7 @@ func TestSummary(t *testing.T) {
 		"  your IP: 0.0.0.0\n" +
 		"  server IP: 0.0.0.0\n" +
 		"  gateway IP: 0.0.0.0\n" +
-		"  client MAC: \n" +
+		"  client MAC: 00:00:00:00:00:00\n" +
 		"  server hostname: \n" +
 		"  bootfile name: \n" +
 		"  options:\n" +
