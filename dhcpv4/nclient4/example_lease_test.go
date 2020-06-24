@@ -1,6 +1,6 @@
 //this is an example for nclient4 with lease/release
 
-package nclient4
+package nclient4_test
 
 import (
 	"context"
