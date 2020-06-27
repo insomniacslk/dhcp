@@ -40,15 +40,6 @@ type testServerLease struct {
 	ShouldFail   bool //expected result
 }
 
-func newtestServerLease(cip net.IP, m net.HardwareAddr, idops dhcpv4.Options) *testServerLease {
-	r := &testServerLease{}
-	r.assignedAddr = cip
-	r.key = &testLeaseKey{}
-	r.key.mac = m
-	r.key.idOptions = idops
-	return r
-}
-
 type testServerLeaseList struct {
 	list            []*testServerLease
 	clientIDOptions dhcpv4.OptionCodeList
