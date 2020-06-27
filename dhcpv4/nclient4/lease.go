@@ -29,7 +29,8 @@ func WithClientIDOptions(cidl dhcpv4.OptionCodeList) ClientOpt {
 
 //Release send DHCPv4 release messsage to server, based on specified lease.
 //release is sent as unicast per RFC2131, section 4.4.4.
-//This function requires assigned address has been added on the binding interface.
+//Note: some DHCP server requries of using assigned IP address as source IP,
+//use nclient4.WithUnicast to create client for such case.
 func (c *Client) Release(lease *Lease) error {
 	if lease == nil {
 		return fmt.Errorf("lease is nil")
@@ -45,21 +46,16 @@ func (c *Client) Release(lease *Lease) error {
 	req.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeRelease))
 	req.ClientHWAddr = lease.ACK.ClientHWAddr
 	req.ClientIPAddr = lease.ACK.YourIPAddr
-	req.UpdateOption(dhcpv4.OptServerIdentifier(lease.ACK.ServerIPAddr))
+	req.UpdateOption(dhcpv4.OptGeneric(dhcpv4.OptionServerIdentifier, lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier)))
 	req.SetUnicast()
-	luaddr, err := net.ResolveUDPAddr("udp4", fmt.Sprintf("%v:%v", lease.ACK.YourIPAddr, 68))
 	if err != nil {
 		return err
 	}
-
-	uniconn, err := net.DialUDP("udp4", luaddr, &net.UDPAddr{IP: lease.ACK.ServerIPAddr, Port: 67})
-	if err != nil {
-		return err
+	timeout := time.Now().Add(3 * time.Second)
+	c.conn.SetWriteDeadline(timeout)
+	_, err = c.conn.WriteTo(req.ToBytes(), &net.UDPAddr{IP: lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier), Port: 67})
+	if err == nil {
+		c.logger.PrintMessage("sent message:", req)
 	}
-	_, err = uniconn.Write(req.ToBytes())
-	if err != nil {
-		return err
-	}
-	c.logger.PrintMessage("sent message:", req)
-	return nil
+	return err
 }
