@@ -51,8 +51,6 @@ func (c *Client) Release(lease *Lease) error {
 	if err != nil {
 		return err
 	}
-	timeout := time.Now().Add(3 * time.Second)
-	c.conn.SetWriteDeadline(timeout)
 	_, err = c.conn.WriteTo(req.ToBytes(), &net.UDPAddr{IP: lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier), Port: 67})
 	if err == nil {
 		c.logger.PrintMessage("sent message:", req)
