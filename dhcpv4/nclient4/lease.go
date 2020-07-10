@@ -13,6 +13,7 @@ import (
 //Lease contains a DHCPv4 lease after DORA.
 //note: Lease doesn't include binding interface name
 type Lease struct {
+	Offer        *dhcpv4.DHCPv4
 	ACK          *dhcpv4.DHCPv4
 	CreationTime time.Time
 	IDOptions    dhcpv4.Options //DHCPv4 options to identify the client like client-id, option82/remote-id

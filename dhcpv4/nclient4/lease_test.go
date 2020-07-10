@@ -240,7 +240,7 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 			return true
 		}
 
-		_, lease, err := clnt.Request(context.Background(), modList...)
+		lease, err := clnt.Request(context.Background(), modList...)
 		keepgoing := chkerr(err, l.ShouldFail, t)
 		if keepgoing {
 			err = clnt.Release(lease)

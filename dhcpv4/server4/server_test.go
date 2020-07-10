@@ -108,10 +108,10 @@ func TestServer(t *testing.T) {
 		dhcpv4.WithHwAddr(ifaces[0].HardwareAddr),
 	}
 
-	offer, lease, err := c.Request(context.Background(), modifiers...)
+	lease, err := c.Request(context.Background(), modifiers...)
 	require.NoError(t, err)
-	require.NotNil(t, offer, lease.ACK)
-	for _, p := range []*dhcpv4.DHCPv4{offer, lease.ACK} {
+	require.NotNil(t, lease.Offer, lease.ACK)
+	for _, p := range []*dhcpv4.DHCPv4{lease.Offer, lease.ACK} {
 		require.Equal(t, xid, p.TransactionID)
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
 	}

@@ -21,7 +21,7 @@ func Example() {
 	}
 	//add option61 to discovery and request
 	option61 := dhcpv4.OptClientIdentifier([]byte(clntid))
-	_, lease, err := clnt.Request(context.Background(), dhcpv4.WithOption(option61))
+	lease, err := clnt.Request(context.Background(), dhcpv4.WithOption(option61))
 	if err != nil {
 		log.Fatal(err)
 	}
