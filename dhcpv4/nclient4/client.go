@@ -439,8 +439,7 @@ func (c *Client) DiscoverOffer(ctx context.Context, modifiers ...dhcpv4.Modifier
 //
 // Note that modifiers will be applied *both* to Discover and Request packets.
 func (c *Client) Request(ctx context.Context, modifiers ...dhcpv4.Modifier) (lease *Lease, err error) {
-	var offer *dhcpv4.DHCPv4
-	offer, err = c.DiscoverOffer(ctx, modifiers...)
+	offer, err := c.DiscoverOffer(ctx, modifiers...)
 	if err != nil {
 		err = fmt.Errorf("unable to receive an offer: %w", err)
 		return

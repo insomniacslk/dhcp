@@ -36,23 +36,27 @@ func (c *Client) Release(lease *Lease) error {
 	if lease == nil {
 		return fmt.Errorf("lease is nil")
 	}
-	req, err := dhcpv4.New()
+	modList := []dhcpv4.Modifier{
+		dhcpv4.WithMessageType(dhcpv4.MessageTypeRelease),
+		dhcpv4.WithClientIP(lease.ACK.YourIPAddr),
+		dhcpv4.WithHwAddr(lease.ACK.ClientHWAddr),
+		dhcpv4.WithBroadcast(false),
+		dhcpv4.WithOption(dhcpv4.OptServerIdentifier(lease.ACK.ServerIdentifier())),
+	}
+
+	req, err := dhcpv4.New(modList...)
 	if err != nil {
 		return err
 	}
 	//This is to make sure use same client identification options used during
 	//DORA, so that DHCP server could identify the required lease
-	req.Options = lease.IDOptions
-
-	req.UpdateOption(dhcpv4.OptMessageType(dhcpv4.MessageTypeRelease))
-	req.ClientHWAddr = lease.ACK.ClientHWAddr
-	req.ClientIPAddr = lease.ACK.YourIPAddr
-	req.UpdateOption(dhcpv4.OptGeneric(dhcpv4.OptionServerIdentifier, lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier)))
-	req.SetUnicast()
-	if err != nil {
-		return err
+	for t, _ := range lease.IDOptions {
+		req.UpdateOption(
+			dhcpv4.OptGeneric(dhcpv4.GenericOptionCode(t),
+				lease.IDOptions.Get(dhcpv4.GenericOptionCode(t))),
+		)
 	}
-	_, err = c.conn.WriteTo(req.ToBytes(), &net.UDPAddr{IP: lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier), Port: 67})
+	_, err = c.conn.WriteTo(req.ToBytes(), &net.UDPAddr{IP: lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier), Port: ServerPort})
 	if err == nil {
 		c.logger.PrintMessage("sent message:", req)
 	}

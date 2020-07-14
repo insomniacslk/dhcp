@@ -43,6 +43,7 @@ type testServerLease struct {
 type testServerLeaseList struct {
 	list            []*testServerLease
 	clientIDOptions dhcpv4.OptionCodeList
+	lastTestSvrErr  error
 }
 
 func newtestServerLeaseList(l dhcpv4.OptionCodeList) *testServerLeaseList {
@@ -183,26 +184,27 @@ func (sll *testServerLeaseList) handle(conn net.PacketConn, peer net.Addr, m *dh
 	if m.OpCode != dhcpv4.OpcodeBootRequest {
 		log.Fatal("Not a BootRequest!")
 	}
-	var err error
 	switch m.MessageType() {
 	case dhcpv4.MessageTypeDiscover, dhcpv4.MessageTypeRequest:
-		err = sll.testLeaseDORAHandle(conn, peer, m)
-		if err != nil {
-			log.Printf("svr failed to handle DORA,%v", err)
+		sll.lastTestSvrErr = sll.testLeaseDORAHandle(conn, peer, m)
+		if sll.lastTestSvrErr != nil {
+			log.Printf("svr failed to handle DORA,%v", sll.lastTestSvrErr)
 		}
 
 	case dhcpv4.MessageTypeRelease:
-		err = sll.testLeaseReleaseHandle(conn, peer, m)
-		if err != nil {
-			log.Printf("svr failed to handle release,%v", err)
+		sll.lastTestSvrErr = sll.testLeaseReleaseHandle(conn, peer, m)
+		if sll.lastTestSvrErr != nil {
+			log.Printf("svr failed to handle release,%v", sll.lastTestSvrErr)
 		}
 	default:
-		log.Printf("svr got unexpeceted message type %v", m.MessageType())
+		sll.lastTestSvrErr = fmt.Errorf("svr got unexpeceted message type %v", m.MessageType())
+		log.Print(sll.lastTestSvrErr)
 	}
 }
 
 func (sll *testServerLeaseList) runTest(t *testing.T) {
 	for _, l := range sll.list {
+		sll.lastTestSvrErr = nil
 		t.Logf("running lease test case for mac %v", l.key.mac)
 		// Fake PacketConn connection.
 		//note can't reuse conn between different clients, because there is currently
@@ -228,12 +230,12 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		for op, val := range l.key.idOptions {
 			modList = append(modList, dhcpv4.WithOption(dhcpv4.OptGeneric(dhcpv4.GenericOptionCode(op), val)))
 		}
-		chkerr := func(err error, shouldfail bool, t *testing.T) bool {
-			if err != nil {
+		chkerr := func(err, lastsvrerr error, shouldfail bool, t *testing.T) bool {
+			if err != nil || lastsvrerr != nil {
 				if !shouldfail {
-					t.Fatal(err)
+					t.Fatalf("case failed,%v,svr err:%v ", err, lastsvrerr)
 				} else {
-					t.Logf("case failed as expected,%v", err)
+					t.Logf("case failed as expected,%v,svr err: %v", err, lastsvrerr)
 					return false
 				}
 			}
@@ -241,10 +243,12 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		}
 
 		lease, err := clnt.Request(context.Background(), modList...)
-		keepgoing := chkerr(err, l.ShouldFail, t)
+		keepgoing := chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
 		if keepgoing {
 			err = clnt.Release(lease)
-			chkerr(err, l.ShouldFail, t)
+			//this sleep is to make sure release is handled by server
+			time.Sleep(time.Second)
+			chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
 		}
 	}
 
@@ -324,7 +328,7 @@ func TestLease(t *testing.T) {
 		&testServerLease{
 			assignedAddr: net.ParseIP("192.168.2.2"),
 			key: &testLeaseKey{
-				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 1, 3},
+				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 3},
 				idOptions: dhcpv4.Options{
 					uint8(dhcpv4.OptionClientIdentifier): []byte("client-fake"),
 				},
