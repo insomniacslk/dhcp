@@ -50,7 +50,7 @@ func (c *Client) Release(lease *Lease) error {
 	}
 	//This is to make sure use same client identification options used during
 	//DORA, so that DHCP server could identify the required lease
-	for t, _ := range lease.IDOptions {
+	for t := range lease.IDOptions {
 		req.UpdateOption(
 			dhcpv4.OptGeneric(dhcpv4.GenericOptionCode(t),
 				lease.IDOptions.Get(dhcpv4.GenericOptionCode(t))),

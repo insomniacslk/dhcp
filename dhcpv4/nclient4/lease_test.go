@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,14 +42,16 @@ type testServerLease struct {
 }
 
 type testServerLeaseList struct {
-	list            []*testServerLease
-	clientIDOptions dhcpv4.OptionCodeList
-	lastTestSvrErr  error
+	list               []*testServerLease
+	clientIDOptions    dhcpv4.OptionCodeList
+	lastTestSvrErr     error
+	lastTestSvrErrLock *sync.RWMutex
 }
 
 func newtestServerLeaseList(l dhcpv4.OptionCodeList) *testServerLeaseList {
 	r := &testServerLeaseList{}
 	r.clientIDOptions = l
+	r.lastTestSvrErrLock = &sync.RWMutex{}
 	return r
 }
 
@@ -184,6 +187,8 @@ func (sll *testServerLeaseList) handle(conn net.PacketConn, peer net.Addr, m *dh
 	if m.OpCode != dhcpv4.OpcodeBootRequest {
 		log.Fatal("Not a BootRequest!")
 	}
+	sll.lastTestSvrErrLock.Lock()
+	defer sll.lastTestSvrErrLock.Unlock()
 	switch m.MessageType() {
 	case dhcpv4.MessageTypeDiscover, dhcpv4.MessageTypeRequest:
 		sll.lastTestSvrErr = sll.testLeaseDORAHandle(conn, peer, m)
@@ -243,13 +248,18 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		}
 
 		lease, err := clnt.Request(context.Background(), modList...)
+		sll.lastTestSvrErrLock.RLock()
 		keepgoing := chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
+		sll.lastTestSvrErrLock.RUnlock()
 		if keepgoing {
 			err = clnt.Release(lease)
 			//this sleep is to make sure release is handled by server
 			time.Sleep(time.Second)
+			sll.lastTestSvrErrLock.RLock()
 			chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
+			sll.lastTestSvrErrLock.RUnlock()
 		}
+
 	}
 
 }
