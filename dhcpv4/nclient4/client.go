@@ -162,11 +162,6 @@ type Client struct {
 	// TransactionID. receiveLoop uses this map to determine which channel
 	// to send a new DHCP message to.
 	pending map[dhcpv4.TransactionID]*pendingCh
-
-	//clientIdOptions is a list of DHCPv4 option code that DHCP server used to
-	//identify client other than the HWAddress,
-	//like client-id, option82/remote-id..etc
-	clientIDOptions dhcpv4.OptionCodeList
 }
 
 // New returns a client usable with an unconfigured interface.
@@ -190,9 +185,8 @@ func new(iface string, conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts .
 		conn:        conn,
 		logger:      EmptyLogger{},
 
-		done:            make(chan struct{}),
-		pending:         make(map[dhcpv4.TransactionID]*pendingCh),
-		clientIDOptions: dhcpv4.OptionCodeList{},
+		done:    make(chan struct{}),
+		pending: make(map[dhcpv4.TransactionID]*pendingCh),
 	}
 
 	for _, opt := range opts {
@@ -462,11 +456,6 @@ func (c *Client) Request(ctx context.Context, modifiers ...dhcpv4.Modifier) (lea
 	lease.ACK = ack
 	lease.Offer = offer
 	lease.CreationTime = time.Now()
-	lease.IDOptions = dhcpv4.Options{}
-	for _, optioncode := range c.clientIDOptions {
-		v := request.Options.Get(optioncode)
-		lease.IDOptions.Update(dhcpv4.OptGeneric(optioncode, v))
-	}
 	return
 }
 

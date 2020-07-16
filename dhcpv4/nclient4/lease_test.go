@@ -3,7 +3,6 @@
 package nclient4
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
@@ -18,14 +17,10 @@ import (
 )
 
 type testLeaseKey struct {
-	mac       net.HardwareAddr
-	idOptions dhcpv4.Options
+	mac net.HardwareAddr
 }
 
 func (lk testLeaseKey) compare(b testLeaseKey) bool {
-	if !bytes.Equal(lk.idOptions.ToBytes(), b.idOptions.ToBytes()) {
-		return false
-	}
 	for i := 0; i < 6; i++ {
 		if lk.mac[i] != b.mac[i] {
 			return false
@@ -43,14 +38,12 @@ type testServerLease struct {
 
 type testServerLeaseList struct {
 	list               []*testServerLease
-	clientIDOptions    dhcpv4.OptionCodeList
 	lastTestSvrErr     error
 	lastTestSvrErrLock *sync.RWMutex
 }
 
 func newtestServerLeaseList(l dhcpv4.OptionCodeList) *testServerLeaseList {
 	r := &testServerLeaseList{}
-	r.clientIDOptions = l
 	r.lastTestSvrErrLock = &sync.RWMutex{}
 	return r
 }
@@ -67,11 +60,6 @@ func (sll testServerLeaseList) get(k *testLeaseKey) *testServerLease {
 func (sll *testServerLeaseList) getKey(m *dhcpv4.DHCPv4) *testLeaseKey {
 	key := &testLeaseKey{}
 	key.mac = m.ClientHWAddr
-	key.idOptions = make(dhcpv4.Options)
-	for _, optioncode := range sll.clientIDOptions {
-		v := m.Options.Get(optioncode)
-		key.idOptions.Update(dhcpv4.OptGeneric(optioncode, v))
-	}
 	return key
 
 }
@@ -118,9 +106,6 @@ func (sll *testServerLeaseList) getCheckList() (mustHaveOpts, mayHaveOpts map[ui
 	mustHaveOpts[dhcpv4.OptionDHCPMessageType.Code()] = false
 	mustHaveOpts[dhcpv4.OptionServerIdentifier.Code()] = false
 
-	for _, o := range sll.clientIDOptions {
-		mustHaveOpts[o.Code()] = false
-	}
 	mayHaveOpts[dhcpv4.OptionClassIdentifier.Code()] = false
 	mayHaveOpts[dhcpv4.OptionMessage.Code()] = false
 	return
@@ -231,10 +216,10 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		modList := []dhcpv4.Modifier{}
-		for op, val := range l.key.idOptions {
-			modList = append(modList, dhcpv4.WithOption(dhcpv4.OptGeneric(dhcpv4.GenericOptionCode(op), val)))
-		}
+		// modList := []dhcpv4.Modifier{}
+		// for op, val := range l.key.idOptions {
+		// 	modList = append(modList, dhcpv4.WithOption(dhcpv4.OptGeneric(dhcpv4.GenericOptionCode(op), val)))
+		// }
 		chkerr := func(err, lastsvrerr error, shouldfail bool, t *testing.T) bool {
 			if err != nil || lastsvrerr != nil {
 				if !shouldfail {
@@ -247,7 +232,7 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 			return true
 		}
 
-		lease, err := clnt.Request(context.Background(), modList...)
+		lease, err := clnt.Request(context.Background())
 		sll.lastTestSvrErrLock.RLock()
 		keepgoing := chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
 		sll.lastTestSvrErrLock.RUnlock()
@@ -267,11 +252,6 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 func testCreateClientWithServerLease(conn net.PacketConn, sl *testServerLease) (*Client, error) {
 	clntModList := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
 	clntModList = append(clntModList, WithHWAddr(sl.key.mac))
-	var idoptlist dhcpv4.OptionCodeList
-	for op := range sl.key.idOptions {
-		idoptlist.Add(dhcpv4.GenericOptionCode(op))
-	}
-	clntModList = append(clntModList, WithClientIDOptions(idoptlist))
 	clnt, err := NewWithConn(conn, sl.key.mac, clntModList...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create dhcpv4 client,%v", err)
@@ -289,9 +269,6 @@ func TestLease(t *testing.T) {
 			assignedAddr: net.ParseIP("192.168.1.1"),
 			key: &testLeaseKey{
 				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 1, 1},
-				idOptions: dhcpv4.Options{
-					uint8(dhcpv4.OptionClientIdentifier): []byte("client-1"),
-				},
 			},
 		},
 
@@ -299,19 +276,7 @@ func TestLease(t *testing.T) {
 			assignedAddr: net.ParseIP("192.168.1.2"),
 			key: &testLeaseKey{
 				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 1, 2},
-				idOptions: dhcpv4.Options{
-					uint8(dhcpv4.OptionClientIdentifier): []byte("client-2"),
-				},
 			},
-		},
-		//negative case
-		&testServerLease{
-			assignedAddr: net.ParseIP("192.168.2.2"),
-			key: &testLeaseKey{
-				mac:       net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 1, 3},
-				idOptions: dhcpv4.Options{},
-			},
-			ShouldFail: true,
 		},
 	}
 	sll.runTest(t)
@@ -322,28 +287,15 @@ func TestLease(t *testing.T) {
 		&testServerLease{
 			assignedAddr: net.ParseIP("192.168.2.1"),
 			key: &testLeaseKey{
-				mac:       net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 1},
-				idOptions: dhcpv4.Options{},
+				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 1},
 			},
 		},
 
 		&testServerLease{
 			assignedAddr: net.ParseIP("192.168.2.2"),
 			key: &testLeaseKey{
-				mac:       net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 2},
-				idOptions: dhcpv4.Options{},
+				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 2},
 			},
-		},
-		//negative case
-		&testServerLease{
-			assignedAddr: net.ParseIP("192.168.2.2"),
-			key: &testLeaseKey{
-				mac: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 2, 3},
-				idOptions: dhcpv4.Options{
-					uint8(dhcpv4.OptionClientIdentifier): []byte("client-fake"),
-				},
-			},
-			ShouldFail: true,
 		},
 	}
 	sll.runTest(t)
