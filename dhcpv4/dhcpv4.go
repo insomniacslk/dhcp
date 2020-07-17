@@ -790,3 +790,20 @@ func (d *DHCPv4) VIVC() VIVCIdentifiers {
 	}
 	return ids
 }
+
+// NewReleaseFromACK creates a DHCPv4 Release message from ACK.
+// default Release message without any Modifer is created as following:
+//  - option Message Type is Release
+//  - ClientIP is set to lease.ACK.YourIPAddr
+//  - ClientHWAddr is set to lease.ACK.ClientHWAddr
+//  - Unicast
+//  - option Server Identifier is set to ServerIdentifier of lease.ACK
+func NewReleaseFromACK(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
+	return New(PrependModifiers(modifiers,
+		WithMessageType(MessageTypeRelease),
+		WithClientIP(ack.YourIPAddr),
+		WithHwAddr(ack.ClientHWAddr),
+		WithBroadcast(false),
+		WithOption(OptServerIdentifier(ack.ServerIdentifier())),
+	)...)
+}

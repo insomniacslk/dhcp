@@ -18,23 +18,6 @@ type Lease struct {
 	CreationTime time.Time
 }
 
-// NewReleaseFromLease creates a DHCPv4 Release message from the lease.
-// default Release message without any Modifer is created as following:
-//  - option Message Type is Release
-//  - ClientIP is set to lease.ACK.YourIPAddr
-//  - ClientHWAddr is set to lease.ACK.ClientHWAddr
-//  - Unicast
-//  - option Server Identifier is set to ServerIdentifier of lease.ACK
-func NewReleaseFromLease(lease *Lease, modifiers ...dhcpv4.Modifier) (*dhcpv4.DHCPv4, error) {
-	return dhcpv4.New(dhcpv4.PrependModifiers(modifiers,
-		dhcpv4.WithMessageType(dhcpv4.MessageTypeRelease),
-		dhcpv4.WithClientIP(lease.ACK.YourIPAddr),
-		dhcpv4.WithHwAddr(lease.ACK.ClientHWAddr),
-		dhcpv4.WithBroadcast(false),
-		dhcpv4.WithOption(dhcpv4.OptServerIdentifier(lease.ACK.ServerIdentifier())),
-	)...)
-}
-
 // Release send DHCPv4 release messsage to server, based on specified lease.
 // release is sent as unicast per RFC2131, section 4.4.4.
 // Note: some DHCP server requries of using assigned IP address as source IP,
@@ -43,7 +26,7 @@ func (c *Client) Release(lease *Lease, modifiers ...dhcpv4.Modifier) error {
 	if lease == nil {
 		return fmt.Errorf("lease is nil")
 	}
-	req, err := NewReleaseFromLease(lease, modifiers...)
+	req, err := dhcpv4.NewReleaseFromACK(lease.ACK, modifiers...)
 	if err != nil {
 		return fmt.Errorf("fail to create release request,%w", err)
 	}
