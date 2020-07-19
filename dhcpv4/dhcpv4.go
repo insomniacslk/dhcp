@@ -284,7 +284,7 @@ func NewReleaseFromACK(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 		WithClientIP(ack.YourIPAddr),
 		WithHwAddr(ack.ClientHWAddr),
 		WithBroadcast(false),
-		WithOption(OptServerIdentifier(ack.ServerIdentifier())),
+		WithOptionCopied(ack, OptionServerIdentifier),
 	)...)
 }
 
