@@ -45,6 +45,8 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		opt, err = parseOptServerID(optData)
 	case OptionIANA:
 		opt, err = ParseOptIANA(optData)
+	case OptionIATA:
+		opt, err = ParseOptIATA(optData)
 	case OptionIAAddr:
 		opt, err = ParseOptIAAddress(optData)
 	case OptionORO:
