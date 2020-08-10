@@ -15,7 +15,7 @@ var relayHumanizer = OptionHumanizer{
 		return OptionGeneric{data}
 	},
 	CodeHumanizer: func(c uint8) OptionCode {
-		return GenericOptionCode(c)
+		return raiSubOptionCode(c)
 	},
 }
 

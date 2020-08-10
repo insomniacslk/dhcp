@@ -255,6 +255,10 @@ type OptionHumanizer struct {
 func (oh OptionHumanizer) Stringify(code uint8, data []byte) string {
 	c := oh.CodeHumanizer(code)
 	val := oh.ValueHumanizer(c, data)
+	switch optionCode(code) {
+	case OptionRelayAgentInformation:
+		return fmt.Sprintf("%s:\n%s", c, val)
+	}
 	return fmt.Sprintf("%s: %s", c, val)
 }
 
