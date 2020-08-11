@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"net"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/insomniacslk/dhcp/rfc1035label"
@@ -174,4 +175,10 @@ func WithIAPD(iaid [4]byte, prefixes ...*OptIAPrefix) Modifier {
 // option with provided HWType and HWAddress on a DHCPv6 packet
 func WithClientLinkLayerAddress(ht iana.HWType, lla net.HardwareAddr) Modifier {
 	return WithOption(OptClientLinkLayerAddress(ht, lla))
+}
+
+// WithInformationRefreshTime adds an optInformationRefreshTime to the DHCPv6 packet
+// using the provided duration
+func WithInformationRefreshTime(irt time.Duration) Modifier {
+	return WithOption(OptInformationRefreshTime(irt))
 }
