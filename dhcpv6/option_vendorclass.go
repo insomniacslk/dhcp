@@ -47,6 +47,10 @@ func ParseOptVendorClass(data []byte) (*OptVendorClass, error) {
 	opt.EnterpriseNumber = buf.Read32()
 	for buf.Has(2) {
 		len := buf.Read16()
+		// Assume little-endian if big-endian would have resulted in an error
+		if len > 0 && !buf.Has(int(len)) {
+			len = len>>8 | (len & 0xff << 8)
+		}
 		opt.Data = append(opt.Data, buf.CopyN(int(len)))
 	}
 	if len(opt.Data) < 1 {

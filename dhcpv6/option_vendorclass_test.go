@@ -68,6 +68,15 @@ func TestOptVendorClassParseOptVendorClassMalformed(t *testing.T) {
 	require.Error(t, err, "ParseOptVendorClass() should error if given a truncated length")
 }
 
+func TestOptVendorClassSwappedByteOrder(t *testing.T) {
+	buf := []byte{
+		0xaa, 0xbb, 0xcc, 0xdd, // EnterpriseNumber
+		12, 0, 'd', 's', 'l', 'f', 'o', 'r', 'u', 'm', '.', 'o', 'r', 'g',
+	}
+	opt, _ := ParseOptVendorClass(buf)
+	require.Equal(t, []byte("dslforum.org"), opt.Data[0])
+}
+
 func TestOptVendorClassString(t *testing.T) {
 	data := []byte{
 		0xaa, 0xbb, 0xcc, 0xdd, // EnterpriseNumber
