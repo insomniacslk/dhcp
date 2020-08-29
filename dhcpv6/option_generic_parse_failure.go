@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// OptionGenericParseFailure represents an option that failed to be parsed correctly
 type OptionGenericParseFailure struct {
 	OptionCode OptionCode
 	OptionData []byte
@@ -11,10 +12,12 @@ type OptionGenericParseFailure struct {
 	Error      error
 }
 
+// Code returns the option's code
 func (og *OptionGenericParseFailure) Code() OptionCode {
 	return og.OptionCode
 }
 
+// ToBytes serializes the option and returns it as a sequence of bytes
 func (og *OptionGenericParseFailure) ToBytes() []byte {
 	return og.OptionData
 }
