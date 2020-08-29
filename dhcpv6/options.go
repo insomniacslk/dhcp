@@ -107,9 +107,9 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
 	}
 	if err != nil {
-		return nil, err
+		opt = &OptionGenericParseFailure{OptionCode: code, OptionData: optData, Option: opt, Error: err}
 	}
-	return opt, nil
+	return opt, err
 }
 
 // Options is a collection of options.
@@ -205,10 +205,7 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		// pertinent data.
 		optData := buf.Consume(length)
 
-		opt, err := parser(code, optData)
-		if err != nil {
-			return err
-		}
+		opt, _ := parser(code, optData)
 		*o = append(*o, opt)
 	}
 	return buf.FinError()
