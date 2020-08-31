@@ -248,6 +248,21 @@ func (mo MessageOptions) ElapsedTime() time.Duration {
 	return 0
 }
 
+// InformationRefreshTime returns the Information Refresh Time option
+// as defined by RFC 815 Section 21.23.
+//
+// InformationRefreshTime returns the provided default if no option is present.
+func (mo MessageOptions) InformationRefreshTime(def time.Duration) time.Duration {
+	opt := mo.Options.GetOne(OptionInformationRefreshTime)
+	if opt == nil {
+		return def
+	}
+	if t, ok := opt.(*optInformationRefreshTime); ok {
+		return t.InformationRefreshtime
+	}
+	return def
+}
+
 // FQDN returns the FQDN option as defined by RFC 4704.
 func (mo MessageOptions) FQDN() *OptFQDN {
 	opt := mo.Options.GetOne(OptionFQDN)
