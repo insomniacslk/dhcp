@@ -18,7 +18,7 @@ func (o OptionGeneric) ToBytes() []byte {
 
 // String returns a human-readable representation of a generic option.
 func (o OptionGeneric) String() string {
-	return fmt.Sprintf("%v(%v)", string(o.Data), o.Data)
+	return fmt.Sprintf("%v (%v)", string(o.Data), o.Data)
 }
 
 // OptGeneric returns a generic option.

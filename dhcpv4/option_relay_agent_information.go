@@ -21,7 +21,7 @@ var relayHumanizer = OptionHumanizer{
 
 // String prints the contained options using Relay Agent-specific option code parsing.
 func (r RelayOptions) String() string {
-	return r.Options.ToString(relayHumanizer)
+	return "\n" + r.Options.ToString(relayHumanizer)
 }
 
 // FromBytes parses relay agent options from data.

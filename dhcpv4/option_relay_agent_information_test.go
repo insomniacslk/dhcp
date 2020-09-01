@@ -41,7 +41,7 @@ func TestOptRelayAgentInfo(t *testing.T) {
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
 	}
-	wantString := "Relay Agent Information:\n    unknown (1): [108 105 110 117 120]\n    unknown (2): [98 111 111 116]\n"
+	wantString := "Relay Agent Information:\n\n    Agent Circuit ID Sub-option: linux ([108 105 110 117 120])\n    Agent Remote ID Sub-option: boot ([98 111 111 116])\n"
 	require.Equal(t, wantBytes, opt.Value.ToBytes())
 	require.Equal(t, OptionRelayAgentInformation, opt.Code)
 	require.Equal(t, wantString, opt.String())
