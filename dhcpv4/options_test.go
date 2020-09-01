@@ -19,7 +19,7 @@ func TestParseOption(t *testing.T) {
 		{
 			code:  OptionNameServer,
 			value: []byte{192, 168, 1, 254},
-			want:  "[192 168 1 254]",
+			want:  "\xc0\xa8\x01\xfe ([192 168 1 254])",
 		},
 		{
 			code:  OptionSubnetMask,
@@ -113,8 +113,8 @@ func TestParseOption(t *testing.T) {
 		},
 		{
 			code:  OptionRelayAgentInformation,
-			value: []byte{1, 4, 129, 168, 0, 1},
-			want:  "    unknown (1): [129 168 0 1]\n",
+			value: []byte{1, 12, 99, 105, 114, 99, 117, 105, 116, 45, 105, 100, 45, 49},
+			want:  "\n    Agent Circuit ID Sub-option: circuit-id-1 ([99 105 114 99 117 105 116 45 105 100 45 49])\n",
 		},
 		{
 			code:  OptionClientSystemArchitectureType,
@@ -152,7 +152,7 @@ func TestOptionStringUnknown(t *testing.T) {
 		Code:  GenericOptionCode(102), // Returend option code.
 		Value: &OptionGeneric{[]byte{byte(MessageTypeDiscover)}},
 	}
-	require.Equal(t, "unknown (102): [1]", o.String())
+	require.Equal(t, "unknown (102): \x01 ([1])", o.String())
 }
 
 func TestOptionsMarshal(t *testing.T) {
