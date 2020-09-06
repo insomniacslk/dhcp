@@ -19,7 +19,7 @@ func TestParseOption(t *testing.T) {
 		{
 			code:  OptionNameServer,
 			value: []byte{192, 168, 1, 254},
-			want:  "\xc0\xa8\x01\xfe ([192 168 1 254])",
+			want:  "[192 168 1 254]",
 		},
 		{
 			code:  OptionSubnetMask,
@@ -152,7 +152,7 @@ func TestOptionStringUnknown(t *testing.T) {
 		Code:  GenericOptionCode(102), // Returend option code.
 		Value: &OptionGeneric{[]byte{byte(MessageTypeDiscover)}},
 	}
-	require.Equal(t, "unknown (102): \x01 ([1])", o.String())
+	require.Equal(t, "unknown (102): [1]", o.String())
 }
 
 func TestOptionsMarshal(t *testing.T) {
