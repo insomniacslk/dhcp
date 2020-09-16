@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package nclient6 is a minimum-functionality client for DHCPv6.
 package nclient6
 
 import (
