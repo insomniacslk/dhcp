@@ -95,17 +95,6 @@ const (
 
 	// ipv4AddressSize is the size, in bytes, of an IPv4 address.
 	ipv4AddressSize = 4
-
-	// ipv4Version is the version of the ipv4 protocol.
-	ipv4Version = 4
-)
-
-var (
-	// ipv4Broadcast is the broadcast address of the IPv4 protocol.
-	ipv4Broadcast = net.IP{0xff, 0xff, 0xff, 0xff}
-
-	// ipv4Any is the non-routable IPv4 "any" meta address.
-	ipv4Any = net.IP{0, 0, 0, 0}
 )
 
 // headerLength returns the value of the "header length" field of the ipv4
@@ -135,11 +124,6 @@ func (b ipv4) transportProtocol() transportProtocolNumber {
 	return transportProtocolNumber(b.protocol())
 }
 
-// payload implements Network.payload.
-func (b ipv4) payload() []byte {
-	return b[b.headerLength():][:b.payloadLength()]
-}
-
 // payloadLength returns the length of the payload portion of the ipv4 packet.
 func (b ipv4) payloadLength() uint16 {
 	return b.totalLength() - uint16(b.headerLength())
@@ -166,18 +150,6 @@ func (b ipv4) setFlagsFragmentOffset(flags uint8, offset uint16) {
 	v := (uint16(flags) << 13) | (offset >> 3)
 	binary.BigEndian.PutUint16(b[flagsFO:], v)
 }
-
-/*
-// setSourceAddress sets the "source address" field of the ipv4 header.
-func (b ipv4) setSourceAddress(addr net.IP) {
-	copy(b[srcAddr:srcAddr+ipv4AddressSize], addr.To4())
-}
-
-// setDestinationAddress sets the "destination address" field of the ipv4
-// header.
-func (b ipv4) setDestinationAddress(addr net.IP) {
-	copy(b[dstAddr:dstAddr+ipv4AddressSize], addr.To4())
-}*/
 
 // calculateChecksum calculates the checksum of the ipv4 header.
 func (b ipv4) calculateChecksum() uint16 {
@@ -247,29 +219,9 @@ func (b udp) length() uint16 {
 	return binary.BigEndian.Uint16(b[udpLength:])
 }
 
-// setSourcePort sets the "source port" field of the udp header.
-func (b udp) setSourcePort(port uint16) {
-	binary.BigEndian.PutUint16(b[udpSrcPort:], port)
-}
-
-// setDestinationPort sets the "destination port" field of the udp header.
-func (b udp) setDestinationPort(port uint16) {
-	binary.BigEndian.PutUint16(b[udpDstPort:], port)
-}
-
 // setChecksum sets the "checksum" field of the udp header.
 func (b udp) setChecksum(checksum uint16) {
 	binary.BigEndian.PutUint16(b[udpchecksum:], checksum)
-}
-
-// payload returns the data contained in the udp datagram.
-func (b udp) payload() []byte {
-	return b[udpMinimumSize:]
-}
-
-// checksum returns the "checksum" field of the udp header.
-func (b udp) checksum() uint16 {
-	return binary.BigEndian.Uint16(b[udpchecksum:])
 }
 
 // calculateChecksum calculates the checksum of the udp packet, given the total
