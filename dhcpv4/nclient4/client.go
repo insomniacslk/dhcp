@@ -414,6 +414,21 @@ func IsMessageType(t dhcpv4.MessageType, tt ...dhcpv4.MessageType) Matcher {
 	}
 }
 
+// RemoteAddr is the default DHCP server address this client sends messages to.
+func (c *Client) RemoteAddr() *net.UDPAddr {
+	// Make a copy so the caller cannot modify the address once the client
+	// is running.
+	cop := *c.serverAddr
+	return &cop
+}
+
+// InterfaceAddr returns the MAC address of the client's interface.
+func (c *Client) InterfaceAddr() net.HardwareAddr {
+	b := make(net.HardwareAddr, len(c.ifaceHWAddr))
+	copy(b, c.ifaceHWAddr)
+	return b
+}
+
 // DiscoverOffer sends a DHCPDiscover message and returns the first valid offer
 // received.
 func (c *Client) DiscoverOffer(ctx context.Context, modifiers ...dhcpv4.Modifier) (offer *dhcpv4.DHCPv4, err error) {

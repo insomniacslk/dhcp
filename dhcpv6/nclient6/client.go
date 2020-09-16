@@ -327,6 +327,21 @@ func IsMessageType(t dhcpv6.MessageType, tt ...dhcpv6.MessageType) Matcher {
 	}
 }
 
+// RemoteAddr is the default DHCP server address this client sends messages to.
+func (c *Client) RemoteAddr() *net.UDPAddr {
+	// Make a copy so the caller cannot modify the address once the client
+	// is running.
+	cop := *c.serverAddr
+	return &cop
+}
+
+// InterfaceAddr returns the MAC address of the client's interface.
+func (c *Client) InterfaceAddr() net.HardwareAddr {
+	b := make(net.HardwareAddr, len(c.ifaceHWAddr))
+	copy(b, c.ifaceHWAddr)
+	return b
+}
+
 // RapidSolicit sends a solicitation message with the RapidCommit option and
 // returns the first valid reply received.
 func (c *Client) RapidSolicit(ctx context.Context, modifiers ...dhcpv6.Modifier) (*dhcpv6.Message, error) {
