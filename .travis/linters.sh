@@ -4,3 +4,5 @@ set -e
 
 GO111MODULE=on go get github.com/golangci/golangci-lint/cmd/golangci-lint
 $GOPATH/bin/golangci-lint run
+
+GO111MODULE=on go mod tidy
