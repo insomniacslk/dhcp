@@ -4,14 +4,6 @@ import (
 	"fmt"
 )
 
-type raiValue struct {
-	val []byte
-}
-
-func (rv raiValue) String() string {
-	return fmt.Sprintf("%s (%v)", string([]byte(rv.val)), rv.val)
-}
-
 // RelayOptions is like Options, but stringifies using the Relay Agent Specific
 // option space.
 type RelayOptions struct {
@@ -20,7 +12,7 @@ type RelayOptions struct {
 
 var relayHumanizer = OptionHumanizer{
 	ValueHumanizer: func(code OptionCode, data []byte) fmt.Stringer {
-		return raiValue{val: data}
+		return raiSubOptionValue{data}
 	},
 	CodeHumanizer: func(c uint8) OptionCode {
 		return raiSubOptionCode(c)
@@ -43,6 +35,14 @@ func (r *RelayOptions) FromBytes(data []byte) error {
 // The relay agent info option is described by RFC 3046.
 func OptRelayAgentInfo(o ...Option) Option {
 	return Option{Code: OptionRelayAgentInformation, Value: RelayOptions{OptionsFromList(o...)}}
+}
+
+type raiSubOptionValue struct {
+	val []byte
+}
+
+func (rv raiSubOptionValue) String() string {
+	return fmt.Sprintf("%s (%v)", string(rv.val), rv.val)
 }
 
 type raiSubOptionCode uint8
