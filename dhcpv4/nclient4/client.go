@@ -352,7 +352,7 @@ func WithLogger(newLogger Logger) ClientOpt {
 func WithUnicast(srcAddr *net.UDPAddr) ClientOpt {
 	return func(c *Client) (err error) {
 		if srcAddr == nil {
-			srcAddr = &net.UDPAddr{Port: ServerPort}
+			srcAddr = &net.UDPAddr{Port: ClientPort}
 		}
 		c.conn, err = net.ListenUDP("udp4", srcAddr)
 		if err != nil {
