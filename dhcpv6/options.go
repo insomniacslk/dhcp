@@ -201,6 +201,11 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		code := OptionCode(buf.Read16())
 		length := int(buf.Read16())
 
+		// Abort trying to parse options with zero length
+		if length <= 0 {
+			return nil
+		}
+
 		// Consume, but do not Copy. Each parser will make a copy of
 		// pertinent data.
 		optData := buf.Consume(length)
