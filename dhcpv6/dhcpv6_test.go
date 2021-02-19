@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"net"
@@ -10,7 +11,6 @@ import (
 	"github.com/xcllnt/dhcp/iana"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/u-root/u-root/pkg/rand"
 )
 
 func randomReadMock(value []byte, n int, err error) func([]byte) (int, error) {

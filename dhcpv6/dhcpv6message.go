@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/xcllnt/dhcp/iana"
 	"github.com/xcllnt/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
 

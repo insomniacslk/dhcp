@@ -17,7 +17,7 @@ package dhcpv4
 
 import (
 	"bytes"
-	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"net"
@@ -26,7 +26,6 @@ import (
 
 	"github.com/xcllnt/dhcp/iana"
 	"github.com/xcllnt/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/rand"
 	"github.com/u-root/u-root/pkg/uio"
 )
 
@@ -45,10 +44,6 @@ const (
 	// Per RFC 951, the minimum length of a packet is 300 bytes.
 	bootpMinLen = 300
 )
-
-// RandomTimeout is the amount of time to wait until random number generation
-// is canceled.
-var RandomTimeout = 2 * time.Minute
 
 // magicCookie is the magic 4-byte value at the beginning of the list of options
 // in a DHCPv4 packet.
@@ -120,9 +115,7 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 // TransactionID
 func GenerateTransactionID() (TransactionID, error) {
 	var xid TransactionID
-	ctx, cancel := context.WithTimeout(context.Background(), RandomTimeout)
-	defer cancel()
-	n, err := rand.ReadContext(ctx, xid[:])
+	n, err := rand.Read(xid[:])
 	if err != nil {
 		return xid, fmt.Errorf("could not get random number: %v", err)
 	}
