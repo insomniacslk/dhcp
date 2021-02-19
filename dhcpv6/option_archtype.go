@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"fmt"
 
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/xcllnt/dhcp/iana"
 )
 
 // OptClientArchType represents an option CLIENT_ARCH_TYPE.

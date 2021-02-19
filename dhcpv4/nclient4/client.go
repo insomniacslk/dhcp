@@ -22,7 +22,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/xcllnt/dhcp/dhcpv4"
 )
 
 const (

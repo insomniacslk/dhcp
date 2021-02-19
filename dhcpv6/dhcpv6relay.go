@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/xcllnt/dhcp/iana"
 	"github.com/u-root/u-root/pkg/uio"
 )
 

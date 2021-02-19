@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"fmt"
 
-	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/xcllnt/dhcp/rfc1035label"
 	"github.com/u-root/u-root/pkg/uio"
 )
 

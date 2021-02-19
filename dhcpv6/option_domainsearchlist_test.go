@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"testing"
 
-	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/xcllnt/dhcp/rfc1035label"
 	"github.com/stretchr/testify/require"
 )
 

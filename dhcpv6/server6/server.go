@@ -26,8 +26,8 @@
 //		"log"
 //		"net"
 //
-//		"github.com/insomniacslk/dhcp/dhcpv6"
-//		"github.com/insomniacslk/dhcp/dhcpv6/server6"
+//		"github.com/xcllnt/dhcp/dhcpv6"
+//		"github.com/xcllnt/dhcp/dhcpv6/server6"
 //	)
 //
 //	func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
@@ -57,7 +57,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/xcllnt/dhcp/dhcpv6"
 	"golang.org/x/net/ipv6"
 )
 

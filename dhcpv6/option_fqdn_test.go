@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/xcllnt/dhcp/rfc1035label"
 	"github.com/stretchr/testify/require"
 )
 

@@ -1,7 +1,7 @@
 package server6
 
 import (
-	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/xcllnt/dhcp/dhcpv6"
 )
 
 // Logger is a handler which will be used to output logging messages
