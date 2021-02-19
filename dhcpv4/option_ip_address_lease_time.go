@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // MaxLeaseTime is the maximum lease time that can be encoded.

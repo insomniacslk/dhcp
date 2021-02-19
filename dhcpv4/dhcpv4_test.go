@@ -9,7 +9,7 @@ import (
 
 	"github.com/xcllnt/dhcp/iana"
 	"github.com/stretchr/testify/require"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 func TestGetExternalIPv4Addrs(t *testing.T) {

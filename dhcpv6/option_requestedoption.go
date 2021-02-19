@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // OptionCodes are a collection of option codes.

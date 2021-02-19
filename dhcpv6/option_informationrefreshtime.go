@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // OptInformationRefreshTime implements OptionInformationRefreshTime option.

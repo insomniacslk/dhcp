@@ -3,7 +3,7 @@ package dhcpv4
 import (
 	"fmt"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // values from http://www.networksorcery.com/enp/protocol/dhcp.htm and

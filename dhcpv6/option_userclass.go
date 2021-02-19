@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // OptUserClass represent a DHCPv6 User Class option

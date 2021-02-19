@@ -5,7 +5,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // IPs are IPv4 addresses from a DHCP packet as used and specified by options

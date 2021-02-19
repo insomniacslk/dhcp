@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/xcllnt/dhcp/dhcpv4"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // BootImageType represents the different BSDP boot image types.

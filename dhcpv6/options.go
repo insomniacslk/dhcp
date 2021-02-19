@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"fmt"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // Option is an interface that all DHCPv6 options adhere to.

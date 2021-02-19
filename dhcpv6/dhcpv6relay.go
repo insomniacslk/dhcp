@@ -6,7 +6,7 @@ import (
 	"net"
 
 	"github.com/xcllnt/dhcp/iana"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 const RelayHeaderSize = 34

@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/xcllnt/dhcp/dhcpv4"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // BootImageList contains a list of boot images presented by a netboot server.

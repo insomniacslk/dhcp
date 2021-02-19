@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/xcllnt/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // OptFQDN implements OptionFQDN option.

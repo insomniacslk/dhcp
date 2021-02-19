@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // PDOptions are options used with the IAPD (prefix delegation) option.

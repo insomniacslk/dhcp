@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"fmt"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // NetworkInterfaceType is the NIC type as defined by RFC 4578 Section 2.2

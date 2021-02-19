@@ -3,7 +3,7 @@ package dhcpv4
 import (
 	"fmt"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // Uint16 implements encoding and decoding functions for a uint16 as used in

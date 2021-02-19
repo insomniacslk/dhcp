@@ -9,7 +9,7 @@ import (
 
 	"github.com/xcllnt/dhcp/iana"
 	"github.com/xcllnt/dhcp/rfc1035label"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 const MessageHeaderSize = 4

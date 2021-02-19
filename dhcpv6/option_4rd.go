@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/xcllnt/dhcp/uio"
 )
 
 // Opt4RD represents a 4RD option. It is only a container for 4RD_*_RULE options
