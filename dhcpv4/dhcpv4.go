@@ -520,20 +520,18 @@ func (d *DHCPv4) ToBytes() []byte {
 	// Write all options.
 	d.Options.Marshal(buf)
 
+	// Finish the options.
+	buf.Write8(OptionEnd.Code())
+
 	// DHCP is based on BOOTP, and BOOTP messages have a minimum length of
 	// 300 bytes per RFC 951. This not stated explicitly, but if you sum up
 	// all the bytes in the message layout, you'll get 300 bytes.
 	//
 	// Some DHCP servers and relay agents care about this BOOTP legacy B.S.
 	// and "conveniently" drop messages that are less than 300 bytes long.
-	//
-	// We subtract one byte for the OptionEnd option.
-	if buf.Len()+1 < bootpMinLen {
-		buf.WriteBytes(bytes.Repeat([]byte{OptionPad.Code()}, bootpMinLen-1-buf.Len()))
+	if buf.Len() < bootpMinLen {
+		buf.WriteBytes(bytes.Repeat([]byte{OptionPad.Code()}, bootpMinLen-buf.Len()))
 	}
-
-	// Finish the packet.
-	buf.Write8(OptionEnd.Code())
 
 	return buf.Data()
 }
