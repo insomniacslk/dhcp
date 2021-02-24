@@ -87,13 +87,13 @@ func TestOptDHCPv4MsgToBytes(t *testing.T) {
 	// Magic Cookie
 	expected = append(expected, magicCookie[:]...)
 
-	// Minimum message length padding.
-	//
-	// 236 + 4 byte cookie + 59 bytes padding + 1 byte end.
-	expected = append(expected, bytes.Repeat([]byte{0}, 59)...)
-
 	// End
 	expected = append(expected, 0xff)
+
+	// Minimum message length padding.
+	//
+	// 236 + 4 byte cookie + 1 byte end + 59 bytes padding.
+	expected = append(expected, bytes.Repeat([]byte{0}, 59)...)
 
 	d, err := dhcpv4.New()
 	require.NoError(t, err)
