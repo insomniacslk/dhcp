@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
@@ -133,4 +134,25 @@ func TestWithClientLinkLayerAddress(t *testing.T) {
 	llt, lla := d.Options.ClientLinkLayerAddress()
 	require.Equal(t, iana.HWTypeEthernet, llt)
 	require.Equal(t, mac, lla)
+}
+
+func TestWithIATA(t *testing.T) {
+	var d Message
+	WithIATA([4]byte{1, 2, 3, 4}, OptIAAddress{
+		IPv6Addr:          net.ParseIP("2001:DB8:7689::1234"),
+		PreferredLifetime: 3600,
+		ValidLifetime:     5200,
+	})(&d)
+	require.Equal(t, 1, len(d.Options.Options))
+
+	iata := d.Options.OneIATA()
+	iataOpts := iata.Options.Get(OptionIAAddr)
+	iaAddr := iataOpts[0].(*OptIAAddress)
+
+	require.Equal(t, OptionIATA, iata.Code())
+	require.Equal(t, [4]byte{1, 2, 3, 4}, iata.IaId)
+	require.Equal(t, net.ParseIP("2001:DB8:7689::1234"),
+		iaAddr.IPv6Addr)
+	require.Equal(t, time.Duration(3600), iaAddr.PreferredLifetime)
+	require.Equal(t, time.Duration(5200), iaAddr.ValidLifetime)
 }
