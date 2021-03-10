@@ -34,6 +34,9 @@ func TestParseOptHostName(t *testing.T) {
 
 	m, _ = New()
 	require.Equal(t, "", m.HostName())
+
+	m, _ = New(WithGeneric(OptionHostName, []byte{'t', 'e', 's', 't', 0}))
+	require.Equal(t, "test", m.HostName())
 }
 
 func TestOptRootPath(t *testing.T) {
