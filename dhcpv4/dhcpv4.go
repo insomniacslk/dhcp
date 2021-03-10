@@ -604,7 +604,8 @@ func (d *DHCPv4) DomainName() string {
 //
 // The Host Name option is described by RFC 2132, Section 3.14.
 func (d *DHCPv4) HostName() string {
-	return GetString(OptionHostName, d.Options)
+	name := GetString(OptionHostName, d.Options)
+	return strings.TrimRight(name, "\x00")
 }
 
 // RootPath parses the DHCPv4 Root Path option if present.
