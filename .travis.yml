@@ -11,6 +11,10 @@ env:
   - TEST_SUITE=unit
   - TEST_SUITE=linters
 
+os:
+  - linux
+  - osx
+
 before_install:
   - go get -t -v ./...
 
