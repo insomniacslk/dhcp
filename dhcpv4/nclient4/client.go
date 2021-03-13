@@ -414,6 +414,25 @@ func IsMessageType(t dhcpv4.MessageType, tt ...dhcpv4.MessageType) Matcher {
 	}
 }
 
+// IsCorrectServer returns a matcher that checks for the correct ServerAddress.
+func IsCorrectServer(s net.IP) Matcher {
+	return func(p *dhcpv4.DHCPv4) bool {
+		return p.ServerIdentifier().Equal(s)
+	}
+}
+
+// IsAll returns a matcher that checks for all given matchers to be true.
+func IsAll(ms ...Matcher) Matcher {
+	return func(p *dhcpv4.DHCPv4) bool {
+		for _, m := range matchers {
+			if !m(p) {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 // RemoteAddr is the default DHCP server address this client sends messages to.
 func (c *Client) RemoteAddr() *net.UDPAddr {
 	// Make a copy so the caller cannot modify the address once the client
@@ -482,7 +501,13 @@ func (c *Client) RequestFromOffer(ctx context.Context, offer *dhcpv4.DHCPv4, mod
 		return nil, fmt.Errorf("unable to create a request: %w", err)
 	}
 
-	response, err := c.SendAndRead(ctx, c.serverAddr, request, IsMessageType(dhcpv4.MessageTypeAck, dhcpv4.MessageTypeNak))
+	// Servers are supposed to only respond to Requests containing their server identifier,
+	// but sometimes non-compliant servers respond anyway.
+	// Clients are not required to validate this field, but servers are required to
+	// include the server identifier in their Offer per RFC 2131 Section 4.3.1 Table 3.
+	response, err := c.SendAndRead(ctx, c.serverAddr, request, IsAll(
+		IsCorrectServer(offer.ServerIdentifier()),
+		IsMessageType(dhcpv4.MessageTypeAck, dhcpv4.MessageTypeNak)))
 	if err != nil {
 		return nil, fmt.Errorf("got an error while processing the request: %w", err)
 	}
