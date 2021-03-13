@@ -20,12 +20,12 @@ func TestParseOptFQDN(t *testing.T) {
 	require.Equal(t, OptionFQDN, opt.Code())
 	require.Equal(t, uint8(0), opt.Flags)
 	require.Equal(t, "cnos.localhost", opt.DomainName.Labels[0])
-	require.Equal(t, "OptFQDN{flags=0, domainname=[cnos.localhost]}", opt.String())
+	require.Equal(t, "FQDN: {Flags=0, DomainName=[cnos.localhost]}", opt.String())
 }
 
 func TestOptFQDNToBytes(t *testing.T) {
 	opt := OptFQDN{
-		Flags:      0,
+		Flags: 0,
 		DomainName: &rfc1035label.Labels{
 			Labels: []string{"cnos.localhost"},
 		},

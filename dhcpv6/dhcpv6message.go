@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/insomniacslk/dhcp/iana"
@@ -517,28 +518,33 @@ func (m *Message) IsOptionRequested(requested OptionCode) bool {
 
 // String returns a short human-readable string for this message.
 func (m *Message) String() string {
-	return fmt.Sprintf("Message(messageType=%s transactionID=%s, %d options)",
+	return fmt.Sprintf("Message(MessageType=%s TransactionID=%s, %d options)",
 		m.MessageType, m.TransactionID, len(m.Options.Options))
 }
 
 // Summary prints all options associated with this message.
 func (m *Message) Summary() string {
-	ret := fmt.Sprintf(
-		"Message\n"+
-			"  messageType=%s\n"+
-			"  transactionid=%s\n",
-		m.MessageType,
-		m.TransactionID,
-	)
-	ret += "  options=["
-	if len(m.Options.Options) > 0 {
-		ret += "\n"
-	}
-	for _, opt := range m.Options.Options {
-		ret += fmt.Sprintf("    %v\n", opt.String())
-	}
-	ret += "  ]\n"
-	return ret
+	return m.LongString(0)
+}
+
+// LongString prints all options associated with this message.
+func (m *Message) LongString(spaceIndent int) string {
+	indent := strings.Repeat(" ", spaceIndent)
+
+	var s strings.Builder
+	s.WriteString("Message{\n")
+	s.WriteString(indent)
+	s.WriteString(fmt.Sprintf("  MessageType=%s\n", m.MessageType))
+	s.WriteString(indent)
+	s.WriteString(fmt.Sprintf("  TransactionID=%s\n", m.TransactionID))
+	s.WriteString(indent)
+	s.WriteString("  Options: ")
+	s.WriteString(m.Options.Options.LongString(spaceIndent + 2))
+	s.WriteString("\n")
+	s.WriteString(indent)
+	s.WriteString("}")
+
+	return s.String()
 }
 
 // ToBytes returns the serialized version of this message as defined by RFC

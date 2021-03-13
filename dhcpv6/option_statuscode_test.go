@@ -47,7 +47,7 @@ func TestOptStatusCodeString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"Code: UseMulticast (5); Message: use multicast",
+		"Code=UseMulticast (5); Message=use multicast",
 		"String() should contain the code and message",
 	)
 }

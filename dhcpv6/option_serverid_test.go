@@ -60,7 +60,7 @@ func TestOptionServerId(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"ServerID: DUID{type=DUID-LL hwtype=Ethernet hwaddr=de:ad:00:00:be:ef}",
+		"Server ID: DUID{Type=DUID-LL HWType=Ethernet HWAddr=de:ad:00:00:be:ef}",
 		"String() should contain the correct sid output",
 	)
 }

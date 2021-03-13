@@ -169,7 +169,7 @@ func TestRelayMsgString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"RelayMsg: Message",
+		"Relay Message: Message",
 		"String() should contain the relaymsg contents",
 	)
 }

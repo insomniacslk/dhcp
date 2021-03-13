@@ -59,8 +59,13 @@ func (op *OptIAAddress) ToBytes() []byte {
 }
 
 func (op *OptIAAddress) String() string {
-	return fmt.Sprintf("IAAddress: IP=%v PreferredLifetime=%v ValidLifetime=%v Options=%v",
+	return fmt.Sprintf("IAAddress: {IP=%v PreferredLifetime=%v ValidLifetime=%v Options=%v}",
 		op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options)
+}
+
+func (op *OptIAAddress) LongString(spaceIndent int) string {
+	return fmt.Sprintf("IAAddress: {IP=%v PreferredLifetime=%v ValidLifetime=%v Options=%s}",
+		op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options.LongString(spaceIndent))
 }
 
 // ParseOptIAAddress builds an OptIAAddress structure from a sequence

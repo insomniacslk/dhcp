@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/u-root/u-root/pkg/uio"
 )
@@ -27,7 +28,10 @@ func (og *OptionGeneric) ToBytes() []byte {
 }
 
 func (og *OptionGeneric) String() string {
-	return fmt.Sprintf("%s -> %v", og.OptionCode, og.OptionData)
+	if len(og.OptionData) == 0 {
+		return og.OptionCode.String()
+	}
+	return fmt.Sprintf("%s: %v", og.OptionCode, og.OptionData)
 }
 
 // ParseOption parses data according to the given code.
@@ -150,6 +154,34 @@ func (o *Options) Del(code OptionCode) {
 		}
 	}
 	*o = newOpts
+}
+
+type longStringer interface {
+	LongString(spaceIndent int) string
+}
+
+// LongString prints options with indentation of at least spaceIndent spaces.
+func (o Options) LongString(spaceIndent int) string {
+	indent := strings.Repeat(" ", spaceIndent)
+	var s strings.Builder
+	if len(o) == 0 {
+		s.WriteString("[]")
+	} else {
+		s.WriteString("[\n")
+		for _, opt := range o {
+			s.WriteString(indent)
+			s.WriteString("  ")
+			if ls, ok := opt.(longStringer); ok {
+				s.WriteString(ls.LongString(spaceIndent + 2))
+			} else {
+				s.WriteString(opt.String())
+			}
+			s.WriteString("\n")
+		}
+		s.WriteString(indent)
+		s.WriteString("]")
+	}
+	return s.String()
 }
 
 // Update replaces the first option of the same type as the specified one.

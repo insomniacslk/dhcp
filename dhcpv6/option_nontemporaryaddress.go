@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"fmt"
+	//"strings"
 	"time"
 
 	"github.com/u-root/u-root/pkg/uio"
@@ -93,8 +94,13 @@ func (op *OptIANA) ToBytes() []byte {
 }
 
 func (op *OptIANA) String() string {
-	return fmt.Sprintf("IANA: {IAID=%v, t1=%v, t2=%v, options=%v}",
+	return fmt.Sprintf("IANA: {IAID=%#x T1=%s T2=%s Options=%s}",
 		op.IaId, op.T1, op.T2, op.Options)
+}
+
+func (op *OptIANA) LongString(indentSpace int) string {
+	return fmt.Sprintf("IANA: {IAID=%#x T1=%s T2=%s Options=%s}",
+		op.IaId, op.T1, op.T2, op.Options.LongString(indentSpace))
 }
 
 // ParseOptIANA builds an OptIANA structure from a sequence of bytes.  The
