@@ -85,24 +85,35 @@ func TestRelayMessageToBytes(t *testing.T) {
 }
 
 func TestNewRelayRepFromRelayForw(t *testing.T) {
+	orig := net.ParseIP("fe80::1")
+
 	// create a new relay forward
-	rf := RelayMessage{}
-	rf.MessageType = MessageTypeRelayForward
-	rf.PeerAddr = net.IPv6linklocalallrouters
-	rf.LinkAddr = net.IPv6interfacelocalallnodes
-	rf.AddOption(OptInterfaceID(nil))
-	rf.AddOption(&OptRemoteID{})
+	rf := &RelayMessage{
+		MessageType: MessageTypeRelayForward,
+		PeerAddr:    orig,
+		LinkAddr:    orig,
+	}
+	rf.Options.Add(OptInterfaceID(nil))
+	rf.Options.Add(&OptRemoteID{})
 
 	// create the inner message
-	s, err := NewMessage()
+	s, err := NewMessage(
+		WithOption(OptClientID(Duid{})),
+	)
 	require.NoError(t, err)
-	s.AddOption(OptClientID(Duid{}))
-	rf.AddOption(OptRelayMessage(s))
+	rf.Options.Add(OptRelayMessage(s))
 
-	a, err := NewAdvertiseFromSolicit(s)
+	d := DHCPv6(rf)
+
+	msg, relayWrapper, err := ServerPeelRelays(d)
+
+	a, err := NewAdvertiseFromSolicit(msg)
 	require.NoError(t, err)
-	rr, err := NewRelayReplFromRelayForw(&rf, a)
+
+	rr := relayWrapper(a)
+	//rr, err := NewRelayReplFromRelayForw(rf, a)
 	require.NoError(t, err)
+
 	relay := rr.(*RelayMessage)
 	require.Equal(t, rr.Type(), MessageTypeRelayReply)
 	require.Equal(t, relay.HopCount, rf.HopCount)
@@ -116,6 +127,6 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 
 	_, err = NewRelayReplFromRelayForw(nil, a)
 	require.Error(t, err)
-	_, err = NewRelayReplFromRelayForw(&rf, nil)
+	_, err = NewRelayReplFromRelayForw(rf, nil)
 	require.Error(t, err)
 }

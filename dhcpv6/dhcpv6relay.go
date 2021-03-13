@@ -176,6 +176,33 @@ func (r *RelayMessage) GetInnerMessage() (*Message, error) {
 	}
 }
 
+type RelayWrapper func(response *Message) DHCPv6
+
+func ServerPeelRelays(d DHCPv6) (*Message, RelayWrapper, error) {
+	if d == nil {
+		return nil, nil, fmt.Errorf("empty message")
+	}
+	if m, ok := d.(*Message); ok {
+		return m, func(response *Message) DHCPv6 {
+			return response
+		}, nil
+	}
+	r, ok := d.(*RelayMessage)
+	if !ok {
+		return nil, nil, fmt.Errorf("outer message is neither Message nor RelayMessage")
+	}
+
+	inner, err := d.GetInnerMessage()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return inner, func(response *Message) DHCPv6 {
+		d, _ := NewRelayReplFromRelayForw(r, response)
+		return d
+	}, nil
+}
+
 // NewRelayReplFromRelayForw creates a MessageTypeRelayReply based on a
 // MessageTypeRelayForward and replaces the inner message with the passed
 // DHCPv6 message. It copies the OptionInterfaceID and OptionRemoteID if the
