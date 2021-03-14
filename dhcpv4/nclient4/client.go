@@ -424,7 +424,7 @@ func IsCorrectServer(s net.IP) Matcher {
 // IsAll returns a matcher that checks for all given matchers to be true.
 func IsAll(ms ...Matcher) Matcher {
 	return func(p *dhcpv4.DHCPv4) bool {
-		for _, m := range matchers {
+		for _, m := range ms {
 			if !m(p) {
 				return false
 			}
