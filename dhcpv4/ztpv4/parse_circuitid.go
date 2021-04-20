@@ -17,8 +17,8 @@ type CircuitID struct {
 }
 
 var circuitRegexs = []*regexp.Regexp{
-	// Juniper QFX et-0/0/0:0.0
-	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+):(?P<subport>[0-9]+).*$"),
+	// Juniper QFX et-0/0/0:0.0 and xe-0/0/0:0.0
+	regexp.MustCompile("^(et|xe)-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+):(?P<subport>[0-9]+).*$"),
 	// Juniper PTX et-0/0/0.0
 	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+)$"),
 	// Juniper EX ge-0/0/0.0
