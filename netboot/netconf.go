@@ -61,11 +61,7 @@ func GetNetConfFromPacketv6(d *dhcpv6.Message) (*NetConf, error) {
 		})
 	}
 	// get DNS configuration
-	dns := d.Options.DNS()
-	if len(dns) == 0 {
-		return nil, errors.New("no option DNS Recursive Name Servers found")
-	}
-	netconf.DNSServers = dns
+	netconf.DNSServers = d.Options.DNS()
 
 	domains := d.Options.DomainSearchList()
 	if domains != nil {
@@ -110,11 +106,7 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 	})
 
 	// get DNS configuration
-	dnsServers := d.DNS()
-	if len(dnsServers) == 0 {
-		return nil, errors.New("no dns servers options in response packet")
-	}
-	netconf.DNSServers = dnsServers
+	netconf.DNSServers = d.DNS()
 
 	// get domain search list
 	dnsSearchList := d.DomainSearch()
