@@ -17,7 +17,8 @@ type VendorData struct {
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
 
-func parseVIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
+func parseVIVC(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	vd := &VendorData{}
 	for _, id := range packet.VIVC() {
 		if id.EntID == uint32(iana.EntIDCiscoSystems) {
 			vd.VendorName = iana.EntIDCiscoSystems.String()
@@ -25,7 +26,7 @@ func parseVIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 			for _, f := range bytes.Split(id.Data, []byte(";")) {
 				p := bytes.Split(f, []byte(":"))
 				if len(p) != 2 {
-					return errVendorOptionMalformed
+					return nil, errVendorOptionMalformed
 				}
 
 				switch string(p[0]) {
@@ -37,13 +38,14 @@ func parseVIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 			}
 		}
 	}
-	return nil
+	return vd, nil
 }
 
-func parseVendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
+func parseVendorClass(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	vd := &VendorData{}
 	vc := packet.ClassIdentifier()
 	if len(vc) == 0 {
-		return errors.New("vendor options not found")
+		return nil, errors.New("vendor options not found")
 	}
 
 	switch {
@@ -51,25 +53,25 @@ func parseVendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
 		if len(p) < 4 {
-			return errVendorOptionMalformed
+			return nil, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
 		vd.Model = p[1]
 		vd.Serial = p[3]
-		return nil
+		return vd, nil
 
 	// ZPESystems:NSC:002251623
 	case strings.HasPrefix(vc, "ZPESystems:"):
 		p := strings.Split(vc, ":")
 		if len(p) < 3 {
-			return errVendorOptionMalformed
+			return nil, errVendorOptionMalformed
 		}
 
 		vd.VendorName = p[0]
 		vd.Model = p[1]
 		vd.Serial = p[2]
-		return nil
+		return vd, nil
 
 	// Juniper option 60 parsing is a bit more nuanced.  The following are all
 	// "valid" identifying stings for Juniper:
@@ -82,7 +84,7 @@ func parseVendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 			vd.Model = p[1]
 			vd.Serial = packet.HostName()
 			if len(vd.Serial) == 0 {
-				return errors.New("host name option is missing")
+				return nil, errors.New("host name option is missing")
 			}
 		} else {
 			vd.Model = strings.Join(p[1:len(p)-1], "-")
@@ -90,22 +92,27 @@ func parseVendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 		}
 
 		vd.VendorName = p[0]
-		return nil
+		return vd, nil
 	}
 
-	return nil
+	return vd, nil
 }
 
 // ParseVendorData will try to parse dhcp4 options looking for more
 // specific vendor data (like model, serial number, etc).
 func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
-	vd := &VendorData{}
-
-	if err := parseVIVC(vd, packet); err != nil {
+	vd, err := parseVIVC(packet)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := parseVendorClass(vd, packet); err != nil {
+	// If VendorData is set, return early
+	if (VendorData{} != *vd) {
+		return vd, nil
+	}
+
+	vd, err = parseVendorClass(packet)
+	if err != nil {
 		return nil, err
 	}
 
