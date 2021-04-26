@@ -4,17 +4,18 @@ import (
 	"testing"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
 func TestParseV4VendorClass(t *testing.T) {
 	tt := []struct {
-		name         string
-		input        string
-		hostname     string
-		entID	     uint32
-		want         *VendorData
-		fail         bool
+		name     string
+		input    string
+		hostname string
+		entID    uint32
+		want     *VendorData
+		fail     bool
 	}{
 		{name: "empty", fail: true},
 		{name: "unknownVendor", input: "VendorX;BFR10K;XX12345", fail: true},
@@ -32,7 +33,7 @@ func TestParseV4VendorClass(t *testing.T) {
 		{
 			name:  "juniperModelDash",
 			input: "Juniper-qfx10002-36q-DN817",
-			want:   &VendorData{VendorName: "Juniper", Model: "qfx10002-36q", Serial: "DN817"},
+			want:  &VendorData{VendorName: "Juniper", Model: "qfx10002-36q", Serial: "DN817"},
 		},
 		{
 			name:     "juniperHostnameSerial",
@@ -42,15 +43,21 @@ func TestParseV4VendorClass(t *testing.T) {
 		},
 		{name: "juniperNoSerial", input: "Juniper-qfx10008", fail: true},
 		{
-			name:    "zpe",
-			input:   "ZPESystems:NSC:001234567",
-			want:    &VendorData{VendorName: "ZPESystems", Model: "NSC", Serial: "001234567"},
+			name:  "zpe",
+			input: "ZPESystems:NSC:001234567",
+			want:  &VendorData{VendorName: "ZPESystems", Model: "NSC", Serial: "001234567"},
 		},
 		{
 			name:  "cisco",
 			entID: 0x09,
 			input: "SN:0;PID:R-IOSXRV9000-CC",
 			want:  &VendorData{VendorName: "Cisco Systems", Model: "R-IOSXRV9000-CC", Serial: "0"},
+		},
+		{
+			name:  "ciscoMultipleColonDelimiters",
+			entID: 0x09,
+			input: "SN:0:123;PID:R-IOSXRV9000-CC:456",
+			fail:  true,
 		},
 	}
 
@@ -67,7 +74,7 @@ func TestParseV4VendorClass(t *testing.T) {
 			if tc.hostname != "" {
 				packet.UpdateOption(dhcpv4.OptHostName(tc.hostname))
 			}
-			if tc.entID == entIDCiscoSystems {
+			if tc.entID == iana.EntIDCiscoSystems {
 				vivc := dhcpv4.VIVCIdentifier{EntID: tc.entID, Data: []byte(tc.input)}
 				packet.UpdateOption(dhcpv4.OptVIVC(vivc))
 			}
