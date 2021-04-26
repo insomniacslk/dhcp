@@ -1,4 +1,6 @@
 package iana
 
+type EntID uint32
+
 // EntIDCiscoSystems is IANA Enterprise ID for Cisco Systems
-const EntIDCiscoSystems = 0x9
+const EntIDCiscoSystems EntID = 0x9
