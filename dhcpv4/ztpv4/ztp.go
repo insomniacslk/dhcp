@@ -151,4 +151,3 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	// We didn't match anything.
 	return nil, errors.New("no known ZTP vendor found")
 }
-
