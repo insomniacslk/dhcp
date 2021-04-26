@@ -1,11 +1,12 @@
 package iana
 
 // EntID represents the Enterprise IDs as set by IANA
-// https://www.iana.org/assignments/enterprise-numbers/enterprise-numbers
 type EntID int
 
-// EntIDCiscoSystems is IANA Enterprise ID for Cisco Systems
-const EntIDCiscoSystems EntID = 9
+// See https://www.iana.org/assignments/enterprise-numbers/enterprise-numbers for values
+const (
+	EntIDCiscoSystems EntID = 9
+)
 
 var entIDToStringMap = map[EntID]string{
 	EntIDCiscoSystems: "Cisco Systems",
