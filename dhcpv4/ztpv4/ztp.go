@@ -17,11 +17,10 @@ type VendorData struct {
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
 
-func parseV4VIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
-	vivc := packet.VIVC()
-	for _, id := range vivc {
-		if id.EntID == iana.EntIDCiscoSystems {
-			vd.VendorName = "Cisco Systems"
+func parseVIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
+	for _, id := range packet.VIVC() {
+		if id.EntID == uint32(iana.EntIDCiscoSystems) {
+			vd.VendorName = iana.EntIDCiscoSystems.String()
 			//SN:0;PID:R-IOSXRV9000-CC
 			for _, f := range bytes.Split(id.Data, []byte(";")) {
 				p := bytes.Split(f, []byte(":"))
@@ -41,7 +40,7 @@ func parseV4VIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	return nil
 }
 
-func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
+func parseVendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	vc := packet.ClassIdentifier()
 	if len(vc) == 0 {
 		return errors.New("vendor options not found")
@@ -102,11 +101,11 @@ func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
 
-	if err := parseV4VIVC(vd, packet); err != nil {
+	if err := parseVIVC(vd, packet); err != nil {
 		return nil, err
 	}
 
-	if err := parseV4VendorClass(vd, packet); err != nil {
+	if err := parseVendorClass(vd, packet); err != nil {
 		return nil, err
 	}
 

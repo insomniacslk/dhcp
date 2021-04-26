@@ -13,7 +13,7 @@ func TestParseV4VendorClass(t *testing.T) {
 		name     string
 		input    string
 		hostname string
-		entID    uint32
+		entID    iana.EntID
 		want     *VendorData
 		fail     bool
 	}{
@@ -49,13 +49,13 @@ func TestParseV4VendorClass(t *testing.T) {
 		},
 		{
 			name:  "cisco",
-			entID: 0x09,
+			entID: iana.EntIDCiscoSystems,
 			input: "SN:0;PID:R-IOSXRV9000-CC",
 			want:  &VendorData{VendorName: "Cisco Systems", Model: "R-IOSXRV9000-CC", Serial: "0"},
 		},
 		{
 			name:  "ciscoMultipleColonDelimiters",
-			entID: 0x09,
+			entID: iana.EntIDCiscoSystems,
 			input: "SN:0:123;PID:R-IOSXRV9000-CC:456",
 			fail:  true,
 		},
@@ -75,7 +75,7 @@ func TestParseV4VendorClass(t *testing.T) {
 				packet.UpdateOption(dhcpv4.OptHostName(tc.hostname))
 			}
 			if tc.entID == iana.EntIDCiscoSystems {
-				vivc := dhcpv4.VIVCIdentifier{EntID: tc.entID, Data: []byte(tc.input)}
+				vivc := dhcpv4.VIVCIdentifier{EntID: uint32(tc.entID), Data: []byte(tc.input)}
 				packet.UpdateOption(dhcpv4.OptVIVC(vivc))
 			}
 
