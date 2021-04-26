@@ -41,51 +41,6 @@ func parseV4VIVC(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	return nil
 }
 
-func parseArista(vd *VendorData, vc string) error {
-	// Arista;DCS-7050S-64;01.23;JPE12221671
-	p := strings.Split(vc, ";")
-	if len(p) < 4 {
-		return errVendorOptionMalformed
-	}
-	vd.VendorName = p[0]
-	vd.Model = p[1]
-	vd.Serial = p[3]
-	return nil
-}
-
-func parseZPE(vd *VendorData, vc string) error {
-	// ZPESystems:NSC:002251623
-	p := strings.Split(vc, ":")
-	if len(p) < 3 {
-		return errVendorOptionMalformed
-	}
-	vd.VendorName = p[0]
-	vd.Model = p[1]
-	vd.Serial = p[2]
-	return nil
-}
-
-func parseJuniper(vd *VendorData, vc string, packet *dhcpv4.DHCPv4) error {
-	// Juniper option 60 parsing is a bit more nuanced.  The following are all
-	// "valid" identifying stings for Juniper:
-	//    Juniper-ptx1000-DD576      <vendor>-<model>-<serial
-	//    Juniper-qfx10008           <vendor>-<model> (serial in hostname option)
-	//    Juniper-qfx10002-361-DN817 <vendor>-<model>-<serial> (model has a dash in it!)
-	p := strings.Split(vc, "-")
-	if len(p) < 3 {
-		vd.Model = p[1]
-		vd.Serial = packet.HostName()
-		if len(vd.Serial) == 0 {
-			return errors.New("host name option is missing")
-		}
-	} else {
-		vd.Model = strings.Join(p[1:len(p)-1], "-")
-		vd.Serial = p[len(p)-1]
-	}
-	vd.VendorName = p[0]
-	return nil
-}
-
 func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	vc := packet.ClassIdentifier()
 	if len(vc) == 0 {
@@ -93,24 +48,52 @@ func parseV4VendorClass(vd *VendorData, packet *dhcpv4.DHCPv4) error {
 	}
 
 	switch {
+	// Arista;DCS-7050S-64;01.23;JPE12221671
 	case strings.HasPrefix(vc, "Arista;"):
-		if err := parseArista(vd, vc); err != nil {
-			return err
+		p := strings.Split(vc, ";")
+		if len(p) < 4 {
+			return errVendorOptionMalformed
 		}
+
+		vd.VendorName = p[0]
+		vd.Model = p[1]
+		vd.Serial = p[3]
 		return nil
 
+	// ZPESystems:NSC:002251623
 	case strings.HasPrefix(vc, "ZPESystems:"):
-		if err := parseZPE(vd, vc); err != nil {
-			return err
+		p := strings.Split(vc, ":")
+		if len(p) < 3 {
+			return errVendorOptionMalformed
 		}
+
+		vd.VendorName = p[0]
+		vd.Model = p[1]
+		vd.Serial = p[2]
 		return nil
 
+	// Juniper option 60 parsing is a bit more nuanced.  The following are all
+	// "valid" identifying stings for Juniper:
+	//    Juniper-ptx1000-DD576      <vendor>-<model>-<serial
+	//    Juniper-qfx10008           <vendor>-<model> (serial in hostname option)
+	//    Juniper-qfx10002-361-DN817 <vendor>-<model>-<serial> (model has a dash in it!)
 	case strings.HasPrefix(vc, "Juniper-"):
-		if err := parseJuniper(vd, vc, packet); err != nil {
-			return err
+		p := strings.Split(vc, "-")
+		if len(p) < 3 {
+			vd.Model = p[1]
+			vd.Serial = packet.HostName()
+			if len(vd.Serial) == 0 {
+				return errors.New("host name option is missing")
+			}
+		} else {
+			vd.Model = strings.Join(p[1:len(p)-1], "-")
+			vd.Serial = p[len(p)-1]
 		}
+
+		vd.VendorName = p[0]
 		return nil
 	}
+
 	return nil
 }
 
@@ -127,11 +110,11 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return nil, err
 	}
 
-	// Check if VendorData got set
-	if (VendorData{} != *vd) {
-		return vd, nil
+	// Check if VendorData did not get set
+	if (VendorData{} == *vd) {
+		// We didn't match anything.
+		return nil, errors.New("no known ZTP vendor found")
 	}
 
-	// We didn't match anything.
-	return nil, errors.New("no known ZTP vendor found")
+	return vd, nil
 }
