@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseV4ClassIdentifier(t *testing.T) {
+func TestParseClassIdentifier(t *testing.T) {
 	tt := []struct {
 		name         string
 		vc, hostname string
@@ -72,13 +72,13 @@ func TestParseV4ClassIdentifier(t *testing.T) {
 	}
 }
 
-func TestParseV4VIVC(t *testing.T) {
+func TestParseVIVC(t *testing.T) {
 	tt := []struct {
-		name         string
-		vivc		 string
-		entID	     iana.EntID
-		want         *VendorData
-		fail         bool
+		name  string
+		vivc  string
+		entID iana.EntID
+		want  *VendorData
+		fail  bool
 	}{
 		{
 			name:  "cisco",
