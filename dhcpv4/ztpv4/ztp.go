@@ -19,9 +19,8 @@ var errVendorOptionMalformed = errors.New("malformed vendor option")
 
 func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
-	vc := packet.ClassIdentifier()
 
-	switch {
+	switch vc := packet.ClassIdentifier(); {
 	// Arista;DCS-7050S-64;01.23;JPE12221671
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
@@ -73,6 +72,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 
 func parseVIVC(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
+
 	for _, id := range packet.VIVC() {
 		if id.EntID == uint32(iana.EntIDCiscoSystems) {
 			vd.VendorName = iana.EntIDCiscoSystems.String()
@@ -93,6 +93,7 @@ func parseVIVC(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 			return vd, nil
 		}
 	}
+
 	return nil, nil
 }
 
