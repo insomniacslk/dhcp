@@ -1,10 +1,12 @@
 package ztpv4
 
 import (
+	"bytes"
 	"errors"
 	"strings"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 // VendorData is optional data a particular vendor may or may not include
@@ -15,16 +17,10 @@ type VendorData struct {
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
 
-// ParseVendorData will try to parse dhcp4 options looking for more
-// specific vendor data (like model, serial number, etc).
-func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
-	vc := packet.ClassIdentifier()
-	if len(vc) == 0 {
-		return nil, errors.New("vendor options not found")
-	}
+func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
 
-	switch {
+	switch vc := packet.ClassIdentifier(); {
 	// Arista;DCS-7050S-64;01.23;JPE12221671
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
@@ -71,6 +67,57 @@ func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 	}
 
-	// We didn't match anything.
+	return nil, nil
+}
+
+func parseVIVC(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	vd := &VendorData{}
+
+	for _, id := range packet.VIVC() {
+		if id.EntID == uint32(iana.EntIDCiscoSystems) {
+			vd.VendorName = iana.EntIDCiscoSystems.String()
+			//SN:0;PID:R-IOSXRV9000-CC
+			for _, f := range bytes.Split(id.Data, []byte(";")) {
+				p := bytes.Split(f, []byte(":"))
+				if len(p) != 2 {
+					return nil, errVendorOptionMalformed
+				}
+
+				switch string(p[0]) {
+				case "SN":
+					vd.Serial = string(p[1])
+				case "PID":
+					vd.Model = string(p[1])
+				}
+			}
+			return vd, nil
+		}
+	}
+
+	return nil, nil
+}
+
+// ParseVendorData will try to parse dhcp4 options looking for more
+// specific vendor data (like model, serial number, etc).
+func ParseVendorData(packet *dhcpv4.DHCPv4) (*VendorData, error) {
+	vd, err := parseClassIdentifier(packet)
+	if err != nil {
+		return nil, err
+	}
+
+	// If VendorData is set, return early
+	if vd != nil {
+		return vd, nil
+	}
+
+	vd, err = parseVIVC(packet)
+	if err != nil {
+		return nil, err
+	}
+
+	if vd != nil {
+		return vd, nil
+	}
+
 	return nil, errors.New("no known ZTP vendor found")
 }
