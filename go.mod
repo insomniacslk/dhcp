@@ -8,6 +8,7 @@ require (
 	github.com/jsimonetti/rtnetlink v0.0.0-20201110080708-d2c240429e6c
 	github.com/mdlayher/ethernet v0.0.0-20190606142754-0394541c37b7
 	github.com/mdlayher/netlink v1.1.1
+	github.com/mdlayher/netx v0.0.0-20200512211805-669a06fde734 // indirect
 	github.com/mdlayher/raw v0.0.0-20191009151244-50f2db8cc065
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.6.1
