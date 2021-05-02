@@ -1,4 +1,4 @@
-// +build darwin solaris
+// +build darwin
 
 package interfaces
 

@@ -134,8 +134,7 @@ func GenerateTransactionID() (TransactionID, error) {
 
 // New creates a new DHCPv4 structure and fill it up with default values. It
 // won't be a valid DHCPv4 message so you will need to adjust its fields.
-// See also NewDiscovery, NewOffer, NewRequest, NewAcknowledge, NewInform and
-// NewRelease .
+// See also NewDiscovery, NewRequest, NewAcknowledge, NewInform and NewRelease.
 func New(modifiers ...Modifier) (*DHCPv4, error) {
 	xid, err := GenerateTransactionID()
 	if err != nil {
