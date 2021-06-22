@@ -15,6 +15,7 @@ type DHCPv6 interface {
 	Type() MessageType
 	ToBytes() []byte
 	String() string
+	LongString(indent int) string
 	Summary() string
 	IsRelay() bool
 

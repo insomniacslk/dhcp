@@ -28,7 +28,7 @@ func TestOptRequestedOptionString(t *testing.T) {
 	require.Contains(
 		t,
 		o.String(),
-		"Client Identifier, Server Identifier",
+		"Client ID, Server ID",
 		"String() should contain the options specified",
 	)
 	o.OptionCodes = append(o.OptionCodes, 12345)

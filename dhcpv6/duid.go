@@ -107,16 +107,7 @@ func (d *Duid) ToBytes() []byte {
 }
 
 func (d *Duid) String() string {
-	var hwaddr string
-	if d.HwType == iana.HWTypeEthernet {
-		for _, b := range d.LinkLayerAddr {
-			hwaddr += fmt.Sprintf("%02x:", b)
-		}
-		if len(hwaddr) > 0 && hwaddr[len(hwaddr)-1] == ':' {
-			hwaddr = hwaddr[:len(hwaddr)-1]
-		}
-	}
-	return fmt.Sprintf("DUID{type=%v hwtype=%v hwaddr=%v}", d.Type.String(), d.HwType.String(), hwaddr)
+	return fmt.Sprintf("DUID{Type=%s HWType=%s HWAddr=%s}", d.Type, d.HwType, d.LinkLayerAddr)
 }
 
 // DuidFromBytes parses a Duid from a byte slice.

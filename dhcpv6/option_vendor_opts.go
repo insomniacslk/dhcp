@@ -30,8 +30,15 @@ func (op *OptVendorOpts) ToBytes() []byte {
 
 // String returns a string representation of the VendorOpts data
 func (op *OptVendorOpts) String() string {
-	return fmt.Sprintf("OptVendorOpts{enterprisenum=%v, vendorOpts=%v}",
-		op.EnterpriseNumber, op.VendorOpts,
+	return fmt.Sprintf("%s: {EnterpriseNum=%v VendorOptions=%v}",
+		op.Code(), op.EnterpriseNumber, op.VendorOpts,
+	)
+}
+
+// LongString returns a string representation of the VendorOpts data
+func (op *OptVendorOpts) LongString(indent int) string {
+	return fmt.Sprintf("%s: {EnterpriseNum=%v VendorOptions=%s}",
+		op.Code(), op.EnterpriseNumber, op.VendorOpts.LongString(indent),
 	)
 }
 

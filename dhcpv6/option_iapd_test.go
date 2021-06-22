@@ -98,17 +98,17 @@ func TestOptIAPDString(t *testing.T) {
 	str := opt.String()
 	require.Contains(
 		t, str,
-		"IAID=[1 0 0 0]",
+		"IAID=0x01000000",
 		"String() should return the IAID",
 	)
 	require.Contains(
 		t, str,
-		"t1=1s, t2=2s",
+		"T1=1s T2=2s",
 		"String() should return the T1/T2 options",
 	)
 	require.Contains(
 		t, str,
-		"Options=[",
+		"Options={",
 		"String() should return a list of options",
 	)
 }

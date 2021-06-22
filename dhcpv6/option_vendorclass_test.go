@@ -81,13 +81,13 @@ func TestOptVendorClassString(t *testing.T) {
 	require.Contains(
 		t,
 		str,
-		"enterprisenum=2864434397",
+		"EnterpriseNum=2864434397",
 		"String() should contain the enterprisenum",
 	)
 	require.Contains(
 		t,
 		str,
-		"data=[linuxboot, test]",
+		"Data=[linuxboot, test]",
 		"String() should contain the list of vendor classes",
 	)
 }

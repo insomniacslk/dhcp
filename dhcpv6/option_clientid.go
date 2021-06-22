@@ -19,7 +19,7 @@ func (*optClientID) Code() OptionCode {
 }
 
 func (op *optClientID) String() string {
-	return fmt.Sprintf("ClientID: %v", op.Duid.String())
+	return fmt.Sprintf("%s: %s", op.Code(), op.Duid.String())
 }
 
 // parseOptClientID builds an OptClientId structure from a sequence
