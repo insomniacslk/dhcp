@@ -42,7 +42,7 @@ func (c *Client) Exchange(ifname string) ([]*Packet, error) {
 	conversation = append(conversation, informList)
 
 	// ACK[LIST]
-	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList.v4(), dhcpv4.MessageTypeAck)
+	ackForList, err := c.Client.SendReceive(sendFd, recvFd, informList.v4(), dhcpv4.MessageTypeAck, dhcpv4.WithDefault())
 	if err != nil {
 		return conversation, err
 	}
@@ -67,7 +67,7 @@ func (c *Client) Exchange(ifname string) ([]*Packet, error) {
 	conversation = append(conversation, informSelect)
 
 	// ACK[SELECT]
-	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informSelect.v4(), dhcpv4.MessageTypeAck)
+	ackForSelect, err := c.Client.SendReceive(sendFd, recvFd, informSelect.v4(), dhcpv4.MessageTypeAck, dhcpv4.WithDefault())
 	if err != nil {
 		return conversation, err
 	}
