@@ -181,7 +181,7 @@ func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 // ordered as Discovery, Offer, Request and Acknowledge. In case of errors, an
 // error is returned, and the list of DHCPv4 objects will be shorted than 4,
 // containing all the sent and received DHCPv4 messages.
-func (c *Client) Exchange(ifname string, selector dhcpv4.Selector,modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
+func (c *Client) Exchange(ifname string, selector dhcpv4.Selector, modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
 	conversation := make([]*dhcpv4.DHCPv4, 0)
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
@@ -333,7 +333,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 			if response.TransactionID != packet.TransactionID {
 				continue
 			}
-			if !selector(response){
+			if !selector(response) {
 				continue
 			}
 			// wait for a response message
