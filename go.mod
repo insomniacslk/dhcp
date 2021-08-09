@@ -11,7 +11,7 @@ require (
 	github.com/mdlayher/raw v0.0.0-20191009151244-50f2db8cc065
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.6.1
-	github.com/u-root/u-root v7.0.0+incompatible
+	github.com/u-root/uio v0.0.0-20210528114334-82958018845c
 	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
-	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
+	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea
 )
