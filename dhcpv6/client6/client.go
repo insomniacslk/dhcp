@@ -210,6 +210,9 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 	if err != nil {
 		return nil, nil, err
 	}
+	if (iface.Flags | net.FlagPointToPoint) != 0 {
+		iface.HardwareAddr = []byte{0,0,0,0,0,0}
+	}
 	solicit, err := dhcpv6.NewSolicit(iface.HardwareAddr)
 	if err != nil {
 		return nil, nil, err
