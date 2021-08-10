@@ -15,5 +15,5 @@ func BindToInterface(fd int, ifname string) error {
 	if err != nil {
 		return err
 	}
-	return syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_RECVIF, iface.Index)
+	return syscall.SetsockoptInt(fd, unix.IPPROTO_IP, unix.IP_RECVIF, iface.Index)
 }
