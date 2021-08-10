@@ -75,12 +75,12 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	// The product type is a number that maps to a Ciena product
 	// The type is used to identified different subtype of the product.
 	// An example can be ‘1271-23422Z11-123’.
-	case strings.HasPrefix(vc, strconv.Itoa(int(iana.EntIDCienaCorporation))):
+	case strings.HasPrefix(vc, strconv.Itoa(int(iana.EnterpriseIDCienaCorporation))):
 		v := strings.Split(vc, "-")
 		if len(v) != 3 {
 			return nil, fmt.Errorf("%w got '%s'", errVendorOptionMalformed, vc)
 		}
-		vd.VendorName = iana.EntIDCienaCorporation.String()
+		vd.VendorName = iana.EnterpriseIDCienaCorporation.String()
 		vd.Model = v[1] + "-" + v[2]
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
@@ -91,7 +91,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
 	// and Opt 61 contains the serial number
 	case vc == "FPR4100" || vc == "FPR9300":
-		vd.VendorName = iana.EntIDCiscoSystems.String()
+		vd.VendorName = iana.EnterpriseIDCiscoSystems.String()
 		vd.Model = vc
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
@@ -107,8 +107,8 @@ func parseVIVC(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
 
 	for _, id := range packet.VIVC() {
-		if id.EntID == uint32(iana.EntIDCiscoSystems) {
-			vd.VendorName = iana.EntIDCiscoSystems.String()
+		if id.EntID == iana.EnterpriseIDCiscoSystems {
+			vd.VendorName = iana.EnterpriseIDCiscoSystems.String()
 			//SN:0;PID:R-IOSXRV9000-CC
 			for _, f := range bytes.Split(id.Data, []byte(";")) {
 				p := bytes.Split(f, []byte(":"))
