@@ -95,19 +95,19 @@ func TestParseVIVC(t *testing.T) {
 	tt := []struct {
 		name  string
 		vivc  string
-		entID iana.EntID
+		entID iana.EnterpriseID
 		want  *VendorData
 		fail  bool
 	}{
 		{
 			name:  "cisco",
-			entID: iana.EntIDCiscoSystems,
+			entID: iana.EnterpriseIDCiscoSystems,
 			vivc:  "SN:0;PID:R-IOSXRV9000-CC",
 			want:  &VendorData{VendorName: "Cisco Systems", Model: "R-IOSXRV9000-CC", Serial: "0"},
 		},
 		{
 			name:  "ciscoMultipleColonDelimiters",
-			entID: iana.EntIDCiscoSystems,
+			entID: iana.EnterpriseIDCiscoSystems,
 			vivc:  "SN:0:123;PID:R-IOSXRV9000-CC:456",
 			fail:  true,
 		},
@@ -121,7 +121,7 @@ func TestParseVIVC(t *testing.T) {
 			}
 
 			if tc.vivc != "" {
-				vivc := dhcpv4.VIVCIdentifier{EntID: uint32(tc.entID), Data: []byte(tc.vivc)}
+				vivc := dhcpv4.VIVCIdentifier{EntID: tc.entID, Data: []byte(tc.vivc)}
 				packet.UpdateOption(dhcpv4.OptVIVC(vivc))
 			}
 
