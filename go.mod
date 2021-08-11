@@ -3,6 +3,7 @@ module github.com/insomniacslk/dhcp
 go 1.13
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
 	github.com/fanliao/go-promise v0.0.0-20141029170127-1890db352a72
 	github.com/hugelgupf/socketpair v0.0.0-20190730060125-05d35a94e714
 	github.com/jsimonetti/rtnetlink v0.0.0-20201110080708-d2c240429e6c
