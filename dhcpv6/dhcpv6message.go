@@ -300,7 +300,7 @@ func (mo MessageOptions) NTPServers() []net.IP {
 	addrs := make([]net.IP, 0)
 	for _, opt := range opts {
 		ntp, ok := opt.(*OptNTPServer)
-		if ok {
+		if !ok {
 			continue
 		}
 		for _, subopt := range ntp.Suboptions {

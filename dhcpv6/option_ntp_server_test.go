@@ -79,4 +79,10 @@ func TestParseOptNTPServer(t *testing.T) {
 	optFQDN, ok := o.Suboptions[1].(*NTPSuboptionSrvFQDN)
 	require.True(t, ok)
 	assert.Equal(t, *fqdn, rfc1035label.Labels(*optFQDN))
+
+	var mo MessageOptions
+	assert.Nil(t, mo.NTPServers())
+	mo.Add(o)
+	// MessageOptions.NTPServers only returns server address values.
+	assert.Equal(t, []net.IP{ip}, mo.NTPServers())
 }
