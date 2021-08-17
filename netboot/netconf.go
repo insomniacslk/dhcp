@@ -30,6 +30,7 @@ type NetConf struct {
 	DNSServers    []net.IP
 	DNSSearchList []string
 	Routers       []net.IP
+	NTPServers    []net.IP
 }
 
 // GetNetConfFromPacketv6 extracts network configuration information from a DHCPv6
@@ -63,10 +64,15 @@ func GetNetConfFromPacketv6(d *dhcpv6.Message) (*NetConf, error) {
 	// get DNS configuration
 	netconf.DNSServers = d.Options.DNS()
 
+	// get domain search list
 	domains := d.Options.DomainSearchList()
 	if domains != nil {
 		netconf.DNSSearchList = domains.Labels
 	}
+
+	// get NTP servers
+	netconf.NTPServers = d.Options.NTPServers()
+
 	return &netconf, nil
 }
 
@@ -123,6 +129,10 @@ func GetNetConfFromPacketv4(d *dhcpv4.DHCPv4) (*NetConf, error) {
 		return nil, errors.New("no routers specified in the corresponding option")
 	}
 	netconf.Routers = routersList
+
+	// get NTP servers
+	netconf.NTPServers = d.NTPServers()
+
 	return &netconf, nil
 }
 
