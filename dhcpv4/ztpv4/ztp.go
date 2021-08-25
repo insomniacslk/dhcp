@@ -21,6 +21,14 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
 
 	switch vc := packet.ClassIdentifier(); {
+	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
+	// and Opt 61 contains the serial number
+	case vc == "FPR9300" || vc == "FPR4100":
+		vd.VendorName = "Cisco"
+		vd.Model = vc
+		vd.Serial = packet.ClientIdentifier()
+		return vd, nil
+
 	// Arista;DCS-7050S-64;01.23;JPE12221671
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")

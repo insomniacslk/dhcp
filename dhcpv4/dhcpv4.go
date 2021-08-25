@@ -637,6 +637,13 @@ func (d *DHCPv4) ClassIdentifier() string {
 	return GetString(OptionClassIdentifier, d.Options)
 }
 
+// ClientIdentifier parses the DHCPv4 Client Identifier option if present
+//
+// The Client Identifier option is described by RFC 2132, Section 9.14
+func (d *DHCPv4) ClientIdentifier() string {
+	return GetString(OptionClientIdentifier, d.Options)
+}
+
 // ClientArch returns the Client System Architecture Type option.
 func (d *DHCPv4) ClientArch() []iana.Arch {
 	v := d.Options.Get(OptionClientSystemArchitectureType)

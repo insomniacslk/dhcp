@@ -12,12 +12,19 @@ func TestParseClassIdentifier(t *testing.T) {
 	tt := []struct {
 		name         string
 		vc, hostname string
+		vci          []byte //Client Identifier
 		want         *VendorData
 		fail         bool
 	}{
 		{name: "empty", fail: true},
 		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true},
 		{name: "truncatedVendor", vc: "Arista;1234", fail: true},
+		{
+			name: "cisco",
+			vc:   "FPR4100",
+			vci:  []byte("JMX2525X0BW"),
+			want: &VendorData{VendorName: "Cisco", Model: "FPR4100", Serial: "JMX2525X0BW"},
+		},
 		{
 			name: "arista",
 			vc:   "Arista;DCS-7050S-64;01.23;JPE12345678",
@@ -59,6 +66,9 @@ func TestParseClassIdentifier(t *testing.T) {
 			}
 			if tc.hostname != "" {
 				packet.UpdateOption(dhcpv4.OptHostName(tc.hostname))
+			}
+			if tc.vci != nil {
+				packet.UpdateOption(dhcpv4.OptClientIdentifier(tc.vci))
 			}
 
 			vd, err := ParseVendorData(packet)
