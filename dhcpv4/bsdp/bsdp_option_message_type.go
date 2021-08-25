@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/u-root/uio/uio"
 )
 
 // MessageType represents the different BSDP message types.

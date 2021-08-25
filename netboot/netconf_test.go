@@ -34,25 +34,6 @@ func TestGetNetConfFromPacketv6Invalid(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGetNetConfFromPacketv6NoAddrsNoDNS(t *testing.T) {
-	adv := getAdv(dhcpv6.WithIANA())
-	_, err := GetNetConfFromPacketv6(adv)
-	require.Error(t, err)
-}
-
-func TestGetNetConfFromPacketv6NoDNS(t *testing.T) {
-	addrs := []dhcpv6.OptIAAddress{
-		dhcpv6.OptIAAddress{
-			IPv6Addr:          net.ParseIP("::1"),
-			PreferredLifetime: 3600 * time.Second,
-			ValidLifetime:     5200 * time.Second,
-		},
-	}
-	adv := getAdv(dhcpv6.WithIANA(addrs...))
-	_, err := GetNetConfFromPacketv6(adv)
-	require.Error(t, err)
-}
-
 func TestGetNetConfFromPacketv6NoSearchList(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
 		dhcpv6.OptIAAddress{
@@ -123,16 +104,6 @@ func TestGetNetConfFromPacketv4NullMask(t *testing.T) {
 func TestGetNetConfFromPacketv4NoLeaseTime(t *testing.T) {
 	d, _ := dhcpv4.New(
 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
-
-func TestGetNetConfFromPacketv4NoDNS(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
 	)
 	_, err := GetNetConfFromPacketv4(d)

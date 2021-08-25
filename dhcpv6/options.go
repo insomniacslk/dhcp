@@ -3,7 +3,7 @@ package dhcpv6
 import (
 	"fmt"
 
-	"github.com/u-root/u-root/pkg/uio"
+	"github.com/u-root/uio/uio"
 )
 
 // Option is an interface that all DHCPv6 options adhere to.
@@ -81,6 +81,8 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		opt, err = ParseOptRemoteID(optData)
 	case OptionFQDN:
 		opt, err = ParseOptFQDN(optData)
+	case OptionNTPServer:
+		opt, err = ParseOptNTPServer(optData)
 	case OptionBootfileURL:
 		opt, err = parseOptBootFileURL(optData)
 	case OptionBootfileParam:
