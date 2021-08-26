@@ -21,14 +21,6 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
 
 	switch vc := packet.ClassIdentifier(); {
-	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
-	// and Opt 61 contains the serial number
-	case vc == "FPR9300" || vc == "FPR4100":
-		vd.VendorName = iana.EntIDCiscoSystems.String()
-		vd.Model = vc
-		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
-		return vd, nil
-
 	// Arista;DCS-7050S-64;01.23;JPE12221671
 	case strings.HasPrefix(vc, "Arista;"):
 		p := strings.Split(vc, ";")
@@ -73,6 +65,15 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 
 		vd.VendorName = p[0]
 		return vd, nil
+
+	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
+	// and Opt 61 contains the serial number
+	case vc == "FPR9300" || vc == "FPR4100":
+		vd.VendorName = iana.EntIDCiscoSystems.String()
+		vd.Model = vc
+		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
+		return vd, nil
+
 	}
 
 	return nil, nil
