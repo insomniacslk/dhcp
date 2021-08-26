@@ -24,9 +24,9 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
 	// and Opt 61 contains the serial number
 	case vc == "FPR9300" || vc == "FPR4100":
-		vd.VendorName = "Cisco"
+		vd.VendorName = iana.EntIDCiscoSystems.String()
 		vd.Model = vc
-		vd.Serial = packet.ClientIdentifier()
+		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		return vd, nil
 
 	// Arista;DCS-7050S-64;01.23;JPE12221671

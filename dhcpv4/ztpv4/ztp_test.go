@@ -12,7 +12,7 @@ func TestParseClassIdentifier(t *testing.T) {
 	tt := []struct {
 		name         string
 		vc, hostname string
-		vci          []byte //Client Identifier
+		ci           []byte //Client Identifier
 		want         *VendorData
 		fail         bool
 	}{
@@ -22,8 +22,8 @@ func TestParseClassIdentifier(t *testing.T) {
 		{
 			name: "cisco",
 			vc:   "FPR4100",
-			vci:  []byte("JMX2525X0BW"),
-			want: &VendorData{VendorName: "Cisco", Model: "FPR4100", Serial: "JMX2525X0BW"},
+			ci:   []byte("JMX2525X0BW"),
+			want: &VendorData{VendorName: iana.EntIDCiscoSystems.String(), Model: "FPR4100", Serial: "JMX2525X0BW"},
 		},
 		{
 			name: "arista",
@@ -67,8 +67,8 @@ func TestParseClassIdentifier(t *testing.T) {
 			if tc.hostname != "" {
 				packet.UpdateOption(dhcpv4.OptHostName(tc.hostname))
 			}
-			if tc.vci != nil {
-				packet.UpdateOption(dhcpv4.OptClientIdentifier(tc.vci))
+			if tc.ci != nil {
+				packet.UpdateOption(dhcpv4.OptClientIdentifier(tc.ci))
 			}
 
 			vd, err := ParseVendorData(packet)
