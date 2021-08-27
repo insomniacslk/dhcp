@@ -73,7 +73,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.Model = vc
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
-			return nil, errors.New("could not get serial from Client Identifier Opt 61")
+			return nil, errors.New("client identifier option is missing")
 		}
 		return vd, nil
 
