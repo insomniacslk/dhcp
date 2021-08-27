@@ -72,6 +72,9 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.VendorName = iana.EntIDCiscoSystems.String()
 		vd.Model = vc
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
+		if len(vd.Serial) == 0 {
+			return nil, errors.New("could not get serial from Client Identifier Opt 61")
+		}
 		return vd, nil
 
 	}
