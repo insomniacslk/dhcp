@@ -91,6 +91,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	rf.PeerAddr = net.IPv6linklocalallrouters
 	rf.LinkAddr = net.IPv6interfacelocalallnodes
 	rf.AddOption(OptInterfaceID(nil))
+	rf.AddOption(&OptRemoteID{})
 
 	// create the inner message
 	s, err := NewMessage()
@@ -108,6 +109,7 @@ func TestNewRelayRepFromRelayForw(t *testing.T) {
 	require.Equal(t, relay.PeerAddr, rf.PeerAddr)
 	require.Equal(t, relay.LinkAddr, rf.LinkAddr)
 	require.NotNil(t, rr.GetOneOption(OptionInterfaceID))
+	require.NotNil(t, rr.GetOneOption(OptionRemoteID))
 	m, err := relay.GetInnerMessage()
 	require.NoError(t, err)
 	require.Equal(t, m, a)
