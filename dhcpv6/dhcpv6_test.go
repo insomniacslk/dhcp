@@ -254,32 +254,6 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 	require.Equal(t, iaid, iana.IaId)
 }
 
-func TestIsUsingUEFIArchTypeTrue(t *testing.T) {
-	msg := Message{}
-	msg.AddOption(OptClientArchType(iana.EFI_BC))
-	require.True(t, IsUsingUEFI(&msg))
-}
-
-func TestIsUsingUEFIArchTypeFalse(t *testing.T) {
-	msg := Message{}
-	msg.AddOption(OptClientArchType(iana.INTEL_X86PC))
-	require.False(t, IsUsingUEFI(&msg))
-}
-
-func TestIsUsingUEFIUserClassTrue(t *testing.T) {
-	msg := Message{}
-	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeUEFI")}}
-	msg.AddOption(&opt)
-	require.True(t, IsUsingUEFI(&msg))
-}
-
-func TestIsUsingUEFIUserClassFalse(t *testing.T) {
-	msg := Message{}
-	opt := OptUserClass{UserClasses: [][]byte{[]byte("ipxeLegacy")}}
-	msg.AddOption(&opt)
-	require.False(t, IsUsingUEFI(&msg))
-}
-
 func TestGetTransactionIDMessage(t *testing.T) {
 	message, err := NewMessage()
 	require.NoError(t, err)
