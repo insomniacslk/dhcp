@@ -117,7 +117,7 @@ func TestParseVIVC(t *testing.T) {
 	        },
 	        {
 	            name:  "CienaInvalid",
-	            entID: 1271
+	            entID: 1271,
 	            vivc:  "Whatever",
 	            fail:  true,
 	       },
