@@ -53,12 +53,12 @@ func TestParseClassIdentifier(t *testing.T) {
 			want: &VendorData{VendorName: "Cisco Systems", Model: "FPR4100", Serial: "JMX2525X0BW"},
 		},
 		{name: "ciscoNoSerial", vc: "FPR4100", fail: true},
-        	{
-	            name: "Ciena",
-	            vc:   "271-00011E00-032",
-	            ci:   []byte("JUSTASN"),
-	            want: &VendorData{VendorName: "Ciena", Model: "00011E00-032", Serial: "JUSTASN"},
-	        },
+		{
+			name: "Ciena",
+			vc:   "1271-00011E00-032",
+			ci:   []byte("JUSTASN"),
+			want: &VendorData{VendorName: "Ciena", Model: "00011E00-032", Serial: "JUSTASN"},
+		},
 	}
 
 	for _, tc := range tt {
@@ -109,18 +109,6 @@ func TestParseVIVC(t *testing.T) {
 			vivc:  "SN:0:123;PID:R-IOSXRV9000-CC:456",
 			fail:  true,
 		},
-        	{
-	            name:  "Ciena",
-	            entID: 1271,
-	            vivc:  "1271-00011E00-032",
-	            want:  &VendorData{VendorName: "Ciena", Model: "00011E00-032", Serial: "0"},
-	        },
-	        {
-	            name:  "CienaInvalid",
-	            entID: 1271,
-	            vivc:  "Whatever",
-	            fail:  true,
-	       },
 	}
 
 	for _, tc := range tt {
