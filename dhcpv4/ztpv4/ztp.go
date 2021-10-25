@@ -78,13 +78,13 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 	/*
 		Ciena DHCP server
-			[vendor code]-[product type]-[shelf type]
-		where:
-		• Ciena vendor code is ‘1271’
-		• Product type is ‘00011E00’ for RLS
-		• Shelf type is:
-		‘032’ for R2 shelf ‘033’ for R4 shelf ‘048’ for R8-300 shelf
-		For example, for R4 shelf, option 60 is ‘1271-00011E00-032’.
+		The class identifier (opt 60) is written in the following format:
+		    {vendor iana code}-{product}-{type}
+		For Ciena the iana code is 1271
+		The product type is a number that maps to a Ciena product
+		The type is used to identified different subtype of the product.
+
+		An example can be  ‘1271-23422Z11-123’.
 	*/
 	case strings.HasPrefix(vc, "1271"):
 		v := strings.Split(vc, "-")
