@@ -67,24 +67,12 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.VendorName = p[0]
 		return vd, nil
 
-	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
-	// and Opt 61 contains the serial number
-	case vc == "FPR4100" || vc == "FPR9300":
-		vd.VendorName = iana.EntIDCiscoSystems.String()
-		vd.Model = vc
-		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
-		if len(vd.Serial) == 0 {
-			return nil, errors.New("client identifier option is missing while parsing Cisco options")
-		}
-		return vd, nil
-
 	// Ciena DHCP server
 	// The class identifier (opt 60) is written in the following format:
 	// 	{vendor iana code}-{product}-{type}
 	// For Ciena the iana code is 1271
 	// The product type is a number that maps to a Ciena product
 	// The type is used to identified different subtype of the product.
-
 	// An example can be  ‘1271-23422Z11-123’.
 	case strings.HasPrefix(vc, strconv.Itoa(int(iana.EntIDCienaCorporation))):
 		v := strings.Split(vc, "-")
@@ -96,6 +84,17 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
 			return nil, errors.New("client identifier option is missing while parsing Ciena options")
+		}
+		return vd, nil
+
+	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
+	// and Opt 61 contains the serial number
+	case vc == "FPR4100" || vc == "FPR9300":
+		vd.VendorName = iana.EntIDCiscoSystems.String()
+		vd.Model = vc
+		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
+		if len(vd.Serial) == 0 {
+			return nil, errors.New("client identifier option is missing while parsing Cisco options")
 		}
 		return vd, nil
 	}
