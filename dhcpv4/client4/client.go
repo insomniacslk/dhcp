@@ -314,7 +314,7 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 			}
 			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
 			expectedDstPort := dhcpv4.ClientPort
-			if c.RemoteAddr != nil {
+			if c.LocalAddr != nil {
 				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
 			}
 			if dstPort != expectedDstPort {
