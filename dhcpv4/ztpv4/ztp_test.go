@@ -62,7 +62,6 @@ func TestParseClassIdentifier(t *testing.T) {
 		{
 			name: "cienaInvalidVendorClass",
 			vc:   "127100011E00032",
-			ci:   []byte("JUSTASN"),
 			fail: true,
 		},
 		{name: "cienaNoSerial", vc: "1271-00011E00-032", fail: true},

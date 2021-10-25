@@ -18,7 +18,7 @@ type VendorData struct {
 }
 
 var errVendorOptionMalformed = errors.New("malformed vendor option")
-var errClientIdentifierOptionMissing = errors.New("client identifier option is missing")
+var errClientIDOptionMissing = errors.New("client identifier option is missing")
 
 func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 	vd := &VendorData{}
@@ -69,7 +69,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.VendorName = p[0]
 		return vd, nil
 
-	// The class identifier (opt 60) is written in the following format:
+	// For Ciena the class identifier (opt 60) is written in the following format:
 	// 	{vendor iana code}-{product}-{type}
 	// For Ciena the iana code is 1271
 	// The product type is a number that maps to a Ciena product
@@ -84,7 +84,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.Model = v[1] + "-" + v[2]
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
-			return nil, errClientIdentifierOptionMissing
+			return nil, errClientIDOptionMissing
 		}
 		return vd, nil
 
@@ -95,22 +95,10 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.Model = vc
 		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
 		if len(vd.Serial) == 0 {
-			return nil, errClientIdentifierOptionMissing
-		}
-		return vd, nil
-
-	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
-	// and Opt 61 contains the serial number
-	case vc == "FPR4100" || vc == "FPR9300":
-		vd.VendorName = iana.EntIDCiscoSystems.String()
-		vd.Model = vc
-		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
-		if len(vd.Serial) == 0 {
-			return nil, errors.New("client identifier option is missing while parsing Cisco options")
+			return nil, errClientIDOptionMissing
 		}
 		return vd, nil
 	}
-
 	return nil, nil
 }
 
