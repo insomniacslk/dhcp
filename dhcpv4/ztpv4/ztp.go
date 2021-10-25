@@ -69,7 +69,6 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		vd.VendorName = p[0]
 		return vd, nil
 
-	// Ciena DHCP server
 	// The class identifier (opt 60) is written in the following format:
 	// 	{vendor iana code}-{product}-{type}
 	// For Ciena the iana code is 1271
