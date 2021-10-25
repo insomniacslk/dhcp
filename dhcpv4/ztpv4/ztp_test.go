@@ -1,4 +1,4 @@
-4package ztpv4
+package ztpv4
 
 import (
 	"testing"
