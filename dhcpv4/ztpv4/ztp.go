@@ -76,28 +76,28 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 			return nil, errors.New("client identifier option is missing")
 		}
 		return vd, nil
-	    /*
-	        Ciena DHCP server
-	            [vendor code]-[product type]-[shelf type]
-	        where:
-	        • Ciena vendor code is ‘1271’
-	        • Product type is ‘00011E00’ for RLS
-	        • Shelf type is:
-	        ‘032’ for R2 shelf ‘033’ for R4 shelf ‘048’ for R8-300 shelf
-	        For example, for R4 shelf, option 60 is ‘1271-00011E00-032’.
-	    */
-	    case strings.HasPrefix(vc, "1271"):
-	        v := strings.Split(vc, "-")
-	        if len(v) != 3 {
-	            return nil, errors.New("Invalid classIdentifier for Ciena:" + vc)
-	        }
-	        vd.VendorName = "Ciena"
-	        vd.Model = v[1] + "-" + v[2]
-	        vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
-	        if len(vd.Serial) == 0 {
-	            return nil, errors.New("client identifier option is missing")
-	        }
-	        return vd, nil
+	/*
+		Ciena DHCP server
+			[vendor code]-[product type]-[shelf type]
+		where:
+		• Ciena vendor code is ‘1271’
+		• Product type is ‘00011E00’ for RLS
+		• Shelf type is:
+		‘032’ for R2 shelf ‘033’ for R4 shelf ‘048’ for R8-300 shelf
+		For example, for R4 shelf, option 60 is ‘1271-00011E00-032’.
+	*/
+	case strings.HasPrefix(vc, "1271"):
+		v := strings.Split(vc, "-")
+		if len(v) != 3 {
+			return nil, errors.New("Invalid classIdentifier for Ciena:" + vc)
+		}
+		vd.VendorName = iana.EntIDCienaCorporation.String()
+		vd.Model = v[1] + "-" + v[2]
+		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
+		if len(vd.Serial) == 0 {
+			return nil, errors.New("client identifier option is missing")
+		}
+		return vd, nil
 	}
 
 	return nil, nil

@@ -57,7 +57,7 @@ func TestParseClassIdentifier(t *testing.T) {
 			name: "Ciena",
 			vc:   "1271-00011E00-032",
 			ci:   []byte("JUSTASN"),
-			want: &VendorData{VendorName: "Ciena", Model: "00011E00-032", Serial: "JUSTASN"},
+			want: &VendorData{VendorName: "Ciena Corporation", Model: "00011E00-032", Serial: "JUSTASN"},
 		},
 	}
 
