@@ -99,6 +99,17 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 			return nil, errClientIdentifierOptionMissing
 		}
 		return vd, nil
+
+	// Cisco Firepower FPR4100/9300 models use Opt 60 for model info
+	// and Opt 61 contains the serial number
+	case vc == "FPR4100" || vc == "FPR9300":
+		vd.VendorName = iana.EntIDCiscoSystems.String()
+		vd.Model = vc
+		vd.Serial = dhcpv4.GetString(dhcpv4.OptionClientIdentifier, packet.Options)
+		if len(vd.Serial) == 0 {
+			return nil, errors.New("client identifier option is missing while parsing Cisco options")
+		}
+		return vd, nil
 	}
 
 	return nil, nil
