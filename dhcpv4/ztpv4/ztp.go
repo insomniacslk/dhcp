@@ -49,7 +49,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 
 	// Juniper option 60 parsing is a bit more nuanced.  The following are all
-	// "valid" identifying stings for Juniper:
+	// "valid" identifying strings for Juniper:
 	//    Juniper-ptx1000-DD576      <vendor>-<model>-<serial
 	//    Juniper-qfx10008           <vendor>-<model> (serial in hostname option)
 	//    Juniper-qfx10002-361-DN817 <vendor>-<model>-<serial> (model has a dash in it!)
@@ -70,11 +70,11 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		return vd, nil
 
 	// For Ciena the class identifier (opt 60) is written in the following format:
-	// 	{vendor iana code}-{product}-{type}
+	//    {vendor iana code}-{product}-{type}
 	// For Ciena the iana code is 1271
 	// The product type is a number that maps to a Ciena product
 	// The type is used to identified different subtype of the product.
-	// An example can be  ‘1271-23422Z11-123’.
+	// An example can be ‘1271-23422Z11-123’.
 	case strings.HasPrefix(vc, strconv.Itoa(int(iana.EntIDCienaCorporation))):
 		v := strings.Split(vc, "-")
 		if len(v) != 3 {
@@ -99,6 +99,7 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 		}
 		return vd, nil
 	}
+
 	return nil, nil
 }
 
