@@ -231,10 +231,6 @@ func TestDHCPv4NewRequestFromOffer(t *testing.T) {
 	require.NoError(t, err)
 	offer.SetBroadcast()
 	offer.UpdateOption(OptMessageType(MessageTypeOffer))
-	_, err = NewRequestFromOffer(offer)
-	require.Error(t, err)
-
-	// Now add the option so it doesn't error out.
 	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
 
 	// Broadcast request
