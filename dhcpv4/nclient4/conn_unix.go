@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.12
+//go:build go1.12 && (darwin || freebsd || linux || netbsd || openbsd)
 // +build go1.12
+// +build darwin freebsd linux netbsd openbsd
 
 package nclient4
 
