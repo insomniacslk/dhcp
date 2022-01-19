@@ -123,23 +123,6 @@ func htons(v uint16) uint16 {
 	return binary.LittleEndian.Uint16(tmp[:])
 }
 
-func makeListeningSocketWithCustomPort(ifname string, port int) (int, error) {
-	fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_DGRAM, int(htons(unix.ETH_P_IP)))
-	if err != nil {
-		return fd, err
-	}
-	iface, err := net.InterfaceByName(ifname)
-	if err != nil {
-		return fd, err
-	}
-	llAddr := unix.SockaddrLinklayer{
-		Ifindex:  iface.Index,
-		Protocol: htons(unix.ETH_P_IP),
-	}
-	err = unix.Bind(fd, &llAddr)
-	return fd, err
-}
-
 func toUDPAddr(addr net.Addr, defaultAddr *net.UDPAddr) (*net.UDPAddr, error) {
 	var uaddr *net.UDPAddr
 	if addr == nil {
