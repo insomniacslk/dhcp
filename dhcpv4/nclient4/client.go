@@ -214,7 +214,7 @@ func new(iface string, conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts .
 		if iface == `` {
 			return nil, ErrNoConn
 		}
-		c.conn, err = NewRawUDPConn(iface, ClientPort) // broadcast
+		c.conn, err = NewRawUDPConn(iface, &net.UDPAddr{Port: ClientPort}, UDPBroadcast) // broadcast
 		if err != nil {
 			return nil, fmt.Errorf("unable to open a broadcasting socket: %w", err)
 		}
@@ -349,15 +349,9 @@ func WithLogger(newLogger Logger) ClientOpt {
 // srcAddr is both:
 // * The source address of outgoing frames.
 // * The address to be listened for incoming frames.
-func WithUnicast(srcAddr *net.UDPAddr) ClientOpt {
+func WithUnicast(iface string, srcAddr *net.UDPAddr) ClientOpt {
 	return func(c *Client) (err error) {
-		if srcAddr == nil {
-			srcAddr = &net.UDPAddr{Port: ClientPort}
-		}
-		c.conn, err = net.ListenUDP("udp4", srcAddr)
-		if err != nil {
-			err = fmt.Errorf("unable to start listening UDP port: %w", err)
-		}
+		c.conn, err = NewRawUDPConn(iface, srcAddr, UDPUnicast)
 		return
 	}
 }

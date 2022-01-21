@@ -10,12 +10,29 @@ package nclient4
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 
+	"github.com/mdlayher/arp"
 	"github.com/mdlayher/ethernet"
 	"github.com/mdlayher/raw"
 	"github.com/u-root/uio/uio"
+	"github.com/vishvananda/netlink"
+)
+
+// UDPConnType indicates the type of the udp conn.
+type UDPConnType int
+
+const (
+	// UDPBroadcast specifies the type of udp conn as broadcast.
+	//
+	// All the packets will be broadcasted.
+	UDPBroadcast UDPConnType = 0
+
+	// UDPUnicast specifies the type of udp conn as unicast.
+	// All the packets will be sent to a unicast MAC address.
+	UDPUnicast UDPConnType = 1
 )
 
 var (
@@ -28,13 +45,16 @@ var (
 var (
 	// ErrUDPAddrIsRequired is an error used when a passed argument is not of type "*net.UDPAddr".
 	ErrUDPAddrIsRequired = errors.New("must supply UDPAddr")
+
+	// ErrHWAddrNotFound is an error used when getting MAC address failed.
+	ErrHWAddrNotFound = errors.New("hardware address not found")
 )
 
-// NewRawUDPConn returns a UDP connection bound to the interface and port
-// given based on a raw packet socket. All packets are broadcasted.
+// NewRawUDPConn returns a UDP connection bound to the interface and udp address
+// given based on a raw packet socket.
 //
 // The interface can be completely unconfigured.
-func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
+func NewRawUDPConn(iface string, addr *net.UDPAddr, typ UDPConnType) (net.PacketConn, error) {
 	ifc, err := net.InterfaceByName(iface)
 	if err != nil {
 		return nil, err
@@ -43,7 +63,12 @@ func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewBroadcastUDPConn(rawConn, &net.UDPAddr{Port: port}), nil
+
+	if typ == UDPUnicast {
+		return NewUnicastRawUDPConn(rawConn, addr), nil
+	}
+
+	return NewBroadcastUDPConn(rawConn, addr), nil
 }
 
 // BroadcastRawUDPConn uses a raw socket to send UDP packets to the broadcast
@@ -156,4 +181,77 @@ func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 
 	// Broadcasting is not always right, but hell, what the ARP do I know.
 	return upc.PacketConn.WriteTo(packet, &raw.Addr{HardwareAddr: BroadcastMac})
+}
+
+// UnicastRawUDPConn inherits from BroadcastRawUDPConn and override the WriteTo method
+type UnicastRawUDPConn struct {
+	*BroadcastRawUDPConn
+}
+
+// NewUnicastRawUDPConn returns a PacketConn which sending the packets to a unicast MAC address.
+func NewUnicastRawUDPConn(rawPacketConn net.PacketConn, boundAddr *net.UDPAddr) net.PacketConn {
+	return &UnicastRawUDPConn{
+		BroadcastRawUDPConn: NewBroadcastUDPConn(rawPacketConn, boundAddr).(*BroadcastRawUDPConn),
+	}
+}
+
+// WriteTo implements net.PacketConn.WriteTo.
+//
+// WriteTo try to get the MAC address of destination IP address before
+// unicast all packets at the raw socket level.
+func (upc *UnicastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
+	udpAddr, ok := addr.(*net.UDPAddr)
+	if !ok {
+		return 0, ErrUDPAddrIsRequired
+	}
+
+	// Using the boundAddr is not quite right here, but it works.
+	packet := udp4pkt(b, udpAddr, upc.boundAddr)
+	dstMac, err := getHwAddr(udpAddr.IP)
+	if err != nil {
+		return 0, ErrHWAddrNotFound
+	}
+
+	return upc.PacketConn.WriteTo(packet, &raw.Addr{HardwareAddr: dstMac})
+}
+
+// getHwAddr from local arp cache. If no existing, try to get it by arp protocol.
+func getHwAddr(ip net.IP) (net.HardwareAddr, error) {
+	neighList, err := netlink.NeighListExecute(netlink.Ndmsg{
+		Family: netlink.FAMILY_V4,
+		State:  netlink.NUD_REACHABLE,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, neigh := range neighList {
+		if ip.Equal(neigh.IP) && neigh.HardwareAddr != nil {
+			return neigh.HardwareAddr, nil
+		}
+	}
+
+	return arpResolve(ip)
+}
+
+func arpResolve(dest net.IP) (net.HardwareAddr, error) {
+	// auto match the interface based on routes
+	routes, err := netlink.RouteGet(dest)
+	if err != nil {
+		return nil, err
+	}
+	if len(routes) == 0 {
+		return nil, fmt.Errorf("no route to %s found", dest.String())
+	}
+	ifc, err := net.InterfaceByIndex(routes[0].LinkIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	c, err := arp.Dial(ifc)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.Resolve(dest)
 }
