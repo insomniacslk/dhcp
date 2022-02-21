@@ -2,9 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build go1.12 && (darwin || freebsd || linux || netbsd || openbsd)
-// +build go1.12
-// +build darwin freebsd linux netbsd openbsd
+//go:build go1.12 && linux
+// +build go1.12,linux
 
 package nclient4
 
@@ -13,22 +12,18 @@ import (
 	"io"
 	"net"
 
-	"github.com/mdlayher/ethernet"
-	"github.com/mdlayher/raw"
+	"github.com/mdlayher/packet"
 	"github.com/u-root/uio/uio"
+	"golang.org/x/sys/unix"
 )
 
-var (
-	// BroadcastMac is the broadcast MAC address.
-	//
-	// Any UDP packet sent to this address is broadcast on the subnet.
-	BroadcastMac = net.HardwareAddr([]byte{255, 255, 255, 255, 255, 255})
-)
+// BroadcastMac is the broadcast MAC address.
+//
+// Any UDP packet sent to this address is broadcast on the subnet.
+var BroadcastMac = net.HardwareAddr([]byte{255, 255, 255, 255, 255, 255})
 
-var (
-	// ErrUDPAddrIsRequired is an error used when a passed argument is not of type "*net.UDPAddr".
-	ErrUDPAddrIsRequired = errors.New("must supply UDPAddr")
-)
+// ErrUDPAddrIsRequired is an error used when a passed argument is not of type "*net.UDPAddr".
+var ErrUDPAddrIsRequired = errors.New("must supply UDPAddr")
 
 // NewRawUDPConn returns a UDP connection bound to the interface and port
 // given based on a raw packet socket. All packets are broadcasted.
@@ -39,7 +34,7 @@ func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawConn, err := raw.ListenPacket(ifc, uint16(ethernet.EtherTypeIPv4), &raw.Config{LinuxSockDGRAM: true})
+	rawConn, err := packet.Listen(ifc, packet.Datagram, unix.ETH_P_IP, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +147,8 @@ func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	}
 
 	// Using the boundAddr is not quite right here, but it works.
-	packet := udp4pkt(b, udpAddr, upc.boundAddr)
+	pkt := udp4pkt(b, udpAddr, upc.boundAddr)
 
 	// Broadcasting is not always right, but hell, what the ARP do I know.
-	return upc.PacketConn.WriteTo(packet, &raw.Addr{HardwareAddr: BroadcastMac})
+	return upc.PacketConn.WriteTo(pkt, &packet.Addr{HardwareAddr: BroadcastMac})
 }
