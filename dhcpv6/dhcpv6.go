@@ -75,7 +75,7 @@ func RelayMessageFromBytes(data []byte) (*RelayMessage, error) {
 	}
 	// TODO: fail if no OptRelayMessage is present.
 	if err := d.Options.FromBytes(buf.Data()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to parse Options: %v", err)
 	}
 	return d, nil
 }
@@ -85,7 +85,7 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	buf := uio.NewBigEndianBuffer(data)
 	messageType := MessageType(buf.Read8())
 	if buf.Error() != nil {
-		return nil, buf.Error()
+		return nil, fmt.Errorf("Unable to parse MessageType: %v", buf.Error())
 	}
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {

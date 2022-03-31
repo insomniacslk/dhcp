@@ -8,12 +8,32 @@ import (
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
-var (
+var circuitRegexs = []*regexp.Regexp{
 	// Arista Port, Vlan Pattern
-	aristaPVPattern = regexp.MustCompile("Ethernet(?P<port>[0-9]+):(?P<vlan>[0-9]+)")
+	regexp.MustCompile("Ethernet(?P<port>[0-9]+):(?P<vlan>[0-9]+)"),
 	// Arista Slot, Mod, Port Pattern
-	aristaSMPPattern = regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<module>[0-9]+)/(?P<port>[0-9]+)")
-)
+	regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)"),
+	// Juniper QFX et-0/0/0:0.0 and xe-0/0/0:0.0
+	regexp.MustCompile("^(et|xe)-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+):(?P<subport>[0-9]+).*$"),
+	// Juniper PTX et-0/0/0.0
+	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+)$"),
+	// Juniper EX ge-0/0/0.0
+	regexp.MustCompile("^ge-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+).*"),
+	// Arista Ethernet3/17/1
+	// Sometimes Arista prepend circuit id type(1 byte) and length(1 byte) not using ^
+	regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
+	// Juniper QFX et-1/0/61
+	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
+	// Arista Ethernet14:Vlan2001
+	// Arista Ethernet10:2020
+	regexp.MustCompile("Ethernet(?P<port>[0-9]+):(?P<vlan>.*)$"),
+	// Cisco Gi1/10:2020
+	regexp.MustCompile("^Gi(?P<slot>[0-9]+)/(?P<port>[0-9]+):(?P<vlan>.*)$"),
+	// Nexus Ethernet1/3
+	regexp.MustCompile("^Ethernet(?P<slot>[0-9]+)/(?P<port>[0-9]+)$"),
+	// Juniper bundle interface ae52.0
+	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
+}
 
 // CircuitID represents the structure of network vendor interface formats
 type CircuitID struct {
@@ -53,38 +73,32 @@ func ParseRemoteID(packet dhcpv6.DHCPv6) (*CircuitID, error) {
 }
 
 func matchCircuitId(circuitInfo string) (*CircuitID, error) {
-	var names, matches []string
+	for _, re := range circuitRegexs {
 
-	switch {
-	case aristaPVPattern.MatchString(circuitInfo):
-		matches = aristaPVPattern.FindStringSubmatch(circuitInfo)
-		names = aristaPVPattern.SubexpNames()
-	case aristaSMPPattern.MatchString(circuitInfo):
-		matches = aristaSMPPattern.FindStringSubmatch(circuitInfo)
-		names = aristaSMPPattern.SubexpNames()
-	}
-
-	if len(matches) == 0 {
-		return nil, fmt.Errorf("no circuitId regex matches for %v", circuitInfo)
-	}
-
-	var circuit CircuitID
-	for i, match := range matches {
-		switch names[i] {
-		case "port":
-			circuit.Port = match
-		case "slot":
-			circuit.Slot = match
-		case "module":
-			circuit.Module = match
-		case "subport":
-			circuit.SubPort = match
-		case "vlan":
-			circuit.Vlan = match
+		match := re.FindStringSubmatch(circuitInfo)
+		if len(match) == 0 {
+			continue
 		}
-	}
 
-	return &circuit, nil
+		c := CircuitID{}
+		for i, k := range re.SubexpNames() {
+			switch k {
+			case "slot":
+				c.Slot = match[i]
+			case "mod":
+				c.Module = match[i]
+			case "port":
+				c.Port = match[i]
+			case "subport":
+				c.SubPort = match[i]
+			case "vlan":
+				c.Vlan = match[i]
+			}
+		}
+
+		return &c, nil
+	}
+	return nil, fmt.Errorf("Unable to match circuit id : %s with listed regexes of interface types", circuitInfo)
 }
 
 // FormatCircuitID is the CircuitID format we send in our Bootfile URL for ZTP devices
