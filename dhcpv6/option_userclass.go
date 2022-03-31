@@ -50,9 +50,5 @@ func ParseOptUserClass(data []byte) (*OptUserClass, error) {
 		len := buf.Read16()
 		opt.UserClasses = append(opt.UserClasses, buf.CopyN(int(len)))
 	}
-	var err = buf.FinError()
-	if err != nil {
-		err = fmt.Errorf("Unable to parse OptUserClass: %v", err)
-	}
-	return &opt, err
+	return &opt, buf.FinError()
 }

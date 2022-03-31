@@ -208,12 +208,10 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		// Consume, but do not Copy. Each parser will make a copy of
 		// pertinent data.
 		optData := buf.Consume(length)
-		if err := buf.Error(); err != nil {
-			return fmt.Errorf("Unable to read payload of option code %d with option length %d: %v", code, length, err)
-		}
+
 		opt, err := parser(code, optData)
 		if err != nil {
-			return fmt.Errorf("Unable to parse option code %d with option length %d : %v [data %x]", code, length, err, optData)
+			return err
 		}
 		*o = append(*o, opt)
 	}

@@ -57,10 +57,11 @@ func TestParseVendorDataWithVendorOpts(t *testing.T) {
 
 func TestParseVendorDataWithVendorClass(t *testing.T) {
 	tt := []struct {
-		name string
-		vc   string
-		want *VendorData
-		fail bool
+		name     string
+		vc       string
+		clientId *dhcpv6.Duid
+		want     *VendorData
+		fail     bool
 	}{
 		{name: "empty", fail: true},
 		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true, want: nil},
@@ -75,45 +76,14 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 			vc:   "ZPESystems:NSC:001234567",
 			want: &VendorData{VendorName: "ZPESystems", Model: "NSC", Serial: "001234567"},
 		},
-	}
-
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			packet, err := dhcpv6.NewMessage()
-			if err != nil {
-				t.Fatalf("failed to creat dhcpv6 packet object: %v", err)
-			}
-
-			packet.AddOption(&dhcpv6.OptVendorClass{
-				EnterpriseNumber: 0000, Data: [][]byte{[]byte(tc.vc)}})
-
-			vd, err := ParseVendorData(packet)
-			if err != nil && !tc.fail {
-				t.Errorf("unexpected failure: %v", err)
-			}
-
-			if vd != nil {
-				require.Equal(t, *tc.want, *vd, "comparing vendor class data")
-			} else {
-				require.Equal(t, tc.want, vd, "comparing vendor class data")
-			}
-		})
-	}
-}
-
-func TestParseVendorDataWithClientId(t *testing.T) {
-	tt := []struct {
-		name   string
-		vc     string
-		serial string
-		want   *VendorData
-		fail   bool
-	}{
 		{
-			name:   "Ciena",
-			vc:     "1271-23422Z11-123",
-			serial: "001234567",
-			want:   &VendorData{VendorName: iana.EnterpriseIDCienaCorporation.String(), Model: "23422Z11-123", Serial: "001234567"},
+			name: "Ciena",
+			vc:   "1271-23422Z11-123",
+			clientId: &dhcpv6.Duid{
+				Type:                 dhcpv6.DUID_EN,
+				EnterpriseIdentifier: []byte("001234567"),
+			},
+			want: &VendorData{VendorName: iana.EnterpriseIDCienaCorporation.String(), Model: "23422Z11-123", Serial: "001234567"},
 		},
 	}
 
@@ -126,23 +96,18 @@ func TestParseVendorDataWithClientId(t *testing.T) {
 
 			packet.AddOption(&dhcpv6.OptVendorClass{
 				EnterpriseNumber: 0000, Data: [][]byte{[]byte(tc.vc)}})
-			packet.AddOption(dhcpv6.OptClientID(
-				dhcpv6.Duid{
-					Type:                 dhcpv6.DUID_EN,
-					EnterpriseIdentifier: []byte(tc.serial),
-				},
-			),
-			)
-
+			if tc.clientId != nil {
+				packet.AddOption(dhcpv6.OptClientID(*tc.clientId))
+			}
 			vd, err := ParseVendorData(packet)
 			if err != nil && !tc.fail {
 				t.Errorf("unexpected failure: %v", err)
 			}
 
 			if vd != nil {
-				require.Equal(t, *tc.want, *vd, "comparing vendor option data")
+				require.Equal(t, *tc.want, *vd, "comparing vendor class data")
 			} else {
-				require.Equal(t, tc.want, vd, "comparing vendor option data")
+				require.Equal(t, tc.want, vd, "comparing vendor class data")
 			}
 		})
 	}
