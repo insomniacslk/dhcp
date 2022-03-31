@@ -2,7 +2,6 @@ package ztpv6
 
 import (
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -81,11 +80,7 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 			if len(v) < 3 {
 				return nil, errVendorOptionMalformed
 			}
-			innerMessage, err := packet.GetInnerMessage()
-			if err != nil {
-				return nil, fmt.Errorf("Unable to get inner message: %v", err)
-			}
-			duid := innerMessage.Options.ClientID()
+			duid := packet.(*dhcpv6.Message).Options.ClientID()
 			vd.VendorName = iana.EnterpriseIDCienaCorporation.String()
 			vd.Model = v[1] + "-" + v[2]
 			vd.Serial = string(duid.EnterpriseIdentifier)
