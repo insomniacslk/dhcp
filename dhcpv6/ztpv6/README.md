@@ -3,6 +3,7 @@
 ## Currently Supported Vendors For DHCPv6 ZTP
  - Arista
  - ZPE
+ - Ciena
 
 ## Why Do We Need This?
 Many network hardware vendors support features that allow network devices to provision themselves with proper supporting automation/tools. Network devices can rely on DHCP and other methods to gather bootfile info, IPs, etc. DHCPv6 Vendor options provides us Vendor Name, Make, Model, and Serial Number data. This data can be used to uniquely identify individual network devices at provisioning time and can be used by tooling to make decisions necessary to correctly and reliably provision a network device.

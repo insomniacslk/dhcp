@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,10 +57,11 @@ func TestParseVendorDataWithVendorOpts(t *testing.T) {
 
 func TestParseVendorDataWithVendorClass(t *testing.T) {
 	tt := []struct {
-		name string
-		vc   string
-		want *VendorData
-		fail bool
+		name     string
+		vc       string
+		clientId *dhcpv6.Duid
+		want     *VendorData
+		fail     bool
 	}{
 		{name: "empty", fail: true},
 		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true, want: nil},
@@ -74,6 +76,15 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 			vc:   "ZPESystems:NSC:001234567",
 			want: &VendorData{VendorName: "ZPESystems", Model: "NSC", Serial: "001234567"},
 		},
+		{
+			name: "Ciena",
+			vc:   "1271-23422Z11-123",
+			clientId: &dhcpv6.Duid{
+				Type:                 dhcpv6.DUID_EN,
+				EnterpriseIdentifier: []byte("001234567"),
+			},
+			want: &VendorData{VendorName: iana.EnterpriseIDCienaCorporation.String(), Model: "23422Z11-123", Serial: "001234567"},
+		},
 	}
 
 	for _, tc := range tt {
@@ -85,7 +96,9 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 
 			packet.AddOption(&dhcpv6.OptVendorClass{
 				EnterpriseNumber: 0000, Data: [][]byte{[]byte(tc.vc)}})
-
+			if tc.clientId != nil {
+				packet.AddOption(dhcpv6.OptClientID(*tc.clientId))
+			}
 			vd, err := ParseVendorData(packet)
 			if err != nil && !tc.fail {
 				t.Errorf("unexpected failure: %v", err)
