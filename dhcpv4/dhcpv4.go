@@ -278,7 +278,7 @@ func NewReleaseFromACK(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	)...)
 }
 
-// FromBytes encodes the DHCPv4 packet into a sequence of bytes, and returns an
+// FromBytes decodes a DHCPv4 packet from a sequence of bytes, and returns an
 // error if the packet is not valid.
 func FromBytes(q []byte) (*DHCPv4, error) {
 	var p DHCPv4
