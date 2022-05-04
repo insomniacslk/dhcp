@@ -2,9 +2,11 @@ package ztpv6
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 
 	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/insomniacslk/dhcp/iana"
 )
 
 var (
@@ -65,6 +67,23 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 			vd.VendorName = p[0]
 			vd.Model = p[1]
 			vd.Serial = p[2]
+			return &vd, nil
+
+		// For Ciena the class identifier (opt 60) is written in the following format:
+		//    {vendor iana code}-{product}-{type}
+		// For Ciena the iana code is 1271
+		// The product type is a number that maps to a Ciena product
+		// The type is used to identified different subtype of the product.
+		// An example can be ‘1271-23422Z11-123’.
+		case strings.HasPrefix(d, strconv.Itoa(int(iana.EnterpriseIDCienaCorporation))):
+			v := strings.Split(d, "-")
+			if len(v) < 3 {
+				return nil, errVendorOptionMalformed
+			}
+			duid := packet.(*dhcpv6.Message).Options.ClientID()
+			vd.VendorName = iana.EnterpriseIDCienaCorporation.String()
+			vd.Model = v[1] + "-" + v[2]
+			vd.Serial = string(duid.EnterpriseIdentifier)
 			return &vd, nil
 		}
 	}
