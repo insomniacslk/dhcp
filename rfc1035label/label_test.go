@@ -28,6 +28,18 @@ func TestLabelsFromBytesZeroLength(t *testing.T) {
 	require.Equal(t, []byte{}, labels.ToBytes())
 }
 
+func TestLabelsFromBytesWithoutZeroLength(t *testing.T) {
+	expected := []byte{
+		0x8, 'h', 'o', 's', 't', 'n', 'a', 'm', 'e',
+	}
+	labels, err := FromBytes(expected)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(labels.Labels))
+	require.Equal(t, len(expected), labels.Length())
+	require.Equal(t, expected, labels.ToBytes())
+	require.Equal(t, "hostname", labels.Labels[0])
+}
+
 func TestLabelsFromBytesInvalidLength(t *testing.T) {
 	_, err := FromBytes([]byte{0x5, 0xaa, 0xbb}) // short length
 	require.Error(t, err)
