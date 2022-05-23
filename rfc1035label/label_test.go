@@ -28,7 +28,9 @@ func TestLabelsFromBytesZeroLength(t *testing.T) {
 	require.Equal(t, []byte{}, labels.ToBytes())
 }
 
-func TestLabelsFromBytesWithoutZeroLength(t *testing.T) {
+func TestLabelsFromBytesPartialDomainName(t *testing.T) {
+	// Partial domain name without trailing zero-length byte as per RFC 4704
+	// Section 4.2
 	expected := []byte{
 		0x8, 'h', 'o', 's', 't', 'n', 'a', 'm', 'e',
 	}
