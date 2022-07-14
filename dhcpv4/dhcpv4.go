@@ -382,6 +382,13 @@ func (d *DHCPv4) GetOneOption(code OptionCode) []byte {
 	return d.Options.Get(code)
 }
 
+// DeleteOption deletes an existing option with the given option code.
+func (d *DHCPv4) DeleteOption(code OptionCode) {
+	if d.Options != nil {
+		d.Options.Del(code)
+	}
+}
+
 // UpdateOption replaces an existing option with the same option code with the
 // given one, adding it if not already present.
 func (d *DHCPv4) UpdateOption(opt Option) {
