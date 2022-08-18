@@ -46,7 +46,8 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 	for _, d := range vData {
 		switch {
 		// Arista;DCS-0000;00.00;ZZZ00000000
-		case strings.HasPrefix(d, "Arista;"):
+		// Cisco;8800;12.34;FOC00000000
+		case strings.HasPrefix(d, "Arista;"), strings.HasPrefix(d, "Cisco;"):
 			p := strings.Split(d, ";")
 			if len(p) < 4 {
 				return nil, errVendorOptionMalformed
