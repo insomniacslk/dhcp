@@ -231,6 +231,7 @@ func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (
 }
 
 // NewRequestFromOffer builds a DHCPv4 request from an offer.
+// It assumes the SELECTING state by default, see Section 4.3.2 in RFC 2131 for more details.
 func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	return New(PrependModifiers(modifiers,
 		WithReply(offer),
@@ -245,6 +246,21 @@ func NewRequestFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) 
 			OptionDomainName,
 			OptionDomainNameServer,
 		),
+	)...)
+}
+
+// NewRenewFromOffer builds a DHCPv4 RENEW-style request from an offer. RENEW requests have minor
+// changes to their options compared to SELECT requests as specified by RFC 2131, section 4.3.2.
+func NewRenewFromOffer(offer *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
+	return NewRequestFromOffer(offer, PrependModifiers(modifiers,
+		// The server identifier option must not be filled in
+		WithoutOption(OptionServerIdentifier),
+		// The requested IP address must not be filled in
+		WithoutOption(OptionRequestedIPAddress),
+		// The client IP must be filled in with the IP offered to the client
+		WithClientIP(offer.YourIPAddr),
+		// The renewal request must use unicast
+		WithBroadcast(false),
 	)...)
 }
 
@@ -380,6 +396,13 @@ func (d *DHCPv4) SetUnicast() {
 // concatenated, and hence this should always just return one option.
 func (d *DHCPv4) GetOneOption(code OptionCode) []byte {
 	return d.Options.Get(code)
+}
+
+// DeleteOption deletes an existing option with the given option code.
+func (d *DHCPv4) DeleteOption(code OptionCode) {
+	if d.Options != nil {
+		d.Options.Del(code)
+	}
 }
 
 // UpdateOption replaces an existing option with the same option code with the

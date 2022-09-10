@@ -1,4 +1,4 @@
-// this tests nclient4 with lease and release
+// this tests nclient4 with lease, renew and release
 
 package nclient4
 
@@ -236,6 +236,14 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		sll.lastTestSvrErrLock.RLock()
 		keepgoing := chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
 		sll.lastTestSvrErrLock.RUnlock()
+
+		if keepgoing {
+			err = clnt.Renew(context.Background(), lease)
+			sll.lastTestSvrErrLock.RLock()
+			keepgoing = chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
+			sll.lastTestSvrErrLock.RUnlock()
+		}
+
 		if keepgoing {
 			err = clnt.Release(lease)
 			//this sleep is to make sure release is handled by server
