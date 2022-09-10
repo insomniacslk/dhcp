@@ -44,6 +44,17 @@ func TestWithOptionModifier(t *testing.T) {
 	require.Equal(t, "slackware.it", dnOpt)
 }
 
+func TestWithoutOptionModifier(t *testing.T) {
+	d, err := New(
+		WithOption(OptDomainName("slackware.it")),
+		WithoutOption(OptionDomainName),
+	)
+	require.NoError(t, err)
+
+	require.False(t, d.Options.Has(OptionDomainName))
+	require.Equal(t, "", d.DomainName())
+}
+
 func TestUserClassModifier(t *testing.T) {
 	d, err := New(WithUserClass("linuxboot", false))
 	require.NoError(t, err)
