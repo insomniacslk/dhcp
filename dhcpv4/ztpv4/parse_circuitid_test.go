@@ -89,6 +89,8 @@ func TestParseCircuitID(t *testing.T) {
 		{name: "Juniper Bundle Pattern", circuit: []byte("ae52.0"), want: &CircuitID{Port: "52", SubPort: "0"}},
 		{name: "Arista Vlan pattern 1 with circuitid type and length", circuit: []byte("\x00\x0fEthernet14:2001"), want: &CircuitID{Port: "14", Vlan: "2001"}},
 		{name: "juniperEX pattern", circuit: []byte("ge-0/0/0.0:RANDOMCHAR"), want: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}},
+		{name: "Ciena pattern 1", circuit: []byte("tt-tt-tttt-6-7.OSC-1-2"), want: &CircuitID{Slot: "1", Port: "2"}},
+		{name: "Ciena pattern 2", circuit: []byte("tt-tt-tttt-6-7.OSC-1-2-3"), want: &CircuitID{Slot: "2", Port: "3"}},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

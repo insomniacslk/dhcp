@@ -21,7 +21,7 @@ You will probably only need `dhcpv6` and/or `dhcpv4` explicitly. The rest is
 pulled in automatically if necessary.
 
 
-So, to get `dhcpv6` and `dhpv4` just run:
+So, to get `dhcpv6` and `dhcpv4` just run:
 ```
 go get -u github.com/insomniacslk/dhcp/dhcpv{4,6}
 ```

@@ -266,6 +266,43 @@ func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
 	require.Equal(t, MessageTypeRequest, req.MessageType())
 }
 
+func TestDHCPv4NewRenewFromOffer(t *testing.T) {
+	offer, err := New()
+	require.NoError(t, err)
+	offer.SetBroadcast()
+	offer.UpdateOption(OptMessageType(MessageTypeOffer))
+	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
+	offer.UpdateOption(OptRequestedIPAddress(net.IPv4(192, 168, 0, 1)))
+	offer.YourIPAddr = net.IPv4(192, 168, 0, 1)
+
+	// RFC 2131: RENEW-style requests will be unicast
+	var req *DHCPv4
+	req, err = NewRenewFromOffer(offer)
+	require.NoError(t, err)
+	require.Equal(t, MessageTypeRequest, req.MessageType())
+	require.Nil(t, req.GetOneOption(OptionServerIdentifier))
+	require.Nil(t, req.GetOneOption(OptionRequestedIPAddress))
+	require.Equal(t, offer.YourIPAddr, req.ClientIPAddr)
+	require.True(t, req.IsUnicast())
+	require.False(t, req.IsBroadcast())
+	// Renewals should behave identically to initial requests regarding requested options
+	require.True(t, req.IsOptionRequested(OptionRouter))
+	require.True(t, req.IsOptionRequested(OptionSubnetMask))
+	require.True(t, req.IsOptionRequested(OptionDomainName))
+	require.True(t, req.IsOptionRequested(OptionDomainNameServer))
+}
+
+func TestDHCPv4NewRenewFromOfferWithModifier(t *testing.T) {
+	offer, err := New()
+	require.NoError(t, err)
+	offer.UpdateOption(OptMessageType(MessageTypeOffer))
+	userClass := WithUserClass("linuxboot", false)
+	req, err := NewRenewFromOffer(offer, userClass)
+	require.NoError(t, err)
+	require.Equal(t, MessageTypeRequest, req.MessageType())
+	require.Contains(t, req.UserClass(), "linuxboot")
+}
+
 func TestNewReplyFromRequest(t *testing.T) {
 	discover, err := New()
 	require.NoError(t, err)

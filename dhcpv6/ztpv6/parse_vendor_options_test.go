@@ -18,11 +18,16 @@ func TestParseVendorDataWithVendorOpts(t *testing.T) {
 		{name: "empty", fail: true},
 		{name: "unknownVendor", vc: "VendorX;BFR10K;XX12345", fail: true, want: nil},
 		{name: "truncatedArista", vc: "Arista;1234", fail: true, want: nil},
+		{name: "truncatedCisco", vc: "Cisco;1234", fail: true, want: nil},
 		{name: "truncatedZPE", vc: "ZPESystems:1234", fail: true, want: nil},
 		{
 			name: "arista",
 			vc:   "Arista;DCS-7050S-64;01.23;JPE12345678",
 			want: &VendorData{VendorName: "Arista", Model: "DCS-7050S-64", Serial: "JPE12345678"},
+		}, {
+			name: "cisco",
+			vc:   "Cisco;SYS-8801;01.23;FOC12345678",
+			want: &VendorData{VendorName: "Cisco", Model: "SYS-8801", Serial: "FOC12345678"},
 		}, {
 			name: "zpe",
 			vc:   "ZPESystems:NSC:001234567",
