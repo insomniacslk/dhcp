@@ -7,45 +7,25 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14', '1.15', '1.16']
-    env:
-      GO111MODULE: on
+        go: ['1.18', '1.19']
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          stable: false
           go-version: ${{ matrix.go }}
       - name: run unit tests
-        run: |
-          go get -v -t ./...
-          echo "" > "${GITHUB_WORKSPACE}"/coverage.txt
-          for d in $(go list ./...); do
-              go test -v -race -coverprofile=profile.out -covermode=atomic "${d}"
-              if [ -f profile.out ]; then
-                cat profile.out >> "${GITHUB_WORKSPACE}"/coverage.txt
-                rm profile.out
-              fi
-          done
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v1
-        with:
-          files: coverage.txt
-          flags: unittests
-          fail_ci_if_error: true
-          verbose: true
+        uses: codecov/codecov-action@v3
   integration-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14', '1.15', '1.16']
-    env:
-      GO111MODULE: on
+        go: ['1.18', '1.19']
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          stable: false
           go-version: ${{ matrix.go }}
       - name: run integ tests
         run: |
@@ -62,9 +42,4 @@ jobs:
               fi
           done
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v1
-        with:
-          files: coverage.txt
-          flags: integtests
-          fail_ci_if_error: true
-          verbose: true
+        uses: codecov/codecov-action@v3
