@@ -104,8 +104,6 @@ func labelsFromBytes(buf []byte) ([]string, error) {
 			// domain name field as per RFC 4704 Section 4.2
 			if label != "" {
 				labels = append(labels, label)
-
-				return labels, nil
 			}
 
 			break
