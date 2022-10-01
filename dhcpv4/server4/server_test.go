@@ -116,7 +116,7 @@ func TestServer(t *testing.T) {
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
 	}
 
-	err = c.Renew(context.Background(), lease, modifiers...)
+	lease, err = c.Renew(context.Background(), lease, modifiers...)
 	require.NoError(t, err)
 	require.NotNil(t, lease.Offer, lease.ACK)
 	for _, p := range []*dhcpv4.DHCPv4{lease.Offer, lease.ACK} {
