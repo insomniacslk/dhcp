@@ -238,7 +238,7 @@ func (sll *testServerLeaseList) runTest(t *testing.T) {
 		sll.lastTestSvrErrLock.RUnlock()
 
 		if keepgoing {
-			err = clnt.Renew(context.Background(), lease)
+			lease, err = clnt.Renew(context.Background(), lease)
 			sll.lastTestSvrErrLock.RLock()
 			keepgoing = chkerr(err, sll.lastTestSvrErr, l.ShouldFail, t)
 			sll.lastTestSvrErrLock.RUnlock()
