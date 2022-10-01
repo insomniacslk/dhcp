@@ -110,7 +110,8 @@ func TestServer(t *testing.T) {
 
 	lease, err := c.Request(context.Background(), modifiers...)
 	require.NoError(t, err)
-	require.NotNil(t, lease.Offer, lease.ACK)
+	require.NotNil(t, lease.Offer)
+	require.NotNil(t, lease.ACK)
 	for _, p := range []*dhcpv4.DHCPv4{lease.Offer, lease.ACK} {
 		require.Equal(t, xid, p.TransactionID)
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
@@ -118,7 +119,8 @@ func TestServer(t *testing.T) {
 
 	err = c.Renew(context.Background(), lease, modifiers...)
 	require.NoError(t, err)
-	require.NotNil(t, lease.Offer, lease.ACK)
+	require.NotNil(t, lease.Offer)
+	require.NotNil(t, lease.ACK)
 	for _, p := range []*dhcpv4.DHCPv4{lease.Offer, lease.ACK} {
 		require.Equal(t, xid, p.TransactionID)
 		require.Equal(t, ifaces[0].HardwareAddr, p.ClientHWAddr)
