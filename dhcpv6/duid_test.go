@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"bytes"
+	"fmt"
 	"net"
 	"testing"
 
@@ -145,4 +146,56 @@ func TestDuidEqualNotEqual(t *testing.T) {
 		LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0x00},
 	}
 	require.False(t, d.Equal(o))
+}
+
+func TestDuidFromBytesCreatesCopy(t *testing.T) {
+	// Test that DuidFromBytes creates a copy of the underlying buffer
+
+	items := []struct {
+		duidType  string
+		duidBytes []byte
+	}{
+		{"DUID-LL", []byte{0, 3, 0, 1, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+		{"DUID-LL", []byte{0, 3, 0, 1, 0xbb, 0xcc, 0xaa, 0xee, 0xff, 0xdd}},
+		{"DUID-LLT", []byte{0, 1, 0, 1, 0x01, 0x02, 0x03, 0x04, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+		{"DUID-LLT", []byte{0, 1, 0, 1, 0x05, 0x06, 0x07, 0x08, 0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa}},
+		{"DUID-EN", []byte{0, 2, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf}},
+		{"DUID-EN", []byte{0, 2, 0x0e, 0x0f, 0x01, 0x02, 0x3, 0x4, 0x5}},
+		{"DUID-UUID", []byte{0x00, 0x04, 0x00, 0x02, 0x00, 0x03, 0x00, 0x04, 0x00, 0x05, 0x00, 0x06, 0x00, 0x07, 0x00, 0x08, 0x00, 0x09}},
+		{"DUID-UUID", []byte{0x00, 0x04, 0x02, 0x08, 0x07, 0x00, 0x04, 0x03, 0x00, 0x05, 0x00, 0x05, 0x03, 0x04, 0x01, 0x08, 0x07, 0x09}},
+		{"Unknown", []byte("\x00\x0a\x00\x03\x00\x01\x4c\x5e\x0c\x43\xbf\x39")},
+		{"Unknown", []byte("\x00\x0a\x00\x04\x02\x03\x4e\x5f\x03\x33\xfb\x93")},
+		{"Unknown", []byte("\x00\x0a\x00\x03\x00\x01\x4c\x5e\x0c\x43\xbf\x39")},
+		{"Unknown", []byte("\x00\x0a\x00\x04\x02\x03\x4e\x5f\x03\x33\xfb\x93")},
+	}
+
+	// Compute max DUID length from the above items
+	maxLen := 0
+	for _, item := range items {
+		l := len(item.duidBytes)
+		if l > maxLen {
+			maxLen = l
+		}
+	}
+
+	// Create shared buffer
+	buf := make([]byte, maxLen)
+
+	results := make([]*Duid, len(items))
+
+	// For each item, copy it into buf, then parse it from buf and store the result
+	for i, item := range items {
+		copy(buf, item.duidBytes)
+		duid, err := DuidFromBytes(buf[:len(item.duidBytes)])
+		require.NoError(t, err)
+		results[i] = duid
+	}
+
+	// Require that all the parsed DUID values still match the original byte values
+	for i := range items {
+		t.Run(fmt.Sprintf("item %d", i+1), func(t *testing.T) {
+			require.Equal(t, items[i].duidBytes, results[i].ToBytes())
+			require.Equal(t, items[i].duidType, results[i].Type.String())
+		})
+	}
 }

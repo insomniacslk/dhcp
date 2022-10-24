@@ -119,6 +119,13 @@ func (d *Duid) String() string {
 	return fmt.Sprintf("DUID{type=%v hwtype=%v hwaddr=%v}", d.Type.String(), d.HwType.String(), hwaddr)
 }
 
+// dupBytes creates and returns a new byte slice with data copied from the given byte slice.
+func dupBytes(slice []byte) []byte {
+	ret := make([]byte, len(slice))
+	copy(ret, slice)
+	return ret
+}
+
 // DuidFromBytes parses a Duid from a byte slice.
 func DuidFromBytes(data []byte) (*Duid, error) {
 	if len(data) < 2 {
@@ -132,26 +139,26 @@ func DuidFromBytes(data []byte) (*Duid, error) {
 		}
 		d.HwType = iana.HWType(binary.BigEndian.Uint16(data[2:4]))
 		d.Time = binary.BigEndian.Uint32(data[4:8])
-		d.LinkLayerAddr = data[8:]
+		d.LinkLayerAddr = dupBytes(data[8:])
 	} else if d.Type == DUID_LL {
 		if len(data) < 4 {
 			return nil, fmt.Errorf("Invalid DUID-LL: shorter than 4 bytes")
 		}
 		d.HwType = iana.HWType(binary.BigEndian.Uint16(data[2:4]))
-		d.LinkLayerAddr = data[4:]
+		d.LinkLayerAddr = dupBytes(data[4:])
 	} else if d.Type == DUID_EN {
 		if len(data) < 6 {
 			return nil, fmt.Errorf("Invalid DUID-EN: shorter than 6 bytes")
 		}
 		d.EnterpriseNumber = binary.BigEndian.Uint32(data[2:6])
-		d.EnterpriseIdentifier = data[6:]
+		d.EnterpriseIdentifier = dupBytes(data[6:])
 	} else if d.Type == DUID_UUID {
 		if len(data) != 18 {
 			return nil, fmt.Errorf("Invalid DUID-UUID length. Expected 18, got %v", len(data))
 		}
-		d.Uuid = data[2:18]
+		d.Uuid = dupBytes(data[2:18])
 	} else {
-		d.Opaque = data[2:]
+		d.Opaque = dupBytes(data[2:])
 	}
 	return &d, nil
 }
