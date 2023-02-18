@@ -93,8 +93,8 @@ func (op *OptIANA) ToBytes() []byte {
 }
 
 func (op *OptIANA) String() string {
-	return fmt.Sprintf("IANA: {IAID=%v, t1=%v, t2=%v, options=%v}",
-		op.IaId, op.T1, op.T2, op.Options)
+	return fmt.Sprintf("%s: {IAID=%#x T1=%v T2=%v Options=%v}",
+		op.Code(), op.IaId, op.T1, op.T2, op.Options)
 }
 
 // ParseOptIANA builds an OptIANA structure from a sequence of bytes.  The

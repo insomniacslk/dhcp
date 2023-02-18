@@ -24,7 +24,7 @@ func (op *Opt4RD) ToBytes() []byte {
 
 // String returns a human-readable representation of the option
 func (op *Opt4RD) String() string {
-	return fmt.Sprintf("Opt4RD{%v}", op.Options)
+	return fmt.Sprintf("%s: {Options=%v}", op.Code(), op.Options)
 }
 
 // ParseOpt4RD builds an Opt4RD structure from a sequence of bytes.
@@ -96,8 +96,8 @@ func (op *Opt4RDMapRule) ToBytes() []byte {
 
 // String returns a human-readable description of this option
 func (op *Opt4RDMapRule) String() string {
-	return fmt.Sprintf("Opt4RDMapRule{Prefix4=%s, Prefix6=%s, EA-Bits=%d, WKPAuthorized=%t}",
-		op.Prefix4.String(), op.Prefix6.String(), op.EABitsLength, op.WKPAuthorized)
+	return fmt.Sprintf("%s: {Prefix4=%s, Prefix6=%s, EA-Bits=%d, WKPAuthorized=%t}",
+		op.Code(), op.Prefix4.String(), op.Prefix6.String(), op.EABitsLength, op.WKPAuthorized)
 }
 
 // ParseOpt4RDMapRule builds an Opt4RDMapRule structure from a sequence of bytes.
@@ -156,8 +156,8 @@ func (op *Opt4RDNonMapRule) String() string {
 		tClass = *op.TrafficClass
 	}
 
-	return fmt.Sprintf("Opt4RDNonMapRule{HubAndSpoke=%t, TrafficClass=%v, DomainPMTU=%d}",
-		op.HubAndSpoke, tClass, op.DomainPMTU)
+	return fmt.Sprintf("%s: {HubAndSpoke=%t, TrafficClass=%v, DomainPMTU=%d}",
+		op.Code(), op.HubAndSpoke, tClass, op.DomainPMTU)
 }
 
 // ParseOpt4RDNonMapRule builds an Opt4RDNonMapRule structure from a sequence of bytes.

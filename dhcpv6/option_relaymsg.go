@@ -25,7 +25,7 @@ func (op *optRelayMsg) ToBytes() []byte {
 }
 
 func (op *optRelayMsg) String() string {
-	return fmt.Sprintf("RelayMsg: %v", op.Msg)
+	return fmt.Sprintf("%s: %v", op.Code(), op.Msg)
 }
 
 // build an optRelayMsg structure from a sequence of bytes.

@@ -25,7 +25,7 @@ func (op *OptDHCPv4Msg) ToBytes() []byte {
 }
 
 func (op *OptDHCPv4Msg) String() string {
-	return fmt.Sprintf("OptDHCPv4Msg{%v}", op.Msg)
+	return fmt.Sprintf("%s: %v", op.Code(), op.Msg)
 }
 
 // ParseOptDHCPv4Msg builds an OptDHCPv4Msg structure

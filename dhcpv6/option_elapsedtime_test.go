@@ -28,7 +28,7 @@ func TestOptElapsedTimeToBytes(t *testing.T) {
 
 func TestOptElapsedTimeString(t *testing.T) {
 	opt := OptElapsedTime(100 * time.Millisecond)
-	expected := "ElapsedTime: 100ms"
+	expected := "Elapsed Time: 100ms"
 	if optString := opt.String(); optString != expected {
 		t.Fatalf("Invalid elapsed time string. Expected %v, got %v", expected, optString)
 	}

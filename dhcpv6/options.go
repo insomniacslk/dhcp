@@ -27,7 +27,10 @@ func (og *OptionGeneric) ToBytes() []byte {
 }
 
 func (og *OptionGeneric) String() string {
-	return fmt.Sprintf("%s -> %v", og.OptionCode, og.OptionData)
+	if len(og.OptionData) == 0 {
+		return og.OptionCode.String()
+	}
+	return fmt.Sprintf("%s: %v", og.OptionCode, og.OptionData)
 }
 
 // ParseOption parses data according to the given code.

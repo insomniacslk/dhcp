@@ -18,7 +18,7 @@ func TestParseOptDHCP4oDHCP6Server(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, expected, opt.DHCP4oDHCP6Servers)
 	require.Equal(t, OptionDHCP4oDHCP6Server, opt.Code())
-	require.Contains(t, opt.String(), "4o6-servers=[2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct DHCP4-over-DHCP6 server output")
+	require.Contains(t, opt.String(), "[2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct DHCP4-over-DHCP6 server output")
 }
 
 func TestOptDHCP4oDHCP6ServerToBytes(t *testing.T) {
@@ -32,8 +32,7 @@ func TestOptDHCP4oDHCP6ServerToBytes(t *testing.T) {
 }
 
 func TestParseOptDHCP4oDHCP6ServerParseNoAddr(t *testing.T) {
-	data := []byte{
-	}
+	data := []byte{}
 	var expected []net.IP
 	opt, err := ParseOptDHCP4oDHCP6Server(data)
 	require.NoError(t, err)

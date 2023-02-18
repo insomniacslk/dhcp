@@ -52,13 +52,13 @@ func TestOptRemoteIDString(t *testing.T) {
 	require.Contains(
 		t,
 		str,
-		"EnterpriseNumber 2864434397",
+		"EnterpriseNumber=2864434397",
 		"String() should contain the enterprisenum",
 	)
 	require.Contains(
 		t,
 		str,
-		"RemoteID [84 101 115 116 49 50 51 52]",
+		"RemoteID=0x5465737431323334",
 		"String() should contain the remoteid bytes",
 	)
 }

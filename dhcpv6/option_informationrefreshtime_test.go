@@ -11,7 +11,7 @@ func TestOptInformationRefreshTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if informationRefreshTime := opt.InformationRefreshtime; informationRefreshTime != time.Duration(0xaabbccdd) * time.Second {
+	if informationRefreshTime := opt.InformationRefreshtime; informationRefreshTime != time.Duration(0xaabbccdd)*time.Second {
 		t.Fatalf("Invalid information refresh time. Expected 0xaabb, got %v", informationRefreshTime)
 	}
 }
@@ -26,7 +26,7 @@ func TestOptInformationRefreshTimeToBytes(t *testing.T) {
 
 func TestOptInformationRefreshTimeString(t *testing.T) {
 	opt := OptInformationRefreshTime(3600 * time.Second)
-	expected := "InformationRefreshTime: 1h0m0s"
+	expected := "Information Refresh Time: 1h0m0s"
 	if optString := opt.String(); optString != expected {
 		t.Fatalf("Invalid elapsed time string. Expected %v, got %v", expected, optString)
 	}

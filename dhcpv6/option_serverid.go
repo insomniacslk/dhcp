@@ -19,7 +19,7 @@ func (*optServerID) Code() OptionCode {
 }
 
 func (op *optServerID) String() string {
-	return fmt.Sprintf("ServerID: %v", op.Duid.String())
+	return fmt.Sprintf("%s: %v", op.Code(), op.Duid.String())
 }
 
 // parseOptServerID builds an optServerID structure from a sequence of bytes.
