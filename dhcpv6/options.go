@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/u-root/uio/uio"
 )
@@ -119,8 +120,36 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	return opt, nil
 }
 
+type longStringer interface {
+	LongString(spaceIndent int) string
+}
+
 // Options is a collection of options.
 type Options []Option
+
+// LongString prints options with indentation of at least spaceIndent spaces.
+func (o Options) LongString(spaceIndent int) string {
+	indent := strings.Repeat(" ", spaceIndent)
+	var s strings.Builder
+	if len(o) == 0 {
+		s.WriteString("[]")
+	} else {
+		s.WriteString("[\n")
+		for _, opt := range o {
+			s.WriteString(indent)
+			s.WriteString("  ")
+			if ls, ok := opt.(longStringer); ok {
+				s.WriteString(ls.LongString(spaceIndent + 2))
+			} else {
+				s.WriteString(opt.String())
+			}
+			s.WriteString("\n")
+		}
+		s.WriteString(indent)
+		s.WriteString("]")
+	}
+	return s.String()
+}
 
 // Get returns all options matching the option code.
 func (o Options) Get(code OptionCode) []Option {

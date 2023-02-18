@@ -28,6 +28,11 @@ func (op *optRelayMsg) String() string {
 	return fmt.Sprintf("%s: %v", op.Code(), op.Msg)
 }
 
+// LongString returns a multi-line string representation of the relay message data.
+func (op *optRelayMsg) LongString(indent int) string {
+	return fmt.Sprintf("%s: %v", op.Code(), op.Msg.LongString(indent))
+}
+
 // build an optRelayMsg structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func parseOptRelayMsg(data []byte) (*optRelayMsg, error) {

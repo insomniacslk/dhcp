@@ -63,6 +63,12 @@ func (op *OptIAAddress) String() string {
 		op.Code(), op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options)
 }
 
+// LongString returns a multi-line string representation of the OptIAAddress data.
+func (op *OptIAAddress) LongString(indent int) string {
+	return fmt.Sprintf("%s: {IP=%v PreferredLifetime=%v ValidLifetime=%v Options=%v}",
+		op.Code(), op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options.LongString(indent))
+}
+
 // ParseOptIAAddress builds an OptIAAddress structure from a sequence
 // of bytes. The input data does not include option code and length
 // bytes.
