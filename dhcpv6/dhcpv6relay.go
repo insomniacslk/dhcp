@@ -94,11 +94,8 @@ func (r *RelayMessage) Type() MessageType {
 
 // String prints a short human-readable relay message.
 func (r *RelayMessage) String() string {
-	ret := fmt.Sprintf(
-		"RelayMessage(messageType=%s hopcount=%d, linkaddr=%s, peeraddr=%s, %d options)",
-		r.Type(), r.HopCount, r.LinkAddr, r.PeerAddr, len(r.Options.Options),
-	)
-	return ret
+	return fmt.Sprintf("RelayMessage(MessageType=%s, HopCount=%d, LinkAddr=%s, PeerAddr=%s, %d options)",
+		r.Type(), r.HopCount, r.LinkAddr, r.PeerAddr, len(r.Options.Options))
 }
 
 // Summary prints all options associated with this relay message.

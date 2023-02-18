@@ -202,8 +202,8 @@ func (mo MessageOptions) UserClasses() [][]byte {
 //
 // RFC 8415 Section 21.17:
 //
-//   Multiple instances of the Vendor-specific Information option may appear in
-//   a DHCP message.
+//	Multiple instances of the Vendor-specific Information option may appear in
+//	a DHCP message.
 func (mo MessageOptions) VendorOpts() []*OptVendorOpts {
 	opt := mo.Options.Get(OptionVendorOpts)
 	if opt == nil {
@@ -222,8 +222,8 @@ func (mo MessageOptions) VendorOpts() []*OptVendorOpts {
 //
 // RFC 8415 Section 21.17:
 //
-//   Servers and clients MUST NOT send more than one instance of the
-//   Vendor-specific Information option with the same Enterprise Number.
+//	Servers and clients MUST NOT send more than one instance of the
+//	Vendor-specific Information option with the same Enterprise Number.
 func (mo MessageOptions) VendorOpt(enterpriseNumber uint32) Options {
 	vo := mo.VendorOpts()
 	for _, v := range vo {
@@ -543,7 +543,7 @@ func (m *Message) IsOptionRequested(requested OptionCode) bool {
 
 // String returns a short human-readable string for this message.
 func (m *Message) String() string {
-	return fmt.Sprintf("Message(messageType=%s transactionID=%s, %d options)",
+	return fmt.Sprintf("Message(MessageType=%s, TransactionID=%#x, %d options)",
 		m.MessageType, m.TransactionID, len(m.Options.Options))
 }
 
