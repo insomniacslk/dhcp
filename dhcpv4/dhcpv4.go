@@ -222,8 +222,7 @@ func PrependModifiers(m []Modifier, other ...Modifier) []Modifier {
 // NewInform builds a new DHCPv4 Informational message with the specified
 // hardware address.
 func NewInform(hwaddr net.HardwareAddr, localIP net.IP, modifiers ...Modifier) (*DHCPv4, error) {
-	return New(PrependModifiers(
-		modifiers,
+	return New(PrependModifiers(modifiers,
 		WithHwAddr(hwaddr),
 		WithMessageType(MessageTypeInform),
 		WithClientIP(localIP),

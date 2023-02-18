@@ -355,6 +355,16 @@ func TestNewInform(t *testing.T) {
 	require.True(t, m.ClientIPAddr.Equal(localIP))
 }
 
+func TestDHCPv4NewInformWithModifier(t *testing.T) {
+	hwAddr := net.HardwareAddr{1, 2, 3, 4, 5, 6}
+	localIP := net.IPv4(10, 10, 11, 11)
+	serverID := net.IPv4(192, 168, 0, 1)
+	m, err := NewInform(hwAddr, localIP, WithOption(OptServerIdentifier(serverID)))
+
+	require.NoError(t, err)
+	require.True(t, serverID.Equal(m.ServerIdentifier()))
+}
+
 func TestIsOptionRequested(t *testing.T) {
 	pkt, err := New()
 	require.NoError(t, err)

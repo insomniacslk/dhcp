@@ -42,15 +42,15 @@ func (c *Client) Release(lease *Lease, modifiers ...dhcpv4.Modifier) error {
 // sourced from the initial offer in the lease, and the ACK of the lease is updated to the ACK of
 // the latest renewal. This avoids issues with DHCP servers that omit information needed to build a
 // completely new lease from their renewal ACK (such as the Windows DHCP Server).
-func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Modifier) error {
+func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Modifier) (*Lease, error) {
 	if lease == nil {
-		return fmt.Errorf("lease is nil")
+		return nil, fmt.Errorf("lease is nil")
 	}
 
 	request, err := dhcpv4.NewRenewFromOffer(lease.Offer, dhcpv4.PrependModifiers(modifiers,
 		dhcpv4.WithOption(dhcpv4.OptMaxMessageSize(MaxMessageSize)))...)
 	if err != nil {
-		return fmt.Errorf("unable to create a request: %w", err)
+		return nil, fmt.Errorf("unable to create a request: %w", err)
 	}
 
 	// Servers are supposed to only respond to Requests containing their server identifier,
@@ -61,17 +61,19 @@ func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Mo
 		IsCorrectServer(lease.Offer.ServerIdentifier()),
 		IsMessageType(dhcpv4.MessageTypeAck, dhcpv4.MessageTypeNak)))
 	if err != nil {
-		return fmt.Errorf("got an error while processing the request: %w", err)
+		return nil, fmt.Errorf("got an error while processing the request: %w", err)
 	}
 	if response.MessageType() == dhcpv4.MessageTypeNak {
-		return &ErrNak{
+		return nil, &ErrNak{
 			Offer: lease.Offer,
 			Nak:   response,
 		}
 	}
 
-	// Update the ACK of the lease with the ACK of the latest renewal
-	lease.ACK = response
-
-	return nil
+	// Return a new lease with the latest ACK and updated creation time
+	return &Lease{
+		Offer:        lease.Offer,
+		ACK:          response,
+		CreationTime: time.Now(),
+	}, nil
 }
