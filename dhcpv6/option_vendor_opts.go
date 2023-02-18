@@ -33,6 +33,11 @@ func (op *OptVendorOpts) String() string {
 	return fmt.Sprintf("%s: {EnterpriseNumber=%v VendorOptions=%v}", op.Code(), op.EnterpriseNumber, op.VendorOpts)
 }
 
+// LongString returns a string representation of the VendorOpts data
+func (op *OptVendorOpts) LongString(indent int) string {
+	return fmt.Sprintf("%s: EnterpriseNumber=%v VendorOptions=%s", op.Code(), op.EnterpriseNumber, op.VendorOpts.LongString(indent))
+}
+
 // ParseOptVendorOpts builds an OptVendorOpts structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {

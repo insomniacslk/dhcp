@@ -74,6 +74,11 @@ func (op *OptIAPD) String() string {
 		op.Code(), op.IaId, op.T1, op.T2, op.Options)
 }
 
+// LongString returns a multi-line string representation of the OptIAPD data
+func (op *OptIAPD) LongString(indentSpace int) string {
+	return fmt.Sprintf("%s: IAID=%#x T1=%v T2=%v Options=%v", op.Code(), op.IaId, op.T1, op.T2, op.Options.LongString(indentSpace))
+}
+
 // ParseOptIAPD builds an OptIAPD structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
 func ParseOptIAPD(data []byte) (*OptIAPD, error) {

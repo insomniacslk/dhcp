@@ -33,6 +33,11 @@ func (op *OptIATA) String() string {
 	return fmt.Sprintf("%s: {IAID=%#x, Options=%v}", op.Code(), op.IaId, op.Options)
 }
 
+// LongString returns a multi-line string representation of IATA data.
+func (op *OptIATA) LongString(indentSpace int) string {
+	return fmt.Sprintf("%s: IAID=%#x Options=%v", op.Code(), op.IaId, op.Options.LongString(indentSpace))
+}
+
 // ParseOptIATA builds an OptIATA structure from a sequence of bytes.  The
 // input data does not include option code and length bytes.
 func ParseOptIATA(data []byte) (*OptIATA, error) {

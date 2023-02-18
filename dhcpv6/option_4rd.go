@@ -27,6 +27,11 @@ func (op *Opt4RD) String() string {
 	return fmt.Sprintf("%s: {Options=%v}", op.Code(), op.Options)
 }
 
+// LongString returns a multi-line human-readable representation of the option
+func (op *Opt4RD) LongString(indentSpace int) string {
+	return fmt.Sprintf("%s: Options=%v", op.Code(), op.Options.LongString(indentSpace))
+}
+
 // ParseOpt4RD builds an Opt4RD structure from a sequence of bytes.
 // The input data does not include option code and length bytes
 func ParseOpt4RD(data []byte) (*Opt4RD, error) {
