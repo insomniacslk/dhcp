@@ -30,8 +30,7 @@ func (op *OptIATA) ToBytes() []byte {
 }
 
 func (op *OptIATA) String() string {
-	return fmt.Sprintf("IATA: {IAID=%v, options=%v}",
-		op.IaId, op.Options)
+	return fmt.Sprintf("%s: {IAID=%#x, Options=%v}", op.Code(), op.IaId, op.Options)
 }
 
 // ParseOptIATA builds an OptIATA structure from a sequence of bytes.  The

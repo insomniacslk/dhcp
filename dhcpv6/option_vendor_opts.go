@@ -30,9 +30,7 @@ func (op *OptVendorOpts) ToBytes() []byte {
 
 // String returns a string representation of the VendorOpts data
 func (op *OptVendorOpts) String() string {
-	return fmt.Sprintf("OptVendorOpts{enterprisenum=%v, vendorOpts=%v}",
-		op.EnterpriseNumber, op.VendorOpts,
-	)
+	return fmt.Sprintf("%s: {EnterpriseNumber=%v VendorOptions=%v}", op.Code(), op.EnterpriseNumber, op.VendorOpts)
 }
 
 // ParseOptVendorOpts builds an OptVendorOpts structure from a sequence of bytes.

@@ -20,7 +20,7 @@ func TestParseOptClientLinkLayerAddress(t *testing.T) {
 	require.Equal(t, OptionClientLinkLayerAddr, opt.Code())
 	require.Equal(t, iana.HWTypeEthernet, opt.LinkLayerType)
 	require.Equal(t, net.HardwareAddr(data[2:]), opt.LinkLayerAddress)
-	require.Equal(t, "ClientLinkLayerAddress: Type=Ethernet LinkLayerAddress=a4:83:e7:e3:df:88", opt.String())
+	require.Equal(t, "Client Link-Layer Address: Type=Ethernet LinkLayerAddress=a4:83:e7:e3:df:88", opt.String())
 }
 
 func TestOptClientLinkLayerAddressToBytes(t *testing.T) {

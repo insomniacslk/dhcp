@@ -87,7 +87,7 @@ func TestOptUserClassString(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"userclass=[linuxboot, test]",
+		"User Class: [linuxboot, test]",
 		"String() should contain the list of user classes",
 	)
 }
