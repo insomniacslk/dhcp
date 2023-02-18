@@ -81,6 +81,7 @@ func main() {
 		dhcpv6.WithOption(&dhcpv6.OptVendorClass{EnterpriseNumber: 300, Data: [][]byte{[]byte("foo"), []byte("bar")}}),
 		dhcpv6.WithOption(vendorOpts),
 	)
+	fmt.Println(adv.String())
 	fmt.Println(adv.Summary())
 
 	relayfw := dhcpv6.RelayMessage{
@@ -91,5 +92,6 @@ func main() {
 		EnterpriseNumber: 0x123,
 		RemoteID:         []byte{0x1, 0x2},
 	})
+	fmt.Println(relayfw.String())
 	fmt.Println(relayfw.Summary())
 }
