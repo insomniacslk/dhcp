@@ -1,7 +1,6 @@
 package dhcpv6
 
 import (
-	"log"
 	"net"
 	"testing"
 	"time"
@@ -65,7 +64,6 @@ func TestWithDNS(t *testing.T) {
 	)(&d)
 	require.Equal(t, 1, len(d.Options.Options))
 	dns := d.Options.DNS()
-	log.Printf("DNS %+v", dns)
 	require.Equal(t, 2, len(dns))
 	require.Equal(t, net.ParseIP("fe80::1"), dns[0])
 	require.Equal(t, net.ParseIP("fe80::2"), dns[1])
