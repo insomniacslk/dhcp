@@ -8,7 +8,9 @@ import (
 )
 
 // Opt4RD represents a 4RD option. It is only a container for 4RD_*_RULE options
-type Opt4RD Options
+type Opt4RD struct {
+	Options
+}
 
 // Code returns the Option Code for this option
 func (op *Opt4RD) Code() OptionCode {
@@ -17,20 +19,20 @@ func (op *Opt4RD) Code() OptionCode {
 
 // ToBytes serializes this option
 func (op *Opt4RD) ToBytes() []byte {
-	return (*Options)(op).ToBytes()
+	return op.Options.ToBytes()
 }
 
 // String returns a human-readable representation of the option
 func (op *Opt4RD) String() string {
-	return fmt.Sprintf("Opt4RD{%v}", (*Options)(op))
+	return fmt.Sprintf("Opt4RD{%v}", op.Options)
 }
 
 // ParseOpt4RD builds an Opt4RD structure from a sequence of bytes.
 // The input data does not include option code and length bytes
 func ParseOpt4RD(data []byte) (*Opt4RD, error) {
-	var opt Options
-	err := opt.FromBytes(data)
-	return (*Opt4RD)(&opt), err
+	var opt Opt4RD
+	err := opt.Options.FromBytes(data)
+	return &opt, err
 }
 
 // Opt4RDMapRule represents a 4RD Mapping Rule option
