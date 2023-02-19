@@ -7,12 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14', '1.15', '1.16']
+        go: ['1.17', '1.18', '1.19', '1.20']
     env:
       GO111MODULE: on
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           stable: false
           go-version: ${{ matrix.go }}
@@ -28,22 +28,17 @@ jobs:
               fi
           done
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v1
-        with:
-          files: coverage.txt
-          flags: unittests
-          fail_ci_if_error: true
-          verbose: true
+        uses: codecov/codecov-action@v3
   integration-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14', '1.15', '1.16']
+        go: ['1.17', '1.18', '1.19', '1.20']
     env:
       GO111MODULE: on
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
           stable: false
           go-version: ${{ matrix.go }}
@@ -62,9 +57,4 @@ jobs:
               fi
           done
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v1
-        with:
-          files: coverage.txt
-          flags: integtests
-          fail_ci_if_error: true
-          verbose: true
+        uses: codecov/codecov-action@v3
