@@ -2,11 +2,42 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageWithIANA(t *testing.T) {
+	data := []byte{
+		0, 3, // IANA option code
+		0, 40, // length
+		1, 0, 0, 0, // IAID
+		0, 0, 0, 1, // T1
+		0, 0, 0, 2, // T2
+		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, // options
+	}
+	var got MessageOptions
+	if err := got.FromBytes(data); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	}
+
+	want := &OptIANA{
+		IaId: [4]byte{1, 0, 0, 0},
+		T1:   1 * time.Second,
+		T2:   2 * time.Second,
+		Options: IdentityOptions{Options: Options{&OptIAAddress{
+			IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+			PreferredLifetime: 2 * time.Second,
+			ValidLifetime:     4 * time.Second,
+			Options:           AddressOptions{Options: Options{}},
+		}}},
+	}
+	if gotIANA := got.OneIANA(); !reflect.DeepEqual(gotIANA, want) {
+		t.Errorf("OneIANA = %v, want %v", gotIANA, want)
+	}
+}
 
 func TestOptIANAParseOptIANA(t *testing.T) {
 	data := []byte{
