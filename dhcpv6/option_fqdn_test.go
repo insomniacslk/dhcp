@@ -14,7 +14,8 @@ func TestParseOptFQDN(t *testing.T) {
 		4, 'c', 'n', 'o', 's', 9, 'l', 'o', 'c', 'a', 'l',
 		'h', 'o', 's', 't', 0,
 	}
-	opt, err := ParseOptFQDN(data)
+	var opt OptFQDN
+	err := opt.FromBytes(data)
 
 	require.NoError(t, err)
 	require.Equal(t, OptionFQDN, opt.Code())

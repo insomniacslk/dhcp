@@ -12,6 +12,7 @@ type Option interface {
 	Code() OptionCode
 	ToBytes() []byte
 	String() string
+	FromBytes([]byte) error
 }
 
 type OptionGeneric struct {
@@ -34,6 +35,12 @@ func (og *OptionGeneric) String() string {
 	return fmt.Sprintf("%s: %v", og.OptionCode, og.OptionData)
 }
 
+// FromBytes resets OptionData to p.
+func (og *OptionGeneric) FromBytes(p []byte) error {
+	og.OptionData = append([]byte(nil), p...)
+	return nil
+}
+
 // ParseOption parses data according to the given code.
 func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	// Parse a sequence of bytes as a single DHCPv6 option.
@@ -44,75 +51,133 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	)
 	switch code {
 	case OptionClientID:
-		opt, err = parseOptClientID(optData)
+		var o optClientID
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionServerID:
-		opt, err = parseOptServerID(optData)
+		var o optServerID
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionIANA:
-		opt, err = ParseOptIANA(optData)
+		var o OptIANA
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionIATA:
-		opt, err = ParseOptIATA(optData)
+		var o OptIATA
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionIAAddr:
-		opt, err = ParseOptIAAddress(optData)
+		var o OptIAAddress
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionORO:
 		var o optRequestedOption
 		err = o.FromBytes(optData)
 		opt = &o
 	case OptionElapsedTime:
-		opt, err = parseOptElapsedTime(optData)
+		var o optElapsedTime
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionRelayMsg:
-		opt, err = parseOptRelayMsg(optData)
+		var o optRelayMsg
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionStatusCode:
-		opt, err = ParseOptStatusCode(optData)
+		var o OptStatusCode
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionUserClass:
-		opt, err = ParseOptUserClass(optData)
+		var o OptUserClass
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionVendorClass:
-		opt, err = ParseOptVendorClass(optData)
+		var o OptVendorClass
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionVendorOpts:
-		opt, err = ParseOptVendorOpts(optData)
+		var o OptVendorOpts
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionInterfaceID:
-		opt, err = parseOptInterfaceID(optData)
+		var o optInterfaceID
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionDNSRecursiveNameServer:
-		opt, err = parseOptDNS(optData)
+		var o optDNS
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionDomainSearchList:
-		opt, err = parseOptDomainSearchList(optData)
+		var o optDomainSearchList
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionIAPD:
-		opt, err = ParseOptIAPD(optData)
+		var o OptIAPD
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionIAPrefix:
-		opt, err = ParseOptIAPrefix(optData)
+		var o OptIAPrefix
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionInformationRefreshTime:
-		opt, err = parseOptInformationRefreshTime(optData)
+		var o optInformationRefreshTime
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionRemoteID:
-		opt, err = ParseOptRemoteID(optData)
+		var o OptRemoteID
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionFQDN:
-		opt, err = ParseOptFQDN(optData)
+		var o OptFQDN
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionNTPServer:
 		var o OptNTPServer
 		err = o.FromBytes(optData)
 		opt = &o
 	case OptionBootfileURL:
-		opt, err = parseOptBootFileURL(optData)
+		var o optBootFileURL
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionBootfileParam:
-		opt, err = parseOptBootFileParam(optData)
+		var o optBootFileParam
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionClientArchType:
-		opt, err = parseOptClientArchType(optData)
+		var o optClientArchType
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionNII:
 		var o OptNetworkInterfaceID
 		err = o.FromBytes(optData)
 		opt = &o
 	case OptionClientLinkLayerAddr:
-		opt, err = parseOptClientLinkLayerAddress(optData)
+		var o optClientLinkLayerAddress
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionDHCPv4Msg:
-		opt, err = ParseOptDHCPv4Msg(optData)
+		var o OptDHCPv4Msg
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionDHCP4oDHCP6Server:
-		opt, err = ParseOptDHCP4oDHCP6Server(optData)
+		var o OptDHCP4oDHCP6Server
+		err = o.FromBytes(optData)
+		opt = &o
 	case Option4RD:
-		opt, err = ParseOpt4RD(optData)
+		var o Opt4RD
+		err = o.FromBytes(optData)
+		opt = &o
 	case Option4RDMapRule:
-		opt, err = ParseOpt4RDMapRule(optData)
+		var o Opt4RDMapRule
+		err = o.FromBytes(optData)
+		opt = &o
 	case Option4RDNonMapRule:
-		opt, err = ParseOpt4RDNonMapRule(optData)
+		var o Opt4RDNonMapRule
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionRelayPort:
-		opt, err = parseOptRelayPort(optData)
+		var o optRelayPort
+		err = o.FromBytes(optData)
+		opt = &o
 	default:
 		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
 	}

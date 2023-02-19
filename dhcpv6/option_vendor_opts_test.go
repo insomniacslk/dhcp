@@ -17,13 +17,16 @@ func TestOptVendorOpts(t *testing.T) {
 	expectedOpts := OptVendorOpts{}
 	var vendorOpts []Option
 	expectedOpts.VendorOpts = append(vendorOpts, &OptionGeneric{OptionCode: 1, OptionData: optData})
-	opt, err := ParseOptVendorOpts(expected)
+
+	var opt OptVendorOpts
+	err := opt.FromBytes(expected)
 	require.NoError(t, err)
 	require.Equal(t, uint32(0xaabbccdd), opt.EnterpriseNumber)
 	require.Equal(t, expectedOpts.VendorOpts, opt.VendorOpts)
 
 	shortData := make([]byte, 1)
-	_, err = ParseOptVendorOpts(shortData)
+	var opt2 OptVendorOpts
+	err = opt2.FromBytes(shortData)
 	require.Error(t, err)
 }
 

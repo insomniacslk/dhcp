@@ -15,7 +15,8 @@ func TestOptIAAddressParse(t *testing.T) {
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
 		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}...)
-	opt, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, net.IP(ipaddr), opt.IPv6Addr)
 	require.Equal(t, 0x0a0b0c0d*time.Second, opt.PreferredLifetime)
@@ -28,7 +29,8 @@ func TestOptIAAddressParseInvalidTooShort(t *testing.T) {
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		// truncated here
 	}
-	_, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -39,7 +41,8 @@ func TestOptIAAddressParseInvalidBrokenOptions(t *testing.T) {
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
 		0, 8, 0, 2, 0xaa, // broken options
 	}
-	_, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -78,7 +81,8 @@ func TestOptIAAddressString(t *testing.T) {
 		0x00, 0x00, 0x00, 50, // valid lifetime
 		0, 8, 0, 2, 0xaa, 0xbb, // options
 	}...)
-	opt, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

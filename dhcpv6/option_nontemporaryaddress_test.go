@@ -15,7 +15,8 @@ func TestOptIANAParseOptIANA(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionIANA, opt.Code())
 }
@@ -26,7 +27,8 @@ func TestOptIANAParseOptIANAInvalidLength(t *testing.T) {
 		0, 0, 0, 1, // T1
 		// truncated from here
 	}
-	_, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -37,7 +39,8 @@ func TestOptIANAParseOptIANAInvalidOptions(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, // truncated options
 	}
-	_, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -118,7 +121,8 @@ func TestOptIANAString(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

@@ -12,7 +12,8 @@ func TestParseOptDomainSearchList(t *testing.T) {
 		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'o', 'r', 'g', 0,
 	}
-	opt, err := parseOptDomainSearchList(data)
+	var opt optDomainSearchList
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionDomainSearchList, opt.Code())
 	require.Equal(t, 2, len(opt.DomainSearchList.Labels))
@@ -42,6 +43,7 @@ func TestParseOptDomainSearchListInvalidLength(t *testing.T) {
 		7, 'e', 'x', 'a', 'm', 'p', 'l', 'e', 3, 'c', 'o', 'm', 0,
 		6, 's', 'u', 'b', 'n', 'e', 't', 7, 'e', // truncated
 	}
-	_, err := parseOptDomainSearchList(data)
+	var opt optDomainSearchList
+	err := opt.FromBytes(data)
 	require.Error(t, err, "A truncated OptDomainSearchList should return an error")
 }
