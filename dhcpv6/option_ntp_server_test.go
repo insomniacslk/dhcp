@@ -13,25 +13,22 @@ func TestSuboptionSrvAddr(t *testing.T) {
 	ip := net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")
 	so := NTPSuboptionSrvAddr(ip)
 	assert.Equal(t, NTPSuboptionSrvAddrCode, so.Code())
-	expected := append([]byte{0x00, 0x01, 0x00, 0x10}, ip...)
-	assert.Equal(t, expected, so.ToBytes())
+	assert.Equal(t, []byte(ip), so.ToBytes())
 }
 
 func TestSuboptionMCAddr(t *testing.T) {
 	ip := net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")
 	so := NTPSuboptionMCAddr(ip)
 	assert.Equal(t, NTPSuboptionMCAddrCode, so.Code())
-	expected := append([]byte{0x00, 0x02, 0x00, 0x10}, ip...)
-	assert.Equal(t, expected, so.ToBytes())
+	assert.Equal(t, []byte(ip), so.ToBytes())
 }
 
 func TestSuboptionSrvFQDN(t *testing.T) {
 	fqdn, err := rfc1035label.FromBytes([]byte("\x03ntp\x07example\x03com"))
 	require.NoError(t, err)
-	so := NTPSuboptionSrvFQDN(*fqdn)
+	so := NTPSuboptionSrvFQDN{*fqdn}
 	assert.Equal(t, NTPSuboptionSrvFQDNCode, so.Code())
-	expected := append([]byte{0x00, 0x03, 0x00, 0x10}, fqdn.ToBytes()...)
-	assert.Equal(t, expected, so.ToBytes())
+	assert.Equal(t, fqdn.ToBytes(), so.ToBytes())
 }
 
 func TestSuboptionGeneric(t *testing.T) {
@@ -40,7 +37,8 @@ func TestSuboptionGeneric(t *testing.T) {
 		0x00, 0x04, // length, 4 bytes
 		0x74, 0x65, 0x73, 0x74, // the ASCII bytes for the string "test"
 	}
-	o, err := ParseOptNTPServer(data)
+	var o OptNTPServer
+	err := o.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(o.Suboptions))
 	assert.IsType(t, &OptionGeneric{}, o.Suboptions[0])
@@ -67,7 +65,8 @@ func TestParseOptNTPServer(t *testing.T) {
 	}...)
 	data = append(data, fqdn.ToBytes()...)
 
-	o, err := ParseOptNTPServer(data)
+	var o OptNTPServer
+	err = o.FromBytes(data)
 	require.NoError(t, err)
 	require.NotNil(t, o)
 	assert.Equal(t, 2, len(o.Suboptions))
@@ -78,11 +77,11 @@ func TestParseOptNTPServer(t *testing.T) {
 
 	optFQDN, ok := o.Suboptions[1].(*NTPSuboptionSrvFQDN)
 	require.True(t, ok)
-	assert.Equal(t, *fqdn, rfc1035label.Labels(*optFQDN))
+	assert.Equal(t, *fqdn, optFQDN.Labels)
 
 	var mo MessageOptions
 	assert.Nil(t, mo.NTPServers())
-	mo.Add(o)
+	mo.Add(&o)
 	// MessageOptions.NTPServers only returns server address values.
 	assert.Equal(t, []net.IP{ip}, mo.NTPServers())
 }

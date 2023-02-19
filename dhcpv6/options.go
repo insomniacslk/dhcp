@@ -86,7 +86,9 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 	case OptionFQDN:
 		opt, err = ParseOptFQDN(optData)
 	case OptionNTPServer:
-		opt, err = ParseOptNTPServer(optData)
+		var o OptNTPServer
+		err = o.FromBytes(optData)
+		opt = &o
 	case OptionBootfileURL:
 		opt, err = parseOptBootFileURL(optData)
 	case OptionBootfileParam:
