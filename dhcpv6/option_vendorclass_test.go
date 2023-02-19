@@ -12,7 +12,8 @@ func TestParseOptVendorClass(t *testing.T) {
 		0, 10, 'H', 'T', 'T', 'P', 'C', 'l', 'i', 'e', 'n', 't',
 		0, 4, 't', 'e', 's', 't',
 	}
-	opt, err := ParseOptVendorClass(data)
+	var opt OptVendorClass
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionVendorClass, opt.Code())
 	require.Equal(t, 2, len(opt.Data))
@@ -42,13 +43,14 @@ func TestOptVendorClassParseOptVendorClassMalformed(t *testing.T) {
 	buf := []byte{
 		0xaa, 0xbb, // truncated EnterpriseNumber
 	}
-	_, err := ParseOptVendorClass(buf)
+	var opt OptVendorClass
+	err := opt.FromBytes(buf)
 	require.Error(t, err, "ParseOptVendorClass() should error if given truncated EnterpriseNumber")
 
 	buf = []byte{
 		0xaa, 0xbb, 0xcc, 0xdd, // EnterpriseNumber
 	}
-	_, err = ParseOptVendorClass(buf)
+	err = opt.FromBytes(buf)
 	require.Error(t, err, "ParseOptVendorClass() should error if given no vendor classes")
 
 	buf = []byte{
@@ -56,7 +58,7 @@ func TestOptVendorClassParseOptVendorClassMalformed(t *testing.T) {
 		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		0, 4, 't', 'e',
 	}
-	_, err = ParseOptVendorClass(buf)
+	err = opt.FromBytes(buf)
 	require.Error(t, err, "ParseOptVendorClass() should error if given truncated vendor classes")
 
 	buf = []byte{
@@ -64,7 +66,7 @@ func TestOptVendorClassParseOptVendorClassMalformed(t *testing.T) {
 		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		0,
 	}
-	_, err = ParseOptVendorClass(buf)
+	err = opt.FromBytes(buf)
 	require.Error(t, err, "ParseOptVendorClass() should error if given a truncated length")
 }
 
@@ -74,7 +76,8 @@ func TestOptVendorClassString(t *testing.T) {
 		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
 		0, 4, 't', 'e', 's', 't',
 	}
-	opt, err := ParseOptVendorClass(data)
+	var opt OptVendorClass
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

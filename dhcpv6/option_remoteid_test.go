@@ -11,8 +11,8 @@ func TestOptRemoteID(t *testing.T) {
 	expected := []byte{0xaa, 0xbb, 0xcc, 0xdd}
 	remoteId := []byte("DSLAM01 eth2/1/01/21")
 	expected = append(expected, remoteId...)
-	opt, err := ParseOptRemoteID(expected)
-	if err != nil {
+	var opt OptRemoteID
+	if err := opt.FromBytes(expected); err != nil {
 		t.Fatal(err)
 	}
 	if en := opt.EnterpriseNumber; en != 0xaabbccdd {
@@ -37,7 +37,8 @@ func TestOptRemoteIDToBytes(t *testing.T) {
 
 func TestOptRemoteIDParseOptRemoteIDTooShort(t *testing.T) {
 	buf := []byte{0xaa, 0xbb, 0xcc}
-	_, err := ParseOptRemoteID(buf)
+	var opt OptRemoteID
+	err := opt.FromBytes(buf)
 	require.Error(t, err, "A short option should return an error")
 }
 
@@ -46,7 +47,8 @@ func TestOptRemoteIDString(t *testing.T) {
 	remoteId := []byte("Test1234")
 	buf = append(buf, remoteId...)
 
-	opt, err := ParseOptRemoteID(buf)
+	var opt OptRemoteID
+	err := opt.FromBytes(buf)
 	require.NoError(t, err)
 	str := opt.String()
 	require.Contains(

@@ -90,24 +90,17 @@ const (
 // parseNTPSuboption implements the OptionParser interface.
 func parseNTPSuboption(code OptionCode, data []byte) (Option, error) {
 	var o Option
-	var err error
 	switch code {
 	case NTPSuboptionSrvAddrCode:
-		var opt NTPSuboptionSrvAddr
-		err = opt.FromBytes(data)
-		o = &opt
+		o = &NTPSuboptionSrvAddr{}
 	case NTPSuboptionMCAddrCode:
-		var opt NTPSuboptionMCAddr
-		err = opt.FromBytes(data)
-		o = &opt
+		o = &NTPSuboptionMCAddr{}
 	case NTPSuboptionSrvFQDNCode:
-		var opt NTPSuboptionSrvFQDN
-		err = opt.FromBytes(data)
-		o = &opt
+		o = &NTPSuboptionSrvFQDN{}
 	default:
-		o = &OptionGeneric{OptionCode: code, OptionData: append([]byte(nil), data...)}
+		o = &OptionGeneric{OptionCode: code}
 	}
-	return o, err
+	return o, o.FromBytes(data)
 }
 
 // OptNTPServer is an option NTP server as defined by RFC 5908.
@@ -120,6 +113,7 @@ func (op *OptNTPServer) Code() OptionCode {
 	return OptionNTPServer
 }
 
+// FromBytes parses a sequence of bytes into an OptNTPServer object.
 func (op *OptNTPServer) FromBytes(data []byte) error {
 	return op.Suboptions.FromBytesWithParser(data, parseNTPSuboption)
 }

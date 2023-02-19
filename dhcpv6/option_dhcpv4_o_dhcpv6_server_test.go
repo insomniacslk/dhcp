@@ -14,7 +14,8 @@ func TestParseOptDHCP4oDHCP6Server(t *testing.T) {
 	expected := []net.IP{
 		net.IP(data),
 	}
-	opt, err := ParseOptDHCP4oDHCP6Server(data)
+	var opt OptDHCP4oDHCP6Server
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, expected, opt.DHCP4oDHCP6Servers)
 	require.Equal(t, OptionDHCP4oDHCP6Server, opt.Code())
@@ -34,7 +35,8 @@ func TestOptDHCP4oDHCP6ServerToBytes(t *testing.T) {
 func TestParseOptDHCP4oDHCP6ServerParseNoAddr(t *testing.T) {
 	data := []byte{}
 	var expected []net.IP
-	opt, err := ParseOptDHCP4oDHCP6Server(data)
+	var opt OptDHCP4oDHCP6Server
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, expected, opt.DHCP4oDHCP6Servers)
 }
@@ -49,6 +51,7 @@ func TestParseOptDHCP4oDHCP6ServerParseBogus(t *testing.T) {
 	data := []byte{
 		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
 	}
-	_, err := ParseOptDHCP4oDHCP6Server(data)
+	var opt OptDHCP4oDHCP6Server
+	err := opt.FromBytes(data)
 	require.Error(t, err, "An invalid IPv6 address should return an error")
 }
