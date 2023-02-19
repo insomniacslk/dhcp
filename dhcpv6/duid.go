@@ -1,6 +1,7 @@
 package dhcpv6
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 
@@ -15,6 +16,7 @@ type DUID interface {
 	ToBytes() []byte
 	FromBytes(p []byte) error
 	DUIDType() DUIDType
+	Equal(d DUID) bool
 }
 
 // DUIDLLT is a DUID based on link-layer address plus time (RFC 8415 Section 11.2).
@@ -53,6 +55,15 @@ func (d *DUIDLLT) FromBytes(p []byte) error {
 	return buf.FinError()
 }
 
+// Equal returns true if e is a DUID-LLT with the same values as d.
+func (d *DUIDLLT) Equal(e DUID) bool {
+	ellt, ok := e.(*DUIDLLT)
+	if !ok {
+		return false
+	}
+	return d.HWType == ellt.HWType && d.Time == ellt.Time && bytes.Equal(d.LinkLayerAddr, ellt.LinkLayerAddr)
+}
+
 // DUIDLL is a DUID based on link-layer (RFC 8415 Section 11.4).
 type DUIDLL struct {
 	HWType        iana.HWType
@@ -86,6 +97,15 @@ func (d *DUIDLL) FromBytes(p []byte) error {
 	return buf.FinError()
 }
 
+// Equal returns true if e is a DUID-LL with the same values as d.
+func (d *DUIDLL) Equal(e DUID) bool {
+	ell, ok := e.(*DUIDLL)
+	if !ok {
+		return false
+	}
+	return d.HWType == ell.HWType && bytes.Equal(d.LinkLayerAddr, ell.LinkLayerAddr)
+}
+
 // DUIDEN is a DUID based on enterprise number (RFC 8415 Section 11.3).
 type DUIDEN struct {
 	EnterpriseNumber     uint32
@@ -117,6 +137,15 @@ func (d *DUIDEN) FromBytes(p []byte) error {
 	d.EnterpriseNumber = buf.Read32()
 	d.EnterpriseIdentifier = buf.ReadAll()
 	return buf.FinError()
+}
+
+// Equal returns true if e is a DUID-EN with the same values as d.
+func (d *DUIDEN) Equal(e DUID) bool {
+	en, ok := e.(*DUIDEN)
+	if !ok {
+		return false
+	}
+	return d.EnterpriseNumber == en.EnterpriseNumber && bytes.Equal(d.EnterpriseIdentifier, en.EnterpriseIdentifier)
 }
 
 // DUIDUUID is a DUID based on UUID (RFC 8415 Section 11.5).
@@ -189,6 +218,15 @@ func (d DUIDOpaque) ToBytes() []byte {
 func (d *DUIDOpaque) FromBytes(p []byte) error {
 	d.Data = append([]byte(nil), p...)
 	return nil
+}
+
+// Equal returns true if e is an opaque DUID with the same values as d.
+func (d *DUIDOpaque) Equal(e DUID) bool {
+	eopaque, ok := e.(*DUIDOpaque)
+	if !ok {
+		return false
+	}
+	return d.Type == eopaque.Type && bytes.Equal(d.Data, eopaque.Data)
 }
 
 // DUIDType is the DUID type as defined in RFC 3315.
