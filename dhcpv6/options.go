@@ -158,7 +158,10 @@ func (o *Options) FromBytesWithParser(data []byte, optioner Optioner) error {
 
 		opt := optioner(code)
 		if opt == nil {
-			return fmt.Errorf("option code %d is invalid in this message", code)
+			// Most RFCs that define options say that options
+			// should be ignored in messages where they don't
+			// belong.
+			opt = &OptionGeneric{OptionCode: code}
 		}
 		if err := opt.FromBytes(optData); err != nil {
 			return err
