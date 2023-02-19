@@ -136,3 +136,101 @@ func TestFromBytes(t *testing.T) {
 		})
 	}
 }
+
+func TestEqual(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		a    DUID
+		b    DUID
+		want bool
+	}{
+		{
+			name: "DUID-LL-equal",
+			a:    &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			want: true,
+		},
+		{
+			name: "DUID-LL-not-equal",
+			a:    &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa}},
+			want: false,
+		},
+		{
+			name: "DUID-LL-and-DUID-EN",
+			a:    &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDEN{EnterpriseNumber: 5, EnterpriseIdentifier: []byte("foo")},
+			want: false,
+		},
+		{
+			name: "DUID-EN-equal",
+			a:    &DUIDEN{EnterpriseNumber: 5, EnterpriseIdentifier: []byte("foo")},
+			b:    &DUIDEN{EnterpriseNumber: 5, EnterpriseIdentifier: []byte("foo")},
+			want: true,
+		},
+		{
+			name: "DUID-EN-not-equal",
+			a:    &DUIDEN{EnterpriseNumber: 5, EnterpriseIdentifier: []byte("foo")},
+			b:    &DUIDEN{EnterpriseNumber: 5, EnterpriseIdentifier: []byte("bar")},
+			want: false,
+		},
+		{
+			name: "DUID-LLT-equal",
+			a:    &DUIDLLT{HWType: iana.HWTypeEthernet, Time: 10, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDLLT{HWType: iana.HWTypeEthernet, Time: 10, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			want: true,
+		},
+		{
+			name: "DUID-LLT-not-equal",
+			a:    &DUIDLLT{HWType: iana.HWTypeEthernet, Time: 10, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDLLT{HWType: iana.HWTypeEthernet, Time: 10, LinkLayerAddr: net.HardwareAddr{0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa}},
+			want: false,
+		},
+		{
+			name: "DUID-LLT-and-DUID-UUID",
+			a:    &DUIDLLT{HWType: iana.HWTypeEthernet, Time: 10, LinkLayerAddr: net.HardwareAddr{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+			b:    &DUIDUUID{UUID: [16]byte{0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04}},
+			want: false,
+		},
+		{
+			name: "DUID-UUID-equal",
+			a:    &DUIDUUID{UUID: [16]byte{0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04}},
+			b:    &DUIDUUID{UUID: [16]byte{0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04}},
+			want: true,
+		},
+		{
+			name: "DUID-UUID-not-equal",
+			a:    &DUIDUUID{UUID: [16]byte{0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04}},
+			b:    &DUIDUUID{UUID: [16]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff}},
+			want: false,
+		},
+		{
+			name: "DUID-UUID-and-DUID-Opaque",
+			a:    &DUIDOpaque{Type: 5, Data: []byte{0x1}},
+			b:    &DUIDUUID{UUID: [16]byte{0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04, 0x01, 0x02, 0x03, 0x04}},
+			want: false,
+		},
+		{
+			name: "DUID-Opaque-equal",
+			a:    &DUIDOpaque{Type: 5, Data: []byte{0x1}},
+			b:    &DUIDOpaque{Type: 5, Data: []byte{0x1}},
+			want: true,
+		},
+		{
+			name: "DUID-Opaque-not-equal",
+			a:    &DUIDOpaque{Type: 5, Data: []byte{0x1}},
+			b:    &DUIDOpaque{Type: 5, Data: []byte{0x2}},
+			want: false,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.a.Equal(tt.b); got != tt.want {
+				t.Errorf("%s.Equal(%s) = %v, want %v", tt.a, tt.b, got, tt.want)
+			}
+
+			if got := tt.b.Equal(tt.a); got != tt.want {
+				t.Errorf("%s.Equal(%s) = %v, want %v", tt.b, tt.a, got, tt.want)
+			}
+		})
+	}
+}
