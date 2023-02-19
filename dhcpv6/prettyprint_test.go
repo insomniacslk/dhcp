@@ -73,7 +73,7 @@ func TestPrint(t *testing.T) {
 		WithOption(OptRelayPort(1026)),
 		WithOption(&OptRemoteID{EnterpriseNumber: 300, RemoteID: []byte{0xde, 0xad, 0xbe, 0xed}}),
 		WithOption(OptRequestedOption(OptionBootfileURL, OptionBootfileParam)),
-		WithOption(OptServerID(Duid{Type: DUID_LL, HwType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}})),
+		WithOption(OptServerID(&DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0x1, 0x2, 0x3, 0x4, 0x5, 0x6}})),
 		WithOption(&OptUserClass{[][]byte{[]byte("foo"), []byte("bar")}}),
 		WithOption(oneiana),
 		WithOption(oneiata),

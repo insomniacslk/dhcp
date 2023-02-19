@@ -64,7 +64,7 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 	tt := []struct {
 		name     string
 		vc       string
-		clientId *dhcpv6.Duid
+		clientId dhcpv6.DUID
 		want     *VendorData
 		fail     bool
 	}{
@@ -84,8 +84,7 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 		{
 			name: "Ciena",
 			vc:   "1271-23422Z11-123",
-			clientId: &dhcpv6.Duid{
-				Type:                 dhcpv6.DUID_EN,
+			clientId: &dhcpv6.DUIDEN{
 				EnterpriseIdentifier: []byte("001234567"),
 			},
 			want: &VendorData{VendorName: iana.EnterpriseIDCienaCorporation.String(), Model: "23422Z11-123", Serial: "001234567"},
@@ -102,7 +101,7 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 			packet.AddOption(&dhcpv6.OptVendorClass{
 				EnterpriseNumber: 0000, Data: [][]byte{[]byte(tc.vc)}})
 			if tc.clientId != nil {
-				packet.AddOption(dhcpv6.OptClientID(*tc.clientId))
+				packet.AddOption(dhcpv6.OptClientID(tc.clientId))
 			}
 			vd, err := ParseVendorData(packet)
 			if err != nil && !tc.fail {

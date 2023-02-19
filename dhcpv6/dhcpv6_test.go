@@ -165,9 +165,9 @@ func TestNewAdvertiseFromSolicit(t *testing.T) {
 		MessageType:   MessageTypeSolicit,
 		TransactionID: TransactionID{0xa, 0xb, 0xc},
 	}
-	s.AddOption(OptClientID(Duid{}))
+	s.AddOption(OptClientID(&DUIDLLT{}))
 
-	a, err := NewAdvertiseFromSolicit(&s, WithServerID(Duid{}))
+	a, err := NewAdvertiseFromSolicit(&s, WithServerID(&DUIDLLT{}))
 	require.NoError(t, err)
 	require.Equal(t, a.TransactionID, s.TransactionID)
 	require.Equal(t, a.Type(), MessageTypeAdvertise)
@@ -178,35 +178,35 @@ func TestNewReplyFromMessage(t *testing.T) {
 		TransactionID: TransactionID{0xa, 0xb, 0xc},
 		MessageType:   MessageTypeConfirm,
 	}
-	var duid Duid
-	msg.AddOption(OptClientID(duid))
-	msg.AddOption(OptServerID(duid))
+	var duid DUIDLLT
+	msg.AddOption(OptClientID(&duid))
+	msg.AddOption(OptServerID(&duid))
 
-	rep, err := NewReplyFromMessage(&msg, WithServerID(duid))
+	rep, err := NewReplyFromMessage(&msg, WithServerID(&duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRenew
-	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
+	rep, err = NewReplyFromMessage(&msg, WithServerID(&duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRebind
-	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
+	rep, err = NewReplyFromMessage(&msg, WithServerID(&duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeRelease
-	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
+	rep, err = NewReplyFromMessage(&msg, WithServerID(&duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
 
 	msg.MessageType = MessageTypeInformationRequest
-	rep, err = NewReplyFromMessage(&msg, WithServerID(duid))
+	rep, err = NewReplyFromMessage(&msg, WithServerID(&duid))
 	require.NoError(t, err)
 	require.Equal(t, rep.TransactionID, msg.TransactionID)
 	require.Equal(t, rep.Type(), MessageTypeReply)
@@ -226,9 +226,8 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 	hwAddr, err := net.ParseMAC("24:0A:9E:9F:EB:2B")
 	require.NoError(t, err)
 
-	duid := Duid{
-		Type:          DUID_LL,
-		HwType:        iana.HWTypeEthernet,
+	duid := &DUIDLL{
+		HWType:        iana.HWTypeEthernet,
 		LinkLayerAddr: hwAddr,
 	}
 
@@ -239,7 +238,7 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 	// Check CID
 	cduid := s.Options.ClientID()
 	require.NotNil(t, cduid)
-	require.Equal(t, cduid, &duid)
+	require.Equal(t, cduid, duid)
 
 	// Check ORO
 	oro := s.Options.RequestedOptions()
