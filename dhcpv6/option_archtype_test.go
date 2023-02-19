@@ -11,14 +11,16 @@ func TestParseOptClientArchType(t *testing.T) {
 	data := []byte{
 		0, 6, // EFI_IA32
 	}
-	opt, err := parseOptClientArchType(data)
+	var opt optClientArchType
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, iana.EFI_IA32, opt.Archs[0])
 }
 
 func TestParseOptClientArchTypeInvalid(t *testing.T) {
 	data := []byte{42}
-	_, err := parseOptClientArchType(data)
+	var opt optClientArchType
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -26,7 +28,8 @@ func TestOptClientArchTypeParseAndToBytes(t *testing.T) {
 	data := []byte{
 		0, 8, // EFI_XSCALE
 	}
-	opt, err := parseOptClientArchType(data)
+	var opt optClientArchType
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, data, opt.ToBytes())
 }

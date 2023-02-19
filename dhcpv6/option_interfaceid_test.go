@@ -9,8 +9,8 @@ import (
 
 func TestParseOptInterfaceID(t *testing.T) {
 	expected := []byte("DSLAM01 eth2/1/01/21")
-	opt, err := parseOptInterfaceID(expected)
-	if err != nil {
+	var opt optInterfaceID
+	if err := opt.FromBytes(expected); err != nil {
 		t.Fatal(err)
 	}
 	if url := opt.ID; !bytes.Equal(url, expected) {

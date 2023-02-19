@@ -12,7 +12,8 @@ func TestParseOptStatusCode(t *testing.T) {
 		0, 5, // StatusUseMulticast
 		'u', 's', 'e', ' ', 'm', 'u', 'l', 't', 'i', 'c', 'a', 's', 't',
 	}
-	opt, err := ParseOptStatusCode(data)
+	var opt OptStatusCode
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, iana.StatusUseMulticast, opt.StatusCode)
 	require.Equal(t, "use multicast", opt.StatusMessage)
@@ -32,7 +33,8 @@ func TestOptStatusCodeToBytes(t *testing.T) {
 }
 
 func TestOptStatusCodeParseOptStatusCodeTooShort(t *testing.T) {
-	_, err := ParseOptStatusCode([]byte{0})
+	var opt OptStatusCode
+	err := opt.FromBytes([]byte{0})
 	require.Error(t, err, "ParseOptStatusCode: Expected error on truncated option")
 }
 
@@ -41,7 +43,8 @@ func TestOptStatusCodeString(t *testing.T) {
 		0, 5, // StatusUseMulticast
 		'u', 's', 'e', ' ', 'm', 'u', 'l', 't', 'i', 'c', 'a', 's', 't',
 	}
-	opt, err := ParseOptStatusCode(data)
+	var opt OptStatusCode
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	require.Contains(

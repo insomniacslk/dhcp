@@ -17,8 +17,8 @@ func TestOptIAPrefix(t *testing.T) {
 		36,                                             // prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
 	}
-	opt, err := ParseOptIAPrefix(buf)
-	if err != nil {
+	var opt OptIAPrefix
+	if err := opt.FromBytes(buf); err != nil {
 		t.Fatal(err)
 	}
 	want := &OptIAPrefix{
@@ -30,7 +30,7 @@ func TestOptIAPrefix(t *testing.T) {
 		},
 		Options: PrefixOptions{[]Option{}},
 	}
-	if !reflect.DeepEqual(want, opt) {
+	if !reflect.DeepEqual(want, &opt) {
 		t.Errorf("parseIAPrefix = %v, want %v", opt, want)
 	}
 }
@@ -79,7 +79,8 @@ func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
 		36,                  // prefixLength
 		0, 0, 0, 0, 0, 0, 0, // truncated ipv6Prefix
 	}
-	if opt, err := ParseOptIAPrefix(buf); err == nil {
+	var opt OptIAPrefix
+	if err := opt.FromBytes(buf); err == nil {
 		t.Fatalf("ParseOptIAPrefix: Expected error on truncated option, got %v", opt)
 	}
 }
@@ -91,7 +92,8 @@ func TestOptIAPrefixString(t *testing.T) {
 		36,                                                         // prefixLength
 		0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
 	}
-	opt, err := ParseOptIAPrefix(buf)
+	var opt OptIAPrefix
+	err := opt.FromBytes(buf)
 	require.NoError(t, err)
 
 	str := opt.String()

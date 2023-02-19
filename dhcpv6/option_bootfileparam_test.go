@@ -41,8 +41,8 @@ func compileTestBootfileParams(t *testing.T, params []string) []byte {
 
 func TestOptBootFileParam(t *testing.T) {
 	expected := string(compileTestBootfileParams(t, testBootfileParams1))
-	opt, err := parseOptBootFileParam([]byte(expected))
-	if err != nil {
+	var opt optBootFileParam
+	if err := opt.FromBytes([]byte(expected)); err != nil {
 		t.Fatal(err)
 	}
 	if string(opt.ToBytes()) != expected {
@@ -54,10 +54,10 @@ func TestParsedTypeOptBootFileParam(t *testing.T) {
 	tryParse := func(compiled []byte, expected []string) {
 		opt, err := ParseOption(OptionBootfileParam, compiled)
 		require.NoError(t, err)
-		bootfileParamOpt, ok := opt.(optBootFileParam)
+		bootfileParamOpt, ok := opt.(*optBootFileParam)
 		require.True(t, ok, fmt.Sprintf("invalid type: %T instead of %T", opt, bootfileParamOpt))
 		require.Equal(t, compiled, bootfileParamOpt.ToBytes())
-		require.Equal(t, expected, ([]string)(bootfileParamOpt))
+		require.Equal(t, expected, bootfileParamOpt.params)
 	}
 
 	tryParse(

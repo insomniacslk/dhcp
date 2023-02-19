@@ -14,7 +14,8 @@ func TestParseOptDNS(t *testing.T) {
 	expected := []net.IP{
 		net.IP(data),
 	}
-	opt, err := parseOptDNS(data)
+	var opt optDNS
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, expected, opt.NameServers)
 	require.Equal(t, OptionDNSRecursiveNameServer, opt.Code())
@@ -35,6 +36,7 @@ func TestParseOptDNSBogus(t *testing.T) {
 	data := []byte{
 		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
 	}
-	_, err := parseOptDNS(data)
+	var opt optDNS
+	err := opt.FromBytes(data)
 	require.Error(t, err, "An invalid nameserver IPv6 address should return an error")
 }

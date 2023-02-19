@@ -43,7 +43,8 @@ func TestParseOptDHCPv4Msg(t *testing.T) {
 	// magic cookie, then no options
 	data = append(data, magicCookie[:]...)
 
-	opt, err := ParseOptDHCPv4Msg(data)
+	var opt OptDHCPv4Msg
+	err := opt.FromBytes(data)
 	d := opt.Msg
 	require.NoError(t, err)
 	require.Equal(t, d.OpCode, dhcpv4.OpcodeBootRequest)

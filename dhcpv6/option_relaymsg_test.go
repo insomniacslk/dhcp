@@ -9,7 +9,8 @@ import (
 )
 
 func TestRelayMsgParseOptRelayMsg(t *testing.T) {
-	opt, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -148,7 +149,8 @@ func TestSample(t *testing.T) {
 }
 
 func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
-	_, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -158,7 +160,8 @@ func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
 }
 
 func TestRelayMsgString(t *testing.T) {
-	opt, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time

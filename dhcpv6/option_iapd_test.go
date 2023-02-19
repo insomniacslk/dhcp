@@ -19,7 +19,8 @@ func TestOptIAPDParseOptIAPD(t *testing.T) {
 		36,                                             // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
 	}
-	opt, err := ParseOptIAPD(data)
+	var opt OptIAPD
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionIAPD, opt.Code())
 	require.Equal(t, [4]byte{1, 0, 0, 0}, opt.IaId)
@@ -33,7 +34,8 @@ func TestOptIAPDParseOptIAPDInvalidLength(t *testing.T) {
 		0, 0, 0, 1, // T1
 		// truncated from here
 	}
-	_, err := ParseOptIAPD(data)
+	var opt OptIAPD
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -48,7 +50,8 @@ func TestOptIAPDParseOptIAPDInvalidOptions(t *testing.T) {
 		36,                                          // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // IAPrefix ipv6Prefix missing last byte
 	}
-	_, err := ParseOptIAPD(data)
+	var opt OptIAPD
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -92,7 +95,8 @@ func TestOptIAPDString(t *testing.T) {
 		36,                                             // IAPrefix prefixLength
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // IAPrefix ipv6Prefix
 	}
-	opt, err := ParseOptIAPD(data)
+	var opt OptIAPD
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()
