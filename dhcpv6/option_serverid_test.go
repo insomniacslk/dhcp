@@ -16,16 +16,19 @@ func TestParseOptServerID(t *testing.T) {
 	}
 	opt, err := parseOptServerID(data)
 	require.NoError(t, err)
-	require.Equal(t, DUID_LL, opt.Type)
-	require.Equal(t, iana.HWTypeEthernet, opt.HwType)
-	require.Equal(t, net.HardwareAddr{0, 1, 2, 3, 4, 5}, opt.LinkLayerAddr)
+	want := OptServerID(
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
+			LinkLayerAddr: net.HardwareAddr{0, 1, 2, 3, 4, 5},
+		},
+	)
+	require.Equal(t, opt, want)
 }
 
 func TestOptServerIdToBytes(t *testing.T) {
 	opt := OptServerID(
-		Duid{
-			Type:          DUID_LL,
-			HwType:        iana.HWTypeEthernet,
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr{5, 4, 3, 2, 1, 0},
 		},
 	)
@@ -50,9 +53,8 @@ func TestOptServerIdDecodeEncode(t *testing.T) {
 
 func TestOptionServerId(t *testing.T) {
 	opt := OptServerID(
-		Duid{
-			Type:          DUID_LL,
-			HwType:        iana.HWTypeEthernet,
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr{0xde, 0xad, 0, 0, 0xbe, 0xef},
 		},
 	)
@@ -60,7 +62,7 @@ func TestOptionServerId(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"Server ID: DUID{type=DUID-LL hwtype=Ethernet hwaddr=de:ad:00:00:be:ef}",
+		"Server ID: DUID-LL{HWType=Ethernet HWAddr=de:ad:00:00:be:ef}",
 		"String() should contain the correct sid output",
 	)
 }

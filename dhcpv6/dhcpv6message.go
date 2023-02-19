@@ -32,21 +32,21 @@ func (mo MessageOptions) ArchTypes() iana.Archs {
 }
 
 // ClientID returns the client identifier option.
-func (mo MessageOptions) ClientID() *Duid {
+func (mo MessageOptions) ClientID() DUID {
 	opt := mo.GetOne(OptionClientID)
 	if opt == nil {
 		return nil
 	}
-	return &opt.(*optClientID).Duid
+	return opt.(*optClientID).DUID
 }
 
 // ServerID returns the server identifier option.
-func (mo MessageOptions) ServerID() *Duid {
+func (mo MessageOptions) ServerID() DUID {
 	opt := mo.GetOne(OptionServerID)
 	if opt == nil {
 		return nil
 	}
-	return &opt.(*optServerID).Duid
+	return opt.(*optServerID).DUID
 }
 
 // IANA returns all Identity Association for Non-temporary Address options.
@@ -347,9 +347,8 @@ func GetTime() uint32 {
 // NewSolicit creates a new SOLICIT message, using the given hardware address to
 // derive the IAID in the IA_NA option.
 func NewSolicit(hwaddr net.HardwareAddr, modifiers ...Modifier) (*Message, error) {
-	duid := Duid{
-		Type:          DUID_LLT,
-		HwType:        iana.HWTypeEthernet,
+	duid := &DUIDLLT{
+		HWType:        iana.HWTypeEthernet,
 		Time:          GetTime(),
 		LinkLayerAddr: hwaddr,
 	}

@@ -16,16 +16,19 @@ func TestParseOptClientID(t *testing.T) {
 	}
 	opt, err := parseOptClientID(data)
 	require.NoError(t, err)
-	require.Equal(t, DUID_LL, opt.Type)
-	require.Equal(t, iana.HWTypeEthernet, opt.HwType)
-	require.Equal(t, net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}), opt.LinkLayerAddr)
+	want := OptClientID(
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
+			LinkLayerAddr: net.HardwareAddr([]byte{0, 1, 2, 3, 4, 5}),
+		},
+	)
+	require.Equal(t, want, opt)
 }
 
 func TestOptClientIdToBytes(t *testing.T) {
 	opt := OptClientID(
-		Duid{
-			Type:          DUID_LL,
-			HwType:        iana.HWTypeEthernet,
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{5, 4, 3, 2, 1, 0}),
 		},
 	)
@@ -50,9 +53,8 @@ func TestOptClientIdDecodeEncode(t *testing.T) {
 
 func TestOptionClientId(t *testing.T) {
 	opt := OptClientID(
-		Duid{
-			Type:          DUID_LL,
-			HwType:        iana.HWTypeEthernet,
+		&DUIDLL{
+			HWType:        iana.HWTypeEthernet,
 			LinkLayerAddr: net.HardwareAddr([]byte{0xde, 0xad, 0, 0, 0xbe, 0xef}),
 		},
 	)
@@ -60,7 +62,7 @@ func TestOptionClientId(t *testing.T) {
 	require.Contains(
 		t,
 		opt.String(),
-		"Client ID: DUID{type=DUID-LL hwtype=Ethernet hwaddr=de:ad:00:00:be:ef}",
+		"Client ID: DUID-LL{HWType=Ethernet HWAddr=de:ad:00:00:be:ef}",
 		"String() should contain the correct cid output",
 	)
 }

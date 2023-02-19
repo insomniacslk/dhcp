@@ -131,15 +131,26 @@ func Test_ExtractMAC(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, mac.String(), "24:8a:07:56:dc:a4")
 
-	// MAC extracted from DUID
-	duid := Duid{
-		Type:          DUID_LL,
-		HwType:        iana.HWTypeEthernet,
+	// MAC extracted from DUID-LL
+	duid := &DUIDLL{
+		HWType:        iana.HWTypeEthernet,
 		LinkLayerAddr: []byte{0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa},
 	}
 	solicit, err := NewMessage(WithClientID(duid))
 	require.NoError(t, err)
 	relay, err := EncapsulateRelay(solicit, MessageTypeRelayForward, net.IPv6zero, net.IPv6zero)
+	require.NoError(t, err)
+	mac, err = ExtractMAC(relay)
+	require.NoError(t, err)
+	require.Equal(t, mac.String(), "aa:aa:aa:aa:aa:aa")
+
+	// MAC extracted from DUID-LLT
+	solicit, err = NewMessage(WithClientID(&DUIDLLT{
+		HWType:        iana.HWTypeEthernet,
+		LinkLayerAddr: []byte{0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa},
+	}))
+	require.NoError(t, err)
+	relay, err = EncapsulateRelay(solicit, MessageTypeRelayForward, net.IPv6zero, net.IPv6zero)
 	require.NoError(t, err)
 	mac, err = ExtractMAC(relay)
 	require.NoError(t, err)
@@ -152,8 +163,8 @@ func Test_ExtractMAC(t *testing.T) {
 	require.Error(t, err)
 
 	// DUID is not DuidLL or DuidLLT
-	duid = Duid{}
-	solicit, err = NewMessage(WithClientID(duid))
+	duiden := &DUIDEN{}
+	solicit, err = NewMessage(WithClientID(duiden))
 	require.NoError(t, err)
 	_, err = ExtractMAC(solicit)
 	require.Error(t, err)

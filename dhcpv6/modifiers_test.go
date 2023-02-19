@@ -10,27 +10,25 @@ import (
 )
 
 func TestWithClientID(t *testing.T) {
-	duid := Duid{
-		Type:          DUID_LL,
-		HwType:        iana.HWTypeEthernet,
+	duid := &DUIDLL{
+		HWType:        iana.HWTypeEthernet,
 		LinkLayerAddr: net.HardwareAddr([]byte{0xfa, 0xce, 0xb0, 0x00, 0x00, 0x0c}),
 	}
 	m, err := NewMessage(WithClientID(duid))
 	require.NoError(t, err)
 	cid := m.Options.ClientID()
-	require.Equal(t, cid, &duid)
+	require.Equal(t, cid, duid)
 }
 
 func TestWithServerID(t *testing.T) {
-	duid := Duid{
-		Type:          DUID_LL,
-		HwType:        iana.HWTypeEthernet,
+	duid := &DUIDLL{
+		HWType:        iana.HWTypeEthernet,
 		LinkLayerAddr: net.HardwareAddr([]byte{0xfa, 0xce, 0xb0, 0x00, 0x00, 0x0c}),
 	}
 	m, err := NewMessage(WithServerID(duid))
 	require.NoError(t, err)
 	sid := m.Options.ServerID()
-	require.Equal(t, sid, &duid)
+	require.Equal(t, sid, duid)
 }
 
 func TestWithRequestedOptions(t *testing.T) {
