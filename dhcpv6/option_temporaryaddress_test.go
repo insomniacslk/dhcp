@@ -2,11 +2,41 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageWithIATA(t *testing.T) {
+	data := []byte{
+		0, 4, // IATA option code
+		0, 32, // length
+		1, 0, 0, 0, // IAID
+		// IATA Options
+		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IP
+		0, 0, 0, 2, // PreferredLifetime
+		0, 0, 0, 4, // ValidLifetime
+	}
+	var got MessageOptions
+	if err := got.FromBytes(data); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	}
+
+	want := &OptIATA{
+		IaId: [4]byte{1, 0, 0, 0},
+		Options: IdentityOptions{Options: Options{&OptIAAddress{
+			IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+			PreferredLifetime: 2 * time.Second,
+			ValidLifetime:     4 * time.Second,
+			Options:           AddressOptions{Options: Options{}},
+		}}},
+	}
+	if gotIATA := got.OneIATA(); !reflect.DeepEqual(gotIATA, want) {
+		t.Errorf("OneIATA = %v, want %v", gotIATA, want)
+	}
+}
 
 func TestOptIATAParseOptIATA(t *testing.T) {
 	data := []byte{
