@@ -42,149 +42,80 @@ func (og *OptionGeneric) FromBytes(p []byte) error {
 }
 
 // ParseOption parses data according to the given code.
+//
+// Parse a sequence of bytes as a single DHCPv6 option.
+// Returns the option structure, or an error if any.
 func ParseOption(code OptionCode, optData []byte) (Option, error) {
-	// Parse a sequence of bytes as a single DHCPv6 option.
-	// Returns the option structure, or an error if any.
-	var (
-		err error
-		opt Option
-	)
+	var opt Option
 	switch code {
 	case OptionClientID:
-		var o optClientID
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optClientID{}
 	case OptionServerID:
-		var o optServerID
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optServerID{}
 	case OptionIANA:
-		var o OptIANA
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptIANA{}
 	case OptionIATA:
-		var o OptIATA
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptIATA{}
 	case OptionIAAddr:
-		var o OptIAAddress
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptIAAddress{}
 	case OptionORO:
-		var o optRequestedOption
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optRequestedOption{}
 	case OptionElapsedTime:
-		var o optElapsedTime
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optElapsedTime{}
 	case OptionRelayMsg:
-		var o optRelayMsg
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optRelayMsg{}
 	case OptionStatusCode:
-		var o OptStatusCode
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptStatusCode{}
 	case OptionUserClass:
-		var o OptUserClass
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptUserClass{}
 	case OptionVendorClass:
-		var o OptVendorClass
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptVendorClass{}
 	case OptionVendorOpts:
-		var o OptVendorOpts
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptVendorOpts{}
 	case OptionInterfaceID:
-		var o optInterfaceID
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optInterfaceID{}
 	case OptionDNSRecursiveNameServer:
-		var o optDNS
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optDNS{}
 	case OptionDomainSearchList:
-		var o optDomainSearchList
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optDomainSearchList{}
 	case OptionIAPD:
-		var o OptIAPD
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptIAPD{}
 	case OptionIAPrefix:
-		var o OptIAPrefix
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptIAPrefix{}
 	case OptionInformationRefreshTime:
-		var o optInformationRefreshTime
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optInformationRefreshTime{}
 	case OptionRemoteID:
-		var o OptRemoteID
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptRemoteID{}
 	case OptionFQDN:
-		var o OptFQDN
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptFQDN{}
 	case OptionNTPServer:
-		var o OptNTPServer
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptNTPServer{}
 	case OptionBootfileURL:
-		var o optBootFileURL
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optBootFileURL{}
 	case OptionBootfileParam:
-		var o optBootFileParam
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optBootFileParam{}
 	case OptionClientArchType:
-		var o optClientArchType
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optClientArchType{}
 	case OptionNII:
-		var o OptNetworkInterfaceID
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptNetworkInterfaceID{}
 	case OptionClientLinkLayerAddr:
-		var o optClientLinkLayerAddress
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optClientLinkLayerAddress{}
 	case OptionDHCPv4Msg:
-		var o OptDHCPv4Msg
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptDHCPv4Msg{}
 	case OptionDHCP4oDHCP6Server:
-		var o OptDHCP4oDHCP6Server
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &OptDHCP4oDHCP6Server{}
 	case Option4RD:
-		var o Opt4RD
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &Opt4RD{}
 	case Option4RDMapRule:
-		var o Opt4RDMapRule
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &Opt4RDMapRule{}
 	case Option4RDNonMapRule:
-		var o Opt4RDNonMapRule
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &Opt4RDNonMapRule{}
 	case OptionRelayPort:
-		var o optRelayPort
-		err = o.FromBytes(optData)
-		opt = &o
+		opt = &optRelayPort{}
 	default:
-		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
+		opt = &OptionGeneric{OptionCode: code}
 	}
-	if err != nil {
-		return nil, err
-	}
-	return opt, nil
+	return opt, opt.FromBytes(optData)
 }
 
 type longStringer interface {
