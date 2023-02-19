@@ -9,7 +9,8 @@ import (
 
 func TestOpt4RDNonMapRuleParse(t *testing.T) {
 	data := []byte{0x81, 0xaa, 0x05, 0xd4}
-	opt, err := ParseOpt4RDNonMapRule(data)
+	var opt Opt4RDNonMapRule
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.True(t, opt.HubAndSpoke)
 	require.NotNil(t, opt.TrafficClass)
@@ -18,7 +19,8 @@ func TestOpt4RDNonMapRuleParse(t *testing.T) {
 
 	// Remove the TrafficClass flag and check value is ignored
 	data[0] = 0x80
-	opt, err = ParseOpt4RDNonMapRule(data)
+	opt = Opt4RDNonMapRule{}
+	err = opt.FromBytes(data)
 	require.NoError(t, err)
 	require.True(t, opt.HubAndSpoke)
 	require.Nil(t, opt.TrafficClass)
@@ -77,7 +79,8 @@ func TestOpt4RDMapRuleParse(t *testing.T) {
 		append(ip4addr.To4(), ip6addr...)...,
 	)
 
-	opt, err := ParseOpt4RDMapRule(data)
+	var opt Opt4RDMapRule
+	err = opt.FromBytes(data)
 	require.NoError(t, err)
 	require.EqualValues(t, *ip6net, opt.Prefix6)
 	require.EqualValues(t, *ip4net, opt.Prefix4)
@@ -162,9 +165,10 @@ func TestOpt4RDRoundTrip(t *testing.T) {
 		},
 	}
 
-	rtOpt, err := ParseOpt4RD(opt.ToBytes())
+	var rtOpt Opt4RD
+	err := rtOpt.FromBytes(opt.ToBytes())
 
 	require.NoError(t, err)
 	require.NotNil(t, rtOpt)
-	require.Equal(t, opt, *rtOpt)
+	require.Equal(t, opt, rtOpt)
 }
