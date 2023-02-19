@@ -3,7 +3,6 @@ package dhcpv6
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -52,12 +51,11 @@ func TestOptBootFileParam(t *testing.T) {
 
 func TestParsedTypeOptBootFileParam(t *testing.T) {
 	tryParse := func(compiled []byte, expected []string) {
-		opt, err := ParseOption(OptionBootfileParam, compiled)
+		var opt optBootFileParam
+		err := opt.FromBytes([]byte(compiled))
 		require.NoError(t, err)
-		bootfileParamOpt, ok := opt.(*optBootFileParam)
-		require.True(t, ok, fmt.Sprintf("invalid type: %T instead of %T", opt, bootfileParamOpt))
-		require.Equal(t, compiled, bootfileParamOpt.ToBytes())
-		require.Equal(t, expected, bootfileParamOpt.params)
+		require.Equal(t, compiled, opt.ToBytes())
+		require.Equal(t, expected, opt.params)
 	}
 
 	tryParse(

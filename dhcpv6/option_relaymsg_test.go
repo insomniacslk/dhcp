@@ -28,7 +28,7 @@ func TestRelayMsgParseOptRelayMsg(t *testing.T) {
 }
 
 func TestRelayMsgOptionsFromBytes(t *testing.T) {
-	var opts Options
+	var opts RelayOptions
 	err := opts.FromBytes([]byte{
 		0, 9, // option: relay message
 		0, 10, // relayed message length
@@ -41,10 +41,10 @@ func TestRelayMsgOptionsFromBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(opts) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts))
+	if len(opts.Options) != 1 {
+		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts.Options))
 	}
-	opt := opts[0]
+	opt := opts.Options[0]
 	if code := opt.Code(); code != OptionRelayMsg {
 		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
 			OptionRelayMsg, code,

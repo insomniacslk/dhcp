@@ -9,7 +9,7 @@ import (
 
 // OptFQDN implements OptionFQDN option.
 //
-// https://tools.ietf.org/html/rfc4704
+// Defined by RFC 4704.
 type OptFQDN struct {
 	Flags      uint8
 	DomainName *rfc1035label.Labels

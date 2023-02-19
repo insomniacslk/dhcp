@@ -64,6 +64,28 @@ func (io IdentityOptions) Status() *OptStatusCode {
 	return sc
 }
 
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 IANA/IATA options per RFC 8415
+// Appendix C.
+func (io *IdentityOptions) FromBytes(data []byte) error {
+	return io.FromBytesWithParser(data, newIdentityOption)
+}
+
+// newIdentityOption returns new zero-value options for DHCPv6 IANA/IATA
+// suboption.
+//
+// Options listed in RFC 8415 Appendix C for IANA/IATA are eligible.
+func newIdentityOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case OptionStatusCode:
+		opt = &OptStatusCode{}
+	case OptionIAAddr:
+		opt = &OptIAAddress{}
+	}
+	return opt
+}
+
 // OptIANA implements the identity association for non-temporary addresses
 // option.
 //

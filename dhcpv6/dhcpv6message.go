@@ -15,11 +15,94 @@ import (
 
 const MessageHeaderSize = 4
 
+// NewMessageOption returns new zero-value options for a DHCPv6 Message.
+//
+// Options listed in RFC 8415 Appendix B & C are used for this list.
+func NewMessageOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	// The following are listed in RFC 8415 Appendix C.
+	case OptionClientID:
+		opt = &optClientID{}
+	case OptionServerID:
+		opt = &optServerID{}
+	case OptionIANA:
+		opt = &OptIANA{}
+	case OptionIATA:
+		opt = &OptIATA{}
+	case OptionIAPD:
+		opt = &OptIAPD{}
+	case OptionORO:
+		opt = &optRequestedOption{}
+	case OptionElapsedTime:
+		opt = &optElapsedTime{}
+	case OptionStatusCode:
+		opt = &OptStatusCode{}
+	case OptionUserClass:
+		opt = &OptUserClass{}
+	case OptionVendorClass:
+		opt = &OptVendorClass{}
+	case OptionVendorOpts:
+		opt = &OptVendorOpts{}
+	case OptionInformationRefreshTime:
+		opt = &optInformationRefreshTime{}
+
+	// RFC 3646 Section 5.
+	case OptionDNSRecursiveNameServer:
+		opt = &optDNS{}
+	case OptionDomainSearchList:
+		opt = &optDomainSearchList{}
+
+	// RFC 4704 Section 4.
+	case OptionFQDN:
+		opt = &OptFQDN{}
+
+	// RFC 5908 Section 5.
+	case OptionNTPServer:
+		opt = &OptNTPServer{}
+
+	// RFC 5970 Section 4.
+	case OptionBootfileURL:
+		opt = &optBootFileURL{}
+	case OptionBootfileParam:
+		opt = &optBootFileParam{}
+	case OptionClientArchType:
+		opt = &optClientArchType{}
+	case OptionNII:
+		opt = &OptNetworkInterfaceID{}
+
+	// RFC 7341 Section 6. Technically, this is compatible only with
+	// DHCPv4Query/Response message types. We don't have the ability to
+	// restrict by message type yet.
+	case OptionDHCPv4Msg:
+		opt = &OptDHCPv4Msg{}
+	case OptionDHCP4oDHCP6Server:
+		opt = &OptDHCP4oDHCP6Server{}
+
+	// RFC 7600 does not explicitly specify, but we assume this is not
+	// valid for Relay messages.
+	case Option4RD:
+		opt = &Opt4RD{}
+
+	// We have plenty of unimplemented options.
+	default:
+		opt = &OptionGeneric{OptionCode: code}
+	}
+	return opt
+}
+
 // MessageOptions are the options that may appear in a normal DHCPv6 message.
 //
-// RFC 3315 Appendix B lists the valid options that can be used.
+// RFC 8415 Appendix C lists the valid options that can be used.
 type MessageOptions struct {
 	Options
+}
+
+// FromBytes reads data into o and returns an error if the options are not a
+// valid serialized representation of DHCPv6 message options per RFC 8415
+// Appendix B.
+func (mo *MessageOptions) FromBytes(data []byte) error {
+	return mo.FromBytesWithParser(data, NewMessageOption)
 }
 
 // ArchTypes returns the architecture type option.

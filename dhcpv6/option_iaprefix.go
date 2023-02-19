@@ -32,6 +32,26 @@ func (po PrefixOptions) Status() *OptStatusCode {
 	return sc
 }
 
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 IAPrefix options per RFC 8415
+// Appendix C.
+func (po *PrefixOptions) FromBytes(data []byte) error {
+	return po.FromBytesWithParser(data, newPrefixOption)
+}
+
+// newPrefixOption returns new zero-value options for DHCPv6 IAPrefix
+// suboption.
+//
+// Options listed in RFC 8415 Appendix C for IAPrefix are eligible.
+func newPrefixOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case OptionStatusCode:
+		opt = &OptStatusCode{}
+	}
+	return opt
+}
+
 // OptIAPrefix implements the IAPrefix option.
 //
 // This module defines the OptIAPrefix structure.

@@ -41,83 +41,6 @@ func (og *OptionGeneric) FromBytes(p []byte) error {
 	return nil
 }
 
-// ParseOption parses data according to the given code.
-//
-// Parse a sequence of bytes as a single DHCPv6 option.
-// Returns the option structure, or an error if any.
-func ParseOption(code OptionCode, optData []byte) (Option, error) {
-	var opt Option
-	switch code {
-	case OptionClientID:
-		opt = &optClientID{}
-	case OptionServerID:
-		opt = &optServerID{}
-	case OptionIANA:
-		opt = &OptIANA{}
-	case OptionIATA:
-		opt = &OptIATA{}
-	case OptionIAAddr:
-		opt = &OptIAAddress{}
-	case OptionORO:
-		opt = &optRequestedOption{}
-	case OptionElapsedTime:
-		opt = &optElapsedTime{}
-	case OptionRelayMsg:
-		opt = &optRelayMsg{}
-	case OptionStatusCode:
-		opt = &OptStatusCode{}
-	case OptionUserClass:
-		opt = &OptUserClass{}
-	case OptionVendorClass:
-		opt = &OptVendorClass{}
-	case OptionVendorOpts:
-		opt = &OptVendorOpts{}
-	case OptionInterfaceID:
-		opt = &optInterfaceID{}
-	case OptionDNSRecursiveNameServer:
-		opt = &optDNS{}
-	case OptionDomainSearchList:
-		opt = &optDomainSearchList{}
-	case OptionIAPD:
-		opt = &OptIAPD{}
-	case OptionIAPrefix:
-		opt = &OptIAPrefix{}
-	case OptionInformationRefreshTime:
-		opt = &optInformationRefreshTime{}
-	case OptionRemoteID:
-		opt = &OptRemoteID{}
-	case OptionFQDN:
-		opt = &OptFQDN{}
-	case OptionNTPServer:
-		opt = &OptNTPServer{}
-	case OptionBootfileURL:
-		opt = &optBootFileURL{}
-	case OptionBootfileParam:
-		opt = &optBootFileParam{}
-	case OptionClientArchType:
-		opt = &optClientArchType{}
-	case OptionNII:
-		opt = &OptNetworkInterfaceID{}
-	case OptionClientLinkLayerAddr:
-		opt = &optClientLinkLayerAddress{}
-	case OptionDHCPv4Msg:
-		opt = &OptDHCPv4Msg{}
-	case OptionDHCP4oDHCP6Server:
-		opt = &OptDHCP4oDHCP6Server{}
-	case Option4RD:
-		opt = &Opt4RD{}
-	case Option4RDMapRule:
-		opt = &Opt4RDMapRule{}
-	case Option4RDNonMapRule:
-		opt = &Opt4RDNonMapRule{}
-	case OptionRelayPort:
-		opt = &optRelayPort{}
-	default:
-		opt = &OptionGeneric{OptionCode: code}
-	}
-	return opt, opt.FromBytes(optData)
-}
-
 type longStringer interface {
 	LongString(spaceIndent int) string
 }
@@ -212,18 +135,12 @@ func (o Options) ToBytes() []byte {
 	return buf.Data()
 }
 
-// FromBytes reads data into o and returns an error if the options are not a
-// valid serialized representation of DHCPv6 options per RFC 3315.
-func (o *Options) FromBytes(data []byte) error {
-	return o.FromBytesWithParser(data, ParseOption)
-}
-
-// OptionParser is a function signature for option parsing
-type OptionParser func(code OptionCode, data []byte) (Option, error)
+// Optioner returns a new zero-value option for the given option code.
+type Optioner func(code OptionCode) Option
 
 // FromBytesWithParser parses Options from byte sequences using the parsing
 // function that is passed in as a paremeter
-func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
+func (o *Options) FromBytesWithParser(data []byte, optioner Optioner) error {
 	*o = make(Options, 0, 10)
 	if len(data) == 0 {
 		// no options, no party
@@ -239,8 +156,11 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		// pertinent data.
 		optData := buf.Consume(length)
 
-		opt, err := parser(code, optData)
-		if err != nil {
+		opt := optioner(code)
+		if opt == nil {
+			return fmt.Errorf("option code %d is invalid in this message", code)
+		}
+		if err := opt.FromBytes(optData); err != nil {
 			return err
 		}
 		*o = append(*o, opt)

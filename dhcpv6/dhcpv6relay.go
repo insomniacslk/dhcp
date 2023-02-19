@@ -12,12 +12,53 @@ import (
 
 const RelayHeaderSize = 34
 
+// NewRelayOption returns new zero-value options for a DHCPv6 RelayMessage.
+//
+// Options listed in RFC 8415 Appendix B & C are used for this list, as well as
+// RFC 4649 for the RemoteID, RFC 8357 for the relay port, and RFC 6939 for the
+// client link-layer address.
+func NewRelayOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	// RFC 8415 Appendix C
+	case OptionRelayMsg:
+		opt = &optRelayMsg{}
+	// RFC 8415 Appendix C
+	case OptionVendorOpts:
+		opt = &OptVendorOpts{}
+	// RFC 8415 Appendix C
+	case OptionInterfaceID:
+		opt = &optInterfaceID{}
+	// RFC 6939
+	case OptionClientLinkLayerAddr:
+		opt = &optClientLinkLayerAddress{}
+	// RFC 4649
+	case OptionRemoteID:
+		opt = &OptRemoteID{}
+	// RFC 8357
+	case OptionRelayPort:
+		opt = &optRelayPort{}
+
+	// We have plenty of unimplemented options.
+	default:
+		opt = &OptionGeneric{OptionCode: code}
+	}
+	return opt
+}
+
 // RelayOptions are the options valid for RelayForw and RelayRepl messages.
 //
 // RFC 3315 Appendix B defines them to be InterfaceID and RelayMsg options; RFC
 // 4649 also adds the RemoteID option.
 type RelayOptions struct {
 	Options
+}
+
+// FromBytes reads data into o and returns an error if the options are not a
+// valid serialized representation of DHCPv6 relay options per RFC 8415
+// Appendix B.
+func (ro *RelayOptions) FromBytes(data []byte) error {
+	return ro.FromBytesWithParser(data, NewRelayOption)
 }
 
 // RelayMessage returns the message embedded.

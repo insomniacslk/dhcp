@@ -9,7 +9,9 @@ import (
 	"github.com/u-root/uio/uio"
 )
 
-// OptRelayPort specifies an UDP port to use for the downstream relay
+// OptRelayPort specifies an UDP port to use for the downstream relay.
+//
+// Defined in RFC 8357.
 func OptRelayPort(port uint16) Option {
 	return &optRelayPort{DownstreamSourcePort: port}
 }

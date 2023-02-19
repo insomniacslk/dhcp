@@ -144,23 +144,25 @@ func TestOpt4RDMapRuleString(t *testing.T) {
 func TestOpt4RDRoundTrip(t *testing.T) {
 	var tClass uint8 = 0xaa
 	opt := Opt4RD{
-		Options: Options{
-			&Opt4RDMapRule{
-				Prefix4: net.IPNet{
-					IP:   net.IPv4(100, 64, 0, 238).To4(),
-					Mask: net.CIDRMask(24, 32),
+		Options: FourRDOptions{
+			Options: Options{
+				&Opt4RDMapRule{
+					Prefix4: net.IPNet{
+						IP:   net.IPv4(100, 64, 0, 238).To4(),
+						Mask: net.CIDRMask(24, 32),
+					},
+					Prefix6: net.IPNet{
+						IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
+						Mask: net.CIDRMask(80, 128),
+					},
+					EABitsLength:  32,
+					WKPAuthorized: true,
 				},
-				Prefix6: net.IPNet{
-					IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
-					Mask: net.CIDRMask(80, 128),
+				&Opt4RDNonMapRule{
+					HubAndSpoke:  true,
+					TrafficClass: &tClass,
+					DomainPMTU:   9000,
 				},
-				EABitsLength:  32,
-				WKPAuthorized: true,
-			},
-			&Opt4RDNonMapRule{
-				HubAndSpoke:  true,
-				TrafficClass: &tClass,
-				DomainPMTU:   9000,
 			},
 		},
 	}

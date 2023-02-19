@@ -40,6 +40,26 @@ func (po PDOptions) Status() *OptStatusCode {
 	return sc
 }
 
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 IAPD options per RFC 3633.
+func (po *PDOptions) FromBytes(data []byte) error {
+	return po.FromBytesWithParser(data, newIAPDOption)
+}
+
+// newIAPDOption returns new zero-value options for DHCPv6 IAPD suboption.
+//
+// Options listed in RFC 3633 for IAPD are eligible.
+func newIAPDOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case OptionStatusCode:
+		opt = &OptStatusCode{}
+	case OptionIAPrefix:
+		opt = &OptIAPrefix{}
+	}
+	return opt
+}
+
 // OptIAPD implements the identity association for prefix
 // delegation option defined by RFC 3633, Section 9.
 type OptIAPD struct {

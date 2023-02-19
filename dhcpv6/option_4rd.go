@@ -8,8 +8,10 @@ import (
 )
 
 // Opt4RD represents a 4RD option. It is only a container for 4RD_*_RULE options
+//
+// Defined in RFC 7600 Section 4.9.
 type Opt4RD struct {
-	Options
+	Options FourRDOptions
 }
 
 // Code returns the Option Code for this option
@@ -36,6 +38,32 @@ func (op *Opt4RD) LongString(indentSpace int) string {
 // The input data does not include option code and length bytes
 func (op *Opt4RD) FromBytes(data []byte) error {
 	return op.Options.FromBytes(data)
+}
+
+// New4RDOption returns new zero-value options for DHCPv6 4RD suboption.
+//
+// Options listed in RFC 7600 Section 4.9 are eligible.
+func New4RDOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case Option4RDMapRule:
+		opt = &Opt4RDMapRule{}
+	case Option4RDNonMapRule:
+		opt = &Opt4RDNonMapRule{}
+	}
+	return opt
+}
+
+// FourRDOptions are 4RD suboptions as defined in RFC 7600 Section 4.9.
+type FourRDOptions struct {
+	Options
+}
+
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 4RD options per RFC 7600 Section
+// 4.9.
+func (fo *FourRDOptions) FromBytes(data []byte) error {
+	return fo.FromBytesWithParser(data, New4RDOption)
 }
 
 // Opt4RDMapRule represents a 4RD Mapping Rule option

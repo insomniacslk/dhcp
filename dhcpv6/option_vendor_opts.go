@@ -43,16 +43,16 @@ func (op *OptVendorOpts) LongString(indent int) string {
 func (op *OptVendorOpts) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 	op.EnterpriseNumber = buf.Read32()
-	if err := op.VendorOpts.FromBytesWithParser(buf.ReadAll(), vendParseOption); err != nil {
+	if err := op.VendorOpts.FromBytesWithParser(buf.ReadAll(), newVendorOption); err != nil {
 		return err
 	}
 	return buf.FinError()
 }
 
-// vendParseOption builds a GenericOption from a slice of bytes
+// newVendorOption builds a GenericOption from a slice of bytes
 // We cannot use the existing ParseOption function in options.go because the
 // sub-options include codes specific to each vendor. There are overlaps in these
 // codes with RFC standard codes.
-func vendParseOption(code OptionCode, data []byte) (Option, error) {
-	return &OptionGeneric{OptionCode: code, OptionData: data}, nil
+func newVendorOption(code OptionCode) Option {
+	return &OptionGeneric{OptionCode: code}
 }
