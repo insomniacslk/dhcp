@@ -2,11 +2,30 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageOptionsWithServerID(t *testing.T) {
+	buf := []byte{
+		0, 2, // Server ID option
+		0, 10, // length
+		0, 3, // DUID_LL
+		0, 1, // hwtype ethernet
+		0, 1, 2, 3, 4, 5, // HW addr
+	}
+
+	want := &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0, 1, 2, 3, 4, 5}}
+	var mo MessageOptions
+	if err := mo.FromBytes(buf); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if got := mo.ServerID(); !reflect.DeepEqual(got, want) {
+		t.Errorf("ServerID = %v, want %v", got, want)
+	}
+}
 
 func TestParseOptServerID(t *testing.T) {
 	data := []byte{

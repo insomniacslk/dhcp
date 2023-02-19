@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -173,4 +174,14 @@ func TestOpt4RDRoundTrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, rtOpt)
 	require.Equal(t, opt, rtOpt)
+
+	var mo MessageOptions
+	mo.Options.Add(&opt)
+
+	var got MessageOptions
+	if err := got.FromBytes(mo.ToBytes()); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if !reflect.DeepEqual(mo, got) {
+		t.Errorf("FromBytes = %v, want %v", got, mo)
+	}
 }
