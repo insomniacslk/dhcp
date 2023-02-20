@@ -2,10 +2,27 @@ package dhcpv6
 
 import (
 	"bytes"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageWithBootFileURL(t *testing.T) {
+	buf := []byte{
+		0, 59, // boot file option
+		0, 3, // length
+		0x66, 0x6f, 0x6f, //
+	}
+
+	want := "foo"
+	var mo MessageOptions
+	if err := mo.FromBytes(buf); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if got := mo.BootFileURL(); !reflect.DeepEqual(got, want) {
+		t.Errorf("BootFileURL = %v, want %v", got, want)
+	}
+}
 
 func TestOptBootFileURL(t *testing.T) {
 	expected := "https://insomniac.slackware.it"

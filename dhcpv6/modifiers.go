@@ -8,6 +8,13 @@ import (
 	"github.com/insomniacslk/dhcp/rfc1035label"
 )
 
+func Apply(d DHCPv6, modifiers ...Modifier) DHCPv6 {
+	for _, m := range modifiers {
+		m(d)
+	}
+	return d
+}
+
 // WithOption adds the specific option to the DHCPv6 message.
 func WithOption(o Option) Modifier {
 	return func(d DHCPv6) {
@@ -82,7 +89,7 @@ func WithIAID(iaid [4]byte) Modifier {
 			iana := msg.Options.OneIANA()
 			if iana == nil {
 				iana = &OptIANA{
-					Options: IdentityOptions{Options: []Option{}},
+					Options: IdentityOptions{Options: Options{}},
 				}
 			}
 			copy(iana.IaId[:], iaid[:])

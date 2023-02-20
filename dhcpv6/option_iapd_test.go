@@ -31,7 +31,7 @@ func TestParseMessageWithIAPD(t *testing.T) {
 		IaId: [4]byte{1, 0, 0, 0},
 		T1:   1 * time.Second,
 		T2:   2 * time.Second,
-		Options: PDOptions{Options: Options{&OptIAPrefix{
+		Options: PDOptions{Options: OptionsFrom(&OptIAPrefix{
 			PreferredLifetime: 2 * time.Second,
 			ValidLifetime:     4 * time.Second,
 			Prefix: &net.IPNet{
@@ -39,7 +39,7 @@ func TestParseMessageWithIAPD(t *testing.T) {
 				IP:   net.IP{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 			},
 			Options: PrefixOptions{Options: Options{}},
-		}}},
+		})},
 	}
 	if gotIAPD := got.OneIAPD(); !reflect.DeepEqual(gotIAPD, want) {
 		t.Errorf("OneIAPD = %v, want %v", gotIAPD, want)
@@ -106,7 +106,7 @@ func TestOptIAPDToBytes(t *testing.T) {
 		IaId:    [4]byte{1, 2, 3, 4},
 		T1:      12345 * time.Second,
 		T2:      54321 * time.Second,
-		Options: PDOptions{[]Option{&oaddr}},
+		Options: PDOptions{OptionsFrom(&oaddr)},
 	}
 
 	expected := []byte{

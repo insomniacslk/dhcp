@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -37,6 +38,23 @@ func compileTestBootfileParams(t *testing.T, params []string) []byte {
 	}
 
 	return buf.Bytes()
+}
+
+func TestParseMessageWithBootFileParam(t *testing.T) {
+	buf := []byte{
+		0, 60, // boot file param option
+		0, 5, // length
+		0, 3, // length
+		0x66, 0x6f, 0x6f, //
+	}
+
+	want := []string{"foo"}
+	var mo MessageOptions
+	if err := mo.FromBytes(buf); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if got := mo.BootFileParam(); !reflect.DeepEqual(got, want) {
+		t.Errorf("BootFileParam = %v, want %v", got, want)
+	}
 }
 
 func TestOptBootFileParam(t *testing.T) {

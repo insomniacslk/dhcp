@@ -145,7 +145,7 @@ func TestOpt4RDMapRuleString(t *testing.T) {
 func TestOpt4RDRoundTrip(t *testing.T) {
 	var tClass uint8 = 0xaa
 	opt := Opt4RD{
-		Options: Options{
+		Options: OptionsFrom(
 			&Opt4RDMapRule{
 				Prefix4: net.IPNet{
 					IP:   net.IPv4(100, 64, 0, 238).To4(),
@@ -163,7 +163,7 @@ func TestOpt4RDRoundTrip(t *testing.T) {
 				TrafficClass: &tClass,
 				DomainPMTU:   9000,
 			},
-		},
+		),
 	}
 
 	var rtOpt Opt4RD

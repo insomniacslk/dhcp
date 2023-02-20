@@ -14,9 +14,8 @@ func TestOptVendorOpts(t *testing.T) {
 		0, byte(len(optData)), //length
 	}...)
 	expected = append(expected, optData...)
-	expectedOpts := OptVendorOpts{}
-	var vendorOpts []Option
-	expectedOpts.VendorOpts = append(vendorOpts, &OptionGeneric{OptionCode: 1, OptionData: optData})
+
+	expectedOpts := OptVendorOpts{VendorOpts: OptionsFrom(&OptionGeneric{OptionCode: 1, OptionData: optData})}
 
 	var opt OptVendorOpts
 	err := opt.FromBytes(expected)
@@ -32,8 +31,6 @@ func TestOptVendorOpts(t *testing.T) {
 
 func TestOptVendorOptsToBytes(t *testing.T) {
 	optData := []byte("Arista;DCS-7304;01.00;HSH14425148")
-	var opts []Option
-	opts = append(opts, &OptionGeneric{OptionCode: 1, OptionData: optData})
 
 	expected := append([]byte{
 		0, 0, 0, 0, // EnterpriseNumber
@@ -43,7 +40,7 @@ func TestOptVendorOptsToBytes(t *testing.T) {
 
 	opt := OptVendorOpts{
 		EnterpriseNumber: 0000,
-		VendorOpts:       opts,
+		VendorOpts:       OptionsFrom(&OptionGeneric{OptionCode: 1, OptionData: optData}),
 	}
 	toBytes := opt.ToBytes()
 	require.Equal(t, expected, toBytes)

@@ -8,21 +8,35 @@ import (
 )
 
 // Duration is a duration as embedded in IA messages (IAPD, IANA, IATA).
-type Duration struct {
-	time.Duration
+type Duration time.Duration
+
+func (d Duration) String() string {
+	return time.Duration(d).String()
+}
+
+func (d Duration) ToBytes() []byte {
+	buf := uio.NewBigEndianBuffer(nil)
+	d.Marshal(buf)
+	return buf.Data()
 }
 
 // Marshal encodes the time in uint32 seconds as defined by RFC 3315 for IANA
 // messages.
 func (d Duration) Marshal(buf *uio.Lexer) {
-	buf.Write32(uint32(d.Duration.Round(time.Second) / time.Second))
+	buf.Write32(uint32(time.Duration(d).Round(time.Second) / time.Second))
 }
 
 // Unmarshal decodes time from uint32 seconds as defined by RFC 3315 for IANA
 // messages.
 func (d *Duration) Unmarshal(buf *uio.Lexer) {
 	t := buf.Read32()
-	d.Duration = time.Duration(t) * time.Second
+	*d = Duration(time.Duration(t) * time.Second)
+}
+
+func (d *Duration) FromBytes(p []byte) error {
+	buf := uio.NewBigEndianBuffer(p)
+	d.Unmarshal(buf)
+	return buf.FinError()
 }
 
 // IdentityOptions implement the options allowed for IA_NA and IA_TA messages.
@@ -34,34 +48,17 @@ type IdentityOptions struct {
 
 // Addresses returns the addresses assigned to the identity.
 func (io IdentityOptions) Addresses() []*OptIAAddress {
-	opts := io.Options.Get(OptionIAAddr)
-	var iaAddrs []*OptIAAddress
-	for _, o := range opts {
-		iaAddrs = append(iaAddrs, o.(*OptIAAddress))
-	}
-	return iaAddrs
+	return MustGetPtrOptioner[OptIAAddress, *OptIAAddress](OptionIAAddr, io.Options)
 }
 
 // OneAddress returns one address (of potentially many) assigned to the identity.
 func (io IdentityOptions) OneAddress() *OptIAAddress {
-	a := io.Addresses()
-	if len(a) == 0 {
-		return nil
-	}
-	return a[0]
+	return MustGetOnePtrOptioner[OptIAAddress, *OptIAAddress](OptionIAAddr, io.Options)
 }
 
 // Status returns the status code associated with this option.
 func (io IdentityOptions) Status() *OptStatusCode {
-	opt := io.Options.GetOne(OptionStatusCode)
-	if opt == nil {
-		return nil
-	}
-	sc, ok := opt.(*OptStatusCode)
-	if !ok {
-		return nil
-	}
-	return sc
+	return MustGetOnePtrOptioner[OptStatusCode, *OptStatusCode](OptionStatusCode, io.Options)
 }
 
 // OptIANA implements the identity association for non-temporary addresses
@@ -84,9 +81,9 @@ func (op *OptIANA) Code() OptionCode {
 func (op *OptIANA) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	buf.WriteBytes(op.IaId[:])
-	t1 := Duration{op.T1}
+	t1 := Duration(op.T1)
 	t1.Marshal(buf)
-	t2 := Duration{op.T2}
+	t2 := Duration(op.T2)
 	t2.Marshal(buf)
 	buf.WriteBytes(op.Options.ToBytes())
 	return buf.Data()
@@ -111,8 +108,8 @@ func (op *OptIANA) FromBytes(data []byte) error {
 	var t1, t2 Duration
 	t1.Unmarshal(buf)
 	t2.Unmarshal(buf)
-	op.T1 = t1.Duration
-	op.T2 = t2.Duration
+	op.T1 = time.Duration(t1)
+	op.T2 = time.Duration(t2)
 
 	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
 		return err

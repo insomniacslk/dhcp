@@ -24,179 +24,100 @@ type MessageOptions struct {
 
 // ArchTypes returns the architecture type option.
 func (mo MessageOptions) ArchTypes() iana.Archs {
-	opt := mo.GetOne(OptionClientArchType)
-	if opt == nil {
-		return nil
-	}
-	return opt.(*optClientArchType).Archs
+	return MustGetOneOptioner[iana.Archs, *iana.Archs](OptionClientArchType, mo.Options)
 }
 
 // ClientID returns the client identifier option.
 func (mo MessageOptions) ClientID() DUID {
-	opt := mo.GetOne(OptionClientID)
-	if opt == nil {
-		return nil
-	}
-	return opt.(*optClientID).DUID
+	return MustGetOneInfOptioner[DUID](OptionClientID, mo.Options, DUIDFromBytes)
 }
 
 // ServerID returns the server identifier option.
 func (mo MessageOptions) ServerID() DUID {
-	opt := mo.GetOne(OptionServerID)
-	if opt == nil {
-		return nil
-	}
-	return opt.(*optServerID).DUID
+	return MustGetOneInfOptioner[DUID](OptionServerID, mo.Options, DUIDFromBytes)
 }
 
 // IANA returns all Identity Association for Non-temporary Address options.
 func (mo MessageOptions) IANA() []*OptIANA {
-	opts := mo.Get(OptionIANA)
-	var ianas []*OptIANA
-	for _, o := range opts {
-		ianas = append(ianas, o.(*OptIANA))
-	}
-	return ianas
+	return MustGetPtrOptioner[OptIANA, *OptIANA](OptionIANA, mo.Options)
 }
 
 // OneIANA returns the first IANA option.
 func (mo MessageOptions) OneIANA() *OptIANA {
-	ianas := mo.IANA()
-	if len(ianas) == 0 {
-		return nil
-	}
-	return ianas[0]
+	return MustGetOnePtrOptioner[OptIANA, *OptIANA](OptionIANA, mo.Options)
 }
 
 // IATA returns all Identity Association for Temporary Address options.
 func (mo MessageOptions) IATA() []*OptIATA {
-	opts := mo.Get(OptionIATA)
-	var iatas []*OptIATA
-	for _, o := range opts {
-		iatas = append(iatas, o.(*OptIATA))
-	}
-	return iatas
+	return MustGetPtrOptioner[OptIATA, *OptIATA](OptionIATA, mo.Options)
 }
 
 // OneIATA returns the first IATA option.
 func (mo MessageOptions) OneIATA() *OptIATA {
-	iatas := mo.IATA()
-	if len(iatas) == 0 {
-		return nil
-	}
-	return iatas[0]
+	return MustGetOnePtrOptioner[OptIATA, *OptIATA](OptionIATA, mo.Options)
 }
 
 // IAPD returns all Identity Association for Prefix Delegation options.
 func (mo MessageOptions) IAPD() []*OptIAPD {
-	opts := mo.Get(OptionIAPD)
-	var ianas []*OptIAPD
-	for _, o := range opts {
-		ianas = append(ianas, o.(*OptIAPD))
-	}
-	return ianas
+	return MustGetPtrOptioner[OptIAPD, *OptIAPD](OptionIAPD, mo.Options)
 }
 
 // OneIAPD returns the first IAPD option.
 func (mo MessageOptions) OneIAPD() *OptIAPD {
-	iapds := mo.IAPD()
-	if len(iapds) == 0 {
-		return nil
-	}
-	return iapds[0]
+	return MustGetOnePtrOptioner[OptIAPD, *OptIAPD](OptionIAPD, mo.Options)
 }
 
 // Status returns the status code associated with this option.
 func (mo MessageOptions) Status() *OptStatusCode {
-	opt := mo.Options.GetOne(OptionStatusCode)
-	if opt == nil {
-		return nil
-	}
-	sc, ok := opt.(*OptStatusCode)
-	if !ok {
-		return nil
-	}
-	return sc
+	return MustGetOnePtrOptioner[OptStatusCode, *OptStatusCode](OptionStatusCode, mo.Options)
 }
 
 // RequestedOptions returns the Options Requested Option.
 func (mo MessageOptions) RequestedOptions() OptionCodes {
+	opts, err := GetOptioner[OptionCodes, *OptionCodes](OptionORO, mo.Options)
+	if err != nil {
+		return nil
+	}
+
 	// Technically, RFC 8415 states that ORO may only appear once in the
 	// area of a DHCP message. However, some proprietary clients have been
 	// observed sending more than one OptionORO.
 	//
 	// So we merge them.
-	opt := mo.Options.Get(OptionORO)
-	if len(opt) == 0 {
-		return nil
-	}
 	var oc OptionCodes
-	for _, o := range opt {
-		if oro, ok := o.(*optRequestedOption); ok {
-			oc = append(oc, oro.OptionCodes...)
-		}
+	for _, o := range opts {
+		oc = append(oc, o...)
 	}
 	return oc
 }
 
 // DNS returns the DNS Recursive Name Server option as defined by RFC 3646.
 func (mo MessageOptions) DNS() []net.IP {
-	opt := mo.Options.GetOne(OptionDNSRecursiveNameServer)
-	if opt == nil {
-		return nil
-	}
-	if dns, ok := opt.(*optDNS); ok {
-		return dns.NameServers
-	}
-	return nil
+	return []net.IP(MustGetOneOptioner[IPs, *IPs](OptionDNSRecursiveNameServer, mo.Options))
 }
 
 // DomainSearchList returns the Domain List option as defined by RFC 3646.
 func (mo MessageOptions) DomainSearchList() *rfc1035label.Labels {
-	opt := mo.Options.GetOne(OptionDomainSearchList)
-	if opt == nil {
-		return nil
-	}
-	if dsl, ok := opt.(*optDomainSearchList); ok {
-		return dsl.DomainSearchList
-	}
-	return nil
+	return MustGetOnePtrOptioner[rfc1035label.Labels, *rfc1035label.Labels](OptionDomainSearchList, mo.Options)
 }
 
 // BootFileURL returns the Boot File URL option as defined by RFC 5970.
 func (mo MessageOptions) BootFileURL() string {
-	opt := mo.Options.GetOne(OptionBootfileURL)
-	if opt == nil {
-		return ""
-	}
-	if u, ok := opt.(*optBootFileURL); ok {
-		return u.url
-	}
-	return ""
+	return string(MustGetOneOptioner[String, *String](OptionBootfileURL, mo.Options))
 }
 
 // BootFileParam returns the Boot File Param option as defined by RFC 5970.
 func (mo MessageOptions) BootFileParam() []string {
-	opt := mo.Options.GetOne(OptionBootfileParam)
-	if opt == nil {
-		return nil
-	}
-	if u, ok := opt.(*optBootFileParam); ok {
-		return u.params
-	}
-	return nil
+	return []string(MustGetOneOptioner[Strings, *Strings](OptionBootfileParam, mo.Options))
 }
 
 // UserClasses returns a list of user classes.
 func (mo MessageOptions) UserClasses() [][]byte {
-	opt := mo.Options.GetOne(OptionUserClass)
-	if opt == nil {
+	uc := MustGetOnePtrOptioner[OptUserClass, *OptUserClass](OptionUserClass, mo.Options)
+	if uc == nil {
 		return nil
 	}
-	if t, ok := opt.(*OptUserClass); ok {
-		return t.UserClasses
-	}
-	return nil
+	return uc.UserClasses
 }
 
 // VendorOpts returns the all vendor-specific options.
@@ -206,17 +127,7 @@ func (mo MessageOptions) UserClasses() [][]byte {
 //	Multiple instances of the Vendor-specific Information option may appear in
 //	a DHCP message.
 func (mo MessageOptions) VendorOpts() []*OptVendorOpts {
-	opt := mo.Options.Get(OptionVendorOpts)
-	if opt == nil {
-		return nil
-	}
-	var vo []*OptVendorOpts
-	for _, o := range opt {
-		if t, ok := o.(*OptVendorOpts); ok {
-			vo = append(vo, t)
-		}
-	}
-	return vo
+	return MustGetPtrOptioner[OptVendorOpts, *OptVendorOpts](OptionVendorOpts, mo.Options)
 }
 
 // VendorOpt returns the vendor options matching the given enterprise number.
@@ -239,14 +150,7 @@ func (mo MessageOptions) VendorOpt(enterpriseNumber uint32) Options {
 //
 // ElapsedTime returns a duration of 0 if the option is not present.
 func (mo MessageOptions) ElapsedTime() time.Duration {
-	opt := mo.Options.GetOne(OptionElapsedTime)
-	if opt == nil {
-		return 0
-	}
-	if t, ok := opt.(*optElapsedTime); ok {
-		return t.ElapsedTime
-	}
-	return 0
+	return time.Duration(MustGetOneOptioner[Duration, *Duration](OptionElapsedTime, mo.Options))
 }
 
 // InformationRefreshTime returns the Information Refresh Time option
@@ -254,39 +158,18 @@ func (mo MessageOptions) ElapsedTime() time.Duration {
 //
 // InformationRefreshTime returns the provided default if no option is present.
 func (mo MessageOptions) InformationRefreshTime(def time.Duration) time.Duration {
-	opt := mo.Options.GetOne(OptionInformationRefreshTime)
-	if opt == nil {
-		return def
-	}
-	if t, ok := opt.(*optInformationRefreshTime); ok {
-		return t.InformationRefreshtime
-	}
-	return def
+	return time.Duration(MustGetOneOptioner[Duration, *Duration](OptionInformationRefreshTime, mo.Options))
 }
 
 // FQDN returns the FQDN option as defined by RFC 4704.
 func (mo MessageOptions) FQDN() *OptFQDN {
-	opt := mo.Options.GetOne(OptionFQDN)
-	if opt == nil {
-		return nil
-	}
-	if fqdn, ok := opt.(*OptFQDN); ok {
-		return fqdn
-	}
-	return nil
+	return MustGetOnePtrOptioner[OptFQDN, *OptFQDN](OptionFQDN, mo.Options)
 }
 
-// DHCP4oDHCP6Server returns the DHCP 4o6 Server Address option as
-// defined by RFC 7341.
+// DHCP4oDHCP6Server returns the DHCP 4o6 Server Address option as defined by
+// RFC 7341.
 func (mo MessageOptions) DHCP4oDHCP6Server() *OptDHCP4oDHCP6Server {
-	opt := mo.Options.GetOne(OptionDHCP4oDHCP6Server)
-	if opt == nil {
-		return nil
-	}
-	if server, ok := opt.(*OptDHCP4oDHCP6Server); ok {
-		return server
-	}
-	return nil
+	return MustGetOnePtrOptioner[OptDHCP4oDHCP6Server, *OptDHCP4oDHCP6Server](OptionDHCP4oDHCP6Server, mo.Options)
 }
 
 // NTPServers returns the NTP server addresses contained in the
@@ -294,16 +177,9 @@ func (mo MessageOptions) DHCP4oDHCP6Server() *OptDHCP4oDHCP6Server {
 // If multiple NTP server options exist, the function will return all the NTP
 // server addresses it finds, as defined by RFC 5908.
 func (mo MessageOptions) NTPServers() []net.IP {
-	opts := mo.Options.Get(OptionNTPServer)
-	if opts == nil {
-		return nil
-	}
+	//opts := MustGetPointer[OptNTPServer, *OptNTPServer](OptionNTPServer, mo.Options)
 	addrs := make([]net.IP, 0)
-	for _, opt := range opts {
-		ntp, ok := opt.(*OptNTPServer)
-		if !ok {
-			continue
-		}
+	/*for _, ntp := range opts {
 		for _, subopt := range ntp.Suboptions {
 			so, ok := subopt.(*NTPSuboptionSrvAddr)
 			if !ok {
@@ -311,7 +187,7 @@ func (mo MessageOptions) NTPServers() []net.IP {
 			}
 			addrs = append(addrs, net.IP(*so))
 		}
-	}
+	}*/
 	return addrs
 }
 

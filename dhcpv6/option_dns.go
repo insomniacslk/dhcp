@@ -12,6 +12,31 @@ func OptDNS(ip ...net.IP) Option {
 	return &optDNS{NameServers: ip}
 }
 
+type IPs []net.IP
+
+// ToBytes returns the option serialized to bytes.
+func (ips IPs) ToBytes() []byte {
+	buf := uio.NewBigEndianBuffer(nil)
+	for _, ip := range ips {
+		buf.WriteBytes(ip.To16())
+	}
+	return buf.Data()
+}
+
+func (ips IPs) String() string {
+	return fmt.Sprintf("%v", []net.IP(ips))
+}
+
+// FromBytes builds an optDNS structure from a sequence of bytes. The input
+// data does not include option code and length bytes.
+func (ips *IPs) FromBytes(data []byte) error {
+	buf := uio.NewBigEndianBuffer(data)
+	for buf.Has(net.IPv6len) {
+		*ips = append(*ips, buf.CopyN(net.IPv6len))
+	}
+	return buf.FinError()
+}
+
 type optDNS struct {
 	NameServers []net.IP
 }

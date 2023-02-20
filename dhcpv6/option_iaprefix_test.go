@@ -28,7 +28,7 @@ func TestOptIAPrefix(t *testing.T) {
 			Mask: net.CIDRMask(36, 128),
 			IP:   net.IPv6loopback,
 		},
-		Options: PrefixOptions{[]Option{}},
+		Options: PrefixOptions{Options: OptionsFrom()},
 	}
 	if !reflect.DeepEqual(want, &opt) {
 		t.Errorf("parseIAPrefix = %v, want %v", opt, want)
@@ -50,7 +50,7 @@ func TestOptIAPrefixToBytes(t *testing.T) {
 			Mask: net.CIDRMask(36, 128),
 			IP:   net.IPv6zero,
 		},
-		Options: PrefixOptions{[]Option{OptElapsedTime(10 * time.Millisecond)}},
+		Options: PrefixOptions{OptionsFrom(OptElapsedTime(10 * time.Millisecond))},
 	}
 	toBytes := opt.ToBytes()
 	if !bytes.Equal(toBytes, buf) {

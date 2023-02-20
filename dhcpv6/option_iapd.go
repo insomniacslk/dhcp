@@ -17,27 +17,12 @@ type PDOptions struct {
 
 // Prefixes are the prefixes associated with this delegation.
 func (po PDOptions) Prefixes() []*OptIAPrefix {
-	opts := po.Options.Get(OptionIAPrefix)
-	pre := make([]*OptIAPrefix, 0, len(opts))
-	for _, o := range opts {
-		if iap, ok := o.(*OptIAPrefix); ok {
-			pre = append(pre, iap)
-		}
-	}
-	return pre
+	return MustGetPtrOptioner[OptIAPrefix, *OptIAPrefix](OptionIAPrefix, po.Options)
 }
 
 // Status returns the status code associated with this option.
 func (po PDOptions) Status() *OptStatusCode {
-	opt := po.Options.GetOne(OptionStatusCode)
-	if opt == nil {
-		return nil
-	}
-	sc, ok := opt.(*OptStatusCode)
-	if !ok {
-		return nil
-	}
-	return sc
+	return MustGetOnePtrOptioner[OptStatusCode, *OptStatusCode](OptionStatusCode, po.Options)
 }
 
 // OptIAPD implements the identity association for prefix
@@ -59,9 +44,9 @@ func (op *OptIAPD) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	buf.WriteBytes(op.IaId[:])
 
-	t1 := Duration{op.T1}
+	t1 := Duration(op.T1)
 	t1.Marshal(buf)
-	t2 := Duration{op.T2}
+	t2 := Duration(op.T2)
 	t2.Marshal(buf)
 
 	buf.WriteBytes(op.Options.ToBytes())
@@ -88,8 +73,8 @@ func (op *OptIAPD) FromBytes(data []byte) error {
 	var t1, t2 Duration
 	t1.Unmarshal(buf)
 	t2.Unmarshal(buf)
-	op.T1 = t1.Duration
-	op.T2 = t2.Duration
+	op.T1 = time.Duration(t1)
+	op.T2 = time.Duration(t2)
 
 	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
 		return err

@@ -73,9 +73,7 @@ func TestRelayMessageToBytes(t *testing.T) {
 	opt := OptRelayMessage(&Message{
 		MessageType:   MessageTypeSolicit,
 		TransactionID: TransactionID{0xaa, 0xbb, 0xcc},
-		Options: MessageOptions{[]Option{
-			OptElapsedTime(0),
-		}},
+		Options:       MessageOptions{OptionsFrom(OptElapsedTime(0))},
 	})
 	r.AddOption(opt)
 	relayBytes := r.ToBytes()
