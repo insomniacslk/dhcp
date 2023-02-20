@@ -12,6 +12,7 @@ type Option interface {
 	Code() OptionCode
 	ToBytes() []byte
 	String() string
+	FromBytes([]byte) error
 }
 
 type OptionGeneric struct {
@@ -34,90 +35,10 @@ func (og *OptionGeneric) String() string {
 	return fmt.Sprintf("%s: %v", og.OptionCode, og.OptionData)
 }
 
-// ParseOption parses data according to the given code.
-func ParseOption(code OptionCode, optData []byte) (Option, error) {
-	// Parse a sequence of bytes as a single DHCPv6 option.
-	// Returns the option structure, or an error if any.
-	var (
-		err error
-		opt Option
-	)
-	switch code {
-	case OptionClientID:
-		opt, err = parseOptClientID(optData)
-	case OptionServerID:
-		opt, err = parseOptServerID(optData)
-	case OptionIANA:
-		opt, err = ParseOptIANA(optData)
-	case OptionIATA:
-		opt, err = ParseOptIATA(optData)
-	case OptionIAAddr:
-		opt, err = ParseOptIAAddress(optData)
-	case OptionORO:
-		var o optRequestedOption
-		err = o.FromBytes(optData)
-		opt = &o
-	case OptionElapsedTime:
-		opt, err = parseOptElapsedTime(optData)
-	case OptionRelayMsg:
-		opt, err = parseOptRelayMsg(optData)
-	case OptionStatusCode:
-		opt, err = ParseOptStatusCode(optData)
-	case OptionUserClass:
-		opt, err = ParseOptUserClass(optData)
-	case OptionVendorClass:
-		opt, err = ParseOptVendorClass(optData)
-	case OptionVendorOpts:
-		opt, err = ParseOptVendorOpts(optData)
-	case OptionInterfaceID:
-		opt, err = parseOptInterfaceID(optData)
-	case OptionDNSRecursiveNameServer:
-		opt, err = parseOptDNS(optData)
-	case OptionDomainSearchList:
-		opt, err = parseOptDomainSearchList(optData)
-	case OptionIAPD:
-		opt, err = ParseOptIAPD(optData)
-	case OptionIAPrefix:
-		opt, err = ParseOptIAPrefix(optData)
-	case OptionInformationRefreshTime:
-		opt, err = parseOptInformationRefreshTime(optData)
-	case OptionRemoteID:
-		opt, err = ParseOptRemoteID(optData)
-	case OptionFQDN:
-		opt, err = ParseOptFQDN(optData)
-	case OptionNTPServer:
-		opt, err = ParseOptNTPServer(optData)
-	case OptionBootfileURL:
-		opt, err = parseOptBootFileURL(optData)
-	case OptionBootfileParam:
-		opt, err = parseOptBootFileParam(optData)
-	case OptionClientArchType:
-		opt, err = parseOptClientArchType(optData)
-	case OptionNII:
-		var o OptNetworkInterfaceID
-		err = o.FromBytes(optData)
-		opt = &o
-	case OptionClientLinkLayerAddr:
-		opt, err = parseOptClientLinkLayerAddress(optData)
-	case OptionDHCPv4Msg:
-		opt, err = ParseOptDHCPv4Msg(optData)
-	case OptionDHCP4oDHCP6Server:
-		opt, err = ParseOptDHCP4oDHCP6Server(optData)
-	case Option4RD:
-		opt, err = ParseOpt4RD(optData)
-	case Option4RDMapRule:
-		opt, err = ParseOpt4RDMapRule(optData)
-	case Option4RDNonMapRule:
-		opt, err = ParseOpt4RDNonMapRule(optData)
-	case OptionRelayPort:
-		opt, err = parseOptRelayPort(optData)
-	default:
-		opt = &OptionGeneric{OptionCode: code, OptionData: optData}
-	}
-	if err != nil {
-		return nil, err
-	}
-	return opt, nil
+// FromBytes resets OptionData to p.
+func (og *OptionGeneric) FromBytes(p []byte) error {
+	og.OptionData = append([]byte(nil), p...)
+	return nil
 }
 
 type longStringer interface {
@@ -214,18 +135,12 @@ func (o Options) ToBytes() []byte {
 	return buf.Data()
 }
 
-// FromBytes reads data into o and returns an error if the options are not a
-// valid serialized representation of DHCPv6 options per RFC 3315.
-func (o *Options) FromBytes(data []byte) error {
-	return o.FromBytesWithParser(data, ParseOption)
-}
-
-// OptionParser is a function signature for option parsing
-type OptionParser func(code OptionCode, data []byte) (Option, error)
+// Optioner returns a new zero-value option for the given option code.
+type Optioner func(code OptionCode) Option
 
 // FromBytesWithParser parses Options from byte sequences using the parsing
 // function that is passed in as a paremeter
-func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
+func (o *Options) FromBytesWithParser(data []byte, optioner Optioner) error {
 	*o = make(Options, 0, 10)
 	if len(data) == 0 {
 		// no options, no party
@@ -241,8 +156,14 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		// pertinent data.
 		optData := buf.Consume(length)
 
-		opt, err := parser(code, optData)
-		if err != nil {
+		opt := optioner(code)
+		if opt == nil {
+			// Most RFCs that define options say that options
+			// should be ignored in messages where they don't
+			// belong.
+			opt = &OptionGeneric{OptionCode: code}
+		}
+		if err := opt.FromBytes(optData); err != nil {
 			return err
 		}
 		*o = append(*o, opt)

@@ -9,7 +9,8 @@ import (
 )
 
 func TestRelayMsgParseOptRelayMsg(t *testing.T) {
-	opt, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -27,7 +28,7 @@ func TestRelayMsgParseOptRelayMsg(t *testing.T) {
 }
 
 func TestRelayMsgOptionsFromBytes(t *testing.T) {
-	var opts Options
+	var opts RelayOptions
 	err := opts.FromBytes([]byte{
 		0, 9, // option: relay message
 		0, 10, // relayed message length
@@ -40,10 +41,10 @@ func TestRelayMsgOptionsFromBytes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(opts) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts))
+	if len(opts.Options) != 1 {
+		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts.Options))
 	}
-	opt := opts[0]
+	opt := opts.Options[0]
 	if code := opt.Code(); code != OptionRelayMsg {
 		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
 			OptionRelayMsg, code,
@@ -148,7 +149,8 @@ func TestSample(t *testing.T) {
 }
 
 func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
-	_, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time
@@ -158,7 +160,8 @@ func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
 }
 
 func TestRelayMsgString(t *testing.T) {
-	opt, err := parseOptRelayMsg([]byte{
+	var opt optRelayMsg
+	err := opt.FromBytes([]byte{
 		1,                // MessageTypeSolicit
 		0xaa, 0xbb, 0xcc, // transaction ID
 		0, 8, // option: elapsed time

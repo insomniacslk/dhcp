@@ -23,7 +23,7 @@ func TestPrint(t *testing.T) {
 	oneiata.Options.Add(iaaddr)
 
 	fourrd := &Opt4RD{}
-	fourrd.Add(&Opt4RDMapRule{
+	fourrd.Options.Add(&Opt4RDMapRule{
 		Prefix4: net.IPNet{
 			IP:   net.IP{123, 123, 0, 0},
 			Mask: net.CIDRMask(16, 32),
@@ -33,7 +33,7 @@ func TestPrint(t *testing.T) {
 			Mask: net.CIDRMask(64, 128),
 		},
 	})
-	fourrd.Add(&Opt4RDNonMapRule{
+	fourrd.Options.Add(&Opt4RDNonMapRule{
 		HubAndSpoke: true,
 	})
 

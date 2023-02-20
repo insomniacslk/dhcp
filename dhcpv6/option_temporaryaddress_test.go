@@ -13,7 +13,8 @@ func TestOptIATAParseOptIATA(t *testing.T) {
 		1, 0, 0, 0, // IAID
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIATA(data)
+	var opt OptIATA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionIATA, opt.Code())
 }
@@ -22,7 +23,8 @@ func TestOptIATAParseOptIATAInvalidLength(t *testing.T) {
 	data := []byte{
 		1, 0, 0, // truncated IAID
 	}
-	_, err := ParseOptIATA(data)
+	var opt OptIATA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -31,7 +33,8 @@ func TestOptIATAParseOptIATAInvalidOptions(t *testing.T) {
 		1, 0, 0, 0, // IAID
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, // truncated options
 	}
-	_, err := ParseOptIATA(data)
+	var opt OptIATA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -106,7 +109,8 @@ func TestOptIATAString(t *testing.T) {
 		1, 0, 0, 0, // IAID
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIATA(data)
+	var opt OptIATA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

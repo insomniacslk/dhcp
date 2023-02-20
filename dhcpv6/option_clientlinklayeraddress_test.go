@@ -14,7 +14,8 @@ func TestParseOptClientLinkLayerAddress(t *testing.T) {
 		0, 1, // LinkLayerType
 		164, 131, 231, 227, 223, 136,
 	}
-	opt, err := parseOptClientLinkLayerAddress(data)
+	var opt optClientLinkLayerAddress
+	err := opt.FromBytes(data)
 
 	require.NoError(t, err)
 	require.Equal(t, OptionClientLinkLayerAddr, opt.Code())

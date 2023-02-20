@@ -9,7 +9,8 @@ import (
 )
 
 func TestOptElapsedTime(t *testing.T) {
-	opt, err := parseOptElapsedTime([]byte{0xaa, 0xbb})
+	var opt optElapsedTime
+	err := opt.FromBytes([]byte{0xaa, 0xbb})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,9 +36,10 @@ func TestOptElapsedTimeString(t *testing.T) {
 }
 
 func TestOptElapsedTimeParseInvalidOption(t *testing.T) {
-	_, err := parseOptElapsedTime([]byte{0xaa})
+	var opt optElapsedTime
+	err := opt.FromBytes([]byte{0xaa})
 	require.Error(t, err, "A short option should return an error")
 
-	_, err = parseOptElapsedTime([]byte{0xaa, 0xbb, 0xcc})
+	err = opt.FromBytes([]byte{0xaa, 0xbb, 0xcc})
 	require.Error(t, err, "An option with too many bytes should return an error")
 }

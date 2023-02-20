@@ -7,7 +7,8 @@ import (
 )
 
 func TestOptInformationRefreshTime(t *testing.T) {
-	opt, err := parseOptInformationRefreshTime([]byte{0xaa, 0xbb, 0xcc, 0xdd})
+	var opt optInformationRefreshTime
+	err := opt.FromBytes([]byte{0xaa, 0xbb, 0xcc, 0xdd})
 	if err != nil {
 		t.Fatal(err)
 	}

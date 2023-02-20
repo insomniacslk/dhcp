@@ -13,9 +13,10 @@ func TestOptIAAddressParse(t *testing.T) {
 	data := append(ipaddr, []byte{
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
-		0, 8, 0, 2, 0xaa, 0xbb, // options
+		0, 13, 0, 2, 0xaa, 0xbb, // options
 	}...)
-	opt, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, net.IP(ipaddr), opt.IPv6Addr)
 	require.Equal(t, 0x0a0b0c0d*time.Second, opt.PreferredLifetime)
@@ -28,7 +29,8 @@ func TestOptIAAddressParseInvalidTooShort(t *testing.T) {
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		// truncated here
 	}
-	_, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -37,9 +39,10 @@ func TestOptIAAddressParseInvalidBrokenOptions(t *testing.T) {
 		0x24, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
-		0, 8, 0, 2, 0xaa, // broken options
+		0, 13, 0, 2, 0xaa, // broken options
 	}
-	_, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -58,14 +61,14 @@ func TestOptIAAddressToBytes(t *testing.T) {
 	expected := append(ipBytes, []byte{
 		0xa, 0xb, 0xc, 0xd, // preferred lifetime
 		0xe, 0xf, 0x1, 0x2, // valid lifetime
-		0, 8, 0, 2, 0x00, 0x01, // options
+		0, 13, 0, 2, 0x00, 0x01, // options
 	}...)
 	opt := OptIAAddress{
 		IPv6Addr:          net.IP(ipBytes),
 		PreferredLifetime: 0x0a0b0c0d * time.Second,
 		ValidLifetime:     0x0e0f0102 * time.Second,
 		Options: AddressOptions{[]Option{
-			OptElapsedTime(10 * time.Millisecond),
+			&OptStatusCode{StatusCode: 0x1},
 		}},
 	}
 	require.Equal(t, expected, opt.ToBytes())
@@ -76,9 +79,10 @@ func TestOptIAAddressString(t *testing.T) {
 	data := append(ipaddr, []byte{
 		0x00, 0x00, 0x00, 70, // preferred lifetime
 		0x00, 0x00, 0x00, 50, // valid lifetime
-		0, 8, 0, 2, 0xaa, 0xbb, // options
+		0, 13, 0, 2, 0xaa, 0xbb, // options
 	}...)
-	opt, err := ParseOptIAAddress(data)
+	var opt OptIAAddress
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

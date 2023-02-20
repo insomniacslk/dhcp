@@ -38,22 +38,21 @@ func (op *OptVendorOpts) LongString(indent int) string {
 	return fmt.Sprintf("%s: EnterpriseNumber=%v VendorOptions=%s", op.Code(), op.EnterpriseNumber, op.VendorOpts.LongString(indent))
 }
 
-// ParseOptVendorOpts builds an OptVendorOpts structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
-func ParseOptVendorOpts(data []byte) (*OptVendorOpts, error) {
-	var opt OptVendorOpts
+// FromBytes builds an OptVendorOpts structure from a sequence of bytes. The
+// input data does not include option code and length bytes.
+func (op *OptVendorOpts) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	opt.EnterpriseNumber = buf.Read32()
-	if err := opt.VendorOpts.FromBytesWithParser(buf.ReadAll(), vendParseOption); err != nil {
-		return nil, err
+	op.EnterpriseNumber = buf.Read32()
+	if err := op.VendorOpts.FromBytesWithParser(buf.ReadAll(), newVendorOption); err != nil {
+		return err
 	}
-	return &opt, buf.FinError()
+	return buf.FinError()
 }
 
-// vendParseOption builds a GenericOption from a slice of bytes
+// newVendorOption builds a GenericOption from a slice of bytes
 // We cannot use the existing ParseOption function in options.go because the
 // sub-options include codes specific to each vendor. There are overlaps in these
 // codes with RFC standard codes.
-func vendParseOption(code OptionCode, data []byte) (Option, error) {
-	return &OptionGeneric{OptionCode: code, OptionData: data}, nil
+func newVendorOption(code OptionCode) Option {
+	return &OptionGeneric{OptionCode: code}
 }

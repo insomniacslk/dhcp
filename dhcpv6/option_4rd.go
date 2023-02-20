@@ -8,8 +8,10 @@ import (
 )
 
 // Opt4RD represents a 4RD option. It is only a container for 4RD_*_RULE options
+//
+// Defined in RFC 7600 Section 4.9.
 type Opt4RD struct {
-	Options
+	Options FourRDOptions
 }
 
 // Code returns the Option Code for this option
@@ -32,12 +34,36 @@ func (op *Opt4RD) LongString(indentSpace int) string {
 	return fmt.Sprintf("%s: Options=%v", op.Code(), op.Options.LongString(indentSpace))
 }
 
-// ParseOpt4RD builds an Opt4RD structure from a sequence of bytes.
+// FromBytes builds an Opt4RD structure from a sequence of bytes.
 // The input data does not include option code and length bytes
-func ParseOpt4RD(data []byte) (*Opt4RD, error) {
-	var opt Opt4RD
-	err := opt.Options.FromBytes(data)
-	return &opt, err
+func (op *Opt4RD) FromBytes(data []byte) error {
+	return op.Options.FromBytes(data)
+}
+
+// New4RDOption returns new zero-value options for DHCPv6 4RD suboption.
+//
+// Options listed in RFC 7600 Section 4.9 are eligible.
+func New4RDOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case Option4RDMapRule:
+		opt = &Opt4RDMapRule{}
+	case Option4RDNonMapRule:
+		opt = &Opt4RDNonMapRule{}
+	}
+	return opt
+}
+
+// FourRDOptions are 4RD suboptions as defined in RFC 7600 Section 4.9.
+type FourRDOptions struct {
+	Options
+}
+
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 4RD options per RFC 7600 Section
+// 4.9.
+func (fo *FourRDOptions) FromBytes(data []byte) error {
+	return fo.FromBytesWithParser(data, New4RDOption)
 }
 
 // Opt4RDMapRule represents a 4RD Mapping Rule option
@@ -105,18 +131,17 @@ func (op *Opt4RDMapRule) String() string {
 		op.Code(), op.Prefix4.String(), op.Prefix6.String(), op.EABitsLength, op.WKPAuthorized)
 }
 
-// ParseOpt4RDMapRule builds an Opt4RDMapRule structure from a sequence of bytes.
+// FromBytes builds an Opt4RDMapRule structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
-func ParseOpt4RDMapRule(data []byte) (*Opt4RDMapRule, error) {
-	var opt Opt4RDMapRule
+func (op *Opt4RDMapRule) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	opt.Prefix4.Mask = net.CIDRMask(int(buf.Read8()), 32)
-	opt.Prefix6.Mask = net.CIDRMask(int(buf.Read8()), 128)
-	opt.EABitsLength = buf.Read8()
-	opt.WKPAuthorized = (buf.Read8() & opt4RDWKPAuthorizedMask) != 0
-	opt.Prefix4.IP = net.IP(buf.CopyN(net.IPv4len))
-	opt.Prefix6.IP = net.IP(buf.CopyN(net.IPv6len))
-	return &opt, buf.FinError()
+	op.Prefix4.Mask = net.CIDRMask(int(buf.Read8()), 32)
+	op.Prefix6.Mask = net.CIDRMask(int(buf.Read8()), 128)
+	op.EABitsLength = buf.Read8()
+	op.WKPAuthorized = (buf.Read8() & opt4RDWKPAuthorizedMask) != 0
+	op.Prefix4.IP = net.IP(buf.CopyN(net.IPv4len))
+	op.Prefix6.IP = net.IP(buf.CopyN(net.IPv6len))
+	return buf.FinError()
 }
 
 // Opt4RDNonMapRule represents 4RD parameters other than mapping rules
@@ -165,21 +190,20 @@ func (op *Opt4RDNonMapRule) String() string {
 		op.Code(), op.HubAndSpoke, tClass, op.DomainPMTU)
 }
 
-// ParseOpt4RDNonMapRule builds an Opt4RDNonMapRule structure from a sequence of bytes.
+// FromBytes builds an Opt4RDNonMapRule structure from a sequence of bytes.
 // The input data does not include option code and length bytes
-func ParseOpt4RDNonMapRule(data []byte) (*Opt4RDNonMapRule, error) {
-	var opt Opt4RDNonMapRule
+func (op *Opt4RDNonMapRule) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 	flags := buf.Read8()
 
-	opt.HubAndSpoke = flags&opt4RDHubAndSpokeMask != 0
+	op.HubAndSpoke = flags&opt4RDHubAndSpokeMask != 0
 
 	tClass := buf.Read8()
 	if flags&opt4RDTrafficClassMask != 0 {
-		opt.TrafficClass = &tClass
+		op.TrafficClass = &tClass
 	}
 
-	opt.DomainPMTU = buf.Read16()
+	op.DomainPMTU = buf.Read16()
 
-	return &opt, buf.FinError()
+	return buf.FinError()
 }

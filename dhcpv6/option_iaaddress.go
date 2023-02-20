@@ -28,10 +28,29 @@ func (ao AddressOptions) Status() *OptStatusCode {
 	return sc
 }
 
+// FromBytes reads data into fo and returns an error if the options are not a
+// valid serialized representation of DHCPv6 Address options per RFC 8415
+// Appendix C.
+func (ao *AddressOptions) FromBytes(data []byte) error {
+	return ao.FromBytesWithParser(data, newAddressOption)
+}
+
+// newAddressOption returns new zero-value options for DHCPv6 IAAddress
+// suboption.
+//
+// Options listed in RFC 8415 Appendix C for IAAddress are eligible.
+func newAddressOption(code OptionCode) Option {
+	var opt Option
+	switch code {
+	case OptionStatusCode:
+		opt = &OptStatusCode{}
+	}
+	return opt
+}
+
 // OptIAAddress represents an OptionIAAddr.
 //
-// This module defines the OptIAAddress structure.
-// https://www.ietf.org/rfc/rfc3633.txt
+// This module defines the OptIAAddress structure. RFC 8415 Section 21.6.
 type OptIAAddress struct {
 	IPv6Addr          net.IP
 	PreferredLifetime time.Duration
@@ -69,22 +88,20 @@ func (op *OptIAAddress) LongString(indent int) string {
 		op.Code(), op.IPv6Addr, op.PreferredLifetime, op.ValidLifetime, op.Options.LongString(indent))
 }
 
-// ParseOptIAAddress builds an OptIAAddress structure from a sequence
-// of bytes. The input data does not include option code and length
-// bytes.
-func ParseOptIAAddress(data []byte) (*OptIAAddress, error) {
-	var opt OptIAAddress
+// FromBytes builds an OptIAAddress structure from a sequence of bytes. The
+// input data does not include option code and length bytes.
+func (op *OptIAAddress) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	opt.IPv6Addr = net.IP(buf.CopyN(net.IPv6len))
+	op.IPv6Addr = net.IP(buf.CopyN(net.IPv6len))
 
 	var t1, t2 Duration
 	t1.Unmarshal(buf)
 	t2.Unmarshal(buf)
-	opt.PreferredLifetime = t1.Duration
-	opt.ValidLifetime = t2.Duration
+	op.PreferredLifetime = t1.Duration
+	op.ValidLifetime = t2.Duration
 
-	if err := opt.Options.FromBytes(buf.ReadAll()); err != nil {
-		return nil, err
+	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
+		return err
 	}
-	return &opt, buf.FinError()
+	return buf.FinError()
 }

@@ -7,9 +7,10 @@ import (
 )
 
 func TestParseRelayPort(t *testing.T) {
-	opt, err := parseOptRelayPort([]byte{0x12, 0x32})
+	var opt optRelayPort
+	err := opt.FromBytes([]byte{0x12, 0x32})
 	require.NoError(t, err)
-	require.Equal(t, &optRelayPort{DownstreamSourcePort: 0x1232}, opt)
+	require.Equal(t, optRelayPort{DownstreamSourcePort: 0x1232}, opt)
 }
 
 func TestRelayPortToBytes(t *testing.T) {

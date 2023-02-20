@@ -9,11 +9,11 @@ import (
 
 func TestOptBootFileURL(t *testing.T) {
 	expected := "https://insomniac.slackware.it"
-	opt, err := parseOptBootFileURL([]byte(expected))
-	if err != nil {
+	var opt optBootFileURL
+	if err := opt.FromBytes([]byte(expected)); err != nil {
 		t.Fatal(err)
 	}
-	if string(opt) != expected {
+	if opt.url != expected {
 		t.Fatalf("Invalid boot file URL. Expected %v, got %v", expected, opt)
 	}
 	require.Contains(t, opt.String(), "https://insomniac.slackware.it", "String() should contain the correct BootFileUrl output")

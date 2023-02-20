@@ -2,6 +2,7 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -9,7 +10,8 @@ import (
 
 func TestOpt4RDNonMapRuleParse(t *testing.T) {
 	data := []byte{0x81, 0xaa, 0x05, 0xd4}
-	opt, err := ParseOpt4RDNonMapRule(data)
+	var opt Opt4RDNonMapRule
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.True(t, opt.HubAndSpoke)
 	require.NotNil(t, opt.TrafficClass)
@@ -18,7 +20,8 @@ func TestOpt4RDNonMapRuleParse(t *testing.T) {
 
 	// Remove the TrafficClass flag and check value is ignored
 	data[0] = 0x80
-	opt, err = ParseOpt4RDNonMapRule(data)
+	opt = Opt4RDNonMapRule{}
+	err = opt.FromBytes(data)
 	require.NoError(t, err)
 	require.True(t, opt.HubAndSpoke)
 	require.Nil(t, opt.TrafficClass)
@@ -77,7 +80,8 @@ func TestOpt4RDMapRuleParse(t *testing.T) {
 		append(ip4addr.To4(), ip6addr...)...,
 	)
 
-	opt, err := ParseOpt4RDMapRule(data)
+	var opt Opt4RDMapRule
+	err = opt.FromBytes(data)
 	require.NoError(t, err)
 	require.EqualValues(t, *ip6net, opt.Prefix6)
 	require.EqualValues(t, *ip4net, opt.Prefix4)
@@ -141,30 +145,43 @@ func TestOpt4RDMapRuleString(t *testing.T) {
 func TestOpt4RDRoundTrip(t *testing.T) {
 	var tClass uint8 = 0xaa
 	opt := Opt4RD{
-		Options: Options{
-			&Opt4RDMapRule{
-				Prefix4: net.IPNet{
-					IP:   net.IPv4(100, 64, 0, 238).To4(),
-					Mask: net.CIDRMask(24, 32),
+		Options: FourRDOptions{
+			Options: Options{
+				&Opt4RDMapRule{
+					Prefix4: net.IPNet{
+						IP:   net.IPv4(100, 64, 0, 238).To4(),
+						Mask: net.CIDRMask(24, 32),
+					},
+					Prefix6: net.IPNet{
+						IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
+						Mask: net.CIDRMask(80, 128),
+					},
+					EABitsLength:  32,
+					WKPAuthorized: true,
 				},
-				Prefix6: net.IPNet{
-					IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
-					Mask: net.CIDRMask(80, 128),
+				&Opt4RDNonMapRule{
+					HubAndSpoke:  true,
+					TrafficClass: &tClass,
+					DomainPMTU:   9000,
 				},
-				EABitsLength:  32,
-				WKPAuthorized: true,
-			},
-			&Opt4RDNonMapRule{
-				HubAndSpoke:  true,
-				TrafficClass: &tClass,
-				DomainPMTU:   9000,
 			},
 		},
 	}
 
-	rtOpt, err := ParseOpt4RD(opt.ToBytes())
+	var rtOpt Opt4RD
+	err := rtOpt.FromBytes(opt.ToBytes())
 
 	require.NoError(t, err)
 	require.NotNil(t, rtOpt)
-	require.Equal(t, opt, *rtOpt)
+	require.Equal(t, opt, rtOpt)
+
+	var mo MessageOptions
+	mo.Options.Add(&opt)
+
+	var got MessageOptions
+	if err := got.FromBytes(mo.ToBytes()); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if !reflect.DeepEqual(mo, got) {
+		t.Errorf("FromBytes = %v, want %v", got, mo)
+	}
 }

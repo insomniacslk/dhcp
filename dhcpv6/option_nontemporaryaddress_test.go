@@ -2,11 +2,42 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageWithIANA(t *testing.T) {
+	data := []byte{
+		0, 3, // IANA option code
+		0, 40, // length
+		1, 0, 0, 0, // IAID
+		0, 0, 0, 1, // T1
+		0, 0, 0, 2, // T2
+		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0, 2, 0, 0, 0, 4, // options
+	}
+	var got MessageOptions
+	if err := got.FromBytes(data); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	}
+
+	want := &OptIANA{
+		IaId: [4]byte{1, 0, 0, 0},
+		T1:   1 * time.Second,
+		T2:   2 * time.Second,
+		Options: IdentityOptions{Options: Options{&OptIAAddress{
+			IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+			PreferredLifetime: 2 * time.Second,
+			ValidLifetime:     4 * time.Second,
+			Options:           AddressOptions{Options: Options{}},
+		}}},
+	}
+	if gotIANA := got.OneIANA(); !reflect.DeepEqual(gotIANA, want) {
+		t.Errorf("OneIANA = %v, want %v", gotIANA, want)
+	}
+}
 
 func TestOptIANAParseOptIANA(t *testing.T) {
 	data := []byte{
@@ -15,7 +46,8 @@ func TestOptIANAParseOptIANA(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, OptionIANA, opt.Code())
 }
@@ -26,7 +58,8 @@ func TestOptIANAParseOptIANAInvalidLength(t *testing.T) {
 		0, 0, 0, 1, // T1
 		// truncated from here
 	}
-	_, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -37,7 +70,8 @@ func TestOptIANAParseOptIANAInvalidOptions(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, // truncated options
 	}
-	_, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.Error(t, err)
 }
 
@@ -118,7 +152,8 @@ func TestOptIANAString(t *testing.T) {
 		0, 0, 0, 2, // T2
 		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
 	}
-	opt, err := ParseOptIANA(data)
+	var opt OptIANA
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 
 	str := opt.String()

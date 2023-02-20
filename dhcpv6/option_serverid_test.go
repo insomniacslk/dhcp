@@ -2,11 +2,30 @@ package dhcpv6
 
 import (
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/insomniacslk/dhcp/iana"
 	"github.com/stretchr/testify/require"
 )
+
+func TestParseMessageOptionsWithServerID(t *testing.T) {
+	buf := []byte{
+		0, 2, // Server ID option
+		0, 10, // length
+		0, 3, // DUID_LL
+		0, 1, // hwtype ethernet
+		0, 1, 2, 3, 4, 5, // HW addr
+	}
+
+	want := &DUIDLL{HWType: iana.HWTypeEthernet, LinkLayerAddr: net.HardwareAddr{0, 1, 2, 3, 4, 5}}
+	var mo MessageOptions
+	if err := mo.FromBytes(buf); err != nil {
+		t.Errorf("FromBytes = %v", err)
+	} else if got := mo.ServerID(); !reflect.DeepEqual(got, want) {
+		t.Errorf("ServerID = %v, want %v", got, want)
+	}
+}
 
 func TestParseOptServerID(t *testing.T) {
 	data := []byte{
@@ -14,7 +33,8 @@ func TestParseOptServerID(t *testing.T) {
 		0, 1, // hwtype ethernet
 		0, 1, 2, 3, 4, 5, // hw addr
 	}
-	opt, err := parseOptServerID(data)
+	var opt optServerID
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	want := OptServerID(
 		&DUIDLL{
@@ -22,7 +42,7 @@ func TestParseOptServerID(t *testing.T) {
 			LinkLayerAddr: net.HardwareAddr{0, 1, 2, 3, 4, 5},
 		},
 	)
-	require.Equal(t, opt, want)
+	require.Equal(t, &opt, want)
 }
 
 func TestOptServerIdToBytes(t *testing.T) {
@@ -46,7 +66,8 @@ func TestOptServerIdDecodeEncode(t *testing.T) {
 		0, 1, // hwtype ethernet
 		5, 4, 3, 2, 1, 0, // hw addr
 	}
-	opt, err := parseOptServerID(data)
+	var opt optServerID
+	err := opt.FromBytes(data)
 	require.NoError(t, err)
 	require.Equal(t, data, opt.ToBytes())
 }
@@ -73,7 +94,8 @@ func TestOptServerIdparseOptServerIDBogusDUID(t *testing.T) {
 		1, 2, 3, 4, 5, 6, 7, 8, 9, // a UUID should be 18 bytes not 17
 		10, 11, 12, 13, 14, 15, 16, 17,
 	}
-	_, err := parseOptServerID(data)
+	var opt optServerID
+	err := opt.FromBytes(data)
 	require.Error(t, err, "A truncated OptServerId DUID should return an error")
 }
 
@@ -81,6 +103,7 @@ func TestOptServerIdparseOptServerIDInvalidTooShort(t *testing.T) {
 	data := []byte{
 		0, // truncated: DUIDs are at least 2 bytes
 	}
-	_, err := parseOptServerID(data)
+	var opt optServerID
+	err := opt.FromBytes(data)
 	require.Error(t, err, "A truncated OptServerId should return an error")
 }

@@ -9,7 +9,9 @@ import (
 	"github.com/u-root/uio/uio"
 )
 
-// OptRelayPort specifies an UDP port to use for the downstream relay
+// OptRelayPort specifies an UDP port to use for the downstream relay.
+//
+// Defined in RFC 8357.
 func OptRelayPort(port uint16) Option {
 	return &optRelayPort{DownstreamSourcePort: port}
 }
@@ -32,11 +34,10 @@ func (op *optRelayPort) String() string {
 	return fmt.Sprintf("%s: %d", op.Code(), op.DownstreamSourcePort)
 }
 
-// build an optRelayPort structure from a sequence of bytes.
-// The input data does not include option code and length bytes.
-func parseOptRelayPort(data []byte) (*optRelayPort, error) {
-	var opt optRelayPort
+// FromBytes build an optRelayPort structure from a sequence of bytes. The
+// input data does not include option code and length bytes.
+func (op *optRelayPort) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	opt.DownstreamSourcePort = buf.Read16()
-	return &opt, buf.FinError()
+	op.DownstreamSourcePort = buf.Read16()
+	return buf.FinError()
 }
