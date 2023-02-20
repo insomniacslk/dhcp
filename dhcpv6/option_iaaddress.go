@@ -17,15 +17,7 @@ type AddressOptions struct {
 
 // Status returns the status code associated with this option.
 func (ao AddressOptions) Status() *OptStatusCode {
-	opt := ao.Options.GetOne(OptionStatusCode)
-	if opt == nil {
-		return nil
-	}
-	sc, ok := opt.(*OptStatusCode)
-	if !ok {
-		return nil
-	}
-	return sc
+	return MustGetOnePtrOptioner[OptStatusCode, *OptStatusCode](OptionStatusCode, ao.Options)
 }
 
 // OptIAAddress represents an OptionIAAddr.
@@ -49,9 +41,9 @@ func (op *OptIAAddress) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 	write16(buf, op.IPv6Addr)
 
-	t1 := Duration{op.PreferredLifetime}
+	t1 := Duration(op.PreferredLifetime)
 	t1.Marshal(buf)
-	t2 := Duration{op.ValidLifetime}
+	t2 := Duration(op.ValidLifetime)
 	t2.Marshal(buf)
 
 	buf.WriteBytes(op.Options.ToBytes())
@@ -78,8 +70,8 @@ func (op *OptIAAddress) FromBytes(data []byte) error {
 	var t1, t2 Duration
 	t1.Unmarshal(buf)
 	t2.Unmarshal(buf)
-	op.PreferredLifetime = t1.Duration
-	op.ValidLifetime = t2.Duration
+	op.PreferredLifetime = time.Duration(t1)
+	op.ValidLifetime = time.Duration(t2)
 
 	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
 		return err

@@ -26,7 +26,7 @@ func (op *optInformationRefreshTime) Code() OptionCode {
 // ToBytes serializes the option and returns it as a sequence of bytes
 func (op *optInformationRefreshTime) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	irt := Duration{op.InformationRefreshtime}
+	irt := Duration(op.InformationRefreshtime)
 	irt.Marshal(buf)
 	return buf.Data()
 }
@@ -42,6 +42,6 @@ func (op *optInformationRefreshTime) FromBytes(data []byte) error {
 
 	var irt Duration
 	irt.Unmarshal(buf)
-	op.InformationRefreshtime = irt.Duration
+	op.InformationRefreshtime = time.Duration(irt)
 	return buf.FinError()
 }

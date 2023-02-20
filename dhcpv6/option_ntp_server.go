@@ -115,7 +115,7 @@ func (op *OptNTPServer) Code() OptionCode {
 
 // FromBytes parses a sequence of bytes into an OptNTPServer object.
 func (op *OptNTPServer) FromBytes(data []byte) error {
-	return op.Suboptions.FromBytesWithParser(data, parseNTPSuboption)
+	return op.Suboptions.FromBytes(data)
 }
 
 // ToBytes returns the option serialized to bytes.

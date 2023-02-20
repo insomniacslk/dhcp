@@ -1,18 +1,25 @@
 package dhcpv6
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/u-root/uio/uio"
 )
 
+// Optioner is an interface that all DHCPv6 options adhere to.
+type Optioner interface {
+	ToBytes() []byte
+	//FromBytes([]byte) error
+	String() string
+}
+
 // Option is an interface that all DHCPv6 options adhere to.
 type Option interface {
 	Code() OptionCode
-	ToBytes() []byte
-	String() string
 	FromBytes([]byte) error
+	Optioner
 }
 
 type OptionGeneric struct {
@@ -20,15 +27,15 @@ type OptionGeneric struct {
 	OptionData []byte
 }
 
-func (og *OptionGeneric) Code() OptionCode {
+func (og OptionGeneric) Code() OptionCode {
 	return og.OptionCode
 }
 
-func (og *OptionGeneric) ToBytes() []byte {
+func (og OptionGeneric) ToBytes() []byte {
 	return og.OptionData
 }
 
-func (og *OptionGeneric) String() string {
+func (og OptionGeneric) String() string {
 	if len(og.OptionData) == 0 {
 		return og.OptionCode.String()
 	}
@@ -123,7 +130,15 @@ type longStringer interface {
 }
 
 // Options is a collection of options.
-type Options []Option
+type Options map[OptionCode][][]byte
+
+func OptionsFrom(list ...Option) Options {
+	o := make(Options)
+	for _, opt := range list {
+		o.Add(opt)
+	}
+	return o
+}
 
 // LongString prints options with indentation of at least spaceIndent spaces.
 func (o Options) LongString(spaceIndent int) string {
@@ -133,7 +148,8 @@ func (o Options) LongString(spaceIndent int) string {
 		s.WriteString("[]")
 	} else {
 		s.WriteString("[\n")
-		for _, opt := range o {
+		/* TODO
+		* for _, opt := range o {
 			s.WriteString(indent)
 			s.WriteString("  ")
 			if ls, ok := opt.(longStringer); ok {
@@ -142,89 +158,216 @@ func (o Options) LongString(spaceIndent int) string {
 				s.WriteString(opt.String())
 			}
 			s.WriteString("\n")
-		}
+		}*/
 		s.WriteString(indent)
 		s.WriteString("]")
 	}
 	return s.String()
 }
 
-// Get returns all options matching the option code.
 func (o Options) Get(code OptionCode) []Option {
-	var ret []Option
-	for _, opt := range o {
-		if opt.Code() == code {
-			ret = append(ret, opt)
-		}
+	opts, err := GetOptioner[OptionGeneric, *OptionGeneric](code, o)
+	if err != nil {
+		return nil
 	}
-	return ret
+	var os []Option
+	for _, opt := range opts {
+		os = append(os, &opt)
+	}
+	return os
+}
+
+// Get returns all options matching the option code.
+func (o Options) GetRaw(code OptionCode) [][]byte {
+	return o[code]
+}
+
+var ErrOptionNotFound = errors.New("option not found")
+
+// Da musste erstmal drauf kommen.
+// https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md#pointer-method-example
+type Decoder[O any] interface {
+	FromBytes([]byte) error
+	*O
+}
+
+func GetOptioner[T any, PT Decoder[T]](code OptionCode, o Options) ([]T, error) {
+	data, ok := o[code]
+	if !ok {
+		return nil, ErrOptionNotFound
+	}
+
+	var ret []T
+	for i, p := range data {
+		var opt T
+		if err := PT(&opt).FromBytes(p); err != nil {
+			return nil, fmt.Errorf("option #%d could not be parsed: %w", i+1, err)
+		}
+		ret = append(ret, opt)
+	}
+	return ret, nil
+}
+
+func MustGetOptioner[T any, PT Decoder[T]](code OptionCode, o Options) []T {
+	vals, err := GetOptioner[T, PT](code, o)
+	if err != nil {
+		return nil
+	}
+	return vals
+}
+
+func GetPtrOptioner[T any, PT Decoder[T]](code OptionCode, o Options) ([]*T, error) {
+	data, ok := o[code]
+	if !ok {
+		return nil, ErrOptionNotFound
+	}
+
+	var ret []*T
+	for i, p := range data {
+		var opt T
+		if err := PT(&opt).FromBytes(p); err != nil {
+			return nil, fmt.Errorf("option #%d could not be parsed: %w", i+1, err)
+		}
+		ret = append(ret, &opt)
+	}
+	return ret, nil
+}
+
+func MustGetPtrOptioner[T any, PT Decoder[T]](code OptionCode, o Options) []*T {
+	vals, err := GetPtrOptioner[T, PT](code, o)
+	if err != nil {
+		return nil
+	}
+	return vals
 }
 
 // GetOne returns the first option matching the option code.
-func (o Options) GetOne(code OptionCode) Option {
-	for _, opt := range o {
-		if opt.Code() == code {
-			return opt
-		}
+func (o Options) GetOneRaw(code OptionCode) []byte {
+	data, ok := o[code]
+	if !ok || len(data) == 0 {
+		return nil
 	}
-	return nil
+	return data[0]
+}
+
+func (o Options) GetOne(code OptionCode) Option {
+	opt, err := GetOneOptioner[OptionGeneric, *OptionGeneric](code, o)
+	if err != nil {
+		return nil
+	}
+	return &opt
+}
+
+func MustGetOneOptioner[T any, PT Decoder[T]](code OptionCode, o Options) T {
+	var zerovalue T
+	t, err := GetOneOptioner[T, PT](code, o)
+	if err != nil {
+		return zerovalue
+	}
+	return t
+}
+
+func GetOneOptioner[T any, PT Decoder[T]](code OptionCode, o Options) (T, error) {
+	var opt T
+	data, ok := o[code]
+	if !ok || len(data) == 0 {
+		return opt, ErrOptionNotFound
+	}
+	if err := PT(&opt).FromBytes(data[0]); err != nil {
+		return opt, err
+	}
+	return opt, nil
+}
+
+func MustGetOnePtrOptioner[T any, PT Decoder[T]](code OptionCode, o Options) *T {
+	t, err := GetOnePtrOptioner[T, PT](code, o)
+	if err != nil {
+		return nil
+	}
+	return t
+}
+
+func GetOnePtrOptioner[T any, PT Decoder[T]](code OptionCode, o Options) (*T, error) {
+	var opt T
+	data, ok := o[code]
+	if !ok || len(data) == 0 {
+		return nil, ErrOptionNotFound
+	}
+	if err := PT(&opt).FromBytes(data[0]); err != nil {
+		return nil, err
+	}
+	return &opt, nil
+}
+
+type DecoderFunc[T interface{}] func([]byte) (T, error)
+
+func GetOneInfOptioner[T interface{}](code OptionCode, o Options, fromBytes DecoderFunc[T]) (T, error) {
+	var opt T
+	data, ok := o[code]
+	if !ok || len(data) == 0 {
+		return opt, ErrOptionNotFound
+	}
+	opt, err := fromBytes(data[0])
+	if err != nil {
+		return opt, err
+	}
+	return opt, nil
+}
+
+func MustGetOneInfOptioner[T interface{}](code OptionCode, o Options, fromBytes DecoderFunc[T]) T {
+	var zerovalue T
+	t, err := GetOneInfOptioner[T](code, o, fromBytes)
+	if err != nil {
+		return zerovalue
+	}
+	return t
+}
+
+// AddRaw appends one option.
+func (o Options) AddRaw(code OptionCode, p []byte) {
+	o[code] = append(o[code], p)
 }
 
 // Add appends one option.
 func (o *Options) Add(option Option) {
-	*o = append(*o, option)
+	if *o == nil {
+		*o = make(map[OptionCode][][]byte)
+	}
+	(*o)[option.Code()] = append((*o)[option.Code()], option.ToBytes())
 }
 
 // Del deletes all options matching the option code.
-func (o *Options) Del(code OptionCode) {
-	newOpts := make(Options, 0, len(*o))
-	for _, opt := range *o {
-		if opt.Code() != code {
-			newOpts = append(newOpts, opt)
-		}
-	}
-	*o = newOpts
+func (o Options) Del(code OptionCode) {
+	delete(o, code)
 }
 
 // Update replaces the first option of the same type as the specified one.
 func (o *Options) Update(option Option) {
-	for idx, opt := range *o {
-		if opt.Code() == option.Code() {
-			(*o)[idx] = option
-			// don't look further
-			return
-		}
+	data, ok := (*o)[option.Code()]
+	if !ok || len(data) == 0 {
+		o.Add(option)
 	}
-	// if not found, add it
-	o.Add(option)
+	(*o)[option.Code()][0] = option.ToBytes()
 }
 
 // ToBytes marshals all options to bytes.
 func (o Options) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
-	for _, opt := range o {
-		buf.Write16(uint16(opt.Code()))
-
-		val := opt.ToBytes()
-		buf.Write16(uint16(len(val)))
-		buf.WriteBytes(val)
+	for code, opts := range o {
+		for _, opt := range opts {
+			buf.Write16(uint16(code))
+			buf.Write16(uint16(len(opt)))
+			buf.WriteBytes(opt)
+		}
 	}
 	return buf.Data()
 }
 
-// FromBytes reads data into o and returns an error if the options are not a
-// valid serialized representation of DHCPv6 options per RFC 3315.
+// FromBytes reads option data into o. Options are not deserialized, but the
+// overall option structure (type, length, value) has to match or this function
+// will return an error.
 func (o *Options) FromBytes(data []byte) error {
-	return o.FromBytesWithParser(data, ParseOption)
-}
-
-// OptionParser is a function signature for option parsing
-type OptionParser func(code OptionCode, data []byte) (Option, error)
-
-// FromBytesWithParser parses Options from byte sequences using the parsing
-// function that is passed in as a paremeter
-func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
-	*o = make(Options, 0, 10)
+	*o = make(map[OptionCode][][]byte)
 	if len(data) == 0 {
 		// no options, no party
 		return nil
@@ -238,12 +381,14 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 		// Consume, but do not Copy. Each parser will make a copy of
 		// pertinent data.
 		optData := buf.Consume(length)
-
-		opt, err := parser(code, optData)
-		if err != nil {
-			return err
+		if optData == nil {
+			// Buffer did not have `length` bytes left. Malformed
+			// packet.
+			return fmt.Errorf("error collecting options: %v", buf.Error())
 		}
-		*o = append(*o, opt)
+
+		// TODO: make copy?
+		(*o)[code] = append((*o)[code], optData)
 	}
 	return buf.FinError()
 }

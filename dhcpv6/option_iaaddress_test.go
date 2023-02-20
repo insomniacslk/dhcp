@@ -67,9 +67,7 @@ func TestOptIAAddressToBytes(t *testing.T) {
 		IPv6Addr:          net.IP(ipBytes),
 		PreferredLifetime: 0x0a0b0c0d * time.Second,
 		ValidLifetime:     0x0e0f0102 * time.Second,
-		Options: AddressOptions{[]Option{
-			OptElapsedTime(10 * time.Millisecond),
-		}},
+		Options:           AddressOptions{OptionsFrom(OptElapsedTime(10 * time.Millisecond))},
 	}
 	require.Equal(t, expected, opt.ToBytes())
 }

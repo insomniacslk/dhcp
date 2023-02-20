@@ -20,7 +20,7 @@ type PrefixOptions struct {
 }
 
 // Status returns the status code associated with this option.
-func (po PrefixOptions) Status() *OptStatusCode {
+/*func (po PrefixOptions) Status() *OptStatusCode {
 	opt := po.Options.GetOne(OptionStatusCode)
 	if opt == nil {
 		return nil
@@ -30,7 +30,7 @@ func (po PrefixOptions) Status() *OptStatusCode {
 		return nil
 	}
 	return sc
-}
+}*/
 
 // OptIAPrefix implements the IAPrefix option.
 //
@@ -51,9 +51,9 @@ func (op *OptIAPrefix) Code() OptionCode {
 func (op *OptIAPrefix) ToBytes() []byte {
 	buf := uio.NewBigEndianBuffer(nil)
 
-	t1 := Duration{op.PreferredLifetime}
+	t1 := Duration(op.PreferredLifetime)
 	t1.Marshal(buf)
-	t2 := Duration{op.ValidLifetime}
+	t2 := Duration(op.ValidLifetime)
 	t2.Marshal(buf)
 
 	if op.Prefix != nil {
@@ -82,8 +82,8 @@ func (op *OptIAPrefix) FromBytes(data []byte) error {
 	var t1, t2 Duration
 	t1.Unmarshal(buf)
 	t2.Unmarshal(buf)
-	op.PreferredLifetime = t1.Duration
-	op.ValidLifetime = t2.Duration
+	op.PreferredLifetime = time.Duration(t1)
+	op.ValidLifetime = time.Duration(t2)
 
 	length := buf.Read8()
 	ip := net.IP(buf.CopyN(net.IPv6len))

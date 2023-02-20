@@ -22,51 +22,31 @@ type RelayOptions struct {
 
 // RelayMessage returns the message embedded.
 func (ro RelayOptions) RelayMessage() DHCPv6 {
-	opt := ro.Options.GetOne(OptionRelayMsg)
-	if opt == nil {
-		return nil
-	}
-	if relayOpt, ok := opt.(*optRelayMsg); ok {
-		return relayOpt.Msg
-	}
-	return nil
+	return MustGetOneInfOptioner[DHCPv6](OptionRelayMsg, ro.Options, FromBytes)
 }
 
 // InterfaceID returns the interface ID of this relay message.
 func (ro RelayOptions) InterfaceID() []byte {
-	opt := ro.Options.GetOne(OptionInterfaceID)
-	if opt == nil {
+	p := MustGetOnePtrOptioner[optInterfaceID, *optInterfaceID](OptionInterfaceID, ro.Options)
+	if p == nil {
 		return nil
 	}
-	if iid, ok := opt.(*optInterfaceID); ok {
-		return iid.ID
-	}
-	return nil
+	return p.ID
 }
 
 // RemoteID returns the remote ID in this relay message.
 func (ro RelayOptions) RemoteID() *OptRemoteID {
-	opt := ro.Options.GetOne(OptionRemoteID)
-	if opt == nil {
-		return nil
-	}
-	if rid, ok := opt.(*OptRemoteID); ok {
-		return rid
-	}
-	return nil
+	return MustGetOnePtrOptioner[OptRemoteID, *OptRemoteID](OptionRemoteID, ro.Options)
 }
 
 // ClientLinkLayerAddress returns the Hardware Type and
 // Link Layer Address of the requesting client in this relay message.
 func (ro RelayOptions) ClientLinkLayerAddress() (iana.HWType, net.HardwareAddr) {
-	opt := ro.Options.GetOne(OptionClientLinkLayerAddr)
-	if opt == nil {
+	lla := MustGetOnePtrOptioner[optClientLinkLayerAddress, *optClientLinkLayerAddress](OptionClientLinkLayerAddr, ro.Options)
+	if lla == nil {
 		return 0, nil
 	}
-	if lla, ok := opt.(*optClientLinkLayerAddress); ok {
-		return lla.LinkLayerType, lla.LinkLayerAddress
-	}
-	return 0, nil
+	return lla.LinkLayerType, lla.LinkLayerAddress
 }
 
 // RelayMessage is a DHCPv6 relay agent message as defined by RFC 3315 Section
