@@ -1,71 +1,142 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestParseMessageWithIATA(t *testing.T) {
-	data := []byte{
-		0, 4, // IATA option code
-		0, 32, // length
-		1, 0, 0, 0, // IAID
-		// IATA Options
-		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IP
-		0, 0, 0, 2, // PreferredLifetime
-		0, 0, 0, 4, // ValidLifetime
-	}
-	var got MessageOptions
-	if err := got.FromBytes(data); err != nil {
-		t.Errorf("FromBytes = %v", err)
-	}
+func TestIATAParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []*OptIATA
+	}{
+		{
+			buf: []byte{
+				0, 4, // IATA option code
+				0, 32, // length
+				1, 0, 0, 0, // IAID
+				0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IPv6
+				0, 0, 0, 2, // PreferredLifetime
+				0, 0, 0, 4, // ValidLifetime
+			},
+			want: []*OptIATA{
+				&OptIATA{
+					IaId: [4]byte{1, 0, 0, 0},
+					Options: IdentityOptions{Options: Options{&OptIAAddress{
+						IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						PreferredLifetime: 2 * time.Second,
+						ValidLifetime:     4 * time.Second,
+						Options:           AddressOptions{Options: Options{}},
+					}}},
+				},
+			},
+		},
+		{
+			buf: []byte{
+				0, 4, // IATA option code
+				0, 32, // length
+				1, 0, 0, 0, // IAID
+				0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IPv6
+				0, 0, 0, 2, // PreferredLifetime
+				0, 0, 0, 4, // ValidLifetime
 
-	want := &OptIATA{
-		IaId: [4]byte{1, 0, 0, 0},
-		Options: IdentityOptions{Options: Options{&OptIAAddress{
-			IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
-			PreferredLifetime: 2 * time.Second,
-			ValidLifetime:     4 * time.Second,
-			Options:           AddressOptions{Options: Options{}},
-		}}},
-	}
-	if gotIATA := got.OneIATA(); !reflect.DeepEqual(gotIATA, want) {
-		t.Errorf("OneIATA = %v, want %v", gotIATA, want)
-	}
-}
+				0, 4, // IATA option code
+				0, 32, // length
+				1, 2, 3, 4, // IAID
+				0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IPv6
+				0, 0, 0, 2, // PreferredLifetime
+				0, 0, 0, 4, // ValidLifetime
+			},
+			want: []*OptIATA{
+				&OptIATA{
+					IaId: [4]byte{1, 0, 0, 0},
+					Options: IdentityOptions{Options: Options{&OptIAAddress{
+						IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						PreferredLifetime: 2 * time.Second,
+						ValidLifetime:     4 * time.Second,
+						Options:           AddressOptions{Options: Options{}},
+					}}},
+				},
+				&OptIATA{
+					IaId: [4]byte{1, 2, 3, 4},
+					Options: IdentityOptions{Options: Options{&OptIAAddress{
+						IPv6Addr:          net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						PreferredLifetime: 2 * time.Second,
+						ValidLifetime:     4 * time.Second,
+						Options:           AddressOptions{Options: Options{}},
+					}}},
+				},
+			},
+		},
 
-func TestOptIATAParseOptIATA(t *testing.T) {
-	data := []byte{
-		1, 0, 0, 0, // IAID
-		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, 0, 0, 0xc0, 0x8a, // options
-	}
-	var opt OptIATA
-	err := opt.FromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, OptionIATA, opt.Code())
-}
+		{
+			buf:  nil,
+			want: nil,
+		},
+		{
+			buf:  []byte{0, 4, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0, 4, // IATA option code
+				0, 3, // length
+				1, 0, 0, // IAID too short
+			},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0, 4, // IATA option code
+				0, 28, // length
+				1, 0, 0, 0, // IAID
+				0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IPv6
+				0, 0, 0xb2, 0x7a, // PreferredLifetime
+				// Missing ValidLifetime
+			},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.IATA(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("IATA = %v, want %v", got, tt.want)
+			}
+			var wantOne *OptIATA
+			if len(tt.want) >= 1 {
+				wantOne = tt.want[0]
+			}
+			if got := mo.OneIATA(); !reflect.DeepEqual(got, wantOne) {
+				t.Errorf("OneIATA = %v, want %v", got, wantOne)
+			}
 
-func TestOptIATAParseOptIATAInvalidLength(t *testing.T) {
-	data := []byte{
-		1, 0, 0, // truncated IAID
+			if len(tt.want) >= 1 {
+				var b MessageOptions
+				for _, iata := range tt.want {
+					b.Add(iata)
+				}
+				got := b.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	var opt OptIATA
-	err := opt.FromBytes(data)
-	require.Error(t, err)
-}
-
-func TestOptIATAParseOptIATAInvalidOptions(t *testing.T) {
-	data := []byte{
-		1, 0, 0, 0, // IAID
-		0, 5, 0, 0x18, 0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, 0, 0, 0xb2, 0x7a, // truncated options
-	}
-	var opt OptIATA
-	err := opt.FromBytes(data)
-	require.Error(t, err)
 }
 
 func TestOptIATAGetOneOption(t *testing.T) {
@@ -118,20 +189,6 @@ func TestOptIATADelOption(t *testing.T) {
 	}
 	iana2.Options.Del(OptionIAAddr)
 	require.Equal(t, iana2.Options.Options, Options{&optsc})
-}
-
-func TestOptIATAToBytes(t *testing.T) {
-	opt := OptIATA{
-		IaId: [4]byte{1, 2, 3, 4},
-		Options: IdentityOptions{[]Option{
-			OptElapsedTime(10 * time.Millisecond),
-		}},
-	}
-	expected := []byte{
-		1, 2, 3, 4, // IA ID
-		0, 8, 0, 2, 0x00, 0x01,
-	}
-	require.Equal(t, expected, opt.ToBytes())
 }
 
 func TestOptIATAString(t *testing.T) {
