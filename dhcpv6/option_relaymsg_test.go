@@ -1,111 +1,78 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
-	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestRelayMsgParseOptRelayMsg(t *testing.T) {
-	var opt optRelayMsg
-	err := opt.FromBytes([]byte{
-		1,                // MessageTypeSolicit
-		0xaa, 0xbb, 0xcc, // transaction ID
-		0, 8, // option: elapsed time
-		0, 2, // option length
-		0, 0, // option value
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if code := opt.Code(); code != OptionRelayMsg {
-		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
-			OptionRelayMsg, code,
-		)
-	}
-}
+func TestRelayMsgOptionParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want DHCPv6
+	}{
+		{
+			buf: []byte{
+				0, 9, // Relay Msg option
+				0, 10, // length
+				1,                // MessageTypeSolicit
+				0xaa, 0xbb, 0xcc, // transaction ID
+				0, 8, // option: elapsed time
+				0, 2, // option length
+				0, 0, // option value
+			},
+			want: &Message{
+				MessageType:   MessageTypeSolicit,
+				TransactionID: TransactionID{0xaa, 0xbb, 0xcc},
+				Options:       MessageOptions{Options{OptElapsedTime(0)}},
+			},
+		},
+		{
+			buf: []byte{
+				0, 9, // Relay Msg option
+				0, 6, // length
+				1,                // MessageTypeSolicit
+				0xaa, 0xbb, 0xcc, // transaction ID
+				0, 8, // option: elapsed time
+				// no length/value for elapsed time option
+			},
+			err: uio.ErrUnreadBytes,
+		},
+		{
+			buf:  []byte{0, 9, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+		{
+			buf:  []byte{0, 9, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var ro RelayOptions
+			if err := ro.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := ro.RelayMessage(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RelayMessage = %v, want %v", got, tt.want)
+			}
 
-func TestRelayMsgOptionsFromBytes(t *testing.T) {
-	var opts Options
-	err := opts.FromBytes([]byte{
-		0, 9, // option: relay message
-		0, 10, // relayed message length
-		1,                // MessageTypeSolicit
-		0xaa, 0xbb, 0xcc, // transaction ID
-		0, 8, // option: elapsed time
-		0, 2, // option length
-		0, 0, // option value
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(opts) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(opts))
-	}
-	opt := opts[0]
-	if code := opt.Code(); code != OptionRelayMsg {
-		t.Fatalf("Invalid option code. Expected OptionRelayMsg (%v), got %v",
-			OptionRelayMsg, code,
-		)
-	}
-}
-
-func TestRelayMsgParseOptRelayMsgSingleEncapsulation(t *testing.T) {
-	d, err := FromBytes([]byte{
-		12,                                             // RELAY-FORW
-		0,                                              // hop count
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // linkAddr
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, // peerAddr
-		0, 9, // option: relay message
-		0, 10, // relayed message length
-		1,                // MessageTypeSolicit
-		0xaa, 0xbb, 0xcc, // transaction ID
-		0, 8, // option: elapsed time
-		0, 2, // option length
-		0x00, 0x01, // option value
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	r, ok := d.(*RelayMessage)
-	if !ok {
-		t.Fatalf("Invalid DHCPv6 type. Expected RelayMessage, got %v",
-			reflect.TypeOf(d),
-		)
-	}
-	if mType := r.Type(); mType != MessageTypeRelayForward {
-		t.Fatalf("Invalid messge type for relay. Expected %v, got %v", MessageTypeRelayForward, mType)
-	}
-	if len(r.Options.Options) != 1 {
-		t.Fatalf("Invalid number of options. Expected 1, got %v", len(r.Options.Options))
-	}
-	ro := r.Options.RelayMessage()
-	if ro == nil {
-		t.Fatalf("No relay message")
-	}
-	innerDHCP, ok := ro.(*Message)
-	if !ok {
-		t.Fatalf("Invalid relay message type. Expected Message, got %v",
-			reflect.TypeOf(innerDHCP),
-		)
-	}
-	if dType := innerDHCP.Type(); dType != MessageTypeSolicit {
-		t.Fatalf("Invalid inner DHCP type. Expected MessageTypeSolicit (%v), got %v",
-			MessageTypeSolicit, dType,
-		)
-	}
-	xid := TransactionID{0xaa, 0xbb, 0xcc}
-	if tID := innerDHCP.TransactionID; tID != xid {
-		t.Fatalf("Invalid inner DHCP transaction ID. Expected 0xaabbcc, got %v", tID)
-	}
-	if len(innerDHCP.Options.Options) != 1 {
-		t.Fatalf("Invalid inner DHCP options length. Expected 1, got %v", len(innerDHCP.Options.Options))
-	}
-	eTime := innerDHCP.Options.ElapsedTime()
-	if eTime != 10*time.Millisecond {
-		t.Fatalf("Invalid elapsed time. Expected 0x1122, got 0x%04x", eTime)
+			if tt.want != nil {
+				var m RelayOptions
+				m.Add(OptRelayMessage(tt.want))
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
 }
 
@@ -150,12 +117,7 @@ func TestSample(t *testing.T) {
 
 func TestRelayMsgParseOptRelayMsgTooShort(t *testing.T) {
 	var opt optRelayMsg
-	err := opt.FromBytes([]byte{
-		1,                // MessageTypeSolicit
-		0xaa, 0xbb, 0xcc, // transaction ID
-		0, 8, // option: elapsed time
-		// no length/value for elapsed time option
-	})
+	err := opt.FromBytes([]byte{})
 	require.Error(t, err, "ParseOptRelayMsg() should return an error if the encapsulated message is invalid")
 }
 
