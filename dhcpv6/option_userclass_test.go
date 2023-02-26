@@ -1,83 +1,64 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestParseOptUserClass(t *testing.T) {
-	expected := []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	var opt OptUserClass
-	err := opt.FromBytes(expected)
-	require.NoError(t, err)
-	require.Equal(t, 1, len(opt.UserClasses))
-	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
-}
-
-func TestParseOptUserClassMultiple(t *testing.T) {
-	expected := []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-		0, 4, 't', 'e', 's', 't',
-	}
-	var opt OptUserClass
-	err := opt.FromBytes(expected)
-	require.NoError(t, err)
-	require.Equal(t, len(opt.UserClasses), 2)
-	require.Equal(t, []byte("linuxboot"), opt.UserClasses[0])
-	require.Equal(t, []byte("test"), opt.UserClasses[1])
-}
-
-func TestParseOptUserClassNone(t *testing.T) {
-	expected := []byte{}
-	var opt OptUserClass
-	err := opt.FromBytes(expected)
-	require.Error(t, err)
-}
-
-func TestOptUserClassToBytes(t *testing.T) {
-	opt := OptUserClass{
-		UserClasses: [][]byte{[]byte("linuxboot")},
-	}
-	data := opt.ToBytes()
-	expected := []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-	}
-	require.Equal(t, expected, data)
-}
-
-func TestOptUserClassToBytesMultiple(t *testing.T) {
-	opt := OptUserClass{
-		UserClasses: [][]byte{
-			[]byte("linuxboot"),
-			[]byte("test"),
+func TestUserClassParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want [][]byte
+	}{
+		{
+			buf: joinBytes([]byte{
+				0, 15, // User Class
+				0, 19, // length
+				0, 8,
+			}, []byte("bladibla"), []byte{0, 7}, []byte("foo=bar")),
+			want: [][]byte{[]byte("bladibla"), []byte("foo=bar")},
 		},
-	}
-	data := opt.ToBytes()
-	expected := []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-		0, 4, 't', 'e', 's', 't',
-	}
-	require.Equal(t, expected, data)
-}
+		{
+			buf: nil,
+		},
+		{
+			buf: []byte{
+				0, 15,
+				0, 0,
+			},
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{0, 15, 0},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.UserClasses(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("UserClass = %v, want %v", got, tt.want)
+			}
 
-func TestOptUserClassParseOptUserClassTooShort(t *testing.T) {
-	buf := []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-		0, 4, 't', 'e',
+			if tt.want != nil {
+				var m MessageOptions
+				m.Add(&OptUserClass{UserClasses: tt.want})
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	var opt OptUserClass
-	err := opt.FromBytes(buf)
-	require.Error(t, err, "ParseOptUserClass() should error if given truncated user classes")
-
-	buf = []byte{
-		0, 9, 'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
-		0,
-	}
-	err = opt.FromBytes(buf)
-	require.Error(t, err, "ParseOptUserClass() should error if given a truncated length")
 }
 
 func TestOptUserClassString(t *testing.T) {
