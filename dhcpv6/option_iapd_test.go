@@ -111,7 +111,7 @@ func TestIAPDParseAndGetter(t *testing.T) {
 		{
 			buf:  []byte{0, 25, 0, 1, 0},
 			want: nil,
-			err:  uio.ErrBufferTooShort,
+			err:  uio.ErrUnreadBytes,
 		},
 		{
 			buf: []byte{
