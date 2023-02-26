@@ -2,9 +2,67 @@ package dhcpv6
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/u-root/uio/uio"
 )
+
+func TestInformationRefreshTimeParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want time.Duration
+	}{
+		{
+			buf: []byte{
+				0, 32, // IRT option
+				0, 4, // length
+				0, 0, 0, 3,
+			},
+			want: 3 * time.Second,
+		},
+		{
+			buf: []byte{
+				0, 32, // IRT option
+				0, 6, // length
+				0, 0, 0, 3, 0, 0,
+			},
+			err: uio.ErrUnreadBytes,
+		},
+		{
+			buf: []byte{0, 32, 0, 1, 0},
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{0, 32, 0},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.InformationRefreshTime(0); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("InformationRefreshTime = %v, want %v", got, tt.want)
+			}
+
+			if tt.err == nil {
+				var m MessageOptions
+				m.Add(OptInformationRefreshTime(tt.want))
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
+	}
+}
 
 func TestOptInformationRefreshTime(t *testing.T) {
 	var opt optInformationRefreshTime
