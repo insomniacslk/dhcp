@@ -1,29 +1,59 @@
 package dhcpv6
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestOptBootFileURL(t *testing.T) {
-	expected := "https://insomniac.slackware.it"
-	var opt optBootFileURL
-	if err := opt.FromBytes([]byte(expected)); err != nil {
-		t.Fatal(err)
+func TestBootFileURLParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want string
+	}{
+		{
+			buf: []byte{
+				0, 59, // Boot File URL
+				0, 17, // length
+				'h', 't', 't', 'p', ':', '/', '/', 'u', '-', 'r', 'o', 'o', 't', '.', 'o', 'r', 'g',
+			},
+			want: "http://u-root.org",
+		},
+		{
+			buf: nil,
+		},
+		{
+			buf: []byte{0, 59, 0},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.BootFileURL(); got != tt.want {
+				t.Errorf("BootFileURL = %v, want %v", got, tt.want)
+			}
+
+			if tt.want != "" {
+				var m MessageOptions
+				m.Add(OptBootFileURL(tt.want))
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	if opt.url != expected {
-		t.Fatalf("Invalid boot file URL. Expected %v, got %v", expected, opt)
-	}
-	require.Contains(t, opt.String(), "https://insomniac.slackware.it", "String() should contain the correct BootFileUrl output")
 }
 
-func TestOptBootFileURLToBytes(t *testing.T) {
-	urlString := "https://insomniac.slackware.it"
-	opt := OptBootFileURL(urlString)
-	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, []byte(urlString)) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", urlString, toBytes)
-	}
+func TestOptBootFileURL(t *testing.T) {
+	opt := OptBootFileURL("https://insomniac.slackware.it")
+	require.Contains(t, opt.String(), "https://insomniac.slackware.it", "String() should contain the correct BootFileUrl output")
 }
