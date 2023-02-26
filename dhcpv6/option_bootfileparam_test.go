@@ -2,70 +2,78 @@ package dhcpv6
 
 import (
 	"bytes"
-	"encoding/binary"
+	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/google/go-cmp/cmp"
+	"github.com/u-root/uio/uio"
 )
 
-var (
-	testBootfileParams0Compiled = "\x00\x0eroot=/dev/sda1\x00\x00\x00\x02rw"
-	testBootfileParams1         = []string{
-		"initrd=http://myserver.mycompany.local/initrd.xz",
-		"",
-		"root=/dev/sda1",
-		"rw",
-		"netconsole=..:\000:.something\000here.::..",
-		string(make([]byte, (1<<16)-1)),
+func TestBootFileParamLargeParameter(t *testing.T) {
+	param := []string{
+		"foo=bar",
+		strings.Repeat("a", 1<<16),
 	}
-)
+	var m MessageOptions
+	m.Add(OptBootFileParam(param...))
+	want := append([]byte{
+		0, 60, // Boot File Param
+		0, 9, // length
+		0, 7,
+	}, []byte("foo=bar")...)
 
-// compileTestBootfileParams is an independent implementation of bootfile param encoder
-func compileTestBootfileParams(t *testing.T, params []string) []byte {
-	var length [2]byte
-	buf := bytes.Buffer{}
-	for _, param := range params {
-		if len(param) >= 1<<16 {
-			panic("a too long parameter")
-		}
-		binary.BigEndian.PutUint16(length[:], uint16(len(param)))
-		_, err := buf.Write(length[:])
-		require.NoError(t, err)
-		_, err = buf.WriteString(param)
-		require.NoError(t, err)
-	}
-
-	return buf.Bytes()
-}
-
-func TestOptBootFileParam(t *testing.T) {
-	expected := string(compileTestBootfileParams(t, testBootfileParams1))
-	var opt optBootFileParam
-	if err := opt.FromBytes([]byte(expected)); err != nil {
-		t.Fatal(err)
-	}
-	if string(opt.ToBytes()) != expected {
-		t.Fatalf("Invalid boot file parameter. Expected %v, got %v", expected, opt)
+	got := m.ToBytes()
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
 	}
 }
 
-func TestParsedTypeOptBootFileParam(t *testing.T) {
-	tryParse := func(compiled []byte, expected []string) {
-		opt, err := ParseOption(OptionBootfileParam, compiled)
-		require.NoError(t, err)
-		bootfileParamOpt, ok := opt.(*optBootFileParam)
-		require.True(t, ok, fmt.Sprintf("invalid type: %T instead of %T", opt, bootfileParamOpt))
-		require.Equal(t, compiled, bootfileParamOpt.ToBytes())
-		require.Equal(t, expected, bootfileParamOpt.params)
-	}
+func joinBytes(p ...[]byte) []byte {
+	return bytes.Join(p, nil)
+}
 
-	tryParse(
-		[]byte(testBootfileParams0Compiled),
-		[]string{"root=/dev/sda1", "", "rw"},
-	)
-	tryParse(
-		compileTestBootfileParams(t, testBootfileParams1),
-		testBootfileParams1,
-	)
+func TestBootFileParamParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []string
+	}{
+		{
+			buf: joinBytes([]byte{
+				0, 60, // Boot File Param
+				0, 25, // length
+				0, 14,
+			}, []byte("root=/dev/sda1"), []byte{0, 7}, []byte("foo=bar")),
+			want: []string{"root=/dev/sda1", "foo=bar"},
+		},
+		{
+			buf: nil,
+		},
+		{
+			buf: []byte{0, 60, 0},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.BootFileParam(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("BootFileParam = %v, want %v", got, tt.want)
+			}
+
+			if tt.want != nil {
+				var m MessageOptions
+				m.Add(OptBootFileParam(tt.want...))
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
+	}
 }
