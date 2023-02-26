@@ -1,60 +1,88 @@
 package dhcpv6
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestOptRemoteID(t *testing.T) {
-	expected := []byte{0xaa, 0xbb, 0xcc, 0xdd}
-	remoteId := []byte("DSLAM01 eth2/1/01/21")
-	expected = append(expected, remoteId...)
-	var opt OptRemoteID
-	if err := opt.FromBytes(expected); err != nil {
-		t.Fatal(err)
-	}
-	if en := opt.EnterpriseNumber; en != 0xaabbccdd {
-		t.Fatalf("Invalid Enterprise Number. Expected 0xaabbccdd, got %v", en)
-	}
-	if rid := opt.RemoteID; !bytes.Equal(rid, remoteId) {
-		t.Fatalf("Invalid Remote ID. Expected %v, got %v", expected, rid)
-	}
-}
+func TestRemoteIDParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want *OptRemoteID
+	}{
+		{
+			buf: []byte{
+				0, 37, // Remote ID
+				0, 8, // length
+				0, 0, 0, 16,
+				'S', 'L', 'A', 'M',
+			},
+			want: &OptRemoteID{
+				EnterpriseNumber: 16,
+				RemoteID:         []byte("SLAM"),
+			},
+		},
+		{
+			buf: []byte{
+				0, 37,
+				0, 0,
+			},
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0, 37,
+				0, 4,
+				0, 0, 0, 6,
+			},
+			want: &OptRemoteID{
+				EnterpriseNumber: 6,
+				RemoteID:         []byte{},
+			},
+		},
+		{
+			buf: []byte{0, 37, 0},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var ro RelayOptions
+			if err := ro.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := ro.RemoteID(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("RemoteID = %v, want %v", got, tt.want)
+			}
 
-func TestOptRemoteIDToBytes(t *testing.T) {
-	remoteId := []byte("DSLAM01 eth2/1/01/21")
-	expected := append([]byte{0, 0, 0, 0}, remoteId...)
-	opt := OptRemoteID{
-		RemoteID: remoteId,
+			if tt.want != nil {
+				var m RelayOptions
+				m.Add(tt.want)
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, expected) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", expected, toBytes)
-	}
-}
-
-func TestOptRemoteIDParseOptRemoteIDTooShort(t *testing.T) {
-	buf := []byte{0xaa, 0xbb, 0xcc}
-	var opt OptRemoteID
-	err := opt.FromBytes(buf)
-	require.Error(t, err, "A short option should return an error")
 }
 
 func TestOptRemoteIDString(t *testing.T) {
-	buf := []byte{0xaa, 0xbb, 0xcc, 0xdd}
-	remoteId := []byte("Test1234")
-	buf = append(buf, remoteId...)
-
-	var opt OptRemoteID
-	err := opt.FromBytes(buf)
-	require.NoError(t, err)
+	opt := &OptRemoteID{
+		EnterpriseNumber: 123,
+		RemoteID:         []byte("Test1234"),
+	}
 	str := opt.String()
 	require.Contains(
 		t,
 		str,
-		"EnterpriseNumber=2864434397",
+		"EnterpriseNumber=123",
 		"String() should contain the enterprisenum",
 	)
 	require.Contains(
