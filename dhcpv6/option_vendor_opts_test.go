@@ -1,50 +1,94 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/google/go-cmp/cmp"
+	"github.com/u-root/uio/uio"
 )
 
-func TestOptVendorOpts(t *testing.T) {
-	optData := []byte("Arista;DCS-7304;01.00;HSH14425148")
-	// NOTE: this should be aware of endianness
-	expected := []byte{0xaa, 0xbb, 0xcc, 0xdd}
-	expected = append(expected, []byte{0, 1, //code
-		0, byte(len(optData)), //length
-	}...)
-	expected = append(expected, optData...)
-	expectedOpts := OptVendorOpts{}
-	var vendorOpts []Option
-	expectedOpts.VendorOpts = append(vendorOpts, &OptionGeneric{OptionCode: 1, OptionData: optData})
+func TestVendorOptsParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []*OptVendorOpts
+	}{
+		{
+			buf: []byte{
+				0, 17, // VendorOpts option
+				0, 10, // length
+				0, 0, 0, 16,
+				0, 5, // type
+				0, 2, // length
+				0xa, 0xb,
 
-	var opt OptVendorOpts
-	err := opt.FromBytes(expected)
-	require.NoError(t, err)
-	require.Equal(t, uint32(0xaabbccdd), opt.EnterpriseNumber)
-	require.Equal(t, expectedOpts.VendorOpts, opt.VendorOpts)
+				0, 17, // VendorOpts option
+				0, 9, // length
+				0, 0, 0, 14,
+				0, 9, // type
+				0, 1, // length
+				0xa,
+			},
+			want: []*OptVendorOpts{
+				&OptVendorOpts{
+					EnterpriseNumber: 16,
+					VendorOpts: Options{
+						&OptionGeneric{OptionCode: 5, OptionData: []byte{0xa, 0xb}},
+					},
+				},
+				&OptVendorOpts{
+					EnterpriseNumber: 14,
+					VendorOpts: Options{
+						&OptionGeneric{OptionCode: 9, OptionData: []byte{0xa}},
+					},
+				},
+			},
+		},
+		{
+			buf:  nil,
+			want: nil,
+		},
+		{
+			buf:  []byte{0, 17, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+		{
+			buf:  []byte{0, 17, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.VendorOpts(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("VendorOpts = %v, want %v", got, tt.want)
+			}
+			for _, vo := range tt.want {
+				if got := mo.VendorOpt(vo.EnterpriseNumber); !reflect.DeepEqual(got, vo.VendorOpts) {
+					t.Errorf("VendorOpt(%d) = %v, want %v", vo.EnterpriseNumber, got, vo.VendorOpts)
+				}
+			}
+			if got := mo.VendorOpt(100); got != nil {
+				t.Errorf("VendorOpt(100) = %v, not nil", got)
+			}
 
-	shortData := make([]byte, 1)
-	var opt2 OptVendorOpts
-	err = opt2.FromBytes(shortData)
-	require.Error(t, err)
-}
-
-func TestOptVendorOptsToBytes(t *testing.T) {
-	optData := []byte("Arista;DCS-7304;01.00;HSH14425148")
-	var opts []Option
-	opts = append(opts, &OptionGeneric{OptionCode: 1, OptionData: optData})
-
-	expected := append([]byte{
-		0, 0, 0, 0, // EnterpriseNumber
-		0, 1, // Sub-Option code from vendor
-		0, byte(len(optData)), // Length of optionData only
-	}, optData...)
-
-	opt := OptVendorOpts{
-		EnterpriseNumber: 0000,
-		VendorOpts:       opts,
+			if tt.want != nil {
+				var m MessageOptions
+				for _, opt := range tt.want {
+					m.Add(opt)
+				}
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	toBytes := opt.ToBytes()
-	require.Equal(t, expected, toBytes)
 }
