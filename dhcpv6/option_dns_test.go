@@ -1,42 +1,85 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
 	"net"
+	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/google/go-cmp/cmp"
+	"github.com/u-root/uio/uio"
 )
 
-func TestParseOptDNS(t *testing.T) {
-	data := []byte{
-		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
-	}
-	expected := []net.IP{
-		net.IP(data),
-	}
-	var opt optDNS
-	err := opt.FromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, expected, opt.NameServers)
-	require.Equal(t, OptionDNSRecursiveNameServer, opt.Code())
-	require.Contains(t, opt.String(), "DNS: [2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct nameservers output")
-}
+func TestDNSParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []net.IP
+	}{
+		{
+			buf: []byte{
+				0, 23, // DNS
+				0, 16, // length
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
+			},
+			want: []net.IP{
+				net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35},
+			},
+		},
+		{
+			buf: []byte{
+				0, 23, // DNS
+				0, 32, // length
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
+			},
+			want: []net.IP{
+				net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35},
+				net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35},
+			},
+		},
+		{
+			buf:  nil,
+			want: nil,
+		},
+		{
+			buf: []byte{
+				0, 23,
+				0, 8,
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
+			},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+		{
+			buf:  []byte{0, 23, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+		{
+			buf:  []byte{0, 23, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.DNS(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DNS = %v, want %v", got, tt.want)
+			}
 
-func TestOptDNSRecursiveNameServerToBytes(t *testing.T) {
-	ns1 := net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")
-	ns2 := net.ParseIP("2001:4860:4860::8888")
-	nameservers := []net.IP{ns1, ns2}
-	expected := append([]byte{}, []byte(ns1)...)
-	expected = append(expected, []byte(ns2)...)
-	opt := OptDNS(nameservers...)
-	require.Equal(t, expected, opt.ToBytes())
-}
-
-func TestParseOptDNSBogus(t *testing.T) {
-	data := []byte{
-		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
+			if tt.want != nil {
+				var m MessageOptions
+				m.Add(OptDNS(tt.want...))
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	var opt optDNS
-	err := opt.FromBytes(data)
-	require.Error(t, err, "An invalid nameserver IPv6 address should return an error")
 }
