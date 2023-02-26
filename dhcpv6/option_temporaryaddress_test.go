@@ -85,7 +85,7 @@ func TestIATAParseAndGetter(t *testing.T) {
 		{
 			buf:  []byte{0, 4, 0, 1, 0},
 			want: nil,
-			err:  uio.ErrBufferTooShort,
+			err:  uio.ErrUnreadBytes,
 		},
 		{
 			buf: []byte{
@@ -94,7 +94,7 @@ func TestIATAParseAndGetter(t *testing.T) {
 				1, 0, 0, // IAID too short
 			},
 			want: nil,
-			err:  uio.ErrBufferTooShort,
+			err:  uio.ErrUnreadBytes,
 		},
 		{
 			buf: []byte{
