@@ -1,73 +1,80 @@
 package dhcpv6
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestParseMessageOptionsWithDHCP4oDHCP6Server(t *testing.T) {
-	ip := net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35}
-	data := append([]byte{
-		0, 88, // DHCP4oDHCP6 option.
-		0, 16, // length
-	}, ip...)
+func TestDHCP4oDHCP6ParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want *OptDHCP4oDHCP6Server
+	}{
+		{
+			buf: []byte{
+				0, 88, // DHCP4oDHCP6 option.
+				0, 32, // length
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
+			},
+			want: &OptDHCP4oDHCP6Server{
+				DHCP4oDHCP6Servers: []net.IP{
+					net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35},
+					net.IP{0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35},
+				},
+			},
+		},
+		{
+			buf: []byte{
+				0, 88, // DHCP4oDHCP6 option.
+				0, 6, // length
+				0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe,
+			},
+			err: uio.ErrUnreadBytes,
+		},
+		{
+			buf: []byte{
+				0, 88, // DHCP4oDHCP6 option.
+				0, 0, // length
+			},
+			want: &OptDHCP4oDHCP6Server{},
+		},
+		{
+			buf:  []byte{0, 88, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.DHCP4oDHCP6Server(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DHCP4oDHCP6Server = %v, want %v", got, tt.want)
+			}
 
-	want := []net.IP{ip}
-	var mo MessageOptions
-	if err := mo.FromBytes(data); err != nil {
-		t.Errorf("FromBytes = %v", err)
-	} else if got := mo.DHCP4oDHCP6Server(); !reflect.DeepEqual(got.DHCP4oDHCP6Servers, want) {
-		t.Errorf("FromBytes = %v, want %v", got.DHCP4oDHCP6Servers, want)
+			if tt.want != nil {
+				var m MessageOptions
+				m.Add(tt.want)
+				got := m.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
 }
 
 func TestParseOptDHCP4oDHCP6Server(t *testing.T) {
-	data := []byte{
-		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, 0xfa, 0xce, 0xb0, 0x0c, 0x00, 0x00, 0x00, 0x35,
-	}
-	expected := []net.IP{
-		net.IP(data),
-	}
-	var opt OptDHCP4oDHCP6Server
-	err := opt.FromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, expected, opt.DHCP4oDHCP6Servers)
-	require.Equal(t, OptionDHCP4oDHCP6Server, opt.Code())
+	opt := OptDHCP4oDHCP6Server{DHCP4oDHCP6Servers: []net.IP{net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")}}
 	require.Contains(t, opt.String(), "[2a03:2880:fffe:c:face:b00c:0:35]", "String() should contain the correct DHCP4-over-DHCP6 server output")
-}
-
-func TestOptDHCP4oDHCP6ServerToBytes(t *testing.T) {
-	ip1 := net.ParseIP("2a03:2880:fffe:c:face:b00c:0:35")
-	ip2 := net.ParseIP("2001:4860:4860::8888")
-	opt := OptDHCP4oDHCP6Server{DHCP4oDHCP6Servers: []net.IP{ip1, ip2}}
-
-	want := []byte(append(ip1, ip2...))
-	require.Equal(t, want, opt.ToBytes())
-}
-
-func TestParseOptDHCP4oDHCP6ServerParseNoAddr(t *testing.T) {
-	data := []byte{}
-	var expected []net.IP
-	var opt OptDHCP4oDHCP6Server
-	err := opt.FromBytes(data)
-	require.NoError(t, err)
-	require.Equal(t, expected, opt.DHCP4oDHCP6Servers)
-}
-
-func TestOptDHCP4oDHCP6ServerToBytesNoAddr(t *testing.T) {
-	expected := []byte(nil)
-	opt := OptDHCP4oDHCP6Server{}
-	require.Equal(t, expected, opt.ToBytes())
-}
-
-func TestParseOptDHCP4oDHCP6ServerParseBogus(t *testing.T) {
-	data := []byte{
-		0x2a, 0x03, 0x28, 0x80, 0xff, 0xfe, 0x00, 0x0c, // invalid IPv6 address
-	}
-	var opt OptDHCP4oDHCP6Server
-	err := opt.FromBytes(data)
-	require.Error(t, err, "An invalid IPv6 address should return an error")
 }
