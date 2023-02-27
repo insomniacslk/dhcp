@@ -106,6 +106,18 @@ func (mo MessageOptions) OneIAPD() *OptIAPD {
 	return iapds[0]
 }
 
+// FourRD returns all 4RD options.
+func (mo MessageOptions) FourRD() []*Opt4RD {
+	opts := mo.Get(Option4RD)
+	var frds []*Opt4RD
+	for _, o := range opts {
+		if m, ok := o.(*Opt4RD); ok {
+			frds = append(frds, m)
+		}
+	}
+	return frds
+}
+
 // Status returns the status code associated with this option.
 func (mo MessageOptions) Status() *OptStatusCode {
 	opt := mo.Options.GetOne(OptionStatusCode)

@@ -1,49 +1,314 @@
 package dhcpv6
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestOpt4RDNonMapRuleParse(t *testing.T) {
-	data := []byte{0x81, 0xaa, 0x05, 0xd4}
-	var opt Opt4RDNonMapRule
-	err := opt.FromBytes(data)
-	require.NoError(t, err)
-	require.True(t, opt.HubAndSpoke)
-	require.NotNil(t, opt.TrafficClass)
-	require.EqualValues(t, 0xaa, *opt.TrafficClass)
-	require.EqualValues(t, 1492, opt.DomainPMTU)
+func Test4RDParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []*Opt4RD
+	}{
+		{
+			buf: []byte{
+				0, 97, // 4RD option code
+				0, 28, // length
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				16,             // prefix4-length
+				16,             // prefix6-length
+				8,              // ea-len
+				0,              // WKPAuthorized
+				192, 168, 0, 1, // rule-ipv4-prefix
+				0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // rule-ipv6-prefix
+			},
+			want: []*Opt4RD{
+				&Opt4RD{
+					FourRDOptions: FourRDOptions{Options: Options{
+						&Opt4RDMapRule{
+							Prefix4: net.IPNet{
+								IP:   net.IP{192, 168, 0, 1},
+								Mask: net.CIDRMask(16, 32),
+							},
+							Prefix6: net.IPNet{
+								IP:   net.ParseIP("fe80::"),
+								Mask: net.CIDRMask(16, 128),
+							},
+							EABitsLength: 8,
+						},
+					}},
+				},
+			},
+		},
+		{
+			buf: []byte{
+				0, 97, // 4RD option code
+				0, 28, // length
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				16,             // prefix4-length
+				16,             // prefix6-length
+				8,              // ea-len
+				0,              // WKPAuthorized
+				192, 168, 0, 1, // rule-ipv4-prefix
+				0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // rule-ipv6-prefix
 
-	// Remove the TrafficClass flag and check value is ignored
-	data[0] = 0x80
-	opt = Opt4RDNonMapRule{}
-	err = opt.FromBytes(data)
-	require.NoError(t, err)
-	require.True(t, opt.HubAndSpoke)
-	require.Nil(t, opt.TrafficClass)
-	require.EqualValues(t, 1492, opt.DomainPMTU)
+				0, 97, // 4RD
+				0, 8, // length
+				0, 99, // 4RD non map rule
+				0, 4, // length
+				0x80, 0x00, 0x05, 0xd4,
+			},
+			want: []*Opt4RD{
+				&Opt4RD{
+					FourRDOptions: FourRDOptions{Options: Options{
+						&Opt4RDMapRule{
+							Prefix4: net.IPNet{
+								IP:   net.IP{192, 168, 0, 1},
+								Mask: net.CIDRMask(16, 32),
+							},
+							Prefix6: net.IPNet{
+								IP:   net.ParseIP("fe80::"),
+								Mask: net.CIDRMask(16, 128),
+							},
+							EABitsLength: 8,
+						},
+					}},
+				},
+				&Opt4RD{
+					FourRDOptions: FourRDOptions{Options: Options{
+						&Opt4RDNonMapRule{
+							HubAndSpoke: true,
+							DomainPMTU:  1492,
+						},
+					}},
+				},
+			},
+		},
+		{
+			buf:  []byte{0, 97, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+		{
+			// Allowed, because the RFC doesn't really specify that
+			// it can't be empty. RFC doesn't really specify
+			// anything, frustratingly.
+			buf: []byte{
+				0, 97, // 4RD option code
+				0, 0, // length
+			},
+			want: []*Opt4RD{&Opt4RD{FourRDOptions: FourRDOptions{Options: Options{}}}},
+		},
+		{
+			buf: []byte{
+				0, 97, // 4RD option code
+				0, 6, // length
+				0, 98, // 4RD Map Rule option
+				0, 4, // length
+				16, // prefix4-length
+				16, // prefix6-length
+				8,  // ea-len
+				0,  // WKPAuthorized
+				// Missing
+			},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo MessageOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.FourRD(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FourRD = %v, want %v", got, tt.want)
+			}
+			if len(tt.want) >= 1 {
+				var b MessageOptions
+				for _, frd := range tt.want {
+					b.Add(frd)
+				}
+				got := b.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
+	}
 }
 
-func TestOpt4RDNonMapRuleToBytes(t *testing.T) {
-	var tClass uint8 = 0xaa
-	opt := Opt4RDNonMapRule{
-		HubAndSpoke:  true,
-		TrafficClass: &tClass,
-		DomainPMTU:   1492,
+func Test4RDMapRuleParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []*Opt4RDMapRule
+	}{
+		{
+			buf: []byte{
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				16,             // prefix4-length
+				16,             // prefix6-length
+				8,              // ea-len
+				0,              // WKPAuthorized
+				192, 168, 0, 1, // rule-ipv4-prefix
+				0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // rule-ipv6-prefix
+			},
+			want: []*Opt4RDMapRule{
+				&Opt4RDMapRule{
+					Prefix4: net.IPNet{
+						IP:   net.IP{192, 168, 0, 1},
+						Mask: net.CIDRMask(16, 32),
+					},
+					Prefix6: net.IPNet{
+						IP:   net.ParseIP("fe80::"),
+						Mask: net.CIDRMask(16, 128),
+					},
+					EABitsLength: 8,
+				},
+			},
+		},
+		{
+			buf: []byte{
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				16,             // prefix4-length
+				16,             // prefix6-length
+				8,              // ea-len
+				1 << 7,         // WKPAuthorized
+				192, 168, 0, 1, // rule-ipv4-prefix
+				0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // rule-ipv6-prefix
+			},
+			want: []*Opt4RDMapRule{
+				&Opt4RDMapRule{
+					Prefix4: net.IPNet{
+						IP:   net.IP{192, 168, 0, 1},
+						Mask: net.CIDRMask(16, 32),
+					},
+					Prefix6: net.IPNet{
+						IP:   net.ParseIP("fe80::"),
+						Mask: net.CIDRMask(16, 128),
+					},
+					EABitsLength:  8,
+					WKPAuthorized: true,
+				},
+			},
+		},
+		{
+			buf:  []byte{0, 98, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0, 98, // 4RD Map Rule option
+				0, 4, // length
+				16, // prefix4-length
+				16, // prefix6-length
+				8,  // ea-len
+				0,  // WKPAuthorized
+				// Missing
+			},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var frdo FourRDOptions
+			if err := frdo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := frdo.MapRules(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MapRules = %v, want %v", got, tt.want)
+			}
+			if len(tt.want) >= 1 {
+				var b FourRDOptions
+				for _, frd := range tt.want {
+					b.Add(frd)
+				}
+				got := b.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
-	expected := []byte{0x81, 0xaa, 0x05, 0xd4}
+}
 
-	require.Equal(t, expected, opt.ToBytes())
-
-	// Unsetting TrafficClass should zero the corresponding bytes in the output
-	opt.TrafficClass = nil
-	expected[0], expected[1] = 0x80, 0x00
-
-	require.Equal(t, expected, opt.ToBytes())
+func Test4RDNonMapRuleParseAndGetter(t *testing.T) {
+	trafficClassOne := uint8(1)
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want *Opt4RDNonMapRule
+	}{
+		{
+			buf: []byte{
+				0, 99, // 4RD Non Map Rule option
+				0, 4, // length
+				0x80, 0, 0x05, 0xd4,
+			},
+			want: &Opt4RDNonMapRule{
+				HubAndSpoke: true,
+				DomainPMTU:  1492,
+			},
+		},
+		{
+			buf: []byte{
+				0, 99, // 4RD Non Map Rule option
+				0, 4, // length
+				0, 0, 0x05, 0xd4,
+			},
+			want: &Opt4RDNonMapRule{
+				DomainPMTU: 1492,
+			},
+		},
+		{
+			buf: []byte{
+				0, 99, // 4RD Non Map Rule option
+				0, 4, // length
+				0x1, 0x01, 0x05, 0xd4,
+			},
+			want: &Opt4RDNonMapRule{
+				TrafficClass: &trafficClassOne,
+				DomainPMTU:   1492,
+			},
+		},
+		{
+			buf:  []byte{0, 99, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var frdo FourRDOptions
+			if err := frdo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := frdo.NonMapRule(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NonMapRule = %v, want %v", got, tt.want)
+			}
+			if tt.want != nil {
+				var b FourRDOptions
+				b.Add(tt.want)
+				got := b.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
+	}
 }
 
 func TestOpt4RDNonMapRuleString(t *testing.T) {
@@ -64,58 +329,20 @@ func TestOpt4RDNonMapRuleString(t *testing.T) {
 		"String() should contain the domain PMTU")
 }
 
-func TestOpt4RDMapRuleParse(t *testing.T) {
-	ip6addr, ip6net, err := net.ParseCIDR("2001:db8::1234:5678:0:aabb/64")
-	ip6net.IP = ip6addr // We want to keep the entire address however, not apply the mask
-	require.NoError(t, err)
-	ip4addr, ip4net, err := net.ParseCIDR("100.64.0.234/10")
-	ip4net.IP = ip4addr.To4()
-	require.NoError(t, err)
-	data := append([]byte{
-		10,   // IPv4 prefix length
-		64,   // IPv6 prefix length
-		32,   // EA-bits
-		0x80, // WKPs authorized
-	},
-		append(ip4addr.To4(), ip6addr...)...,
-	)
-
-	var opt Opt4RDMapRule
-	err = opt.FromBytes(data)
-	require.NoError(t, err)
-	require.EqualValues(t, *ip6net, opt.Prefix6)
-	require.EqualValues(t, *ip4net, opt.Prefix4)
-	require.EqualValues(t, 32, opt.EABitsLength)
-	require.True(t, opt.WKPAuthorized)
-}
-
 func TestOpt4RDMapRuleToBytes(t *testing.T) {
 	opt := Opt4RDMapRule{
-		Prefix4: net.IPNet{
-			IP:   net.IPv4(100, 64, 0, 238),
-			Mask: net.CIDRMask(24, 32),
-		},
-		Prefix6: net.IPNet{
-			IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
-			Mask: net.CIDRMask(80, 128),
-		},
 		EABitsLength:  32,
 		WKPAuthorized: true,
 	}
 
 	expected := append([]byte{
-		24,   // v4 prefix length
-		80,   // v6 prefix length
+		0,    // v4 prefix length
+		0,    // v6 prefix length
 		32,   // EA-bits
 		0x80, // WKPs authorized
-	},
-		append(opt.Prefix4.IP.To4(), opt.Prefix6.IP.To16()...)...,
-	)
-
+	}, bytes.Repeat([]byte{0x00}, 4+16)...)
 	require.Equal(t, expected, opt.ToBytes())
 }
-
-// FIXME: Invalid packets are serialized without error
 
 func TestOpt4RDMapRuleString(t *testing.T) {
 	opt := Opt4RDMapRule{
@@ -138,48 +365,4 @@ func TestOpt4RDMapRuleString(t *testing.T) {
 	require.Contains(t, str, "Prefix4=100.64.0.238/24",
 		"String() should include the IPv4 prefix")
 	require.Contains(t, str, "EA-Bits=32", "String() should include the value for EA-Bits")
-}
-
-// This test round-trip serialization/deserialization of both kinds of 4RD
-// options, and the container option
-func TestOpt4RDRoundTrip(t *testing.T) {
-	var tClass uint8 = 0xaa
-	opt := Opt4RD{
-		Options: Options{
-			&Opt4RDMapRule{
-				Prefix4: net.IPNet{
-					IP:   net.IPv4(100, 64, 0, 238).To4(),
-					Mask: net.CIDRMask(24, 32),
-				},
-				Prefix6: net.IPNet{
-					IP:   net.ParseIP("2001:db8::1234:5678:0:aabb"),
-					Mask: net.CIDRMask(80, 128),
-				},
-				EABitsLength:  32,
-				WKPAuthorized: true,
-			},
-			&Opt4RDNonMapRule{
-				HubAndSpoke:  true,
-				TrafficClass: &tClass,
-				DomainPMTU:   9000,
-			},
-		},
-	}
-
-	var rtOpt Opt4RD
-	err := rtOpt.FromBytes(opt.ToBytes())
-
-	require.NoError(t, err)
-	require.NotNil(t, rtOpt)
-	require.Equal(t, opt, rtOpt)
-
-	var mo MessageOptions
-	mo.Options.Add(&opt)
-
-	var got MessageOptions
-	if err := got.FromBytes(mo.ToBytes()); err != nil {
-		t.Errorf("FromBytes = %v", err)
-	} else if !reflect.DeepEqual(mo, got) {
-		t.Errorf("FromBytes = %v, want %v", got, mo)
-	}
 }
