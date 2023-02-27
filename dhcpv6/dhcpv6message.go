@@ -211,6 +211,33 @@ func (mo MessageOptions) UserClasses() [][]byte {
 	return nil
 }
 
+// VendorClasses returns the all vendor class options.
+func (mo MessageOptions) VendorClasses() []*OptVendorClass {
+	opt := mo.Options.Get(OptionVendorClass)
+	if opt == nil {
+		return nil
+	}
+	var vo []*OptVendorClass
+	for _, o := range opt {
+		if t, ok := o.(*OptVendorClass); ok {
+			vo = append(vo, t)
+		}
+	}
+	return vo
+}
+
+// VendorClass returns the vendor class options matching the given enterprise
+// number.
+func (mo MessageOptions) VendorClass(enterpriseNumber uint32) [][]byte {
+	vo := mo.VendorClasses()
+	for _, v := range vo {
+		if v.EnterpriseNumber == enterpriseNumber {
+			return v.Data
+		}
+	}
+	return nil
+}
+
 // VendorOpts returns the all vendor-specific options.
 //
 // RFC 8415 Section 21.17:
