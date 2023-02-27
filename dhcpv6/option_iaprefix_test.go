@@ -1,87 +1,150 @@
 package dhcpv6
 
 import (
-	"bytes"
+	"errors"
+	"fmt"
 	"net"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"github.com/u-root/uio/uio"
 )
 
-func TestOptIAPrefix(t *testing.T) {
-	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
-		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                                             // prefixLength
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, // ipv6Prefix
-	}
-	var opt OptIAPrefix
-	if err := opt.FromBytes(buf); err != nil {
-		t.Fatal(err)
-	}
-	want := &OptIAPrefix{
-		PreferredLifetime: 0xaabbccdd * time.Second,
-		ValidLifetime:     0xeeff0011 * time.Second,
-		Prefix: &net.IPNet{
-			Mask: net.CIDRMask(36, 128),
-			IP:   net.IPv6loopback,
+func TestIAPrefixParseAndGetter(t *testing.T) {
+	for i, tt := range []struct {
+		buf  []byte
+		err  error
+		want []*OptIAPrefix
+	}{
+		{
+			buf: []byte{
+				0, 26, // IAPrefix option code
+				0, 25, // length
+				0, 0, 0, 1, // PreferredLifetime
+				0, 0, 0, 2, // ValidLifetime
+				16,                                                                        // prefix length
+				0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // v6-prefix
+			},
+			want: []*OptIAPrefix{
+				&OptIAPrefix{
+					PreferredLifetime: 1 * time.Second,
+					ValidLifetime:     2 * time.Second,
+					Prefix: &net.IPNet{
+						IP:   net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						Mask: net.CIDRMask(16, 128),
+					},
+					Options: PrefixOptions{Options: Options{}},
+				},
+			},
 		},
-		Options: PrefixOptions{[]Option{}},
-	}
-	if !reflect.DeepEqual(want, &opt) {
-		t.Errorf("parseIAPrefix = %v, want %v", opt, want)
-	}
-}
-
-func TestOptIAPrefixToBytes(t *testing.T) {
-	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
-		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                                             // prefixLength
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
-		0, 8, 0, 2, 0x00, 0x01, // options
-	}
-	opt := OptIAPrefix{
-		PreferredLifetime: 0xaabbccdd * time.Second,
-		ValidLifetime:     0xeeff0011 * time.Second,
-		Prefix: &net.IPNet{
-			Mask: net.CIDRMask(36, 128),
-			IP:   net.IPv6zero,
+		{
+			buf: []byte{
+				0, 26, // IAPrefix option code
+				0, 25, // length
+				0, 0, 0, 1, // PreferredLifetime
+				0, 0, 0, 2, // ValidLifetime
+				0,                                              // prefix length
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // v6-prefix
+			},
+			want: []*OptIAPrefix{
+				&OptIAPrefix{
+					PreferredLifetime: 1 * time.Second,
+					ValidLifetime:     2 * time.Second,
+					Prefix:            nil,
+					Options:           PrefixOptions{Options: Options{}},
+				},
+			},
 		},
-		Options: PrefixOptions{[]Option{OptElapsedTime(10 * time.Millisecond)}},
-	}
-	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, buf) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
-	}
-}
+		{
+			buf: []byte{
+				0, 26, // IAPrefix option code
+				0, 25, // length
+				0, 0, 0, 1, // PreferredLifetime
+				0, 0, 0, 2, // ValidLifetime
+				16,                                                                        // prefix length
+				0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // v6-prefix
 
-func TestOptIAPrefixToBytesDefault(t *testing.T) {
-	buf := []byte{
-		0, 0, 0, 0, // preferredLifetime
-		0, 0, 0, 0, // validLifetime
-		0,                                              // prefixLength
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // ipv6Prefix
-	}
-	opt := OptIAPrefix{}
-	toBytes := opt.ToBytes()
-	if !bytes.Equal(toBytes, buf) {
-		t.Fatalf("Invalid ToBytes result. Expected %v, got %v", buf, toBytes)
-	}
-}
+				0, 26, // IAPrefix option code
+				0, 25, // length
+				0, 0, 0, 15, // PreferredLifetime
+				0, 0, 0, 14, // ValidLifetime
+				32,                                                                        // prefix length
+				0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // v6-prefix
+			},
+			want: []*OptIAPrefix{
+				&OptIAPrefix{
+					PreferredLifetime: 1 * time.Second,
+					ValidLifetime:     2 * time.Second,
+					Prefix: &net.IPNet{
+						IP:   net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						Mask: net.CIDRMask(16, 128),
+					},
+					Options: PrefixOptions{Options: Options{}},
+				},
+				&OptIAPrefix{
+					PreferredLifetime: 15 * time.Second,
+					ValidLifetime:     14 * time.Second,
+					Prefix: &net.IPNet{
+						IP:   net.IP{0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0},
+						Mask: net.CIDRMask(32, 128),
+					},
+					Options: PrefixOptions{Options: Options{}},
+				},
+			},
+		},
+		{
+			buf:  []byte{0, 3, 0, 1, 0},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+		{
+			buf: []byte{
+				0, 26, // IAPrefix option code
+				0, 8, // length
+				1, 0, 0, 0, // T1
+				0, 0, 0, 1, // T2
+				// truncated from here
+			},
+			want: nil,
+			err:  uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0, 26, // IANA option code
+				0, 26, // length
+				0, 0, 0, 1, // T1
+				0, 0, 0, 2, // T2
+				8,
+				0x24, 1, 0xdb, 0, 0x30, 0x10, 0xc0, 0x8f, 0xfa, 0xce, 0, 0, 0, 0x44, 0, 0, // IPv6
+				0, // malformed options
+			},
+			want: nil,
+			err:  uio.ErrUnreadBytes,
+		},
+	} {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var mo PDOptions
+			if err := mo.FromBytes(tt.buf); !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if got := mo.Prefixes(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Prefixes = %#v, want %#v", got, tt.want)
+			}
 
-func TestOptIAPrefixParseInvalidTooShort(t *testing.T) {
-	buf := []byte{
-		0xaa, 0xbb, 0xcc, 0xdd, // preferredLifetime
-		0xee, 0xff, 0x00, 0x11, // validLifetime
-		36,                  // prefixLength
-		0, 0, 0, 0, 0, 0, 0, // truncated ipv6Prefix
-	}
-	var opt OptIAPrefix
-	if err := opt.FromBytes(buf); err == nil {
-		t.Fatalf("ParseOptIAPrefix: Expected error on truncated option, got %v", opt)
+			if len(tt.want) >= 1 {
+				var b PDOptions
+				for _, iana := range tt.want {
+					b.Add(iana)
+				}
+				got := b.ToBytes()
+				if diff := cmp.Diff(tt.buf, got); diff != "" {
+					t.Errorf("ToBytes mismatch (-want, +got): %s", diff)
+				}
+			}
+		})
 	}
 }
 
