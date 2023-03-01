@@ -42,6 +42,16 @@ func TestParseClassIdentifier(t *testing.T) {
 		},
 		{name: "juniperNoSerial", vc: "Juniper-qfx10008", fail: true},
 		{
+			name: "juniperHostnameSerialv2",
+			vc:   "Juniper:ttttt-ttt:D12345",
+			want: &VendorData{VendorName: "Juniper", Model: "ttttt-ttt", Serial: "D12345"},
+		},
+		{
+			name: "juniperHostnameSerialv2Invalid",
+			vc:   "Juniper:1",
+			fail: true,
+		},
+		{
 			name: "zpe",
 			vc:   "ZPESystems:NSC:001234567",
 			want: &VendorData{VendorName: "ZPESystems", Model: "NSC", Serial: "001234567"},
