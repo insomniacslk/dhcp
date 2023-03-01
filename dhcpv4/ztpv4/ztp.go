@@ -68,6 +68,16 @@ func parseClassIdentifier(packet *dhcpv4.DHCPv4) (*VendorData, error) {
 
 		vd.VendorName = p[0]
 		return vd, nil
+	// Juniper:tttt-ttt:DN817
+	case strings.HasPrefix(vc, "Juniper:"):
+		p := strings.Split(vc, ":")
+		if len(p) == 3 {
+			vd.VendorName = p[0]
+			vd.Model = p[1]
+			vd.Serial = p[2]
+			return vd, nil
+		}
+		return nil, fmt.Errorf("%w got '%s'", errVendorOptionMalformed, vc)
 
 	// For Ciena the class identifier (opt 60) is written in the following format:
 	//    {vendor iana code}-{product}-{type}
