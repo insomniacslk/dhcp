@@ -96,9 +96,9 @@ func TestIAPrefixParseAndGetter(t *testing.T) {
 			},
 		},
 		{
-			buf:  []byte{0, 3, 0, 1, 0},
+			buf:  []byte{0, 26, 0, 1, 0},
 			want: nil,
-			err:  uio.ErrUnreadBytes,
+			err:  uio.ErrBufferTooShort,
 		},
 		{
 			buf: []byte{

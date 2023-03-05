@@ -80,9 +80,6 @@ func (op *OptIAAddress) FromBytes(data []byte) error {
 	t2.Unmarshal(buf)
 	op.PreferredLifetime = t1.Duration
 	op.ValidLifetime = t2.Duration
-
-	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
-		return err
-	}
+	op.Options.Unmarshal(buf)
 	return buf.FinError()
 }

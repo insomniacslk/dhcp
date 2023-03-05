@@ -43,9 +43,7 @@ func (op *OptVendorOpts) LongString(indent int) string {
 func (op *OptVendorOpts) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 	op.EnterpriseNumber = buf.Read32()
-	if err := op.VendorOpts.FromBytesWithParser(buf.ReadAll(), vendParseOption); err != nil {
-		return err
-	}
+	op.VendorOpts.UnmarshalWithParser(buf, vendParseOption)
 	return buf.FinError()
 }
 

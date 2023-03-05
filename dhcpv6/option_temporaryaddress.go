@@ -43,9 +43,6 @@ func (op *OptIATA) LongString(indentSpace int) string {
 func (op *OptIATA) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
 	buf.ReadBytes(op.IaId[:])
-
-	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
-		return err
-	}
+	op.Options.Unmarshal(buf)
 	return buf.FinError()
 }

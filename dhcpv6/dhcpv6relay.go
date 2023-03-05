@@ -82,10 +82,16 @@ type RelayMessage struct {
 // FromBytes parses a relay message from a byte stream.
 func (r *RelayMessage) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
+	r.Unmarshal(buf)
+	return buf.FinError()
+}
+
+// Unmarshal parses a relay message from a buf.
+func (r *RelayMessage) Unmarshal(buf *uio.Lexer) {
 	messageType := MessageType(buf.Read8())
 
 	if messageType != MessageTypeRelayForward && messageType != MessageTypeRelayReply {
-		return fmt.Errorf("wrong message type")
+		buf.SetError(fmt.Errorf("wrong message type"))
 	}
 
 	r.MessageType = messageType
@@ -93,14 +99,8 @@ func (r *RelayMessage) FromBytes(data []byte) error {
 	r.LinkAddr = net.IP(buf.CopyN(net.IPv6len))
 	r.PeerAddr = net.IP(buf.CopyN(net.IPv6len))
 
-	if buf.Error() != nil {
-		return fmt.Errorf("error parsing RelayMessage header: %w", buf.Error())
-	}
 	// TODO: fail if no OptRelayMessage is present.
-	if err := r.Options.FromBytes(buf.Data()); err != nil {
-		return err
-	}
-	return nil
+	r.Options.Unmarshal(buf)
 }
 
 func write16(b *uio.Lexer, ip net.IP) {

@@ -96,8 +96,6 @@ func (op *OptIAPrefix) FromBytes(data []byte) error {
 			IP:   ip,
 		}
 	}
-	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
-		return err
-	}
+	op.Options.Unmarshal(buf)
 	return buf.FinError()
 }
