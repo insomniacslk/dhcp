@@ -94,7 +94,7 @@ func (r *RelayMessage) FromBytes(data []byte) error {
 	r.PeerAddr = net.IP(buf.CopyN(net.IPv6len))
 
 	if buf.Error() != nil {
-		return fmt.Errorf("error parsing RelayMessage header: %v", buf.Error())
+		return fmt.Errorf("error parsing RelayMessage header: %w", buf.Error())
 	}
 	// TODO: fail if no OptRelayMessage is present.
 	if err := r.Options.FromBytes(buf.Data()); err != nil {

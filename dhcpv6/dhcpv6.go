@@ -60,10 +60,18 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	}
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		return RelayMessageFromBytes(data)
-	} else {
-		return MessageFromBytes(data)
+		r, err := RelayMessageFromBytes(data)
+		if err != nil {
+			return nil, err
+		}
+		return r, nil
 	}
+
+	m, err := MessageFromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // NewMessage creates a new DHCPv6 message with default options
