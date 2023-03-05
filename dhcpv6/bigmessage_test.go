@@ -100,3 +100,18 @@ func TestPrint(t *testing.T) {
 	t.Log(r.String())
 	t.Log(r.Summary())
 }
+
+func BenchmarkToBytes(b *testing.B) {
+	_, r := makeBigMessage()
+	for i := 0; i < b.N; i++ {
+		_ = r.ToBytes()
+	}
+}
+
+func BenchmarkFromBytes(b *testing.B) {
+	_, r := makeBigMessage()
+	buf := r.ToBytes()
+	for i := 0; i < b.N; i++ {
+		_, _ = FromBytes(buf)
+	}
+}
