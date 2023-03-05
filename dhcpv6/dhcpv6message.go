@@ -361,6 +361,26 @@ type Message struct {
 	Options       MessageOptions
 }
 
+// FromBytes parses a DHCPv6 message from a byte stream.
+func (m *Message) FromBytes(data []byte) error {
+	buf := uio.NewBigEndianBuffer(data)
+	messageType := MessageType(buf.Read8())
+
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
+		return fmt.Errorf("wrong message type")
+	}
+
+	m.MessageType = messageType
+	buf.ReadBytes(m.TransactionID[:])
+	if buf.Error() != nil {
+		return fmt.Errorf("failed to parse DHCPv6 header: %w", buf.Error())
+	}
+	if err := m.Options.FromBytes(buf.Data()); err != nil {
+		return err
+	}
+	return nil
+}
+
 var randomRead = rand.Read
 
 // GenerateTransactionID generates a random 3-byte transaction ID.

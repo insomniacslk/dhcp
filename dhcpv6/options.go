@@ -9,10 +9,9 @@ import (
 
 // Option is an interface that all DHCPv6 options adhere to.
 type Option interface {
+	Serializable
+
 	Code() OptionCode
-	ToBytes() []byte
-	String() string
-	FromBytes([]byte) error
 }
 
 type OptionGeneric struct {
