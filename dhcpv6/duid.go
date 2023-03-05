@@ -11,10 +11,8 @@ import (
 
 // DUID is the interface that all DUIDs adhere to.
 type DUID interface {
-	fmt.Stringer
+	Serializable
 
-	ToBytes() []byte
-	FromBytes(p []byte) error
 	DUIDType() DUIDType
 	Equal(d DUID) bool
 }

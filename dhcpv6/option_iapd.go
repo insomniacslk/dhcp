@@ -93,9 +93,6 @@ func (op *OptIAPD) FromBytes(data []byte) error {
 	t2.Unmarshal(buf)
 	op.T1 = t1.Duration
 	op.T2 = t2.Duration
-
-	if err := op.Options.FromBytes(buf.ReadAll()); err != nil {
-		return err
-	}
+	op.Options.Unmarshal(buf)
 	return buf.FinError()
 }

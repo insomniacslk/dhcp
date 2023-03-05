@@ -10,9 +10,9 @@ import (
 )
 
 type DHCPv6 interface {
+	Serializable
+
 	Type() MessageType
-	ToBytes() []byte
-	String() string
 	Summary() string
 	LongString(indent int) string
 	IsRelay() bool
@@ -35,50 +35,20 @@ type Modifier func(d DHCPv6)
 
 // MessageFromBytes parses a DHCPv6 message from a byte stream.
 func MessageFromBytes(data []byte) (*Message, error) {
-	buf := uio.NewBigEndianBuffer(data)
-	messageType := MessageType(buf.Read8())
-
-	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		return nil, fmt.Errorf("wrong message type")
-	}
-
-	d := &Message{
-		MessageType: messageType,
-	}
-	buf.ReadBytes(d.TransactionID[:])
-	if buf.Error() != nil {
-		return nil, fmt.Errorf("failed to parse DHCPv6 header: %w", buf.Error())
-	}
-	if err := d.Options.FromBytes(buf.Data()); err != nil {
+	var m Message
+	if err := m.FromBytes(data); err != nil {
 		return nil, err
 	}
-	return d, nil
+	return &m, nil
 }
 
 // RelayMessageFromBytes parses a relay message from a byte stream.
 func RelayMessageFromBytes(data []byte) (*RelayMessage, error) {
-	buf := uio.NewBigEndianBuffer(data)
-	messageType := MessageType(buf.Read8())
-
-	if messageType != MessageTypeRelayForward && messageType != MessageTypeRelayReply {
-		return nil, fmt.Errorf("wrong message type")
-	}
-
-	d := &RelayMessage{
-		MessageType: messageType,
-		HopCount:    buf.Read8(),
-	}
-	d.LinkAddr = net.IP(buf.CopyN(net.IPv6len))
-	d.PeerAddr = net.IP(buf.CopyN(net.IPv6len))
-
-	if buf.Error() != nil {
-		return nil, fmt.Errorf("Error parsing RelayMessage header: %v", buf.Error())
-	}
-	// TODO: fail if no OptRelayMessage is present.
-	if err := d.Options.FromBytes(buf.Data()); err != nil {
+	var r RelayMessage
+	if err := r.FromBytes(data); err != nil {
 		return nil, err
 	}
-	return d, nil
+	return &r, nil
 }
 
 // FromBytes reads a DHCPv6 message from a byte stream.
@@ -90,10 +60,18 @@ func FromBytes(data []byte) (DHCPv6, error) {
 	}
 
 	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
-		return RelayMessageFromBytes(data)
-	} else {
-		return MessageFromBytes(data)
+		r, err := RelayMessageFromBytes(data)
+		if err != nil {
+			return nil, err
+		}
+		return r, nil
 	}
+
+	m, err := MessageFromBytes(data)
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // NewMessage creates a new DHCPv6 message with default options

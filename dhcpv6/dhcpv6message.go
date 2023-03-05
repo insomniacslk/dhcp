@@ -361,6 +361,26 @@ type Message struct {
 	Options       MessageOptions
 }
 
+// FromBytes parses a DHCPv6 message from a byte stream.
+func (m *Message) FromBytes(data []byte) error {
+	buf := uio.NewBigEndianBuffer(data)
+	m.Unmarshal(buf)
+	return buf.FinError()
+}
+
+// Unmarshal parses a DHCPv6 message from buf.
+func (m *Message) Unmarshal(buf *uio.Lexer) {
+	messageType := MessageType(buf.Read8())
+
+	if messageType == MessageTypeRelayForward || messageType == MessageTypeRelayReply {
+		buf.SetError(fmt.Errorf("wrong message type"))
+	}
+
+	m.MessageType = messageType
+	buf.ReadBytes(m.TransactionID[:])
+	m.Options.Unmarshal(buf)
+}
+
 var randomRead = rand.Read
 
 // GenerateTransactionID generates a random 3-byte transaction ID.

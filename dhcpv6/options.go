@@ -9,10 +9,9 @@ import (
 
 // Option is an interface that all DHCPv6 options adhere to.
 type Option interface {
+	Serializable
+
 	Code() OptionCode
-	ToBytes() []byte
-	String() string
-	FromBytes([]byte) error
 }
 
 type OptionGeneric struct {
@@ -33,6 +32,11 @@ func (og *OptionGeneric) String() string {
 		return og.OptionCode.String()
 	}
 	return fmt.Sprintf("%s: %v", og.OptionCode, og.OptionData)
+}
+
+// Unmarshal copies all data from buf into OptionData.
+func (og *OptionGeneric) Unmarshal(buf *uio.Lexer) {
+	og.OptionData = buf.ReadAll()
 }
 
 // FromBytes resets OptionData to p.
@@ -218,21 +222,34 @@ func (o *Options) FromBytes(data []byte) error {
 	return o.FromBytesWithParser(data, ParseOption)
 }
 
+// Unmarshal reads data into o and returns an error if the options are not a
+// valid serialized representation of DHCPv6 options per RFC 3315.
+func (o *Options) Unmarshal(buf *uio.Lexer) {
+	o.UnmarshalWithParser(buf, ParseOption)
+}
+
 // OptionParser is a function signature for option parsing
 type OptionParser func(code OptionCode, data []byte) (Option, error)
 
 // FromBytesWithParser parses Options from byte sequences using the parsing
 // function that is passed in as a paremeter
 func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
+	buf := uio.NewBigEndianBuffer(data)
+	o.UnmarshalWithParser(buf, parser)
+	return buf.FinError()
+}
+
+// UnmarshalWithParser parses Options from byte sequences using the parsing
+// function that is passed in as a paremeter
+func (o *Options) UnmarshalWithParser(buf *uio.Lexer, parser OptionParser) {
 	if *o == nil {
 		*o = make(Options, 0, 10)
 	}
-	if len(data) == 0 {
+	if len(buf.Data()) == 0 {
 		// no options, no party
-		return nil
+		return
 	}
 
-	buf := uio.NewBigEndianBuffer(data)
 	for buf.Has(4) {
 		code := OptionCode(buf.Read16())
 		length := int(buf.Read16())
@@ -243,9 +260,9 @@ func (o *Options) FromBytesWithParser(data []byte, parser OptionParser) error {
 
 		opt, err := parser(code, optData)
 		if err != nil {
-			return err
+			buf.SetError(err)
+			return
 		}
 		*o = append(*o, opt)
 	}
-	return buf.FinError()
 }

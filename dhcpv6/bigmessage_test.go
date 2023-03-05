@@ -9,7 +9,7 @@ import (
 	"github.com/insomniacslk/dhcp/iana"
 )
 
-func TestPrint(t *testing.T) {
+func makeBigMessage() (*Message, *RelayMessage) {
 	m4, _ := dhcpv4.NewDiscovery(net.HardwareAddr{0x1, 0x2, 0xde, 0xad, 0xbe, 0xef})
 
 	m, _ := NewSolicit(net.HardwareAddr{0x1, 0x2, 0xde, 0xad, 0xbe, 0xef}, WithRapidCommit)
@@ -80,10 +80,8 @@ func TestPrint(t *testing.T) {
 		WithOption(&OptVendorClass{EnterpriseNumber: 300, Data: [][]byte{[]byte("foo"), []byte("bar")}}),
 		WithOption(vendorOpts),
 	)
-	t.Log(adv.String())
-	t.Log(adv.Summary())
 
-	relayfw := RelayMessage{
+	relayfw := &RelayMessage{
 		MessageType: MessageTypeRelayForward,
 	}
 	relayfw.Options.Add(OptRelayMessage(adv))
@@ -91,6 +89,29 @@ func TestPrint(t *testing.T) {
 		EnterpriseNumber: 0x123,
 		RemoteID:         []byte{0x1, 0x2},
 	})
-	t.Log(relayfw.String())
-	t.Log(relayfw.Summary())
+	return adv, relayfw
+}
+
+func TestPrint(t *testing.T) {
+	m, r := makeBigMessage()
+	t.Log(m.String())
+	t.Log(m.Summary())
+
+	t.Log(r.String())
+	t.Log(r.Summary())
+}
+
+func BenchmarkToBytes(b *testing.B) {
+	_, r := makeBigMessage()
+	for i := 0; i < b.N; i++ {
+		_ = r.ToBytes()
+	}
+}
+
+func BenchmarkFromBytes(b *testing.B) {
+	_, r := makeBigMessage()
+	buf := r.ToBytes()
+	for i := 0; i < b.N; i++ {
+		_, _ = FromBytes(buf)
+	}
 }

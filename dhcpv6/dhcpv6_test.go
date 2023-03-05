@@ -1,9 +1,11 @@
 package dhcpv6
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"net"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"github.com/u-root/uio/rand"
+	"github.com/u-root/uio/uio"
 )
 
 func randomReadMock(value []byte, n int, err error) func([]byte) (int, error) {
@@ -130,32 +133,109 @@ func TestToBytes(t *testing.T) {
 }
 
 func TestFromAndToBytes(t *testing.T) {
-	expected := [][]byte{
-		{01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00},
-		[]byte("0000\x00\x01\x00\x0e\x00\x01000000000000"),
-	}
 	t.Parallel()
-	for i, packet := range expected {
+	for i, tt := range []struct {
+		buf  []byte
+		want DHCPv6
+		err  error
+	}{
+		{
+			buf: []byte{0x01, 0xab, 0xcd, 0xef},
+			want: &Message{
+				MessageType:   MessageTypeSolicit,
+				TransactionID: [3]byte{0xab, 0xcd, 0xef},
+				Options:       MessageOptions{Options: Options{}},
+			},
+		},
+		{
+			buf: []byte{0x01, 0xab, 0xcd, 0xef, 0x00, 0x00, 0x00, 0x00},
+			want: &Message{
+				MessageType:   MessageTypeSolicit,
+				TransactionID: [3]byte{0xab, 0xcd, 0xef},
+				Options: MessageOptions{Options: Options{
+					&OptionGeneric{OptionCode: 0},
+				}},
+			},
+		},
+		{
+			buf: []byte{
+				0, 0, 0, 0,
+				0, 1, // ClientID
+				0, 14, // Length
+				0, 1, // DUID_LLT
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0,
+			},
+			want: &Message{
+				MessageType:   MessageTypeNone,
+				TransactionID: [3]byte{0, 0, 0},
+				Options: MessageOptions{Options: Options{
+					OptClientID(&DUIDLLT{HWType: 0, Time: 0, LinkLayerAddr: []byte{0, 0, 0, 0, 0, 0}}),
+				}},
+			},
+		},
+		{
+			buf: nil,
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{30}, // Message
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{12}, // RelayMessage
+			err: uio.ErrBufferTooShort,
+		},
+		{
+			buf: []byte{
+				0x0c,
+				0,                                              // hopcount
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // LinkAddr
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PeerAddr
+				0x00, 0x00, 0x00, 0x00,
+			},
+			want: &RelayMessage{
+				MessageType: MessageTypeRelayForward,
+				LinkAddr:    net.ParseIP("::"),
+				PeerAddr:    net.ParseIP("::"),
+				Options: RelayOptions{Options: Options{
+					&OptionGeneric{OptionCode: 0},
+				}},
+			},
+		},
+		{
+			// Message, option missing length.
+			buf: []byte{0x01, 0xab, 0xcd, 0xef, 0x00, 0x00},
+			err: uio.ErrUnreadBytes,
+		},
+		{
+			// RelayMessage, option missing length.
+			buf: []byte{
+				0x0c,
+				0,                                              // hopcount
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // LinkAddr
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // PeerAddr
+				0x00, 0x00,
+			},
+			err: uio.ErrUnreadBytes,
+		},
+	} {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			d, err := FromBytes(packet)
-			require.NoError(t, err)
-			toBytes := d.ToBytes()
-			require.Equal(t, packet, toBytes)
-		})
-	}
-}
+			got, err := FromBytes(tt.buf)
+			if !errors.Is(err, tt.err) {
+				t.Errorf("FromBytes = %v, want %v", err, tt.err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("FromBytes = %#v, want %#v", got, tt.want)
+			}
 
-func TestFromBytesInvalid(t *testing.T) {
-	expected := [][]byte{
-		{},
-		{30},
-		{12},
-	}
-	t.Parallel()
-	for i, packet := range expected {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			_, err := FromBytes(packet)
-			require.Error(t, err)
+			if tt.want != nil {
+				gotb := tt.want.ToBytes()
+				if !bytes.Equal(gotb, tt.buf) {
+					t.Errorf("ToBytes = %v, want %v", gotb, tt.buf)
+				}
+			}
 		})
 	}
 }

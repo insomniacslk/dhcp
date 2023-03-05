@@ -4,6 +4,14 @@ import (
 	"fmt"
 )
 
+// Serializable is any type that can be encoded to or decoded from DHCPv6 messages.
+type Serializable interface {
+	fmt.Stringer
+
+	ToBytes() []byte
+	FromBytes([]byte) error
+}
+
 // TransactionID is a DHCPv6 Transaction ID defined by RFC 3315, Section 6.
 type TransactionID [3]byte
 
