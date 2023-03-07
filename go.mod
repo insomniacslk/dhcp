@@ -12,7 +12,7 @@ require (
 	github.com/mdlayher/raw v0.0.0-20191009151244-50f2db8cc065
 	github.com/stretchr/testify v1.6.1
 	github.com/u-root/uio v0.0.0-20230220225925-ffce2a382923
-	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+	golang.org/x/net v0.7.0
 	golang.org/x/sys v0.5.0
 )
 
