@@ -266,23 +266,22 @@ func TestDHCPv4NewRequestFromOfferWithModifier(t *testing.T) {
 	require.Equal(t, MessageTypeRequest, req.MessageType())
 }
 
-func TestDHCPv4NewRenewFromOffer(t *testing.T) {
-	offer, err := New()
+func TestDHCPv4NewRenewFromAck(t *testing.T) {
+	ack, err := New()
 	require.NoError(t, err)
-	offer.SetBroadcast()
-	offer.UpdateOption(OptMessageType(MessageTypeOffer))
-	offer.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
-	offer.UpdateOption(OptRequestedIPAddress(net.IPv4(192, 168, 0, 1)))
-	offer.YourIPAddr = net.IPv4(192, 168, 0, 1)
+	ack.SetBroadcast()
+	ack.UpdateOption(OptMessageType(MessageTypeAck))
+	ack.UpdateOption(OptServerIdentifier(net.IPv4(192, 168, 0, 1)))
+	ack.YourIPAddr = net.IPv4(192, 168, 0, 1)
 
-	// RFC 2131: RENEW-style requests will be unicast
 	var req *DHCPv4
-	req, err = NewRenewFromOffer(offer)
+	req, err = NewRenewFromAck(ack)
 	require.NoError(t, err)
 	require.Equal(t, MessageTypeRequest, req.MessageType())
 	require.Nil(t, req.GetOneOption(OptionServerIdentifier))
 	require.Nil(t, req.GetOneOption(OptionRequestedIPAddress))
-	require.Equal(t, offer.YourIPAddr, req.ClientIPAddr)
+	require.Equal(t, ack.YourIPAddr, req.ClientIPAddr)
+	// RFC 2131: RENEW-style requests will be unicast
 	require.True(t, req.IsUnicast())
 	require.False(t, req.IsBroadcast())
 	// Renewals should behave identically to initial requests regarding requested options
@@ -292,12 +291,12 @@ func TestDHCPv4NewRenewFromOffer(t *testing.T) {
 	require.True(t, req.IsOptionRequested(OptionDomainNameServer))
 }
 
-func TestDHCPv4NewRenewFromOfferWithModifier(t *testing.T) {
-	offer, err := New()
+func TestDHCPv4NewRenewFromAckWithModifier(t *testing.T) {
+	ack, err := New()
 	require.NoError(t, err)
-	offer.UpdateOption(OptMessageType(MessageTypeOffer))
+	ack.UpdateOption(OptMessageType(MessageTypeAck))
 	userClass := WithUserClass("linuxboot", false)
-	req, err := NewRenewFromOffer(offer, userClass)
+	req, err := NewRenewFromAck(ack, userClass)
 	require.NoError(t, err)
 	require.Equal(t, MessageTypeRequest, req.MessageType())
 	require.Contains(t, req.UserClass(), "linuxboot")
