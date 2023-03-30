@@ -13,9 +13,9 @@ import (
 	"io"
 	"net"
 
-	"github.com/mdlayher/ethernet"
 	"github.com/mdlayher/packet"
 	"github.com/u-root/uio/uio"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -39,7 +39,7 @@ func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawConn, err := packet.Listen(ifc, packet.Datagram, int(ethernet.EtherTypeIPv4), nil)
+	rawConn, err := packet.Listen(ifc, packet.Datagram, unix.ETH_P_IP, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +152,8 @@ func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	}
 
 	// Using the boundAddr is not quite right here, but it works.
-	packet := udp4pkt(b, udpAddr, upc.boundAddr)
+	pkt := udp4pkt(b, udpAddr, upc.boundAddr)
 
 	// Broadcasting is not always right, but hell, what the ARP do I know.
-	return upc.PacketConn.WriteTo(packet, &packet.Addr{HardwareAddr: BroadcastMac})
+	return upc.PacketConn.WriteTo(pkt, &packet.Addr{HardwareAddr: BroadcastMac})
 }
