@@ -14,7 +14,7 @@ import (
 	"net"
 
 	"github.com/mdlayher/ethernet"
-	"github.com/mdlayher/raw"
+	"github.com/mdlayher/packet"
 	"github.com/u-root/uio/uio"
 )
 
@@ -39,7 +39,7 @@ func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	rawConn, err := raw.ListenPacket(ifc, uint16(ethernet.EtherTypeIPv4), &raw.Config{LinuxSockDGRAM: true})
+	rawConn, err := packet.Listen(ifc, packet.Datagram, int(ethernet.EtherTypeIPv4), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -155,5 +155,5 @@ func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	packet := udp4pkt(b, udpAddr, upc.boundAddr)
 
 	// Broadcasting is not always right, but hell, what the ARP do I know.
-	return upc.PacketConn.WriteTo(packet, &raw.Addr{HardwareAddr: BroadcastMac})
+	return upc.PacketConn.WriteTo(packet, &packet.Addr{HardwareAddr: BroadcastMac})
 }
