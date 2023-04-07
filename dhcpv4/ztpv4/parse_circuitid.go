@@ -37,6 +37,8 @@ var circuitRegexs = []*regexp.Regexp{
 	regexp.MustCompile("^Ethernet(?P<slot>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Juniper bundle interface ae52.0
 	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
+	// Arista bundle interface Port-Channel1
+	regexp.MustCompile("^Port-Channel(?P<port>[0-9]+)$"),
 	// Ciena interface format
 	regexp.MustCompile(`\.OSC(-[0-9]+)?-(?P<slot>[0-9]+)-(?P<port>[0-9]+)$`),
 }

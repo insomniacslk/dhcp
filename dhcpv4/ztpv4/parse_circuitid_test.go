@@ -24,6 +24,7 @@ func TestMatchCircuitID(t *testing.T) {
 		{name: "Arista Vlan pattern 2", circuit: "Ethernet10:2020", want: &CircuitID{Port: "10", Vlan: "2020"}},
 		{name: "Cisco pattern", circuit: "Gi1/10:2020", want: &CircuitID{Slot: "1", Port: "10", Vlan: "2020"}},
 		{name: "Cisco Nexus pattern", circuit: "Ethernet1/3", want: &CircuitID{Slot: "1", Port: "3"}},
+		{name: "Arista Portchannel Pattern", circuit: "Port-Channel10", want: &CircuitID{Port: "10"}},
 		{name: "Juniper Bundle Pattern", circuit: "ae52.0", want: &CircuitID{Port: "52", SubPort: "0"}},
 		{name: "Juniper EX device pattern", circuit: "ge-0/0/0.0:RANDOMCHAR", want: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}},
 	}
@@ -58,6 +59,7 @@ func TestFormatCircuitID(t *testing.T) {
 		{name: "Arista Vlan pattern 2", circuit: &CircuitID{Port: "10", Vlan: "2020"}, want: ",,10,,2020"},
 		{name: "Cisco Nexus pattern", circuit: &CircuitID{Slot: "1", Port: "3"}, want: "1,,3,,"},
 		{name: "Juniper Bundle Pattern", circuit: &CircuitID{Port: "52", SubPort: "0"}, want: ",,52,0,"},
+		{name: "Arista Portchannel Pattern", circuit: &CircuitID{Port: "10"}, want: ",,10,,"},
 	}
 
 	for _, tc := range tt {
@@ -87,6 +89,7 @@ func TestParseCircuitID(t *testing.T) {
 		{name: "Cisco pattern", circuit: []byte("Gi1/10:2020"), want: &CircuitID{Slot: "1", Port: "10", Vlan: "2020"}},
 		{name: "Cisco Nexus pattern", circuit: []byte("Ethernet1/3"), want: &CircuitID{Slot: "1", Port: "3"}},
 		{name: "Juniper Bundle Pattern", circuit: []byte("ae52.0"), want: &CircuitID{Port: "52", SubPort: "0"}},
+		{name: "Arista Portchannel Pattern", circuit: []byte("Port-Channel10"), want: &CircuitID{Port: "10"}},
 		{name: "Arista Vlan pattern 1 with circuitid type and length", circuit: []byte("\x00\x0fEthernet14:2001"), want: &CircuitID{Port: "14", Vlan: "2001"}},
 		{name: "juniperEX pattern", circuit: []byte("ge-0/0/0.0:RANDOMCHAR"), want: &CircuitID{Slot: "0", Module: "0", Port: "0", SubPort: "0"}},
 		{name: "Ciena pattern 1", circuit: []byte("tt-tt-tttt-6-7.OSC-1-2"), want: &CircuitID{Slot: "1", Port: "2"}},
