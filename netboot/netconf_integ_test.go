@@ -4,9 +4,9 @@ package netboot
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -34,7 +34,7 @@ func TestConfigureInterface(t *testing.T) {
 	// `NetConf.DNSServers` is set. In this test we make a backup of resolv.conf
 	// and subsequently restore it. This is really ugly, and not safe if
 	// multiple tests do the same.
-	resolvconf, err := ioutil.ReadFile("/etc/resolv.conf")
+	resolvconf, err := os.ReadFile("/etc/resolv.conf")
 	if err != nil {
 		panic(fmt.Sprintf("Failed to read /etc/resolv.conf: %v", err))
 	}
@@ -69,7 +69,7 @@ func TestConfigureInterface(t *testing.T) {
 
 			// after the test, restore the content of /etc/resolv.conf . The permissions
 			// are used only if it didn't exist.
-			if err = ioutil.WriteFile("/etc/resolv.conf", resolvconf, 0644); err != nil {
+			if err = os.WriteFile("/etc/resolv.conf", resolvconf, 0644); err != nil {
 				panic(fmt.Sprintf("Failed to restore /etc/resolv.conf: %v", err))
 			}
 			log.Printf("Restored /etc/resolv.conf")
