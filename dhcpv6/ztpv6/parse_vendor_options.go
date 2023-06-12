@@ -33,8 +33,16 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 	vData := []string{}
 
 	if opt17 != nil {
-		vo := opt17.(*dhcpv6.OptVendorOpts).VendorOpts
-		for _, opt := range vo {
+		vendorOptsOption := opt17.(*dhcpv6.OptVendorOpts)
+
+		// MLNX-OS has the relevant information spread over different sub-options
+		// of option 17 so the usual approach doesn't work
+		if vendorOptsOption.EnterpriseNumber == uint32(iana.EnterpriseIDMellanoxTechnologiesLTD) {
+			return getMellanoxVendorData(vendorOptsOption)
+		}
+
+		// rest of vendors use a single sub-option so we stringify them and parse them below
+		for _, opt := range vendorOptsOption.VendorOpts {
 			vData = append(vData, string(opt.(*dhcpv6.OptionGeneric).OptionData))
 		}
 	} else {
