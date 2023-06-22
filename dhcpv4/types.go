@@ -297,7 +297,7 @@ const (
 	OptionFORCERENEWNONCECAPABLE                optionCode = 145
 	OptionRDNSSSelection                        optionCode = 146
 	OptionOPTIONV4DOTSRI                        optionCode = 147
-	OptionOPTIONv4DOTSADDRESS                   optionCode = 148
+	OptionOPTIONv4DOTSAddress                   optionCode = 148
 	// Option 149 returned in RFC 3679
 	OptionTFTPServerAddress optionCode = 150
 	OptionStatusCode        optionCode = 151
@@ -473,7 +473,7 @@ var optionCodeToString = map[OptionCode]string{
 	OptionFORCERENEWNONCECAPABLE:                "Forcerenew Nonce Capable",
 	OptionRDNSSSelection:                        "Information for selecting RDNSS",
 	OptionOPTIONV4DOTSRI:                        "The name of the peer DOTS agent",
-	OptionOPTIONv4DOTSADDRESS:                   "IPv4 addresses of peer DOTS agent(s)",
+	OptionOPTIONv4DOTSAddress:                   "IPv4 addresses of peer DOTS agent(s)",
 	// Option 149 returned in RFC 3679
 	OptionTFTPServerAddress:  "TFTP Server Address",
 	OptionStatusCode:         "Status Code",

@@ -307,7 +307,7 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 	var d OptionDecoder
 	switch code {
 	case OptionRouter, OptionDomainNameServer, OptionNTPServers, OptionServerIdentifier,
-		OptionOPTIONv4DOTSADDRESS, OptionV4PCPSERVER:
+		OptionOPTIONv4DOTSAddress, OptionV4PCPSERVER:
 		d = &IPs{}
 
 	case OptionBroadcastAddress, OptionRequestedIPAddress:
