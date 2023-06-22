@@ -27,15 +27,25 @@ type MessageType byte
 const (
 	// MessageTypeNone is not a real message type, it is used by certain
 	// functions to signal that no explicit message type is requested
-	MessageTypeNone     MessageType = 0
-	MessageTypeDiscover MessageType = 1
-	MessageTypeOffer    MessageType = 2
-	MessageTypeRequest  MessageType = 3
-	MessageTypeDecline  MessageType = 4
-	MessageTypeAck      MessageType = 5
-	MessageTypeNak      MessageType = 6
-	MessageTypeRelease  MessageType = 7
-	MessageTypeInform   MessageType = 8
+	MessageTypeNone             MessageType = 0
+	MessageTypeDiscover         MessageType = 1
+	MessageTypeOffer            MessageType = 2
+	MessageTypeRequest          MessageType = 3
+	MessageTypeDecline          MessageType = 4
+	MessageTypeAck              MessageType = 5
+	MessageTypeNak              MessageType = 6
+	MessageTypeRelease          MessageType = 7
+	MessageTypeInform           MessageType = 8
+	MessageTypeForceRenew       MessageType = 9
+	MessageTypeLeaseQuery       MessageType = 10
+	MessageTypeLeaseUnassigned  MessageType = 11
+	MessageTypeLeaseUnknown     MessageType = 12
+	MessageTypeLeaseActive      MessageType = 13
+	MessageTypeBulkLeaseQuery   MessageType = 14
+	MessageTypeLeaseQueryDone   MessageType = 15
+	MessageTyepActiveLeaseQuery MessageType = 16
+	MessageTypeLeaseQueryStatus MessageType = 17
+	MessageTypeTLS              MessageType = 18
 )
 
 // ToBytes returns the serialized version of this option described by RFC 2132,
@@ -61,14 +71,24 @@ func (m *MessageType) FromBytes(data []byte) error {
 }
 
 var messageTypeToString = map[MessageType]string{
-	MessageTypeDiscover: "DISCOVER",
-	MessageTypeOffer:    "OFFER",
-	MessageTypeRequest:  "REQUEST",
-	MessageTypeDecline:  "DECLINE",
-	MessageTypeAck:      "ACK",
-	MessageTypeNak:      "NAK",
-	MessageTypeRelease:  "RELEASE",
-	MessageTypeInform:   "INFORM",
+	MessageTypeDiscover:         "DISCOVER",
+	MessageTypeOffer:            "OFFER",
+	MessageTypeRequest:          "REQUEST",
+	MessageTypeDecline:          "DECLINE",
+	MessageTypeAck:              "ACK",
+	MessageTypeNak:              "NAK",
+	MessageTypeRelease:          "RELEASE",
+	MessageTypeInform:           "INFORM",
+	MessageTypeForceRenew:       "FORCERENEW",
+	MessageTypeLeaseQuery:       "LEASEQUERY",
+	MessageTypeLeaseUnassigned:  "LEASEUNASSIGNED",
+	MessageTypeLeaseUnknown:     "LEASEUNKNOWN",
+	MessageTypeLeaseActive:      "LEASEACTIVE",
+	MessageTypeBulkLeaseQuery:   "BULKLEASEQUEARY",
+	MessageTypeLeaseQueryDone:   "LEASEQUERYDONE",
+	MessageTyepActiveLeaseQuery: "ACTIVELEASEQUERY",
+	MessageTypeLeaseQueryStatus: "LEASEQUERYSTATUS",
+	MessageTypeTLS:              "TLS",
 }
 
 // OpcodeType represents a DHCPv4 opcode.
@@ -238,7 +258,10 @@ const (
 	OptionGeoConfCivic                optionCode = 99
 	OptionIEEE10031TZString           optionCode = 100
 	OptionReferenceToTZDatabase       optionCode = 101
-	// Options 102-111 returned in RFC 3679
+	// Options 102-107 returned in RFC 3679
+	OptionIPv6OnlyPreferred     optionCode = 108
+	OptionDHCP4O6S46SADDR       optionCode = 109
+	// Options 110-111 returned in RFC 3679
 	OptionNetInfoParentServerAddress optionCode = 112
 	OptionNetInfoParentServerTag     optionCode = 113
 	OptionURL                        optionCode = 114
@@ -270,7 +293,12 @@ const (
 	OptionSIPUAConfigurationServiceDomains      optionCode = 141
 	OptionOPTIONIPv4AddressANDSF                optionCode = 142
 	OptionOPTIONIPv6AddressANDSF                optionCode = 143
-	// Options 144-149 returned in RFC 3679
+	OptionGeoLoc                                optionCode = 144
+	OptionFORCERENEWNONCECAPABLE                optionCode = 145
+	OptionRDNSSSelection                        optionCode = 146
+	OptionOPTIONV4DOTSRI                        optionCode = 147
+	OptionOPTIONv4DOTSAddress                   optionCode = 148
+	// Option 149 returned in RFC 3679
 	OptionTFTPServerAddress optionCode = 150
 	OptionStatusCode        optionCode = 151
 	OptionBaseTime          optionCode = 152
@@ -279,7 +307,12 @@ const (
 	OptionQueryEndTime      optionCode = 155
 	OptionDHCPState         optionCode = 156
 	OptionDataSource        optionCode = 157
-	// Options 158-174 returned in RFC 3679
+	OptionV4PCPSERVER       optionCode = 158
+	OptionOPTIONV4PORTPARAMS optionCode = 159
+	// Option 160 returned in RFC 3679
+	OptionMUDURLV4 optionCode = 161
+	OptionV4DNR    optionCode = 162
+	// Options 163-174 returned in RFC 3679
 	OptionEtherboot                        optionCode = 175
 	OptionIPTelephone                      optionCode = 176
 	OptionEtherbootPacketCableAndCableHome optionCode = 177
@@ -401,7 +434,10 @@ var optionCodeToString = map[OptionCode]string{
 	OptionGeoConfCivic:                "GEOCONF_CIVIC",
 	OptionIEEE10031TZString:           "IEEE 1003.1 TZ String",
 	OptionReferenceToTZDatabase:       "Reference to the TZ Database",
-	// Options 102-111 returned in RFC 3679
+	// Options 102-107 returned in RFC 3679
+	OptionIPv6OnlyPreferred: "Number of seconds that DHCPv4 should be disabled",
+	OptionDHCP4O6S46SADDR:   "DHCPv4 over DHCPv6 Softwire Source Address Option",
+	// Options 110-111 returned in RFC 3679
 	OptionNetInfoParentServerAddress: "NetInfo Parent Server Address",
 	OptionNetInfoParentServerTag:     "NetInfo Parent Server Tag",
 	OptionURL:                        "URL",
@@ -433,16 +469,26 @@ var optionCodeToString = map[OptionCode]string{
 	OptionSIPUAConfigurationServiceDomains:      "SIP UA Configuration Service Domains",
 	OptionOPTIONIPv4AddressANDSF:                "OPTION-IPv4_Address-ANDSF",
 	OptionOPTIONIPv6AddressANDSF:                "OPTION-IPv6_Address-ANDSF",
-	// Options 144-149 returned in RFC 3679
-	OptionTFTPServerAddress: "TFTP Server Address",
-	OptionStatusCode:        "Status Code",
-	OptionBaseTime:          "Base Time",
-	OptionStartTimeOfState:  "Start Time of State",
-	OptionQueryStartTime:    "Query Start Time",
-	OptionQueryEndTime:      "Query End Time",
-	OptionDHCPState:         "DHCP Staet",
-	OptionDataSource:        "Data Source",
-	// Options 158-174 returned in RFC 3679
+	OptionGeoLoc:                                "Geospatial Location with Uncertainty",
+	OptionFORCERENEWNONCECAPABLE:                "Forcerenew Nonce Capable",
+	OptionRDNSSSelection:                        "Information for selecting RDNSS",
+	OptionOPTIONV4DOTSRI:                        "The name of the peer DOTS agent",
+	OptionOPTIONv4DOTSAddress:                   "IPv4 addresses of peer DOTS agent(s)",
+	// Option 149 returned in RFC 3679
+	OptionTFTPServerAddress:  "TFTP Server Address",
+	OptionStatusCode:         "Status Code",
+	OptionBaseTime:           "Base Time",
+	OptionStartTimeOfState:   "Start Time of State",
+	OptionQueryStartTime:     "Query Start Time",
+	OptionQueryEndTime:       "Query End Time",
+	OptionDHCPState:          "DHCP Staet",
+	OptionDataSource:         "Data Source",
+	OptionV4PCPSERVER:        "PCP server IP addresses",
+	OptionOPTIONV4PORTPARAMS: "DHCPv4 Port Parameters",
+	// Options 160 returned in RFC 3679
+	OptionMUDURLV4: "Manufacturer Usage Description URL",
+	OptionV4DNR:    "Encrypted DNS Server",
+	// Options 163-174 returned in RFC 3679
 	OptionEtherboot:                        "Etherboot",
 	OptionIPTelephone:                      "IP Telephone",
 	OptionEtherbootPacketCableAndCableHome: "Etherboot / PacketCable and CableHome",

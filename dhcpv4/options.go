@@ -306,7 +306,8 @@ type OptionDecoder interface {
 func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.Stringer {
 	var d OptionDecoder
 	switch code {
-	case OptionRouter, OptionDomainNameServer, OptionNTPServers, OptionServerIdentifier:
+	case OptionRouter, OptionDomainNameServer, OptionNTPServers, OptionServerIdentifier,
+		OptionOPTIONv4DOTSAddress, OptionV4PCPSERVER:
 		d = &IPs{}
 
 	case OptionBroadcastAddress, OptionRequestedIPAddress:
@@ -326,7 +327,8 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 		d = &OptionCodeList{}
 
 	case OptionHostName, OptionDomainName, OptionRootPath,
-		OptionClassIdentifier, OptionTFTPServerName, OptionBootfileName:
+		OptionClassIdentifier, OptionTFTPServerName, OptionBootfileName,
+		OptionOPTIONV4DOTSRI, OptionMUDURLV4:
 		var s String
 		d = &s
 
@@ -336,7 +338,7 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 	case OptionDNSDomainSearchList:
 		d = &rfc1035label.Labels{}
 
-	case OptionIPAddressLeaseTime:
+	case OptionIPAddressLeaseTime, OptionIPv6OnlyPreferred:
 		var dur Duration
 		d = &dur
 

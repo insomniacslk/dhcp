@@ -36,10 +36,24 @@ const (
 	MessageTypeLeaseQueryReply    MessageType = 15
 	MessageTypeLeaseQueryDone     MessageType = 16
 	MessageTypeLeaseQueryData     MessageType = 17
-	_                             MessageType = 18
-	_                             MessageType = 19
+	MessageTypeReconfigureRequest MessageType = 18
+	MessageTypeReconfigureReply   MessageType = 19
 	MessageTypeDHCPv4Query        MessageType = 20
 	MessageTypeDHCPv4Response     MessageType = 21
+	MessageTypeActiveLeaseQuery   MessageType = 22
+	MessapeTypeSTARTTLS           MessageType = 23
+	MessageTypeBndUpd             MessageType = 24
+	MessageTypeBndReply           MessageType = 25
+	MessageTypePoolReq            MessageType = 26
+	MessageTypePoolResp           MessageType = 27
+	MessageTypeUpdReq             MessageType = 28
+	MessageTypeUpdReqAll          MessageType = 29
+	MessageTypeUpdDone            MessageType = 30
+	MessageTypeConnect            MessageType = 31
+	MessageTypeConnectReply       MessageType = 32
+	MessageTypeDisconnect         MessageType = 33
+	MessageTypeState              MessageType = 34
+	MessageTypeContact            MessageType = 35
 )
 
 // String prints the message type name.
@@ -70,8 +84,24 @@ var messageTypeToStringMap = map[MessageType]string{
 	MessageTypeLeaseQueryReply:    "LEASEQUERY-REPLY",
 	MessageTypeLeaseQueryDone:     "LEASEQUERY-DONE",
 	MessageTypeLeaseQueryData:     "LEASEQUERY-DATA",
+        MessageTypeReconfigureRequest: "RECONFIGURE-REQUEST",
+        MessageTypeReconfigureReply:   "RECONFIGURE-REPLY",
 	MessageTypeDHCPv4Query:        "DHCPv4-QUERY",
 	MessageTypeDHCPv4Response:     "DHCPv4-RESPONSE",
+        MessageTypeActiveLeaseQuery:   "ACTIVELEASEQUERY",
+        MessapeTypeSTARTTLS:           "STARTTLS",
+        MessageTypeBndUpd:             "BNDUPD",
+        MessageTypeBndReply:           "BNDREPLY",
+        MessageTypePoolReq:            "POOLREQ",
+        MessageTypePoolResp:           "POOLRESP",
+        MessageTypeUpdReq:             "UPDREQ",
+        MessageTypeUpdReqAll:          "UPDREQALL",
+        MessageTypeUpdDone:            "UPDDONE",
+        MessageTypeConnect:            "CONNECT",
+        MessageTypeConnectReply:       "CONNECTREPLY",
+        MessageTypeDisconnect:         "DISCONNECT",
+        MessageTypeState:              "STATE",
+        MessageTypeContact:            "CONTACT",
 }
 
 // OptionCode is a single byte representing the code for a given Option.
@@ -224,12 +254,16 @@ const (
 	OptionRelayPort                               OptionCode = 135
 	OptionV6SZTPRedirect                          OptionCode = 136
 	OptionS46BindIPv6Prefix                       OptionCode = 137
-	_                                             OptionCode = 138
-	_                                             OptionCode = 139
-	_                                             OptionCode = 140
-	_                                             OptionCode = 141
-	_                                             OptionCode = 142
+	OptionIaLL                                    OptionCode = 138
+	OptionLLAddr                                  OptionCode = 139
+	OptionSlapQuad                                OptionCode = 140
+	OptionV6DotsRi                                OptionCode = 141
+	OptionV6DotsAddress                           OptionCode = 142
 	OptionIPv6AddressANDSF                        OptionCode = 143
+	OptionV6DNR                                   OptionCode = 144
+	OptionRegisteredDomain                        OptionCode = 145
+	OptionForwardDistManager                      OptionCode = 146
+	OptionReverseDistManager                      OptionCode = 147
 )
 
 // optionCodeToString maps DHCPv6 OptionCodes to human-readable strings.
@@ -369,5 +403,14 @@ var optionCodeToString = map[OptionCode]string{
 	OptionRelayPort:                               "Relay Source Port",
 	OptionV6SZTPRedirect:                          "IPv6 Secure Zerotouch Provisioning Redirect",
 	OptionS46BindIPv6Prefix:                       "Softwire46 Source Binding Prefix Hint",
+	OptionIaLL:                                    "Identity Association for Link-Layer Addresses",
+	OptionLLAddr:                                  "Link-Layer Addresses",
+	OptionSlapQuad:                                "Structured Local Address Plan (SLAP) Quadrant Selection",
+	OptionV6DotsRi:                                "DDoS Open Threat Signaling (DOTS) Reference Identifier Option",
+	OptionV6DotsAddress:                           "DDoS Open Threat Signaling (DOTS) Address",
 	OptionIPv6AddressANDSF:                        "IPv6 Access Network Discovery and Selection Function Address",
+	OptionV6DNR:                                   "Encrypted DNS",
+	OptionRegisteredDomain:                        "Registered Homenet Domain",
+	OptionForwardDistManager:                      "Forward Distribution Manager",
+	OptionReverseDistManager:                      "Reverse Distribution Manager",
 }
