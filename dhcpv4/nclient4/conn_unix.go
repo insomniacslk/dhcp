@@ -105,14 +105,15 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		}
 
 		ipHdr := ipv4(buf.Data())
+		headerLength := ipHdr.headerLength()
 
-		if !buf.Has(int(ipHdr.headerLength())) {
+		if !buf.Has(int(headerLength)) {
 			continue
 		}
 
-		ipHdr = ipv4(buf.Consume(int(ipHdr.headerLength())))
+		ipHdr = ipv4(buf.Consume(int(headerLength)))
 
-		if ipHdr.transportProtocol() != udpProtocolNumber {
+		if headerLength <= protocol || ipHdr.transportProtocol() != udpProtocolNumber {
 			continue
 		}
 
