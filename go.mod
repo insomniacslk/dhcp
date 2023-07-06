@@ -1,4 +1,4 @@
-module github.com/insomniacslk/dhcp
+module github.com/Boneyan/dhcp
 
 go 1.18
 
