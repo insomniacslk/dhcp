@@ -139,3 +139,36 @@ func TestNestedCompressedLabel(t *testing.T) {
 	_, err := FromBytes(data)
 	require.Error(t, err)
 }
+
+func FuzzLabel(f *testing.F) {
+
+	f.Add([]byte{0x5, 0xaa, 0xbb})
+	f.Add([]byte{0x3, 0xaa, 0xbb})
+
+	data_0 := []byte{
+		// slackware.it
+		9, 's', 'l', 'a', 'c', 'k', 'w', 'a', 'r', 'e',
+		2, 'i', 't',
+		0,
+		// insomniac.slackware.it
+		9, 'i', 'n', 's', 'o', 'm', 'n', 'i', 'a', 'c',
+		192, 0,
+		// mail.systemboot.org
+		4, 'm', 'a', 'i', 'l',
+		10, 's', 'y', 's', 't', 'e', 'm', 'b', 'o', 'o', 't',
+		3, 'o', 'r', 'g',
+		0,
+		// systemboot.org
+		192, 31,
+	}
+
+	f.Add(data_0)
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		labels, err := FromBytes(data)
+		if err != nil {
+			return
+		}
+		labels.ToBytes()
+	})
+}
