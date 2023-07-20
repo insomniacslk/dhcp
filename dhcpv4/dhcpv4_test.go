@@ -412,3 +412,47 @@ func Test_withIP(t *testing.T) {
 	b := buff.Buffer
 	require.Equal(t, b.Len(), 4, "Testing no of bytes written by writeIP func")
 }
+
+func FuzzDHCPv4(f *testing.F) {
+
+	data_0 := []byte{
+		1,                      // dhcp request
+		1,                      // ethernet hw type
+		6,                      // hw addr length
+		3,                      // hop count
+		0xaa, 0xbb, 0xcc, 0xdd, // transaction ID, big endian (network)
+		0, 3, // number of seconds
+		0, 1, // broadcast
+		0, 0, 0, 0, // client IP address
+		0, 0, 0, 0, // your IP address
+		0, 0, 0, 0, // server IP address
+		0, 0, 0, 0, // gateway IP address
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // client MAC address + padding
+	}
+
+	data_1 := []byte{
+		1,                      // dhcp request
+		1,                      // ethernet hw type
+		6,                      // hw addr length
+		0,                      // hop count
+		0xaa, 0xbb, 0xcc, 0xdd, // transaction ID
+		3, 0, // number of seconds
+		1, 0, // broadcast
+		0, 0, 0, 0, // client IP address
+		0, 0, 0, 0, // your IP address
+		0, 0, 0, 0, // server IP address
+		0, 0, 0, 0, // gateway IP address
+		0xff, 0xee, 0xdd, 0xcc, 0xbb, 0xaa, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // client MAC address + padding
+	}
+
+	f.Add(data_0)
+	f.Add(data_1)
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		msg, err := FromBytes(data)
+		if err != nil {
+			return
+		}
+		msg.ToBytes()
+	})
+}
