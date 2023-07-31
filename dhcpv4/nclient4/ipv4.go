@@ -27,17 +27,16 @@ import (
 )
 
 const (
-	versIHL        = 0
-	tos            = 1
-	totalLen       = 2
-	id             = 4
-	flagsFO        = 6
-	ttl            = 8
-	protocol       = 9
-	checksumOff    = 10
-	srcAddr        = 12
-	dstAddr        = 16
-	ipVersionShift = 4
+	versIHL     = 0
+	tos         = 1
+	totalLen    = 2
+	id          = 4
+	flagsFO     = 6
+	ttl         = 8
+	protocol    = 9
+	checksumOff = 10
+	srcAddr     = 12
+	dstAddr     = 16
 )
 
 // transportProtocolNumber is the number of a transport protocol.
@@ -102,7 +101,7 @@ const (
 	ipv4Version = 4
 )
 
-// IPVersion returns the version of IP used in the given packet. It returns -1
+// ipVersion returns the version of IP used in the given packet. It returns -1
 // if the packet is not large enough to contain the version field.
 func ipVersion(b []byte) int {
 	// Length must be at least offset+length of version field.
@@ -112,24 +111,9 @@ func ipVersion(b []byte) int {
 	return int(b[versIHL] >> ipVersionShift)
 }
 
-// IsValid performs basic validation on the packet.
-func (b ipv4) isValid(pktSize int) bool {
-	if len(b) < ipv4MinimumSize {
-		return false
-	}
-
-	hlen := int(b.headerLength())
-	tlen := int(b.totalLength())
-	if hlen < ipv4MinimumSize || hlen > tlen || tlen > pktSize {
-		return false
-	}
-
-	if ipVersion(b) != ipv4Version {
-		return false
-	}
-
-	return true
-}
+const (
+	ipVersionShift = 4
+)
 
 // headerLength returns the value of the "header length" field of the ipv4
 // header.
@@ -202,6 +186,25 @@ func (b ipv4) encode(i *ipv4Fields) {
 	b.setChecksum(i.checksum)
 	copy(b[srcAddr:srcAddr+ipv4AddressSize], i.SrcAddr)
 	copy(b[dstAddr:dstAddr+ipv4AddressSize], i.DstAddr)
+}
+
+// isValid performs basic validation on the packet.
+func (b ipv4) isValid(pktSize int) bool {
+	if len(b) < ipv4MinimumSize {
+		return false
+	}
+
+	hlen := int(b.headerLength())
+	tlen := int(b.totalLength())
+	if hlen < ipv4MinimumSize || hlen > tlen || tlen > pktSize {
+		return false
+	}
+
+	if ipVersion(b) != ipv4Version {
+		return false
+	}
+
+	return true
 }
 
 const (
