@@ -99,14 +99,9 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		pkt = pkt[:n]
 		buf := uio.NewBigEndianBuffer(pkt)
 
-		// To read the header length, access data directly.
-		if !buf.Has(ipv4MinimumSize) {
-			continue
-		}
-
 		ipHdr := ipv4(buf.Data())
 
-		if !buf.Has(int(ipHdr.headerLength())) {
+		if !ipHdr.isValid(n) {
 			continue
 		}
 
