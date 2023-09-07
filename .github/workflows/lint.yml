@@ -13,20 +13,8 @@ jobs:
     name: golangci-lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2
-        with:
-          version: latest
-
-          # Optional: golangci-lint command line arguments.
-          # args: --issues-exit-code=0
-
-          # Optional: show only new issues if it's a pull request. The default value is `false`.
-          # only-new-issues: true
-
-          # Optional: if set to true then the action will use pre-installed Go
-          # skip-go-installation: true
+      - uses: actions/checkout@v4
+      - uses: golangci/golangci-lint-action@v3
 #  checklicenses:
 #    name: checklicenses
 #    runs-on: ubuntu-latest
