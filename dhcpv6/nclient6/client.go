@@ -17,6 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	"github.com/insomniacslk/dhcp/dhcpv6"
 )
 
@@ -52,7 +53,7 @@ type Client struct {
 	ifaceHWAddr net.HardwareAddr
 	conn        net.PacketConn
 	timeout     time.Duration
-	retry       int
+	retry       uint64
 	logger      logger
 
 	// bufferCap is the channel capacity for each TransactionID.
@@ -272,7 +273,7 @@ func WithLogDroppedPackets() ClientOpt {
 // WithRetry configures the number of retransmissions to attempt.
 //
 // Default is 3.
-func WithRetry(r int) ClientOpt {
+func WithRetry(r uint64) ClientOpt {
 	return func(c *Client) {
 		c.retry = r
 	}
@@ -443,7 +444,8 @@ var errDeadlineExceeded = errors.New("INTERNAL ERROR: deadline exceeded")
 // If match is nil, the first packet matching the Transaction ID is returned.
 func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6.Message, match Matcher) (*dhcpv6.Message, error) {
 	var response *dhcpv6.Message
-	err := c.retryFn(func(timeout time.Duration) error {
+	timeout := c.timeout
+	err := backoff.Retry(func() error {
 		ch, rem, err := c.send(dest, msg)
 		if err != nil {
 			return err
@@ -457,6 +459,7 @@ func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6
 				return ErrNoResponse
 
 			case <-time.After(timeout):
+				timeout *= 2
 				return errDeadlineExceeded
 
 			case <-ctx.Done():
@@ -470,7 +473,7 @@ func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6
 				}
 			}
 		}
-	})
+	}, backoff.WithContext(backoff.WithMaxRetries(backoff.NewExponentialBackOff(), c.retry), ctx))
 	if err == errDeadlineExceeded {
 		return nil, ErrNoResponse
 	}
@@ -478,26 +481,4 @@ func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6
 		return nil, err
 	}
 	return response, nil
-}
-
-func (c *Client) retryFn(fn func(timeout time.Duration) error) error {
-	timeout := c.timeout
-
-	// Each retry takes the amount of timeout at worst.
-	for i := 0; i < c.retry || c.retry < 0; i++ {
-		switch err := fn(timeout); err {
-		case nil:
-			// Got it!
-			return nil
-
-		case errDeadlineExceeded:
-			// Double timeout, then retry.
-			timeout *= 2
-
-		default:
-			return err
-		}
-	}
-
-	return errDeadlineExceeded
 }
