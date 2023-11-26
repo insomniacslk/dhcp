@@ -44,7 +44,7 @@ func RequestNetbootv6(ifname string, timeout time.Duration, retries int, modifie
 
 		client := client6.NewClient()
 		client.ReadTimeout = timeout
-		conversation, err = client.Exchange(ifname, modifiers...)
+		conversation, err = client.Exchange(ifname, dhcpv6.WithDefault(), modifiers...)
 		if err != nil {
 			log.Printf("Client.Exchange failed: %v", err)
 			if i >= retries {
@@ -74,7 +74,7 @@ func RequestNetbootv4(ifname string, timeout time.Duration, retries int, modifie
 		log.Printf("sending request, attempt #%d", i+1)
 		client := client4.NewClient()
 		client.ReadTimeout = timeout
-		conversation, err = client.Exchange(ifname, modifiers...)
+		conversation, err = client.Exchange(ifname, dhcpv4.WithDefault(), modifiers...)
 		if err != nil {
 			log.Printf("Client.Exchange failed: %v", err)
 			log.Printf("sleeping %v before retrying", delay)

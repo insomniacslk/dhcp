@@ -39,12 +39,12 @@ func NewClient() *Client {
 // Reply). The modifiers will be applied to the Solicit and Request packets.
 // A common use is to make sure that the Solicit packet has the right options,
 // see modifiers.go
-func (c *Client) Exchange(ifname string, modifiers ...dhcpv6.Modifier) ([]dhcpv6.DHCPv6, error) {
+func (c *Client) Exchange(ifname string, selector dhcpv6.Selector, modifiers ...dhcpv6.Modifier) ([]dhcpv6.DHCPv6, error) {
 	conversation := make([]dhcpv6.DHCPv6, 0)
 	var err error
 
 	// Solicit
-	solicit, advertise, err := c.Solicit(ifname, modifiers...)
+	solicit, advertise, err := c.Solicit(ifname, selector, modifiers...)
 	if solicit != nil {
 		conversation = append(conversation, solicit)
 	}
@@ -72,7 +72,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv6.Modifier) ([]dhcpv6
 	return conversation, nil
 }
 
-func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType dhcpv6.MessageType) (dhcpv6.DHCPv6, error) {
+func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType dhcpv6.MessageType, selector dhcpv6.Selector) (dhcpv6.DHCPv6, error) {
 	if packet == nil {
 		return nil, fmt.Errorf("Packet to send cannot be nil")
 	}
@@ -191,6 +191,9 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 				// different XID, we don't want this packet for sure
 				continue
 			}
+			if !selector(recvMsg) {
+				continue
+			}
 		}
 		if expectedType == dhcpv6.MessageTypeNone {
 			// just take whatever arrived
@@ -205,7 +208,7 @@ func (c *Client) sendReceive(ifname string, packet dhcpv6.DHCPv6, expectedType d
 // Solicit sends a Solicit, returns the Solicit, an Advertise (if not nil), and
 // an error if any. The modifiers will be applied to the Solicit before sending
 // it, see modifiers.go
-func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+func (c *Client) Solicit(ifname string, selector dhcpv6.Selector, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
 	iface, err := net.InterfaceByName(ifname)
 	if err != nil {
 		return nil, nil, err
@@ -217,14 +220,14 @@ func (c *Client) Solicit(ifname string, modifiers ...dhcpv6.Modifier) (dhcpv6.DH
 	for _, mod := range modifiers {
 		mod(solicit)
 	}
-	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone)
+	advertise, err := c.sendReceive(ifname, solicit, dhcpv6.MessageTypeNone, selector)
 	return solicit, advertise, err
 }
 
 // Request sends a Request built from an Advertise. It returns the Request, a
 // Reply (if not nil), and an error if any. The modifiers will be applied to
 // the Request before sending it, see modifiers.go
-func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
+func (c *Client) Request(ifname string, advertise *dhcpv6.Message, selector dhcpv6.Selector, modifiers ...dhcpv6.Modifier) (dhcpv6.DHCPv6, dhcpv6.DHCPv6, error) {
 	request, err := dhcpv6.NewRequestFromAdvertise(advertise)
 	if err != nil {
 		return nil, nil, err
@@ -232,6 +235,6 @@ func (c *Client) Request(ifname string, advertise *dhcpv6.Message, modifiers ...
 	for _, mod := range modifiers {
 		mod(request)
 	}
-	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone)
+	reply, err := c.sendReceive(ifname, request, dhcpv6.MessageTypeNone, selector)
 	return request, reply, err
 }
