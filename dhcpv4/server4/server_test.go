@@ -5,22 +5,14 @@ package server4
 import (
 	"context"
 	"log"
-	"math/rand"
 	"net"
 	"testing"
-	"time"
 
 	"github.com/insomniacslk/dhcp/dhcpv4"
 	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
 	"github.com/insomniacslk/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	// initialize seed. This is generally bad, but "good enough"
-	// to generate random ports for these tests
-	rand.Seed(time.Now().UTC().UnixNano())
-}
 
 // DORAHandler is a server handler suitable for DORA transactions
 func DORAHandler(conn net.PacketConn, peer net.Addr, m *dhcpv4.DHCPv4) {
