@@ -737,6 +737,15 @@ func (d *DHCPv4) MaxMessageSize() (uint16, error) {
 	return GetUint16(OptionMaximumDHCPMessageSize, d.Options)
 }
 
+// AutoConfigure returns the value of the AutoConfigure option, and a
+// boolean indicating if it was present.
+//
+// The AutoConfigure option is described by RFC 2563, Section 2.
+func (d *DHCPv4) AutoConfigure() (AutoConfiguration, bool) {
+	v, err := GetByte(OptionAutoConfigure, d.Options)
+	return AutoConfiguration(v), err == nil
+}
+
 // MessageType returns the DHCPv4 Message Type option.
 func (d *DHCPv4) MessageType() MessageType {
 	v := d.Options.Get(OptionDHCPMessageType)

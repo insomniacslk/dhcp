@@ -352,6 +352,10 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 			d = &s
 		}
 
+	case OptionAutoConfigure:
+		var a AutoConfiguration
+		d = &a
+
 	case OptionVendorIdentifyingVendorClass:
 		d = &VIVCIdentifiers{}
 
