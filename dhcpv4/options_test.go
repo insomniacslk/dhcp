@@ -107,6 +107,11 @@ func TestParseOption(t *testing.T) {
 			want:  "258",
 		},
 		{
+			code:  OptionAutoConfigure,
+			value: []byte{0},
+			want:  "DoNotAutoConfigure",
+		},
+		{
 			code:  OptionUserClassInformation,
 			value: []byte{4, 't', 'e', 's', 't', 3, 'f', 'o', 'o'},
 			want:  "test, foo",
