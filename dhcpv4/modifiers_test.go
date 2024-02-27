@@ -154,6 +154,15 @@ func TestWithDNS(t *testing.T) {
 	require.Equal(t, net.ParseIP("10.0.0.2").To4(), dns[1])
 }
 
+func TestWithIPv6OnlyPreferred(t *testing.T) {
+	d, err := New(WithIPv6OnlyPreferred(300))
+	require.NoError(t, err)
+
+	v6pref, ok := d.IPv6OnlyPreferred()
+	require.True(t, ok)
+	require.Equal(t, 300*time.Second, v6pref)
+}
+
 func TestWithDomainSearchList(t *testing.T) {
 	d, err := New(WithDomainSearchList("slackware.it", "dhcp.slackware.it"))
 	require.NoError(t, err)
