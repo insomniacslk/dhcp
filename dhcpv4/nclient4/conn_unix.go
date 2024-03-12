@@ -90,7 +90,7 @@ func processVLANStack(buf *uio.Lexer, vlans []uint16) bool {
 		switch etherType := binary.BigEndian.Uint16(buf.Consume(2)); etherType {
 		case vlanTPID:
 			tci := binary.BigEndian.Uint16(buf.Consume(2))
-			vlanID := tci & vlanMax // Mask first 4 bytes
+			vlanID := tci & vlanMax // Mask first 4 bits
 			if len(configuredVLANs) != 0 {
 				currentVLAN, configuredVLANs = configuredVLANs[0], configuredVLANs[1:]
 				if vlanID != currentVLAN {
@@ -117,6 +117,13 @@ func processVLANStack(buf *uio.Lexer, vlans []uint16) bool {
 	}
 }
 
+// getEthernetPayload processes an Ethernet header, verifies the
+// VLAN tags contained in it and returns the payload as a byte slice.
+//
+// If the VLAN tag stack does not match the VLAN configuration,
+// nil is returned (since the packet is not meant for us).
+// In case the EtherType does not match the IPv4 proto value,
+// nil is returned too (since the packet could not be DHCPv4).
 func getEthernetPayload(pkt []byte, vlans []uint16) []byte {
 	buf := uio.NewBigEndianBuffer(pkt)
 	dstMac := buf.Consume(6)
@@ -138,6 +145,10 @@ func getEthernetPayload(pkt []byte, vlans []uint16) []byte {
 	return buf.Data()
 }
 
+// ReadFrom implements net.PacketConn.ReadFrom.
+//
+// ReadFrom reads raw IP packets and will try to match them against
+// upc.boundAddr. Any matching packets are returned via the given buffer.
 func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	ethHdrLen := ethHdrMinimum
 	if len(upc.VLANs) > 0 {
@@ -156,9 +167,9 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 			return 0, nil, io.EOF
 		}
 
-		// We're only interested in properly tagged packets
 		pkt = getEthernetPayload(pkt[:n], upc.VLANs)
 		if pkt == nil {
+			// VLAN stack does not match our configuration
 			continue
 		}
 		dhcpPkt, srcAddr := getUDP4pkt(pkt[:n], upc.boundAddr)
@@ -170,8 +181,8 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	}
 }
 
-// createVLANTag returns the bytes of a 4-byte long VLAN tag, which can be inserted
-// in an Ethernet frame header.
+// createVLANTag returns the bytes of a 4-byte long 802.1Q VLAN tag,
+// which can be inserted in an Ethernet frame header.
 func createVLANTag(vlan uint16) []byte {
 	vlanTag := make([]byte, vlanTagLen)
 	// First 2 bytes are the TPID. Only support 802.1Q for now (even for QinQ, 802.1ad is rarely used)
@@ -179,11 +190,11 @@ func createVLANTag(vlan uint16) []byte {
 
 	var pcp, dei, tci uint16
 	// TCI - tag control information, 2 bytes. Format: | PCP (3 bits) | DEI (1 bit) | VLAN ID (12 bits) |
-	pcp = 0x0 // 802.1p priority level - 3 bits, valid values range from 0x0 to 0x7. 0x0 - best effort
-	dei = 0x0 // drop eligible indicator - 1 bit, valid values are 0x0 or 0x1. 0x0 - not drop eligible
-	tci |= pcp << 13
-	tci |= dei << 12
-	tci |= vlan
+	pcp = 0x0        // 802.1p priority level - 3 bits, valid values range from 0x0 to 0x7. 0x0 - best effort
+	dei = 0x0        // drop eligible indicator - 1 bit, valid values are 0x0 or 0x1. 0x0 - not drop eligible
+	tci |= pcp << 13 // 16-3 = 13 offset
+	tci |= dei << 12 // 13-1 = 12 offset
+	tci |= vlan      // VLAN ID (VID) is 12 bits
 	binary.BigEndian.PutUint16(vlanTag[2:], tci)
 
 	return vlanTag
@@ -202,6 +213,7 @@ func addEthernetHdr(b []byte, dstMac, srcMac net.HardwareAddr, etherProto uint16
 	offset += len(dstMac)
 	copy(b[offset:], srcMac)
 	offset += len(srcMac)
+
 	for _, vlan := range vlans {
 		copy(b[offset:], createVLANTag(vlan))
 		offset += vlanTagLen
@@ -217,8 +229,7 @@ func addEthernetHdr(b []byte, dstMac, srcMac net.HardwareAddr, etherProto uint16
 //
 // WriteTo wraps the given packet in the appropriate UDP, IP and Ethernet header
 // before sending it on the packet conn. Since the Ethernet encapsulation is done
-// on the application's side, this implementation does not work well with VLAN
-// tagging and such.
+// on the application's side, VLAN tagging also has to be handled in the application.
 func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	udpAddr, ok := addr.(*net.UDPAddr)
 	if !ok {
