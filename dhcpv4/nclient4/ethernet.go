@@ -1,6 +1,5 @@
-//go:build go1.12 && (darwin || freebsd || netbsd || openbsd || dragonfly)
+//go:build go1.12
 // +build go1.12
-// +build darwin freebsd netbsd openbsd dragonfly
 
 package nclient4
 
@@ -27,7 +26,7 @@ const (
 // processVLANStack returns true if the VLAN stack in the packet corresponds to the VLAN configuration, false otherwise
 func processVLANStack(buf *uio.Lexer, vlans []uint16) bool {
 	var currentVLAN uint16
-	var vlanStackIsCorrect bool
+	var vlanStackIsCorrect bool = true
 	configuredVLANs := make([]uint16, len(vlans))
 	copy(configuredVLANs, vlans)
 
@@ -48,8 +47,8 @@ func processVLANStack(buf *uio.Lexer, vlans []uint16) bool {
 			}
 		case etherIPv4Proto:
 			if len(configuredVLANs) == 0 {
-				// Packet VLAN stack has been correctly consumed
-				vlanStackIsCorrect = true
+				// Packet VLAN stack has been consumed, return result
+				return vlanStackIsCorrect
 			} else {
 				// VLAN tags remaining in configured stack -> not a match
 				vlanStackIsCorrect = false
