@@ -12,7 +12,7 @@ import (
 
 const (
 	etherIPv4Proto uint16 = 0x0800
-	ethHdrMinimum  int    = 14
+	ethHdrBaseLen  int    = 14
 
 	vlanTagLen int    = 4
 	vlanMax    uint16 = 0x0FFF
@@ -118,7 +118,7 @@ func createVLANTag(vlan uint16) []byte {
 // addEthernetHdr returns the supplied packet (in bytes) with an
 // added Ethernet header with the specified EtherType.
 func addEthernetHdr(b []byte, dstMac, srcMac net.HardwareAddr, etherProto uint16, vlans []uint16) []byte {
-	ethHdrLen := ethHdrMinimum
+	ethHdrLen := ethHdrBaseLen
 	if len(vlans) > 0 {
 		ethHdrLen += len(vlans) * vlanTagLen
 	}

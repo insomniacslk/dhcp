@@ -82,7 +82,7 @@ func TestProcessVLANStack(t *testing.T) {
 }
 
 func TestCreateVLANTag(t *testing.T) {
-	// Gopacket builds VLAN tags the other way around: first VLAN ID/TCI, then TPID, due to their different layered approach
+	// gopacket builds VLAN tags the other way around: first VLAN ID/TCI, then TPID, due to their different layered approach
 	// Since a VLAN tag is only 4 bytes, and the value is well-known, it makes sense to just construct the packet by hand.
 	want := []byte{0x81, 0x00, 0x01, 0x23}
 
@@ -135,7 +135,7 @@ func TestGetEthernetPayload(t *testing.T) {
 	}
 }
 
-func TestAddEthernetHdrTwo(t *testing.T) {
+func TestAddEthernetHdr(t *testing.T) {
 	for _, tt := range []struct {
 		name       string
 		testLayers []gopacket.SerializableLayer

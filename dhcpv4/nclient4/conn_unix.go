@@ -21,6 +21,8 @@ var rawConnectionConfig = &raw.Config{
 
 // NewRawUDPConn returns a UDP connection bound to the interface and port
 // given based on a raw packet socket. All packets are broadcasted.
+//
+// The interface can be completely unconfigured.
 func NewRawUDPConn(iface string, port int, vlans ...uint16) (net.PacketConn, error) {
 	ifc, err := net.InterfaceByName(iface)
 	if err != nil {
@@ -34,6 +36,7 @@ func NewRawUDPConn(iface string, port int, vlans ...uint16) (net.PacketConn, err
 		etherType = etherIPv4Proto
 	}
 
+	// Create a bidirectional raw socket on ifc with etherType as the filter
 	rawConn, err := raw.ListenPacket(ifc, etherType, rawConnectionConfig)
 	if err != nil {
 		return nil, err
@@ -66,12 +69,12 @@ func NewBroadcastUDPConn(rawPacketConn net.PacketConn, boundAddr *net.UDPAddr, v
 
 // ReadFrom implements net.PacketConn.ReadFrom.
 //
-// ReadFrom reads raw Ethernet packets, parses the VLAN stack (if configured)
-// and will try to match the IP+UDP destinations against upc.boundAddr.
+// ReadFrom reads raw Ethernet frames, parses and matches the VLAN stack (if configured),
+// and will try to match the remaining IP packet against upc.boundAddr.
 //
 // Any matching packets are returned via the given buffer.
 func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
-	ethHdrLen := ethHdrMinimum
+	ethHdrLen := ethHdrBaseLen
 	if len(upc.VLANs) > 0 {
 		ethHdrLen += len(upc.VLANs) * vlanTagLen
 	}
