@@ -1,3 +1,6 @@
+//go:build go1.12
+// +build go1.12
+
 package nclient4
 
 import (
@@ -5,13 +8,6 @@ import (
 	"net"
 
 	"github.com/u-root/uio/uio"
-)
-
-var (
-	// BroadcastMac is the broadcast MAC address.
-	//
-	// Any UDP packet sent to this address is broadcast on the subnet.
-	BroadcastMac = net.HardwareAddr([]byte{255, 255, 255, 255, 255, 255})
 )
 
 var (

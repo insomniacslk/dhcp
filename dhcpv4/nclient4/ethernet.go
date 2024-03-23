@@ -19,11 +19,18 @@ const (
 	vlanTPID   uint16 = 0x8100
 )
 
+var (
+	// BroadcastMac is the broadcast MAC address.
+	//
+	// Any UDP packet sent to this address is broadcast on the subnet.
+	BroadcastMac = net.HardwareAddr([]byte{255, 255, 255, 255, 255, 255})
+)
+
 // processVLANStack receives a buffer starting at the first TPID/EtherType field, and walks through
 // the VLAN stack until either an unexpected VLAN is found, or if an IPv4 EtherType is found.
-// The data from the provided buffer is consumed until the end of the Ethernet header
+// The data from the provided buffer is consumed until the end of the Ethernet header.
 //
-// processVLANStack returns true if the VLAN stack in the packet corresponds to the VLAN configuration, false otherwise
+// processVLANStack returns true if the VLAN stack in the packet corresponds to the VLAN configuration, false otherwise.
 func processVLANStack(buf *uio.Lexer, vlans []uint16) bool {
 	var currentVLAN uint16
 	var vlanStackIsCorrect bool = true
