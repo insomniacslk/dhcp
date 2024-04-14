@@ -483,7 +483,7 @@ func (d *DHCPv4) IsOptionRequested(requested OptionCode) bool {
 	}
 
 	for _, o := range rq {
-		if o == requested {
+		if o.Code() == requested.Code() {
 			return true
 		}
 	}
