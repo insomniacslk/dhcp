@@ -378,6 +378,19 @@ func TestIsOptionRequested(t *testing.T) {
 	require.True(t, pkt.IsOptionRequested(OptionDomainNameServer))
 }
 
+func TestIsGenericOptionRequested(t *testing.T) {
+	pkt, err := New()
+	require.NoError(t, err)
+
+	var genericOption224 = GenericOptionCode(224)
+	var genericOption225 = GenericOptionCode(225)
+	pkt.UpdateOption(OptParameterRequestList(OptionBroadcastAddress, genericOption224))
+	require.True(t, pkt.IsOptionRequested(OptionBroadcastAddress))
+	require.False(t, pkt.IsOptionRequested(OptionSwapServer))
+	require.True(t, pkt.IsOptionRequested(genericOption224), "Did not detect generic option 224 in <%v>", pkt.ParameterRequestList())
+	require.False(t, pkt.IsOptionRequested(genericOption225), "Detected generic option 225 in <%v>", pkt.ParameterRequestList())
+}
+
 // TODO
 //      test Summary() and String()
 func TestSummary(t *testing.T) {
