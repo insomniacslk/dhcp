@@ -179,14 +179,17 @@ func TestOptionsMarshal(t *testing.T) {
 		},
 		{
 			// Test sorted key order.
+			// RFC 3046 section 2.1 states that option 82 SHALL come last.
 			opts: Options{
 				5:   []byte{1, 2, 3},
+				82:  []byte{201, 202, 203},
 				100: []byte{101, 102, 103},
 				255: []byte{},
 			},
 			want: []byte{
 				5, 3, 1, 2, 3,
 				100, 3, 101, 102, 103,
+				82, 3, 201, 202, 203,
 			},
 		},
 		{

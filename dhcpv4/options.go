@@ -110,8 +110,9 @@ func (o Options) FromBytes(data []byte) error {
 }
 
 const (
-	optPad = 0
-	optEnd = 255
+	optPad       = 0
+	optAgentInfo = 82
+	optEnd       = 255
 )
 
 // FromBytesCheckEnd parses Options from byte sequences using the
@@ -176,11 +177,28 @@ func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
 func (o Options) sortedKeys() []int {
 	// Send all values for a given key
 	var codes []int
+	var hasOptAgentInfo, hasOptEnd bool
 	for k := range o {
+		// RFC 3046 section 2.1 states that option 82 SHALL come last (ignoring End).
+		if k == optAgentInfo {
+			hasOptAgentInfo = true
+			continue
+		}
+		if k == optEnd {
+			hasOptEnd = true
+			continue
+		}
 		codes = append(codes, int(k))
 	}
 
 	sort.Ints(codes)
+
+	if hasOptAgentInfo {
+		codes = append(codes, optAgentInfo)
+	}
+	if hasOptEnd {
+		codes = append(codes, optEnd)
+	}
 	return codes
 }
 
