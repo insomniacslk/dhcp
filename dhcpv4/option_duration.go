@@ -39,3 +39,8 @@ func (d Duration) String() string {
 func OptIPAddressLeaseTime(d time.Duration) Option {
 	return Option{Code: OptionIPAddressLeaseTime, Value: Duration(d)}
 }
+
+// The IPv6-Only Preferred option is described by RFC 8925, Section 3.1
+func OptIPv6OnlyPreferred(d time.Duration) Option {
+	return Option{Code: OptionIPv6OnlyPreferred, Value: Duration(d)}
+}
