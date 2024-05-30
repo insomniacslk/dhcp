@@ -354,7 +354,7 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 	case OptionDNSDomainSearchList:
 		d = &rfc1035label.Labels{}
 
-	case OptionIPAddressLeaseTime, OptionIPv6OnlyPreferred:
+	case OptionIPAddressLeaseTime, OptionRenewTimeValue, OptionRebindingTimeValue, OptionIPv6OnlyPreferred:
 		var dur Duration
 		d = &dur
 
