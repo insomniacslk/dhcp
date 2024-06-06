@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build go1.12
 // +build go1.12
 
 package nclient6
@@ -189,7 +190,13 @@ func TestSendAndReadUntil(t *testing.T) {
 				t.Error(err)
 			}
 
-			if err := ComparePacket(rcvd, tt.want); err != nil {
+			var inner *dhcpv6.Message
+			if rcvd != nil {
+				inner, err = rcvd.GetInnerMessage()
+				require.NoError(t, err)
+			}
+
+			if err := ComparePacket(inner, tt.want); err != nil {
 				t.Errorf("got unexpected packets: %v", err)
 			}
 		})
@@ -219,7 +226,10 @@ func TestSimpleSendAndReadDiscardGarbage(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := ComparePacket(rcvd, responses[0]); err != nil {
+	inner, err := rcvd.GetInnerMessage()
+	require.NoError(t, err)
+
+	if err := ComparePacket(inner, responses[0]); err != nil {
 		t.Errorf("got unexpected packets: %v", err)
 	}
 }
@@ -264,7 +274,11 @@ func TestMultipleSendAndReadOne(t *testing.T) {
 			if wantErr := tt.wantErr[i]; err != wantErr {
 				t.Errorf("SendAndReadOne(%v): got %v, want %v", send, err, wantErr)
 			}
-			if err := pktsExpected([]*dhcpv6.Message{rcvd}, tt.server[i]); err != nil {
+
+			inner, err := rcvd.GetInnerMessage()
+			require.NoError(t, err)
+
+			if err := pktsExpected([]*dhcpv6.Message{inner}, tt.server[i]); err != nil {
 				t.Errorf("got unexpected packets: %v", err)
 			}
 		}

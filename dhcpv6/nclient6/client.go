@@ -44,7 +44,7 @@ type pendingCh struct {
 	done <-chan struct{}
 
 	// ch is used by the receive loop to distribute DHCP messages.
-	ch chan<- *dhcpv6.Message
+	ch chan<- dhcpv6.DHCPv6
 }
 
 // Client is a DHCPv6 client.
@@ -84,13 +84,13 @@ type Client struct {
 
 type logger interface {
 	Printf(format string, v ...interface{})
-	PrintMessage(prefix string, message *dhcpv6.Message)
+	PrintMessage(prefix string, message dhcpv6.DHCPv6)
 }
 
 type emptyLogger struct{}
 
-func (e emptyLogger) Printf(format string, v ...interface{})              {}
-func (e emptyLogger) PrintMessage(prefix string, message *dhcpv6.Message) {}
+func (e emptyLogger) Printf(format string, v ...interface{})            {}
+func (e emptyLogger) PrintMessage(prefix string, message dhcpv6.DHCPv6) {}
 
 type shortSummaryLogger struct {
 	*log.Logger
@@ -99,7 +99,7 @@ type shortSummaryLogger struct {
 func (s shortSummaryLogger) Printf(format string, v ...interface{}) {
 	s.Logger.Printf(format, v...)
 }
-func (s shortSummaryLogger) PrintMessage(prefix string, message *dhcpv6.Message) {
+func (s shortSummaryLogger) PrintMessage(prefix string, message dhcpv6.DHCPv6) {
 	s.Printf("%s: %s", prefix, message)
 }
 
@@ -110,7 +110,7 @@ type debugLogger struct {
 func (d debugLogger) Printf(format string, v ...interface{}) {
 	d.Logger.Printf(format, v...)
 }
-func (d debugLogger) PrintMessage(prefix string, message *dhcpv6.Message) {
+func (d debugLogger) PrintMessage(prefix string, message dhcpv6.DHCPv6) {
 	d.Printf("%s: %s", prefix, message.Summary())
 }
 
@@ -355,14 +355,19 @@ func (c *Client) RapidSolicit(ctx context.Context, modifiers ...dhcpv6.Modifier)
 		return nil, err
 	}
 
-	switch msg.MessageType {
+	inner, err := msg.GetInnerMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	switch msg.Type() {
 	case dhcpv6.MessageTypeReply:
 		// We got RapidCommitted.
-		return msg, nil
+		return inner, nil
 
 	case dhcpv6.MessageTypeAdvertise:
 		// We didn't get RapidCommitted. Request regular lease.
-		return c.Request(ctx, msg, modifiers...)
+		return c.Request(ctx, inner, modifiers...)
 
 	default:
 		return nil, fmt.Errorf("invalid message type: cannot happen")
@@ -380,7 +385,11 @@ func (c *Client) Solicit(ctx context.Context, modifiers ...dhcpv6.Modifier) (*dh
 	if err != nil {
 		return nil, err
 	}
-	return msg, nil
+	inner, err := msg.GetInnerMessage()
+	if err != nil {
+		return nil, err
+	}
+	return inner, nil
 }
 
 // Request requests an IP Assignment from peer given an advertise message.
@@ -389,7 +398,12 @@ func (c *Client) Request(ctx context.Context, advertise *dhcpv6.Message, modifie
 	if err != nil {
 		return nil, err
 	}
-	return c.SendAndRead(ctx, c.serverAddr, request, nil)
+	msg, err := c.SendAndRead(ctx, c.serverAddr, request, nil)
+	inner, err := msg.GetInnerMessage()
+	if err != nil {
+		return nil, err
+	}
+	return inner, nil
 }
 
 // send sends p to destination and returns a response channel.
@@ -398,16 +412,21 @@ func (c *Client) Request(ctx context.Context, advertise *dhcpv6.Message, modifie
 // received.
 //
 // Responses will be matched by transaction ID.
-func (c *Client) send(dest net.Addr, msg *dhcpv6.Message) (<-chan *dhcpv6.Message, func(), error) {
-	c.pendingMu.Lock()
-	if _, ok := c.pending[msg.TransactionID]; ok {
-		c.pendingMu.Unlock()
-		return nil, nil, fmt.Errorf("transaction ID %s already in use", msg.TransactionID)
+func (c *Client) send(dest net.Addr, msg dhcpv6.DHCPv6) (<-chan dhcpv6.DHCPv6, func(), error) {
+	inner, err := msg.GetInnerMessage()
+	if err != nil {
+		return nil, nil, err
 	}
 
-	ch := make(chan *dhcpv6.Message, c.bufferCap)
+	c.pendingMu.Lock()
+	if _, ok := c.pending[inner.TransactionID]; ok {
+		c.pendingMu.Unlock()
+		return nil, nil, fmt.Errorf("transaction ID %s already in use", inner.TransactionID)
+	}
+
+	ch := make(chan dhcpv6.DHCPv6, c.bufferCap)
 	done := make(chan struct{})
-	c.pending[msg.TransactionID] = &pendingCh{done: done, ch: ch}
+	c.pending[inner.TransactionID] = &pendingCh{done: done, ch: ch}
 	c.pendingMu.Unlock()
 
 	cancel := func() {
@@ -420,9 +439,9 @@ func (c *Client) send(dest net.Addr, msg *dhcpv6.Message) (<-chan *dhcpv6.Messag
 		close(done)
 
 		c.pendingMu.Lock()
-		if p, ok := c.pending[msg.TransactionID]; ok {
+		if p, ok := c.pending[inner.TransactionID]; ok {
 			close(p.ch)
-			delete(c.pending, msg.TransactionID)
+			delete(c.pending, inner.TransactionID)
 		}
 		c.pendingMu.Unlock()
 	}
@@ -441,8 +460,8 @@ var errDeadlineExceeded = errors.New("INTERNAL ERROR: deadline exceeded")
 // response matching `match` as well as its Transaction ID.
 //
 // If match is nil, the first packet matching the Transaction ID is returned.
-func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6.Message, match Matcher) (*dhcpv6.Message, error) {
-	var response *dhcpv6.Message
+func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg dhcpv6.DHCPv6, match Matcher) (dhcpv6.DHCPv6, error) {
+	var response dhcpv6.DHCPv6
 	err := c.retryFn(func(timeout time.Duration) error {
 		ch, rem, err := c.send(dest, msg)
 		if err != nil {
@@ -463,7 +482,11 @@ func (c *Client) SendAndRead(ctx context.Context, dest *net.UDPAddr, msg *dhcpv6
 				return ctx.Err()
 
 			case packet := <-ch:
-				if match == nil || match(packet) {
+				inner, err := packet.GetInnerMessage()
+				if err != nil {
+					return err
+				}
+				if match == nil || match(inner) {
 					c.logger.PrintMessage("received message", packet)
 					response = packet
 					return nil
