@@ -218,7 +218,7 @@ func (c *Client) receiveLoop() {
 				return
 			}
 
-			msg, err := dhcpv6.MessageFromBytes(b[:n])
+			msg, err := dhcpv6.FromBytes(b[:n])
 			if err != nil {
 				// Not a valid DHCP packet; keep listening.
 				if c.printDropped {
@@ -230,13 +230,24 @@ func (c *Client) receiveLoop() {
 				continue
 			}
 
+			inner, err := msg.GetInnerMessage()
+			if err != nil {
+				if c.printDropped {
+					if len(b) > 12 {
+						b = b[:12]
+					}
+					c.logger.Printf("Invalid DHCPv6 message received (len %d bytes), first 12 bytes: %#x", n, b)
+				}
+				continue
+			}
+
 			c.pendingMu.Lock()
-			p, ok := c.pending[msg.TransactionID]
+			p, ok := c.pending[inner.TransactionID]
 			if ok {
 				select {
 				case <-p.done:
 					close(p.ch)
-					delete(c.pending, msg.TransactionID)
+					delete(c.pending, inner.TransactionID)
 
 				// This send may block.
 				case p.ch <- msg:

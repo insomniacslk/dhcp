@@ -51,6 +51,35 @@ func (h *handler) handle(conn net.PacketConn, peer net.Addr, msg dhcpv6.DHCPv6) 
 	}
 }
 
+type relayHandler struct {
+	mu       sync.Mutex
+	received []*dhcpv6.RelayMessage
+
+	// Each received packet can have more than one response (in theory,
+	// from different servers sending different Advertise, for example).
+	responses [][]*dhcpv6.RelayMessage
+}
+
+func (h *relayHandler) handle(conn net.PacketConn, peer net.Addr, msg dhcpv6.DHCPv6) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	m := msg.(*dhcpv6.RelayMessage)
+
+	h.received = append(h.received, m)
+
+	if len(h.responses) > 0 {
+		resps := h.responses[0]
+		// What should we send in response?
+		for _, resp := range resps {
+			if _, err := conn.WriteTo(resp.ToBytes(), peer); err != nil {
+				panic(err)
+			}
+		}
+		h.responses = h.responses[1:]
+	}
+}
+
 func serveAndClient(ctx context.Context, responses [][]*dhcpv6.Message, opt ...ClientOpt) (*Client, net.PacketConn) {
 	// Fake connection between client and server. No raw sockets, no port
 	// weirdness.
@@ -67,6 +96,37 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv6.Message, opt ...C
 	}
 
 	h := &handler{
+		responses: responses,
+	}
+	s, err := server6.NewServer("", nil, h.handle, server6.WithConn(serverRawConn))
+	if err != nil {
+		panic(err)
+	}
+	go func() {
+		if err := s.Serve(); err != nil {
+			panic(err)
+		}
+	}()
+
+	return mc, serverRawConn
+}
+
+func serveAndRelay(ctx context.Context, responses [][]*dhcpv6.RelayMessage, opt ...ClientOpt) (*Client, net.PacketConn) {
+	// Fake connection between client and server. No raw sockets, no port
+	// weirdness.
+	clientRawConn, serverRawConn, err := socketpair.PacketSocketPair()
+	if err != nil {
+		panic(err)
+	}
+
+	o := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
+	o = append(o, opt...)
+	mc, err := NewWithConn(clientRawConn, net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
+	if err != nil {
+		panic(err)
+	}
+
+	h := &relayHandler{
 		responses: responses,
 	}
 	s, err := server6.NewServer("", nil, h.handle, server6.WithConn(serverRawConn))
@@ -108,6 +168,32 @@ func pktsExpected(got []*dhcpv6.Message, want []*dhcpv6.Message) error {
 	return nil
 }
 
+func CompareRelayPacket(got *dhcpv6.RelayMessage, want *dhcpv6.RelayMessage) error {
+	if got == nil && got == want {
+		return nil
+	}
+	if (want == nil || got == nil) && (got != want) {
+		return fmt.Errorf("packet got %v, want %v", got, want)
+	}
+	if !bytes.Equal(got.ToBytes(), want.ToBytes()) {
+		return fmt.Errorf("packet got %v, want %v", got, want)
+	}
+	return nil
+}
+
+func relayPktsExpected(got []*dhcpv6.RelayMessage, want []*dhcpv6.RelayMessage) error {
+	if len(got) != len(want) {
+		return fmt.Errorf("got %d packets, want %d packets", len(got), len(want))
+	}
+
+	for i := range got {
+		if err := CompareRelayPacket(got[i], want[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func newPacket(xid dhcpv6.TransactionID) *dhcpv6.Message {
 	p, err := dhcpv6.NewMessage()
 	if err != nil {
@@ -115,6 +201,14 @@ func newPacket(xid dhcpv6.TransactionID) *dhcpv6.Message {
 	}
 	p.TransactionID = xid
 	return p
+}
+
+func newRelayPacket(mType dhcpv6.MessageType, p dhcpv6.DHCPv6) *dhcpv6.RelayMessage {
+	r, err := dhcpv6.EncapsulateRelay(p, mType, net.ParseIP("fe80::1"), net.ParseIP("fe80::2"))
+	if err != nil {
+		panic(fmt.Sprintf("newrelaypacket: %v", err))
+	}
+	return r
 }
 
 func withBufferCap(n int) ClientOpt {
@@ -282,5 +376,47 @@ func TestMultipleSendAndReadOne(t *testing.T) {
 				t.Errorf("got unexpected packets: %v", err)
 			}
 		}
+	}
+}
+
+func TestSendAndReadRelay(t *testing.T) {
+	for _, tt := range []struct {
+		desc    string
+		send    *dhcpv6.RelayMessage
+		server  []*dhcpv6.RelayMessage
+		wantErr error
+	}{
+		{
+			desc: "single relay message, single response",
+			send: newRelayPacket(dhcpv6.MessageTypeRelayForward, newPacket([3]byte{0x33, 0x33, 0x33})),
+
+			server: []*dhcpv6.RelayMessage{
+				newRelayPacket(dhcpv6.MessageTypeRelayReply, newPacket([3]byte{0x33, 0x33, 0x33})),
+			},
+			wantErr: nil,
+		},
+	} {
+		// Both server and client only get 2 seconds.
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+
+		mc, _ := serveAndRelay(ctx, [][]*dhcpv6.RelayMessage{tt.server})
+		defer mc.conn.Close()
+
+		rcvd, err := mc.SendAndRead(context.Background(), AllDHCPServers, tt.send, nil)
+
+		if err != tt.wantErr {
+			t.Errorf("SendAndReadOne(%v): got %v, want %v", tt.send, err, tt.wantErr)
+		}
+
+		relayResp, ok := rcvd.(*dhcpv6.RelayMessage)
+		if !ok {
+			t.Errorf("expected relay message, got %v", rcvd)
+		}
+
+		if err := relayPktsExpected([]*dhcpv6.RelayMessage{relayResp}, tt.server); err != nil {
+			t.Errorf("got unexpected packets: %v", err)
+		}
+
 	}
 }
