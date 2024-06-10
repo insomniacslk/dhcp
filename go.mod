@@ -1,3 +1,5 @@
+replace github.com/insomniacslk/dhcp => gitlab.com/Vitrifi/cne/insomniacslk-dhcp v0.0.1-cne
+
 module github.com/insomniacslk/dhcp
 
 go 1.20
