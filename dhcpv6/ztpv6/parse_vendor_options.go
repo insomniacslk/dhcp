@@ -77,6 +77,18 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 			vd.Model = p[1]
 			vd.Serial = p[2]
 			return &vd, nil
+		
+		// NVOS##MMM1234##MM1234X56ABC
+		case strings.HasPrefix(d, "NVOS##"):
+			p := strings.Split(d, "##")
+			if len(p) < 3 {
+				return nil, errVendorOptionMalformed
+			}
+
+			vd.VendorName = p[0]
+			vd.Model = p[1]
+			vd.Serial = p[2]
+			return &vd, nil
 
 		// For Ciena the class identifier (opt 60) is written in the following format:
 		//    {vendor iana code}-{product}-{type}
