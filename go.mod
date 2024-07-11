@@ -8,6 +8,7 @@ require (
 	github.com/jsimonetti/rtnetlink v1.3.5
 	github.com/mdlayher/netlink v1.7.2
 	github.com/mdlayher/packet v1.1.2
+	github.com/mdlayher/raw v0.1.0
 	github.com/stretchr/testify v1.6.1
 	github.com/u-root/uio v0.0.0-20230220225925-ffce2a382923
 	golang.org/x/net v0.23.0
@@ -16,6 +17,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.0 // indirect
+	github.com/google/gopacket v1.1.19
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/mdlayher/socket v0.4.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.14 // indirect
