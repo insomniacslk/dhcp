@@ -299,7 +299,15 @@ func NewReleaseFromACK(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 
 // FromBytes decodes a DHCPv4 packet from a sequence of bytes, and returns an
 // error if the packet is not valid.
+// Octets after End option are checked against the pad option.
 func FromBytes(q []byte) (*DHCPv4, error) {
+	return FromBytesWithRelaxedPadding(q, false)
+}
+
+// FromBytesWithRelaxedPadding decodes a DHCPv4 packet from a sequence of bytes, and returns an
+// error if the packet is not valid.
+// Octets after the End option are checked or not according to pad option.
+func FromBytesWithRelaxedPadding(q []byte, relaxedPadding bool) (*DHCPv4, error) {
 	var p DHCPv4
 	buf := uio.NewBigEndianBuffer(q)
 
@@ -353,7 +361,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 	}
 
 	p.Options = make(Options)
-	if err := p.Options.fromBytesCheckEnd(buf.Data(), true); err != nil {
+	if err := p.Options.fromBytesWithRelaxedPadding(buf.Data(), true, relaxedPadding); err != nil {
 		return nil, err
 	}
 	return &p, nil

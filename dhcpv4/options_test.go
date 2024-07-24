@@ -227,9 +227,10 @@ func TestOptionsMarshal(t *testing.T) {
 
 func TestOptionsUnmarshal(t *testing.T) {
 	for i, tt := range []struct {
-		input     []byte
-		want      Options
-		wantError bool
+		input          []byte
+		relaxedPadding bool
+		want           Options
+		wantError      bool
 	}{
 		{
 			// Buffer missing data.
@@ -258,6 +259,12 @@ func TestOptionsUnmarshal(t *testing.T) {
 			// Option present after the End is a nono.
 			input:     []byte{byte(OptionEnd), 3},
 			wantError: true,
+		},
+		{
+			// Option present after the End if relaxedPadding.
+			input:          []byte{byte(OptionEnd), 3},
+			relaxedPadding: true,
+			want:           Options{},
 		},
 		{
 			input: []byte{byte(OptionEnd)},
@@ -306,7 +313,7 @@ func TestOptionsUnmarshal(t *testing.T) {
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
 			opt := make(Options)
-			err := opt.fromBytesCheckEnd(tt.input, true)
+			err := opt.fromBytesWithRelaxedPadding(tt.input, true, tt.relaxedPadding)
 			if tt.wantError {
 				require.Error(t, err)
 			} else {
