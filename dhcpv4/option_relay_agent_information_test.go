@@ -36,12 +36,14 @@ func TestOptRelayAgentInfo(t *testing.T) {
 	opt := OptRelayAgentInfo(
 		OptGeneric(GenericOptionCode(1), []byte("linux")),
 		OptGeneric(GenericOptionCode(2), []byte("boot")),
+		OptGeneric(GenericOptionCode(LinkSelectionSubOption), []byte{192, 0, 2, 1}),
 	)
 	wantBytes := []byte{
 		1, 5, 'l', 'i', 'n', 'u', 'x',
 		2, 4, 'b', 'o', 'o', 't',
+		5, 4, 192, 0, 2, 1,
 	}
-	wantString := "Relay Agent Information:\n\n    Agent Circuit ID Sub-option: linux ([108 105 110 117 120])\n    Agent Remote ID Sub-option: boot ([98 111 111 116])\n"
+	wantString := "Relay Agent Information:\n\n    Agent Circuit ID Sub-option: linux ([108 105 110 117 120])\n    Agent Remote ID Sub-option: boot ([98 111 111 116])\n    Link Selection Sub-option: 192.0.2.1\n"
 	require.Equal(t, wantBytes, opt.Value.ToBytes())
 	require.Equal(t, OptionRelayAgentInformation, opt.Code)
 	require.Equal(t, wantString, opt.String())
