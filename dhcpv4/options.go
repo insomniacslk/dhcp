@@ -106,7 +106,7 @@ func (o Options) ToBytes() []byte {
 //
 // Returns an error if any invalid option or length is found.
 func (o Options) FromBytes(data []byte) error {
-	return o.fromBytesCheckEnd(data, false)
+	return o.fromBytesWithRelaxedPadding(data, false, false)
 }
 
 const (
@@ -115,9 +115,9 @@ const (
 	optEnd       = 255
 )
 
-// FromBytesCheckEnd parses Options from byte sequences using the
+// fromBytesWithRelaxedPadding parses Options from byte sequences using the
 // parsing function that is passed in as a paremeter
-func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
+func (o Options) fromBytesWithRelaxedPadding(data []byte, checkEndOption bool, relaxedPadding bool) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -159,6 +159,10 @@ func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
 	// up.
 	if !end && checkEndOption {
 		return io.ErrUnexpectedEOF
+	}
+
+	if relaxedPadding {
+		return nil
 	}
 
 	// Any bytes left must be padding.

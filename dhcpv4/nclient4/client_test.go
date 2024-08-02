@@ -72,6 +72,40 @@ func serveAndClient(ctx context.Context, responses [][]*dhcpv4.DHCPv4, opts ...C
 	return mc, serverConn
 }
 
+func serveAndClientWithBytesResp(response []byte, opts ...ClientOpt) *Client {
+	// Fake PacketConn connection.
+	clientRawConn, serverRawConn, err := socketpair.PacketSocketPair()
+	if err != nil {
+		panic(err)
+	}
+
+	clientConn := NewBroadcastUDPConn(clientRawConn, &net.UDPAddr{Port: ClientPort})
+	serverConn := NewBroadcastUDPConn(serverRawConn, &net.UDPAddr{Port: ServerPort})
+
+	o := []ClientOpt{WithRetry(1), WithTimeout(2 * time.Second)}
+	o = append(o, opts...)
+	mc, err := NewWithConn(clientConn, net.HardwareAddr{0xa, 0xb, 0xc, 0xd, 0xe, 0xf}, o...)
+	if err != nil {
+		panic(err)
+	}
+
+	// Fake server.
+	go func() {
+		b := make([]byte, 4096)
+		_, peer, err := serverConn.ReadFrom(b)
+		if err != nil {
+			panic(err)
+		}
+
+		_, err = serverConn.WriteTo(response, peer)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	return mc
+}
+
 func ComparePacket(got *dhcpv4.DHCPv4, want *dhcpv4.DHCPv4) error {
 	if got == nil && got == want {
 		return nil
@@ -277,6 +311,36 @@ func TestSimpleSendAndReadDiscardGarbage(t *testing.T) {
 	}
 
 	if err := ComparePacket(rcvd, responses); err != nil {
+		t.Errorf("got unexpected packets: %v", err)
+	}
+}
+
+func TestSendAndReadWithRelaxedPadding(t *testing.T) {
+	pkt := newPacket(dhcpv4.OpcodeBootRequest, [4]byte{0x33, 0x33, 0x33, 0x33})
+
+	// Both the server and client only get 2 seconds.
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	response, err := dhcpv4.NewReplyFromRequest(pkt)
+	if err != nil {
+		t.Errorf("NewReplyFromRequest(%v) = %v, want nil", pkt, err)
+	}
+
+	bytes := response.ToBytes()
+
+	// Add garbage to the end.
+	bytes[len(bytes)-1] = 0x01
+
+	mc := serveAndClientWithBytesResp(bytes, WithRelaxedPadding())
+	defer mc.Close()
+
+	rcvd, err := mc.SendAndRead(ctx, DefaultServers, pkt, nil)
+	if err != nil {
+		t.Errorf("SendAndRead(%v) = %v, want nil", pkt, err)
+	}
+
+	if err := ComparePacket(rcvd, response); err != nil {
 		t.Errorf("got unexpected packets: %v", err)
 	}
 }

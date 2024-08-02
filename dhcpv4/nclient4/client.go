@@ -143,6 +143,11 @@ type Client struct {
 	// bufferCap is the channel capacity for each TransactionID.
 	bufferCap int
 
+	// relaxedPadding is a flag that allows you to relax one of the packet parsing requirements.
+	// The RFC says that octets after the End option SHOULD be pad options. Not MUST.
+	// So we need a way to accept packets not padded with zeros.
+	relaxedPadding bool
+
 	// serverAddr is the UDP address to send all packets to.
 	//
 	// This may be an actual broadcast address, or a unicast address.
@@ -267,7 +272,7 @@ func (c *Client) receiveLoop() {
 			return
 		}
 
-		msg, err := dhcpv4.FromBytes(b[:n])
+		msg, err := dhcpv4.FromBytesWithRelaxedPadding(b[:n], c.relaxedPadding)
 		if err != nil {
 			// Not a valid DHCP packet; keep listening.
 			continue
@@ -392,6 +397,16 @@ func WithRetry(r int) ClientOpt {
 func WithServerAddr(n *net.UDPAddr) ClientOpt {
 	return func(c *Client) (err error) {
 		c.serverAddr = n
+		return
+	}
+}
+
+// WithRelaxedPadding is an option that allows you to relax one of the packet parsing requirements.
+// The RFC says that octets after the End option SHOULD be pad options. Not MUST.
+// So we need a way to accept packets not padded with zeros.
+func WithRelaxedPadding() ClientOpt {
+	return func(c *Client) (err error) {
+		c.relaxedPadding = true
 		return
 	}
 }
