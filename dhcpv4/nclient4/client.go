@@ -143,6 +143,11 @@ type Client struct {
 	// bufferCap is the channel capacity for each TransactionID.
 	bufferCap int
 
+	// strictPadding is a flag that allows you to configure packet parsing behavior.
+	// The RFC says that octets after the End option SHOULD be pad options. Not MUST.
+	// But if necessary, then using this parameter you can consider such packages invalid.
+	strictPadding bool
+
 	// serverAddr is the UDP address to send all packets to.
 	//
 	// This may be an actual broadcast address, or a unicast address.
@@ -267,7 +272,7 @@ func (c *Client) receiveLoop() {
 			return
 		}
 
-		msg, err := dhcpv4.FromBytes(b[:n])
+		msg, err := dhcpv4.FromBytesWithStrictPadding(b[:n], c.strictPadding)
 		if err != nil {
 			// Not a valid DHCP packet; keep listening.
 			continue
@@ -392,6 +397,16 @@ func WithRetry(r int) ClientOpt {
 func WithServerAddr(n *net.UDPAddr) ClientOpt {
 	return func(c *Client) (err error) {
 		c.serverAddr = n
+		return
+	}
+}
+
+// WithStrictPadding is an option that allows you to configure packet parsing behavior.
+// The RFC says that octets after the End option SHOULD be pad options. Not MUST.
+// But if necessary, then using this option you can consider such packages invalid.
+func WithStrictPadding() ClientOpt {
+	return func(c *Client) (err error) {
+		c.strictPadding = true
 		return
 	}
 }
