@@ -348,7 +348,8 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 		d = &OptionCodeList{}
 
 	case OptionHostName, OptionDomainName, OptionRootPath,
-		OptionClassIdentifier, OptionTFTPServerName, OptionBootfileName:
+		OptionClassIdentifier, OptionTFTPServerName, OptionBootfileName,
+		OptionMessage, OptionReferenceToTZDatabase:
 		var s String
 		d = &s
 
@@ -358,7 +359,9 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 	case OptionDNSDomainSearchList:
 		d = &rfc1035label.Labels{}
 
-	case OptionIPAddressLeaseTime, OptionRenewTimeValue, OptionRebindingTimeValue, OptionIPv6OnlyPreferred:
+	case OptionIPAddressLeaseTime, OptionRenewTimeValue,
+		OptionRebindingTimeValue, OptionIPv6OnlyPreferred, OptionArpCacheTimeout,
+		OptionTimeOffset:
 		var dur Duration
 		d = &dur
 
