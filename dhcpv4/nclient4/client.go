@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build go1.12
 // +build go1.12
 
 // Package nclient4 is a small, minimum-functionality client for DHCPv4.
@@ -62,6 +63,12 @@ var (
 
 	// ErrNoIfaceHWAddr is returned when NewWithConn is called with nil-value as ifaceHWAddr
 	ErrNoIfaceHWAddr = errors.New("ifaceHWAddr is nil")
+
+	// ErrNotAUDPSocket is returned when WithReadBuffer is called but the underlying socket is not UDP.
+	ErrNotAUDPSocket = errors.New("the underlying socket is not UDP")
+
+	// ErrZeroReadBufferSize is returned when WithReadBuffer is called with a buffer size of zero.
+	ErrZeroReadBufferSize = errors.New("read buffer size cannot be zero")
 )
 
 // pendingCh is a channel associated with a pending TransactionID.
@@ -357,6 +364,26 @@ func WithUnicast(srcAddr *net.UDPAddr) ClientOpt {
 		c.conn, err = net.ListenUDP("udp4", srcAddr)
 		if err != nil {
 			err = fmt.Errorf("unable to start listening UDP port: %w", err)
+		}
+		return
+	}
+}
+
+// WithReadBuffer sets the size of the read buffer for the underlying socket.
+// This has the effect of setting the SO_RCVBUF option to the given value.
+// The underlying socket must be UDP.
+// The buffer size must be a positive integer.
+func WithReadBuffer(bufSize uint) ClientOpt {
+	return func(c *Client) (err error) {
+		if bufSize == 0 {
+			return ErrZeroReadBufferSize
+		}
+		udpConn, ok := c.conn.(*net.UDPConn)
+		if !ok {
+			return ErrNotAUDPSocket
+		}
+		if err := udpConn.SetReadBuffer(int(bufSize)); err != nil {
+			return fmt.Errorf("unable to set read buffer: %w", err)
 		}
 		return
 	}
