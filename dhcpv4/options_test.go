@@ -255,9 +255,9 @@ func TestOptionsUnmarshal(t *testing.T) {
 			wantError: true,
 		},
 		{
-			// Option present after the End is a nono.
-			input:     []byte{byte(OptionEnd), 3},
-			wantError: true,
+			// Option present after the End.
+			input: []byte{byte(OptionEnd), 3},
+			want:  Options{},
 		},
 		{
 			input: []byte{byte(OptionEnd)},
