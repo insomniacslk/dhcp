@@ -50,7 +50,7 @@ type raiSubOptionValue struct {
 }
 
 func (rv raiSubOptionValue) String() string {
-	return fmt.Sprintf("%s (%v)", string(rv.val), rv.val)
+	return fmt.Sprintf("%q (%v)", string(rv.val), rv.val)
 }
 
 type raiSubOptionCode uint8
