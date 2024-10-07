@@ -55,7 +55,7 @@ func TestConfigureInterface(t *testing.T) {
 			Name: "IP addr, DNS, and routers",
 			NetConf: &NetConf{
 				Addresses: []AddrConf{
-					AddrConf{IPNet: net.IPNet{IP: net.ParseIP("10.20.30.40")}},
+					AddrConf{IPNet: net.IPNet{IP: net.ParseIP("10.20.30.41")}},
 				},
 				DNSServers:    []net.IP{net.ParseIP("8.8.8.8")},
 				DNSSearchList: []string{"slackware.it"},
