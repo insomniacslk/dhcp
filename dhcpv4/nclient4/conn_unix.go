@@ -1,94 +1,88 @@
-// Copyright 2018 the u-root Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
-
-//go:build go1.12 && (darwin || freebsd || linux || netbsd || openbsd || dragonfly)
+//go:build go1.12 && (darwin || freebsd || netbsd || openbsd || dragonfly)
 // +build go1.12
-// +build darwin freebsd linux netbsd openbsd dragonfly
+// +build darwin freebsd netbsd openbsd dragonfly
 
 package nclient4
 
 import (
-	"errors"
 	"io"
 	"net"
 
-	"github.com/mdlayher/packet"
-	"github.com/u-root/uio/uio"
-	"golang.org/x/sys/unix"
+	"github.com/mdlayher/raw"
 )
 
-var (
-	// BroadcastMac is the broadcast MAC address.
-	//
-	// Any UDP packet sent to this address is broadcast on the subnet.
-	BroadcastMac = net.HardwareAddr([]byte{255, 255, 255, 255, 255, 255})
+const (
+	bpfFilterBidirectional int = 1
 )
 
-var (
-	// ErrUDPAddrIsRequired is an error used when a passed argument is not of type "*net.UDPAddr".
-	ErrUDPAddrIsRequired = errors.New("must supply UDPAddr")
-)
+var rawConnectionConfig = &raw.Config{
+	BPFDirection: bpfFilterBidirectional,
+}
 
 // NewRawUDPConn returns a UDP connection bound to the interface and port
 // given based on a raw packet socket. All packets are broadcasted.
 //
 // The interface can be completely unconfigured.
-func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
+func NewRawUDPConn(iface string, port int, vlans ...uint16) (net.PacketConn, error) {
 	ifc, err := net.InterfaceByName(iface)
 	if err != nil {
 		return nil, err
 	}
-	rawConn, err := packet.Listen(ifc, packet.Datagram, unix.ETH_P_IP, nil)
+
+	var etherType uint16
+	if len(vlans) > 0 {
+		etherType = vlanTPID // The VLAN TPID field is located in the same offset as EtherType
+	} else {
+		etherType = etherIPv4Proto
+	}
+
+	// Create a bidirectional raw socket on ifc with etherType as the filter
+	rawConn, err := raw.ListenPacket(ifc, etherType, rawConnectionConfig)
 	if err != nil {
 		return nil, err
 	}
-	return NewBroadcastUDPConn(rawConn, &net.UDPAddr{Port: port}), nil
+
+	return NewBroadcastUDPConn(net.PacketConn(rawConn), &net.UDPAddr{Port: port}, vlans...), nil
 }
 
-// BroadcastRawUDPConn uses a raw socket to send UDP packets to the broadcast
-// MAC address.
 type BroadcastRawUDPConn struct {
-	// PacketConn is a raw DGRAM socket.
+	// PacketConn is a raw network socket
 	net.PacketConn
 
-	// boundAddr is the address this RawUDPConn is "bound" to.
-	//
-	// Calls to ReadFrom will only return packets destined to this address.
 	boundAddr *net.UDPAddr
+	// VLAN tags can be configured to make up for the shortcoming of the BSD implementation
+	VLANs []uint16
 }
 
 // NewBroadcastUDPConn returns a PacketConn that marshals and unmarshals UDP
 // packets, sending them to the broadcast MAC at on rawPacketConn.
+// Supplied VLAN tags are inserted into the Ethernet frame before sending.
 //
 // Calls to ReadFrom will only return packets destined to boundAddr.
-func NewBroadcastUDPConn(rawPacketConn net.PacketConn, boundAddr *net.UDPAddr) net.PacketConn {
+func NewBroadcastUDPConn(rawPacketConn net.PacketConn, boundAddr *net.UDPAddr, vlans ...uint16) net.PacketConn {
 	return &BroadcastRawUDPConn{
 		PacketConn: rawPacketConn,
 		boundAddr:  boundAddr,
+		VLANs:      vlans,
 	}
-}
-
-func udpMatch(addr *net.UDPAddr, bound *net.UDPAddr) bool {
-	if bound == nil {
-		return true
-	}
-	if bound.IP != nil && !bound.IP.Equal(addr.IP) {
-		return false
-	}
-	return bound.Port == addr.Port
 }
 
 // ReadFrom implements net.PacketConn.ReadFrom.
 //
-// ReadFrom reads raw IP packets and will try to match them against
-// upc.boundAddr. Any matching packets are returned via the given buffer.
+// ReadFrom reads raw Ethernet frames, parses and matches the VLAN stack (if configured),
+// and will try to match the remaining IP packet against upc.boundAddr.
+//
+// Any matching packets are returned via the given buffer.
 func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
+	ethHdrLen := ethHdrBaseLen
+	if len(upc.VLANs) > 0 {
+		ethHdrLen += len(upc.VLANs) * vlanTagLen
+	}
 	ipHdrMaxLen := ipv4MaximumHeaderSize
 	udpHdrLen := udpMinimumSize
 
 	for {
-		pkt := make([]byte, ipHdrMaxLen+udpHdrLen+len(b))
+		pkt := make([]byte, ethHdrLen+ipHdrMaxLen+udpHdrLen+len(b))
 		n, _, err := upc.PacketConn.ReadFrom(pkt)
 		if err != nil {
 			return 0, nil, err
@@ -96,50 +90,27 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 		if n == 0 {
 			return 0, nil, io.EOF
 		}
-		pkt = pkt[:n]
-		buf := uio.NewBigEndianBuffer(pkt)
 
-		ipHdr := ipv4(buf.Data())
-
-		if !ipHdr.isValid(n) {
+		pkt = getEthernetPayload(pkt[:n], upc.VLANs)
+		if pkt == nil {
+			// VLAN stack does not match our configuration
+			continue
+		}
+		dhcpPkt, srcAddr := getUDP4pkt(pkt[:n], upc.boundAddr)
+		if dhcpPkt == nil {
 			continue
 		}
 
-		ipHdr = ipv4(buf.Consume(int(ipHdr.headerLength())))
-
-		if ipHdr.transportProtocol() != udpProtocolNumber {
-			continue
-		}
-
-		if !buf.Has(udpHdrLen) {
-			continue
-		}
-
-		udpHdr := udp(buf.Consume(udpHdrLen))
-
-		addr := &net.UDPAddr{
-			IP:   ipHdr.destinationAddress(),
-			Port: int(udpHdr.destinationPort()),
-		}
-		if !udpMatch(addr, upc.boundAddr) {
-			continue
-		}
-		srcAddr := &net.UDPAddr{
-			IP:   ipHdr.sourceAddress(),
-			Port: int(udpHdr.sourcePort()),
-		}
-		// Extra padding after end of IP packet should be ignored,
-		// if not dhcp option parsing will fail.
-		dhcpLen := int(ipHdr.payloadLength()) - udpHdrLen
-		return copy(b, buf.Consume(dhcpLen)), srcAddr, nil
+		return copy(b, dhcpPkt), srcAddr, nil
 	}
 }
 
 // WriteTo implements net.PacketConn.WriteTo and broadcasts all packets at the
 // raw socket level.
 //
-// WriteTo wraps the given packet in the appropriate UDP and IP header before
-// sending it on the packet conn.
+// WriteTo wraps the given packet in the appropriate UDP, IP and Ethernet header
+// before sending it on the packet conn. Since the Ethernet encapsulation is done
+// on the application's side, VLAN tagging also has to be handled in the application.
 func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	udpAddr, ok := addr.(*net.UDPAddr)
 	if !ok {
@@ -149,6 +120,9 @@ func (upc *BroadcastRawUDPConn) WriteTo(b []byte, addr net.Addr) (int, error) {
 	// Using the boundAddr is not quite right here, but it works.
 	pkt := udp4pkt(b, udpAddr, upc.boundAddr)
 
-	// Broadcasting is not always right, but hell, what the ARP do I know.
-	return upc.PacketConn.WriteTo(pkt, &packet.Addr{HardwareAddr: BroadcastMac})
+	srcMac := upc.PacketConn.LocalAddr().(*raw.Addr).HardwareAddr
+	pkt = addEthernetHdr(pkt, BroadcastMac, srcMac, etherIPv4Proto, upc.VLANs)
+
+	// The `raw` packet connection does not take any address as an argument.
+	return upc.PacketConn.WriteTo(pkt, nil)
 }
