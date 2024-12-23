@@ -69,6 +69,25 @@ func TestGetNTPServers(t *testing.T) {
 	require.Nil(t, m.NTPServers())
 }
 
+func TestOptNetBIOSNameServers(t *testing.T) {
+	o := OptNetBIOSNameServers(net.IPv4(192, 168, 0, 1), net.IPv4(192, 168, 0, 10))
+	require.Equal(t, OptionNetBIOSOverTCPIPNameServers, o.Code)
+	require.Equal(t, []byte{192, 168, 0, 1, 192, 168, 0, 10}, o.Value.ToBytes())
+	require.Equal(t, "NetBIOS over TCP/IP Name Servers: 192.168.0.1, 192.168.0.10", o.String())
+}
+
+func TestGetNetBIOSNameServers(t *testing.T) {
+	ips := []net.IP{
+		net.IP{192, 168, 0, 1},
+		net.IP{192, 168, 0, 10},
+	}
+	m, _ := New(WithOption(OptNetBIOSNameServers(ips...)))
+	require.Equal(t, ips, m.NetBIOSNameServers())
+
+	m, _ = New()
+	require.Nil(t, m.NetBIOSNameServers())
+}
+
 func TestOptRouter(t *testing.T) {
 	o := OptRouter(net.IPv4(192, 168, 0, 1), net.IPv4(192, 168, 0, 10))
 	require.Equal(t, OptionRouter, o.Code)
