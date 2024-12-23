@@ -606,7 +606,7 @@ func (d *DHCPv4) NTPServers() []net.IP {
 //
 // The NetBIOS over TCP/IP Name Server option is described by RFC 2132, Section 8.5.
 func (d *DHCPv4) NetBIOSNameServers() []net.IP {
-	return GetIPs(OptionNetBIOSOverTCPIPNameServers, d.Options)
+	return GetIPs(OptionNetBIOSOverTCPIPNameServer, d.Options)
 }
 
 // DNS parses the DHCPv4 Domain Name Server option if present.

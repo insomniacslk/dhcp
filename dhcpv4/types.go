@@ -180,7 +180,7 @@ const (
 	OptionNetworkInformationServers                  optionCode = 41
 	OptionNTPServers                                 optionCode = 42
 	OptionVendorSpecificInformation                  optionCode = 43
-	OptionNetBIOSOverTCPIPNameServers                optionCode = 44
+	OptionNetBIOSOverTCPIPNameServer                 optionCode = 44
 	OptionNetBIOSOverTCPIPDatagramDistributionServer optionCode = 45
 	OptionNetBIOSOverTCPIPNodeType                   optionCode = 46
 	OptionNetBIOSOverTCPIPScope                      optionCode = 47
@@ -345,7 +345,7 @@ var optionCodeToString = map[OptionCode]string{
 	OptionNetworkInformationServers:                  "Network Information Servers",
 	OptionNTPServers:                                 "NTP Servers",
 	OptionVendorSpecificInformation:                  "Vendor Specific Information",
-	OptionNetBIOSOverTCPIPNameServers:                "NetBIOS over TCP/IP Name Servers",
+	OptionNetBIOSOverTCPIPNameServer:                 "NetBIOS over TCP/IP Name Server",
 	OptionNetBIOSOverTCPIPDatagramDistributionServer: "NetBIOS over TCP/IP Datagram Distribution Server",
 	OptionNetBIOSOverTCPIPNodeType:                   "NetBIOS over TCP/IP Node Type",
 	OptionNetBIOSOverTCPIPScope:                      "NetBIOS over TCP/IP Scope",

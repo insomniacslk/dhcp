@@ -71,9 +71,9 @@ func TestGetNTPServers(t *testing.T) {
 
 func TestOptNetBIOSNameServers(t *testing.T) {
 	o := OptNetBIOSNameServers(net.IPv4(192, 168, 0, 1), net.IPv4(192, 168, 0, 10))
-	require.Equal(t, OptionNetBIOSOverTCPIPNameServers, o.Code)
+	require.Equal(t, OptionNetBIOSOverTCPIPNameServer, o.Code)
 	require.Equal(t, []byte{192, 168, 0, 1, 192, 168, 0, 10}, o.Value.ToBytes())
-	require.Equal(t, "NetBIOS over TCP/IP Name Servers: 192.168.0.1, 192.168.0.10", o.String())
+	require.Equal(t, "NetBIOS over TCP/IP Name Server: 192.168.0.1, 192.168.0.10", o.String())
 }
 
 func TestGetNetBIOSNameServers(t *testing.T) {

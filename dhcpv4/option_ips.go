@@ -92,7 +92,7 @@ func OptNTPServers(ntpServers ...net.IP) Option {
 // The NetBIOS over TCP/IP Name Server option is described by RFC 2132, Section 8.5.
 func OptNetBIOSNameServers(netBIOSNameServers ...net.IP) Option {
 	return Option{
-		Code:  OptionNetBIOSOverTCPIPNameServers,
+		Code:  OptionNetBIOSOverTCPIPNameServer,
 		Value: IPs(netBIOSNameServers),
 	}
 }
