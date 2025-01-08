@@ -146,24 +146,7 @@ func New(modifiers ...Modifier) (*DHCPv4, error) {
 	if err != nil {
 		return nil, err
 	}
-	d := DHCPv4{
-		OpCode:        OpcodeBootRequest,
-		HWType:        iana.HWTypeEthernet,
-		ClientHWAddr:  make(net.HardwareAddr, 6),
-		HopCount:      0,
-		TransactionID: xid,
-		NumSeconds:    0,
-		Flags:         0,
-		ClientIPAddr:  net.IPv4zero,
-		YourIPAddr:    net.IPv4zero,
-		ServerIPAddr:  net.IPv4zero,
-		GatewayIPAddr: net.IPv4zero,
-		Options:       make(Options),
-	}
-	for _, mod := range modifiers {
-		mod(&d)
-	}
-	return &d, nil
+	return newDHCPv4(xid, modifiers), nil
 }
 
 // NewWithContext creates a new DHCPv4 structure and fill it up with default
@@ -175,6 +158,10 @@ func NewWithContext(ctx context.Context, modifiers ...Modifier) (*DHCPv4, error)
 	if err != nil {
 		return nil, err
 	}
+	return newDHCPv4(xid, modifiers), nil
+}
+
+func newDHCPv4(xid TransactionID, modifiers ...Modifier) *DHCPv4 {
 	d := DHCPv4{
 		OpCode:        OpcodeBootRequest,
 		HWType:        iana.HWTypeEthernet,
@@ -192,7 +179,7 @@ func NewWithContext(ctx context.Context, modifiers ...Modifier) (*DHCPv4, error)
 	for _, mod := range modifiers {
 		mod(&d)
 	}
-	return &d, nil
+	return &d
 }
 
 // NewDiscoveryForInterface builds a new DHCPv4 Discovery message, with a default
