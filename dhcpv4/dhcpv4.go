@@ -117,10 +117,16 @@ func GetExternalIPv4Addrs(addrs []net.Addr) ([]net.IP, error) {
 }
 
 // GenerateTransactionID generates a random 32-bits number suitable for use as
-// TransactionID
+// TransactionID.
 func GenerateTransactionID() (TransactionID, error) {
+	return GenerateTransactionIDWithContext(context.Background())
+}
+
+// GenerateTransactionIDWithContext generates a random 32-bits number suitable
+// for use as TransactionID.
+func GenerateTransactionIDWithContext(ctx context.Context) (TransactionID, error) {
 	var xid TransactionID
-	ctx, cancel := context.WithTimeout(context.Background(), RandomTimeout)
+	ctx, cancel := context.WithTimeout(ctx, RandomTimeout)
 	defer cancel()
 	n, err := rand.ReadContext(ctx, xid[:])
 	if err != nil {
@@ -133,10 +139,39 @@ func GenerateTransactionID() (TransactionID, error) {
 }
 
 // New creates a new DHCPv4 structure and fill it up with default values. It
-// won't be a valid DHCPv4 message so you will need to adjust its fields.
-// See also NewDiscovery, NewRequest, NewAcknowledge, NewInform and NewRelease.
+// won't be a valid DHCPv4 message so you will need to adjust its fields. See
+// also NewDiscovery, NewRequest, NewAcknowledge, NewInform and NewRelease.
 func New(modifiers ...Modifier) (*DHCPv4, error) {
 	xid, err := GenerateTransactionID()
+	if err != nil {
+		return nil, err
+	}
+	d := DHCPv4{
+		OpCode:        OpcodeBootRequest,
+		HWType:        iana.HWTypeEthernet,
+		ClientHWAddr:  make(net.HardwareAddr, 6),
+		HopCount:      0,
+		TransactionID: xid,
+		NumSeconds:    0,
+		Flags:         0,
+		ClientIPAddr:  net.IPv4zero,
+		YourIPAddr:    net.IPv4zero,
+		ServerIPAddr:  net.IPv4zero,
+		GatewayIPAddr: net.IPv4zero,
+		Options:       make(Options),
+	}
+	for _, mod := range modifiers {
+		mod(&d)
+	}
+	return &d, nil
+}
+
+// NewWithContext creates a new DHCPv4 structure and fill it up with default
+// values. It won't be a valid DHCPv4 message so you will need to adjust its
+// fields. See also NewDiscovery, NewRequest, NewAcknowledge, NewInform and
+// NewRelease.
+func NewWithContext(ctx context.Context, modifiers ...Modifier) (*DHCPv4, error) {
+	xid, err := GenerateTransactionIDWithContext(ctx)
 	if err != nil {
 		return nil, err
 	}
