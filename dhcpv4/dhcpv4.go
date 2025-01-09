@@ -146,7 +146,7 @@ func New(modifiers ...Modifier) (*DHCPv4, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newDHCPv4(xid, modifiers), nil
+	return newDHCPv4(xid, modifiers...), nil
 }
 
 // NewWithContext creates a new DHCPv4 structure and fill it up with default
@@ -158,7 +158,7 @@ func NewWithContext(ctx context.Context, modifiers ...Modifier) (*DHCPv4, error)
 	if err != nil {
 		return nil, err
 	}
-	return newDHCPv4(xid, modifiers), nil
+	return newDHCPv4(xid, modifiers...), nil
 }
 
 func newDHCPv4(xid TransactionID, modifiers ...Modifier) *DHCPv4 {
