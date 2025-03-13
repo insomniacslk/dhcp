@@ -10,8 +10,8 @@ require (
 	github.com/mdlayher/packet v1.1.2
 	github.com/stretchr/testify v1.6.1
 	github.com/u-root/uio v0.0.0-20230220225925-ffce2a382923
-	golang.org/x/net v0.33.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/net v0.36.0
+	golang.org/x/sys v0.30.0
 )
 
 require (
