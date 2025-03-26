@@ -77,3 +77,19 @@ func TestOptUserClassString(t *testing.T) {
 		"String() should contain the list of user classes",
 	)
 }
+
+func TestOptUserClassMicrosoftFormat(t *testing.T) {
+	data := []byte{
+		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	var opt OptUserClass
+	err := opt.FromBytes(data)
+	require.NoError(t, err)
+
+	require.Contains(
+		t,
+		opt.String(),
+		"User Class: [linuxboot]",
+		"String() should contain the list of user classes",
+	)
+}
