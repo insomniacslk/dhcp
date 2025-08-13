@@ -36,7 +36,7 @@ func TestGetNetConfFromPacketv6Invalid(t *testing.T) {
 
 func TestGetNetConfFromPacketv6NoSearchList(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
-		dhcpv6.OptIAAddress{
+		{
 			IPv6Addr:          net.ParseIP("::1"),
 			PreferredLifetime: 3600 * time.Second,
 			ValidLifetime:     5200 * time.Second,
@@ -52,7 +52,7 @@ func TestGetNetConfFromPacketv6NoSearchList(t *testing.T) {
 
 func TestGetNetConfFromPacketv6(t *testing.T) {
 	addrs := []dhcpv6.OptIAAddress{
-		dhcpv6.OptIAAddress{
+		{
 			IPv6Addr:          net.ParseIP("::1"),
 			PreferredLifetime: 3600 * time.Second,
 			ValidLifetime:     5200 * time.Second,
@@ -101,73 +101,83 @@ func TestGetNetConfFromPacketv4NullMask(t *testing.T) {
 	require.Error(t, err)
 }
 
-func TestGetNetConfFromPacketv4NoLeaseTime(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// The commented out tests did pass because all of them had no default gw
+// set which caused an error and masked the case they were supposed to test.
 
-func TestGetNetConfFromPacketv4EmptyDNSList(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
-		dhcpv4.WithDNS(),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// Obsolete test: Lease time is set to 0 in IPAddressLeaseTime()
+// func TestGetNetConfFromPacketv4NoLeaseTime(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
 
-func TestGetNetConfFromPacketv4NoSearchList(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
-		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// DNS is not required for DHCP, the WithDNS() has nil as a result
+// func TestGetNetConfFromPacketv4EmptyDNSList(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithLeaseTime(uint32(0)),
+// 		dhcpv4.WithDNS(),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
 
-func TestGetNetConfFromPacketv4EmptySearchList(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
-		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
-		dhcpv4.WithDomainSearchList(),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// A search list is not required for DHCP
+// func TestGetNetConfFromPacketv4NoSearchList(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithLeaseTime(uint32(0)),
+// 		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
 
-func TestGetNetConfFromPacketv4NoRouter(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
-		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
-		dhcpv4.WithDomainSearchList("slackware.it", "dhcp.slackware.it"),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// This doesn't produce any errors, as the domain search list is nil (fine)
+// and the error before was a side effect of the missing router
+// func TestGetNetConfFromPacketv4EmptySearchList(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithLeaseTime(uint32(0)),
+// 		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
+// 		dhcpv4.WithDomainSearchList(),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
 
-func TestGetNetConfFromPacketv4EmptyRouter(t *testing.T) {
-	d, _ := dhcpv4.New(
-		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
-		dhcpv4.WithLeaseTime(uint32(0)),
-		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
-		dhcpv4.WithDomainSearchList("slackware.it", "dhcp.slackware.it"),
-		dhcpv4.WithRouter(),
-		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
-	)
-	_, err := GetNetConfFromPacketv4(d)
-	require.Error(t, err)
-}
+// No router option is perfectly acceptable
+// func TestGetNetConfFromPacketv4NoRouter(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithLeaseTime(uint32(0)),
+// 		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
+// 		dhcpv4.WithDomainSearchList("slackware.it", "dhcp.slackware.it"),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
+
+// An empty router option is perfectly acceptable (as it's represented by nil)
+// func TestGetNetConfFromPacketv4EmptyRouter(t *testing.T) {
+// 	d, _ := dhcpv4.New(
+// 		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+// 		dhcpv4.WithLeaseTime(uint32(0)),
+// 		dhcpv4.WithDNS(net.ParseIP("10.10.0.1"), net.ParseIP("10.10.0.2")),
+// 		dhcpv4.WithDomainSearchList("slackware.it", "dhcp.slackware.it"),
+// 		dhcpv4.WithRouter(),
+// 		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+// 	)
+// 	_, err := GetNetConfFromPacketv4(d)
+// 	require.Error(t, err)
+// }
 
 func TestGetNetConfFromPacketv4(t *testing.T) {
 	d, _ := dhcpv4.New(
