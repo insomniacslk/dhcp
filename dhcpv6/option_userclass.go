@@ -38,16 +38,26 @@ func (op *OptUserClass) String() string {
 	return fmt.Sprintf("%s: [%s]", op.Code(), strings.Join(ucStrings, ", "))
 }
 
-// FromBytes builds an OptUserClass structure from a sequence of bytes. The
-// input data does not include option code and length bytes.
+// FromBytes builds an OptUserClass structure from a sequence of bytes.
+// The input data does not include option code and length bytes.
 func (op *OptUserClass) FromBytes(data []byte) error {
 	if len(data) == 0 {
 		return fmt.Errorf("%w: user class option must not be empty", uio.ErrBufferTooShort)
 	}
 	buf := uio.NewBigEndianBuffer(data)
+	var userClasses [][]byte
 	for buf.Has(2) {
-		len := buf.Read16()
-		op.UserClasses = append(op.UserClasses, buf.CopyN(int(len)))
+		length := buf.Read16()
+		if int(length) > buf.Len() {
+			break
+		}
+		uc := buf.CopyN(int(length))
+		userClasses = append(userClasses, uc)
 	}
-	return buf.FinError()
+	if len(userClasses) > 0 {
+		op.UserClasses = userClasses
+	} else {
+		op.UserClasses = [][]byte{data}
+	}
+	return nil
 }
