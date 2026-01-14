@@ -83,3 +83,45 @@ func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Mo
 		CreationTime: time.Now(),
 	}, nil
 }
+
+func (c *Client) Rebind(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Modifier) (*Lease, error) {
+	if lease == nil {
+		return nil, fmt.Errorf("lease is nil")
+	}
+
+	request, err := dhcpv4.NewRebindFromAck(lease.ACK, dhcpv4.PrependModifiers(modifiers,
+		dhcpv4.WithOption(dhcpv4.OptMaxMessageSize(MaxMessageSize)))...)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create a request: %w", err)
+	}
+
+	// Servers are supposed to only respond to Requests containing their server identifier,
+	// but sometimes non-compliant servers respond anyway.
+	// Clients are not required to validate this field, but servers are required to
+	// include the server identifier in their Offer per RFC 2131 Section 4.3.1 Table 3.
+	// For the matcher, the server identifier should be checked as another DHCP server
+	// could answer instead of the original one. The responding server is defacto the new
+	// authoritative DHCP for our client.
+	response, err := c.SendAndRead(ctx, c.serverAddr, request, IsAll(
+		IsMessageType(dhcpv4.MessageTypeAck, dhcpv4.MessageTypeNak)))
+	if err != nil {
+		return nil, fmt.Errorf("got an error while processing the request: %w", err)
+	}
+	if response.MessageType() == dhcpv4.MessageTypeNak {
+		return nil, &ErrNak{
+			Offer: lease.Offer,
+			Nak:   response,
+		}
+	}
+
+	// Modify the initial offer, as we switched to another DHCP server.
+	// This allow further Renew or request to succeed with the new DHCP server.
+	lease.Offer.UpdateOption(dhcpv4.OptServerIdentifier(response.ServerIdentifier()))
+
+	// Return a new lease with the latest ACK and updated creation time
+	return &Lease{
+		Offer:        lease.Offer,
+		ACK:          response,
+		CreationTime: time.Now(),
+	}, nil
+}
