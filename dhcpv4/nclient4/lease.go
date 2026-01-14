@@ -53,11 +53,17 @@ func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Mo
 		return nil, fmt.Errorf("unable to create a request: %w", err)
 	}
 
+	// Force unicasting to the original DHCP server
+	destAddr := &net.UDPAddr{
+		IP:   lease.ACK.Options.Get(dhcpv4.OptionServerIdentifier),
+		Port: ServerPort,
+	}
+
 	// Servers are supposed to only respond to Requests containing their server identifier,
 	// but sometimes non-compliant servers respond anyway.
 	// Clients are not required to validate this field, but servers are required to
 	// include the server identifier in their Offer per RFC 2131 Section 4.3.1 Table 3.
-	response, err := c.SendAndRead(ctx, c.serverAddr, request, IsAll(
+	response, err := c.SendAndRead(ctx, destAddr, request, IsAll(
 		IsCorrectServer(lease.Offer.ServerIdentifier()),
 		IsMessageType(dhcpv4.MessageTypeAck, dhcpv4.MessageTypeNak)))
 	if err != nil {
