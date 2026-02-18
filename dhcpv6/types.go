@@ -230,6 +230,7 @@ const (
 	_                                             OptionCode = 141
 	_                                             OptionCode = 142
 	OptionIPv6AddressANDSF                        OptionCode = 143
+	OptionV6DNR                                   OptionCode = 144
 )
 
 // optionCodeToString maps DHCPv6 OptionCodes to human-readable strings.
@@ -370,4 +371,5 @@ var optionCodeToString = map[OptionCode]string{
 	OptionV6SZTPRedirect:                          "IPv6 Secure Zerotouch Provisioning Redirect",
 	OptionS46BindIPv6Prefix:                       "Softwire46 Source Binding Prefix Hint",
 	OptionIPv6AddressANDSF:                        "IPv6 Access Network Discovery and Selection Function Address",
+	OptionV6DNR:                                   "Encrypted DNS",
 }
