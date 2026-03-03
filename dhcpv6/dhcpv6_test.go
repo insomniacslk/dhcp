@@ -253,6 +253,38 @@ func TestNewMessageTypeSolicit(t *testing.T) {
 	require.Equal(t, iaid, iana.IaId)
 }
 
+func TestNewSolicitWithDUIDType(t *testing.T) {
+	hwAddr, _ := net.ParseMAC("24:0a:9e:9f:eb:2b")
+
+	// Default is DUID-LLT
+	s, err := NewSolicit(hwAddr)
+	require.NoError(t, err)
+	cid := s.Options.ClientID()
+	require.IsType(t, &DUIDLLT{}, cid)
+
+	// Switch to DUID-LL
+	s, err = NewSolicit(hwAddr, WithLLDUID)
+	require.NoError(t, err)
+	cid = s.Options.ClientID()
+	require.IsType(t, &DUIDLL{}, cid)
+	require.Equal(t, iana.HWTypeEthernet, cid.(*DUIDLL).HWType)
+	require.Equal(t, hwAddr, cid.(*DUIDLL).LinkLayerAddr)
+
+	// Switch back to DUID-LLT (though it's default)
+	s, err = NewSolicit(hwAddr, WithLLDUID, WithLLTDUID)
+	require.NoError(t, err)
+	cid = s.Options.ClientID()
+	require.IsType(t, &DUIDLLT{}, cid)
+	require.Equal(t, iana.HWTypeEthernet, cid.(*DUIDLLT).HWType)
+	require.Equal(t, hwAddr, cid.(*DUIDLLT).LinkLayerAddr)
+
+	// Test with HWType
+	s, err = NewSolicit(hwAddr, WithHWType(iana.HWTypeFibreChannel))
+	require.NoError(t, err)
+	cid = s.Options.ClientID()
+	require.Equal(t, iana.HWTypeFibreChannel, cid.(*DUIDLLT).HWType)
+}
+
 func TestGetTransactionIDMessage(t *testing.T) {
 	message, err := NewMessage()
 	require.NoError(t, err)

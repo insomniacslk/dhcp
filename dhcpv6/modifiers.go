@@ -184,3 +184,65 @@ func WithClientLinkLayerAddress(ht iana.HWType, lla net.HardwareAddr) Modifier {
 func WithInformationRefreshTime(irt time.Duration) Modifier {
 	return WithOption(OptInformationRefreshTime(irt))
 }
+
+// WithDUIDType sets the DUID type of the message's ClientID option.
+// It only works if the ClientID option is already present and is of type DUID-LLT or DUID-LL
+// (otherwise we won't know what link layer address to use)
+func WithDUIDType(dt DUIDType) Modifier {
+	return func(d DHCPv6) {
+		if msg, ok := d.(*Message); ok {
+			opt := msg.GetOneOption(OptionClientID)
+			if opt == nil {
+				return
+			}
+			if cid, ok := opt.(*optClientID); ok {
+				switch dt {
+				case DUID_LL:
+					if dllt, ok := cid.DUID.(*DUIDLLT); ok {
+						cid.DUID = &DUIDLL{
+							HWType:        dllt.HWType,
+							LinkLayerAddr: dllt.LinkLayerAddr,
+						}
+					}
+				case DUID_LLT:
+					if dll, ok := cid.DUID.(*DUIDLL); ok {
+						cid.DUID = &DUIDLLT{
+							HWType:        dll.HWType,
+							LinkLayerAddr: dll.LinkLayerAddr,
+							Time:          GetTime(),
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// WithLLDUID sets the DUID type to DUID-LL.
+func WithLLDUID(d DHCPv6) {
+	WithDUIDType(DUID_LL)(d)
+}
+
+// WithLLTDUID sets the DUID type to DUID-LLT.
+func WithLLTDUID(d DHCPv6) {
+	WithDUIDType(DUID_LLT)(d)
+}
+
+// WithHWType updates the hardware type of the DUID in the ClientID option.
+func WithHWType(ht iana.HWType) Modifier {
+	return func(d DHCPv6) {
+		if msg, ok := d.(*Message); ok {
+			opt := msg.GetOneOption(OptionClientID)
+			if opt == nil {
+				return
+			}
+			if cid, ok := opt.(*optClientID); ok {
+				if dllt, ok := cid.DUID.(*DUIDLLT); ok {
+					dllt.HWType = ht
+				} else if dll, ok := cid.DUID.(*DUIDLL); ok {
+					dll.HWType = ht
+				}
+			}
+		}
+	}
+}

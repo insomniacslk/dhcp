@@ -80,6 +80,8 @@ type Client struct {
 	// TransactionID. receiveLoop uses this map to determine which channel
 	// to send a new DHCP message to.
 	pending map[dhcpv6.TransactionID]*pendingCh
+
+	modifiers []dhcpv6.Modifier
 }
 
 type logger interface {
@@ -310,6 +312,21 @@ func WithDebugLogger() ClientOpt {
 	}
 }
 
+// WithDUIDType configures the DUID type to be used by the client.
+func WithDUIDType(dt dhcpv6.DUIDType) ClientOpt {
+	return func(c *Client) {
+		c.modifiers = append(c.modifiers, dhcpv6.WithDUIDType(dt))
+	}
+}
+
+// WithModifiers configures the client to use the given modifiers for all
+// outgoing messages.
+func WithModifiers(modifiers ...dhcpv6.Modifier) ClientOpt {
+	return func(c *Client) {
+		c.modifiers = append(c.modifiers, modifiers...)
+	}
+}
+
 // Matcher matches DHCP packets.
 type Matcher func(*dhcpv6.Message) bool
 
@@ -346,7 +363,8 @@ func (c *Client) InterfaceAddr() net.HardwareAddr {
 // RapidSolicit sends a solicitation message with the RapidCommit option and
 // returns the first valid reply received.
 func (c *Client) RapidSolicit(ctx context.Context, modifiers ...dhcpv6.Modifier) (*dhcpv6.Message, error) {
-	solicit, err := dhcpv6.NewSolicit(c.ifaceHWAddr, append(modifiers, dhcpv6.WithRapidCommit)...)
+	allModifiers := append(c.modifiers, modifiers...)
+	solicit, err := dhcpv6.NewSolicit(c.ifaceHWAddr, append(allModifiers, dhcpv6.WithRapidCommit)...)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +390,8 @@ func (c *Client) RapidSolicit(ctx context.Context, modifiers ...dhcpv6.Modifier)
 // Solicit sends a solicitation message and returns the first valid
 // advertisement received.
 func (c *Client) Solicit(ctx context.Context, modifiers ...dhcpv6.Modifier) (*dhcpv6.Message, error) {
-	solicit, err := dhcpv6.NewSolicit(c.ifaceHWAddr, modifiers...)
+	allModifiers := append(c.modifiers, modifiers...)
+	solicit, err := dhcpv6.NewSolicit(c.ifaceHWAddr, allModifiers...)
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +404,8 @@ func (c *Client) Solicit(ctx context.Context, modifiers ...dhcpv6.Modifier) (*dh
 
 // Request requests an IP Assignment from peer given an advertise message.
 func (c *Client) Request(ctx context.Context, advertise *dhcpv6.Message, modifiers ...dhcpv6.Modifier) (*dhcpv6.Message, error) {
-	request, err := dhcpv6.NewRequestFromAdvertise(advertise, modifiers...)
+	allModifiers := append(c.modifiers, modifiers...)
+	request, err := dhcpv6.NewRequestFromAdvertise(advertise, allModifiers...)
 	if err != nil {
 		return nil, err
 	}
