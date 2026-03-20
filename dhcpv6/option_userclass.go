@@ -40,23 +40,32 @@ func (op *OptUserClass) String() string {
 
 // FromBytes builds an OptUserClass structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
+// It supports both RFC 8415-compliant options (each user class preceded by a
+// 16-bit length field) and MS-compatible, non-RFC-compliant options (a single
+// user class as raw bytes without a length prefix).
 func (op *OptUserClass) FromBytes(data []byte) error {
 	if len(data) == 0 {
 		return fmt.Errorf("%w: user class option must not be empty", uio.ErrBufferTooShort)
 	}
 	buf := uio.NewBigEndianBuffer(data)
 	var userClasses [][]byte
+	var bufferTooShort bool
 	for buf.Has(2) {
 		length := buf.Read16()
 		if int(length) > buf.Len() {
+			bufferTooShort = true
 			break
 		}
 		uc := buf.CopyN(int(length))
 		userClasses = append(userClasses, uc)
 	}
 	if len(userClasses) > 0 {
+		if bufferTooShort {
+			return fmt.Errorf("%w: user class option too short", uio.ErrBufferTooShort)
+		}
 		op.UserClasses = userClasses
 	} else {
+		// MS-compatible format: treat entire data as a single user class
 		op.UserClasses = [][]byte{data}
 	}
 	return nil
