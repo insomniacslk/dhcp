@@ -80,3 +80,20 @@ func TestRelayPortToBytes(t *testing.T) {
 	op := OptRelayPort(0x3845)
 	require.Equal(t, []byte{0x38, 0x45}, op.ToBytes())
 }
+
+func TestRelayPortInvalidType(t *testing.T) {
+	// Create RelayOptions containing an option with the OptionRelayPort code
+	// but with an incorrect type (not *optRelayPort)
+	ro := RelayOptions{
+		Options: []Option{
+			&OptionGeneric{OptionCode: OptionRelayPort, OptionData: []byte("foobar")},
+		},
+	}
+
+	got := ro.RelayPort()
+
+	// Assert that nil is returned when type assertion fails
+	if got != nil {
+		t.Errorf("RelayPort = %v want nil", got)
+	}
+}
