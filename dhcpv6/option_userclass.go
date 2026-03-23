@@ -40,9 +40,12 @@ func (op *OptUserClass) String() string {
 
 // FromBytes builds an OptUserClass structure from a sequence of bytes.
 // The input data does not include option code and length bytes.
-// It supports both RFC 8415-compliant options (each user class preceded by a
-// 16-bit length field) and MS-compatible, non-RFC-compliant options (a single
-// user class as raw bytes without a length prefix).
+// It first attempts to parse the data as RFC 8415-compliant (each user class
+// preceded by a 16-bit length field). If no complete user class can be
+// extracted, it falls back to treating the entire data as a single user class
+// (MS-compatible, non-RFC-compliant behavior). Note that ToBytes always
+// serializes in RFC 8415-compliant format regardless of how the data was
+// originally parsed.
 func (op *OptUserClass) FromBytes(data []byte) error {
 	if len(data) == 0 {
 		return fmt.Errorf("%w: user class option must not be empty", uio.ErrBufferTooShort)
@@ -64,9 +67,12 @@ func (op *OptUserClass) FromBytes(data []byte) error {
 			return fmt.Errorf("%w: user class option too short", uio.ErrBufferTooShort)
 		}
 		op.UserClasses = userClasses
-	} else {
-		// MS-compatible format: treat entire data as a single user class
-		op.UserClasses = [][]byte{data}
+		return buf.FinError()
 	}
+	// MS-compatible fallback: no valid length-prefixed classes found,
+	// treat entire data as a single user class.
+	// Note: when no valid classes were parsed, we cannot distinguish corrupt
+	// RFC data from genuine MS-format data, so we treat it as MS-compatible.
+	op.UserClasses = [][]byte{data}
 	return nil
 }
