@@ -289,6 +289,24 @@ func NewRenewFromAck(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	)...)
 }
 
+func NewRebindFromAck(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
+	return New(PrependModifiers(modifiers,
+		WithReply(ack),
+		WithMessageType(MessageTypeRequest),
+		// The client IP must be filled in with the IP offered to the client
+		WithClientIP(ack.YourIPAddr),
+		// The renewal request must use unicast
+		WithBroadcast(true),
+		WithRequestedOptions(
+			OptionSubnetMask,
+			OptionRouter,
+			OptionDomainName,
+			OptionDomainNameServer,
+			OptionServerIdentifier,
+		),
+	)...)
+}
+
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
 func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	return New(PrependModifiers(modifiers,
