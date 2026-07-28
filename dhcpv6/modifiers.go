@@ -25,6 +25,11 @@ func WithServerID(duid DUID) Modifier {
 	return WithOption(OptServerID(duid))
 }
 
+// WithPreference adds a preference option to a DHCPv6 packet
+func WithPreference(prefValue uint8) Modifier {
+	return WithOption(OptPreference(prefValue))
+}
+
 // WithNetboot adds bootfile URL and bootfile param options to a DHCPv6 packet.
 func WithNetboot(d DHCPv6) {
 	WithRequestedOptions(OptionBootfileURL, OptionBootfileParam)(d)
