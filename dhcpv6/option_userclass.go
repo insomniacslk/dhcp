@@ -38,16 +38,41 @@ func (op *OptUserClass) String() string {
 	return fmt.Sprintf("%s: [%s]", op.Code(), strings.Join(ucStrings, ", "))
 }
 
-// FromBytes builds an OptUserClass structure from a sequence of bytes. The
-// input data does not include option code and length bytes.
+// FromBytes builds an OptUserClass structure from a sequence of bytes.
+// The input data does not include option code and length bytes.
+// It first attempts to parse the data as RFC 8415-compliant (each user class
+// preceded by a 16-bit length field). If no complete user class can be
+// extracted, it falls back to treating the entire data as a single user class
+// (MS-compatible, non-RFC-compliant behavior). Note that ToBytes always
+// serializes in RFC 8415-compliant format regardless of how the data was
+// originally parsed.
 func (op *OptUserClass) FromBytes(data []byte) error {
 	if len(data) == 0 {
 		return fmt.Errorf("%w: user class option must not be empty", uio.ErrBufferTooShort)
 	}
 	buf := uio.NewBigEndianBuffer(data)
+	var userClasses [][]byte
+	var bufferTooShort bool
 	for buf.Has(2) {
-		len := buf.Read16()
-		op.UserClasses = append(op.UserClasses, buf.CopyN(int(len)))
+		length := buf.Read16()
+		if int(length) > buf.Len() {
+			bufferTooShort = true
+			break
+		}
+		uc := buf.CopyN(int(length))
+		userClasses = append(userClasses, uc)
 	}
-	return buf.FinError()
+	if len(userClasses) > 0 {
+		if bufferTooShort {
+			return fmt.Errorf("%w: user class option too short", uio.ErrBufferTooShort)
+		}
+		op.UserClasses = userClasses
+		return buf.FinError()
+	}
+	// MS-compatible fallback: no valid length-prefixed classes found,
+	// treat entire data as a single user class.
+	// Note: when no valid classes were parsed, we cannot distinguish corrupt
+	// RFC data from genuine MS-format data, so we treat it as MS-compatible.
+	op.UserClasses = [][]byte{data}
+	return nil
 }
