@@ -187,7 +187,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
 		return err
 	}
 	defer func() {
-		if cerr := rt.Close(); err != nil {
+		if cerr := rt.Close(); cerr != nil && err == nil {
 			err = cerr
 		}
 	}()
