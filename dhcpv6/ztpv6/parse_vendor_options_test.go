@@ -92,6 +92,14 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 				EnterpriseIdentifier: []byte("001234567"),
 			},
 			want: &VendorData{VendorName: iana.EnterpriseIDCienaCorporation.String(), Model: "23422Z11-123", Serial: "001234567"},
+		}, {
+			name: "Infinera",
+			vc:   "",
+			clientId: &dhcpv6.DUIDOpaque{
+				Type: 0x3231,
+				Data: []byte("296%MA1111111111"),
+			},
+			want: &VendorData{VendorName: iana.EnterpriseIDInfineraCorp.String(), Model: "", Serial: "MA1111111111"},
 		},
 	}
 

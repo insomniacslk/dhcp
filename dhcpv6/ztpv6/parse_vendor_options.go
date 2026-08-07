@@ -2,6 +2,7 @@ package ztpv6
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -25,12 +26,26 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 	// check for both options 16 and 17 if both are present will use opt 17
 	opt16 := packet.GetOneOption(dhcpv6.OptionVendorClass)
 	opt17 := packet.GetOneOption(dhcpv6.OptionVendorOpts)
+	duid := packet.GetOneOption(dhcpv6.OptionClientID)
+	vd := VendorData{}
+	vData := []string{}
+
+	if duid != nil {
+		// Infinera encodes the DUID as an ASCII string: "<enterprise-id>%<serial>".
+		infineraPrefix := fmt.Sprintf("%d%%", iana.EnterpriseIDInfineraCorp)
+		duidRaw := string(duid.ToBytes())
+
+		if strings.HasPrefix(duidRaw, infineraPrefix) {
+			vd.VendorName = iana.EnterpriseIDInfineraCorp.String()
+			vd.Model = ""
+			vd.Serial = strings.Split(duidRaw, "%")[1]
+			return &vd, nil
+		}
+	}
+
 	if (opt16 == nil) && (opt17 == nil) {
 		return nil, errors.New("no vendor options or vendor class found")
 	}
-
-	vd := VendorData{}
-	vData := []string{}
 
 	if opt17 != nil {
 		vendorOptsOption := opt17.(*dhcpv6.OptVendorOpts)
