@@ -87,6 +87,16 @@ func (mo MessageOptions) OneIATA() *OptIATA {
 	return iatas[0]
 }
 
+// Preference returns the preference option.
+func (mo MessageOptions) Preference() uint8 {
+	opt := mo.GetOne(OptionPreference)
+	// Missing preference means 0 (RFC 9915 Section 18.2.1).
+	if opt == nil {
+		return 0
+	}
+	return opt.(*optPreference).prefValue
+}
+
 // IAPD returns all Identity Association for Prefix Delegation options.
 func (mo MessageOptions) IAPD() []*OptIAPD {
 	opts := mo.Get(OptionIAPD)
