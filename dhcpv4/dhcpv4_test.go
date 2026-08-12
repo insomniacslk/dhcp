@@ -221,7 +221,7 @@ func TestUpdateOption(t *testing.T) {
 	d.UpdateOption(bootFileOpt2)
 
 	options := d.Options
-	require.Equal(t, len(options), 2)
+	require.Equal(t, len(options.opts), 2)
 	require.Equal(t, d.GetOneOption(OptionHostName), []byte("darkstar"))
 	require.Equal(t, d.GetOneOption(OptionBootfileName), []byte("boot2.img"))
 }

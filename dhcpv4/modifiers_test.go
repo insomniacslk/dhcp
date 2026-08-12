@@ -194,7 +194,7 @@ func TestWithRelayAgentInfo(t *testing.T) {
 
 	opt := resp.RelayAgentInfo()
 	require.NotNil(t, opt)
-	require.Equal(t, len(opt.Options), 2)
+	require.Equal(t, len(opt.Options.opts), 2)
 
 	circuit := opt.Get(GenericOptionCode(1))
 	remote := opt.Get(GenericOptionCode(2))
