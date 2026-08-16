@@ -27,6 +27,9 @@ func (c *Client) Release(lease *Lease, modifiers ...dhcpv4.Modifier) error {
 	if lease == nil {
 		return fmt.Errorf("lease is nil")
 	}
+	if lease.ACK == nil {
+		return fmt.Errorf("lease ACK is nil")
+	}
 	req, err := dhcpv4.NewReleaseFromACK(lease.ACK, modifiers...)
 	if err != nil {
 		return fmt.Errorf("fail to create release request,%w", err)
@@ -45,6 +48,12 @@ func (c *Client) Release(lease *Lease, modifiers ...dhcpv4.Modifier) error {
 func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Modifier) (*Lease, error) {
 	if lease == nil {
 		return nil, fmt.Errorf("lease is nil")
+	}
+	if lease.ACK == nil {
+		return nil, fmt.Errorf("lease ACK is nil")
+	}
+	if lease.Offer == nil {
+		return nil, fmt.Errorf("lease Offer is nil")
 	}
 
 	request, err := dhcpv4.NewRenewFromAck(lease.ACK, dhcpv4.PrependModifiers(modifiers,
