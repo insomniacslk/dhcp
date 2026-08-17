@@ -15,6 +15,7 @@ import (
 
 	"github.com/mdlayher/packet"
 	"github.com/u-root/uio/uio"
+	"golang.org/x/net/bpf"
 	"golang.org/x/sys/unix"
 )
 
@@ -28,6 +29,9 @@ var (
 var (
 	// ErrUDPAddrIsRequired is an error used when a passed argument is not of type "*net.UDPAddr".
 	ErrUDPAddrIsRequired = errors.New("must supply UDPAddr")
+
+	// errPortOutOfRange is returned by NewRawUDPConn when port is not a uint16.
+	errPortOutOfRange = errors.New("port out of range")
 )
 
 // NewRawUDPConn returns a UDP connection bound to the interface and port
@@ -35,15 +39,63 @@ var (
 //
 // The interface can be completely unconfigured.
 func NewRawUDPConn(iface string, port int) (net.PacketConn, error) {
+	if port < 0 || port > 0xffff {
+		return nil, errPortOutOfRange
+	}
 	ifc, err := net.InterfaceByName(iface)
 	if err != nil {
 		return nil, err
 	}
-	rawConn, err := packet.Listen(ifc, packet.Datagram, unix.ETH_P_IP, nil)
+	rawConn, err := listenFiltered(ifc, uint16(port))
 	if err != nil {
 		return nil, err
 	}
 	return NewBroadcastUDPConn(rawConn, &net.UDPAddr{Port: port}), nil
+}
+
+// listenPacket is used for testing purposes
+var listenPacket = func(ifc *net.Interface, cfg *packet.Config) (net.PacketConn, error) {
+	return packet.Listen(ifc, packet.Datagram, unix.ETH_P_IP, cfg)
+}
+
+// listenFiltered opens the raw socket with the prefilter already applied.
+// Config.Filter takes effect before bind, so nothing is queued unfiltered; a
+// kernel that refuses it still gets a plain socket, since ReadFrom revalidates.
+func listenFiltered(ifc *net.Interface, clientPort uint16) (net.PacketConn, error) {
+	var filterErr error
+	if raw, err := bpf.Assemble(dhcpClientFilter(clientPort)); err != nil {
+		filterErr = err
+	} else if conn, err := listenPacket(ifc, &packet.Config{Filter: raw}); err != nil {
+		filterErr = err
+	} else {
+		return conn, nil
+	}
+
+	conn, err := listenPacket(ifc, nil)
+	if err != nil {
+		// The filtered failure is usually the more specific one.
+		return nil, errors.Join(filterErr, err)
+	}
+	return conn, nil
+}
+
+// dhcpClientFilter builds a classic-BPF program passing IPv4/UDP frames destined
+// to clientPort. On the SOCK_DGRAM socket offset 0 is the IPv4 header, the same
+// bytes ReadFrom parses; the filter only prefilters, ReadFrom still validates.
+func dhcpClientFilter(clientPort uint16) []bpf.Instruction {
+	const protocolUDP = 17
+	return []bpf.Instruction{
+		bpf.LoadAbsolute{Off: 0, Size: 1},                                     // version + IHL
+		bpf.ALUOpConstant{Op: bpf.ALUOpAnd, Val: 0x0f},                        // A = IHL
+		bpf.JumpIf{Cond: bpf.JumpLessThan, Val: 5, SkipTrue: 5},               // IHL < 5: drop
+		bpf.LoadAbsolute{Off: 9, Size: 1},                                     // IP protocol
+		bpf.JumpIf{Cond: bpf.JumpNotEqual, Val: protocolUDP, SkipTrue: 3},     // not UDP: drop
+		bpf.LoadMemShift{Off: 0},                                              // X = IHL * 4
+		bpf.LoadIndirect{Off: 2, Size: 2},                                     // UDP destination port
+		bpf.JumpIf{Cond: bpf.JumpEqual, Val: uint32(clientPort), SkipTrue: 1}, // matches: accept
+		bpf.RetConstant{Val: 0},                                               // drop
+		bpf.RetConstant{Val: 262144},                                          // accept
+	}
 }
 
 // BroadcastRawUDPConn uses a raw socket to send UDP packets to the broadcast
