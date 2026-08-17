@@ -142,6 +142,16 @@ func (b ipv4) transportProtocol() transportProtocolNumber {
 	return transportProtocolNumber(b.protocol())
 }
 
+const (
+	ipv4MoreFragments      = 0x2000 // "more fragments" flag
+	ipv4FragmentOffsetMask = 0x1fff // fragment-offset field
+)
+
+// flagsFragmentOffset returns the raw flags and fragment-offset field.
+func (b ipv4) flagsFragmentOffset() uint16 {
+	return binary.BigEndian.Uint16(b[flagsFO:])
+}
+
 // payloadLength returns the length of the payload portion of the ipv4 packet.
 func (b ipv4) payloadLength() uint16 {
 	return b.totalLength() - uint16(b.headerLength())
