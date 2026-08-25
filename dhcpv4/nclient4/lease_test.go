@@ -308,3 +308,11 @@ func TestLease(t *testing.T) {
 	}
 	sll.runTest(t)
 }
+
+func TestRenewNilOffer(t *testing.T) {
+	c := &Client{}
+	_, err := c.Renew(context.Background(), &Lease{})
+	if err == nil {
+		t.Fatal("expected an error when lease.Offer is nil, got nil")
+	}
+}
