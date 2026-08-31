@@ -31,6 +31,14 @@ func TestWithServerID(t *testing.T) {
 	require.Equal(t, sid, duid)
 }
 
+func TestWithPreference(t *testing.T) {
+	prefValue := uint8(25)
+	m, err := NewMessage(WithPreference(prefValue))
+	require.NoError(t, err)
+	sid := m.Options.Preference()
+	require.Equal(t, sid, prefValue)
+}
+
 func TestWithRequestedOptions(t *testing.T) {
 	// Check if ORO is created when no ORO present
 	m, err := NewMessage(WithRequestedOptions(OptionClientID))

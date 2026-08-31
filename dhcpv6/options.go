@@ -60,6 +60,8 @@ func ParseOption(code OptionCode, optData []byte) (Option, error) {
 		opt = &OptIAAddress{}
 	case OptionORO:
 		opt = &optRequestedOption{}
+	case OptionPreference:
+		opt = &optPreference{}
 	case OptionElapsedTime:
 		opt = &optElapsedTime{}
 	case OptionRelayMsg:
