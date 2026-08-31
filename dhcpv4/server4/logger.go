@@ -61,3 +61,21 @@ func (d DebugLogger) Printf(format string, v ...interface{}) {
 func (d DebugLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {
 	d.Printf("%s: %s", prefix, message.Summary())
 }
+
+// SimpleLogger is a straight-forward implementation of the new Logger
+// interface, for anyone who wishes to wrap logging simply, without having to
+// use the complicated interface directly. Just pass in your desired printf
+// function, and off you go!
+type SimpleLogger struct {
+	Logf func(format string, v ...interface{})
+}
+
+// Printf does what you'd expect, except it does so to your configured function.
+func (obj *SimpleLogger) Printf(format string, v ...interface{}) {
+	obj.Logf(format, v...)
+}
+
+// PrintMessage prints to your configured function.
+func (obj *SimpleLogger) PrintMessage(prefix string, message *dhcpv4.DHCPv4) {
+	obj.Logf("%s: %s", prefix, message)
+}
