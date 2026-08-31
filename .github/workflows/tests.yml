@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.23', '1.24']
+        go: ['1.26', '1.27']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
       - name: run unit tests
@@ -25,15 +25,15 @@ jobs:
               fi
           done
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
   integration-tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.23', '1.24']
+        go: ['1.26', '1.27']
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go }}
       - name: run integ tests
@@ -51,4 +51,4 @@ jobs:
               fi
           done
       - name: report coverage to codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v7
