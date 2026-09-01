@@ -55,3 +55,4 @@ See more example code at https://github.com/insomniacslk/exdhcp
 * u-root, an embeddable root file system, https://github.com/u-root/u-root
 * Talos: a modern OS for Kubernetes, https://github.com/talos-systems/talos
 * Smee: the network boot service in the Tinkerbell stack, https://github.com/tinkerbell/smee
+* Spinifex: AWS-compatible control plane for bare-metal and edge deployments, uses this library for DHCP on provisioned compute instances, https://github.com/mulgadc/spinifex
