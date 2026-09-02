@@ -13,6 +13,9 @@ import (
 	"net"
 	"testing"
 	"time"
+
+	"github.com/mdlayher/packet"
+	"golang.org/x/net/bpf"
 )
 
 var errNoMorePackets = errors.New("no more packets")
@@ -117,5 +120,140 @@ func TestReadFromSkipsShortFrameThenReadsNext(t *testing.T) {
 	}
 	if ua, ok := srcAddr.(*net.UDPAddr); !ok || ua.Port != 67 {
 		t.Fatalf("ReadFrom srcAddr = %v, want UDP source port 67", srcAddr)
+	}
+}
+
+// TestDHCPClientFilter runs the kernel prefilter program in the userspace BPF VM
+// to check its logic: accept an IPv4/UDP frame destined to the client port, drop
+// everything else. The VM sees the frame starting at the IPv4 header, which is
+// what the SOCK_DGRAM socket presents to the kernel-attached filter.
+func TestDHCPClientFilter(t *testing.T) {
+	vm, err := bpf.NewVM(dhcpClientFilter(68))
+	if err != nil {
+		t.Fatal(err)
+	}
+	accepted := func(pkt []byte) bool {
+		out, err := vm.Run(pkt)
+		if err != nil {
+			t.Fatalf("vm run: %v", err)
+		}
+		return out > 0
+	}
+
+	// ipOpt builds a frame whose IPv4 header carries options (IHL > 5), so the UDP
+	// port is not at a fixed offset and the filter must track IHL to find it.
+	ipOpt := func(ihl int, dport uint16) []byte {
+		hdrLen := ihl * 4
+		pkt := make([]byte, hdrLen+8)
+		pkt[0] = 0x40 | byte(ihl)
+		pkt[9] = byte(udpProtocolNumber)
+		binary.BigEndian.PutUint16(pkt[hdrLen+2:], dport)
+		return pkt
+	}
+	// tweak returns a valid port-68 frame with one big-endian 16-bit field set.
+	tweak := func(off int, v uint16) []byte {
+		pkt := frame(28+4, []byte{1, 2, 3, 4})
+		binary.BigEndian.PutUint16(pkt[off:], v)
+		return pkt
+	}
+	notUDP := frame(28+4, []byte{1, 2, 3, 4})
+	notUDP[9] = 6 // TCP
+
+	for _, tc := range []struct {
+		name string
+		pkt  []byte
+		want bool
+	}{
+		{"dhcp reply to port 68", frame(28+4, []byte{1, 2, 3, 4}), true},
+		{"ip options ihl 6 to port 68", ipOpt(6, 68), true},
+		{"ip options ihl 15 to port 68", ipOpt(15, 68), true},
+		{"ihl 4 is malformed", ipOpt(4, 68), false},
+		{"udp to port 67", tweak(22, 67), false},
+		{"ip options ihl 6 to port 67", ipOpt(6, 67), false},
+		{"not udp", notUDP, false},
+		{"truncated before the port", []byte{0x45, 0, 0, 20}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := accepted(tc.pkt); got != tc.want {
+				t.Fatalf("filter accepted = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestListenFiltered covers the open path: the socket carries the filter from
+// the start, and a refused filter still leaves the client with a working socket.
+func TestListenFiltered(t *testing.T) {
+	saved := listenPacket
+	t.Cleanup(func() { listenPacket = saved })
+
+	// record captures each config opened with; refuse fails the filtered attempt.
+	var cfgs []*packet.Config
+	record := func(refuse bool) {
+		cfgs = nil
+		listenPacket = func(_ *net.Interface, cfg *packet.Config) (net.PacketConn, error) {
+			cfgs = append(cfgs, cfg)
+			if refuse && cfg != nil {
+				return nil, errors.New("attach refused")
+			}
+			return &mockPacketConn{}, nil
+		}
+	}
+
+	t.Run("filter applied when the socket is opened", func(t *testing.T) {
+		record(false)
+		if _, err := listenFiltered(&net.Interface{}, 68); err != nil {
+			t.Fatalf("listenFiltered: %v", err)
+		}
+		if len(cfgs) != 1 {
+			t.Fatalf("opened the socket %d times, want 1", len(cfgs))
+		}
+		if cfgs[0] == nil || len(cfgs[0].Filter) == 0 {
+			t.Fatal("the socket was opened without a filter, so traffic can be captured before it applies")
+		}
+	})
+
+	t.Run("unfiltered fallback when the filter is refused", func(t *testing.T) {
+		record(true)
+		conn, err := listenFiltered(&net.Interface{}, 68)
+		if err != nil {
+			t.Fatalf("listenFiltered: %v, want the unfiltered fallback", err)
+		}
+		if conn == nil {
+			t.Fatal("no socket returned")
+		}
+		if len(cfgs) != 2 {
+			t.Fatalf("opened the socket %d times, want 2 (filtered, then plain)", len(cfgs))
+		}
+		if cfgs[1] != nil {
+			t.Fatal("the retry still carried a filter")
+		}
+	})
+
+	t.Run("both failures are reported", func(t *testing.T) {
+		filterErr := errors.New("attach refused")
+		plainErr := errors.New("no such device")
+		listenPacket = func(_ *net.Interface, cfg *packet.Config) (net.PacketConn, error) {
+			if cfg != nil {
+				return nil, filterErr
+			}
+			return nil, plainErr
+		}
+		_, err := listenFiltered(&net.Interface{}, 68)
+		if !errors.Is(err, filterErr) || !errors.Is(err, plainErr) {
+			t.Fatalf("error = %v, want both %v and %v", err, filterErr, plainErr)
+		}
+	})
+}
+
+// TestNewRawUDPConnRejectsBadPort checks a port outside uint16 is rejected before
+// any socket is opened, rather than silently truncated into the filter.
+func TestNewRawUDPConnRejectsBadPort(t *testing.T) {
+	// A nonexistent interface fails regardless, so match the specific
+	// port-range error to prove the guard ran rather than InterfaceByName.
+	for _, port := range []int{-1, 0x10000} {
+		if _, err := NewRawUDPConn("nonexistent0", port); !errors.Is(err, errPortOutOfRange) {
+			t.Errorf("NewRawUDPConn(port %d) error = %v, want errPortOutOfRange", port, err)
+		}
 	}
 }
