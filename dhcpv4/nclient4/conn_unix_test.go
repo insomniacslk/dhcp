@@ -119,3 +119,51 @@ func TestReadFromSkipsShortFrameThenReadsNext(t *testing.T) {
 		t.Fatalf("ReadFrom srcAddr = %v, want UDP source port 67", srcAddr)
 	}
 }
+
+// TestReadFromRejectsFragments checks the fragment guard: a more-fragments flag
+// or non-zero offset is skipped, a clear field or don't-fragment alone passes.
+// The reserved bit stays permissive; this polices fragmentation, not flag validity.
+func TestReadFromRejectsFragments(t *testing.T) {
+	const (
+		dontFragment   = 0x4000
+		moreFragments  = 0x2000
+		fragmentOffset = 0x0001
+		reservedBit    = 0x8000
+	)
+	dhcp := []byte{0xAA, 0xBB, 0xCC, 0xDD}
+	for _, tc := range []struct {
+		name  string
+		field uint16
+		skip  bool
+	}{
+		{"no flags", 0, false},
+		{"dont fragment", dontFragment, false},
+		{"reserved bit kept permissive", reservedBit, false},
+		{"more fragments", moreFragments, true},
+		{"fragment offset", fragmentOffset, true},
+		{"more fragments and offset", moreFragments | fragmentOffset, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			pkt := frame(28+len(dhcp), dhcp)
+			binary.BigEndian.PutUint16(pkt[6:], tc.field)
+			upc := &BroadcastRawUDPConn{
+				PacketConn: &mockPacketConn{reads: [][]byte{pkt}},
+				boundAddr:  &net.UDPAddr{Port: 68},
+			}
+			b := make([]byte, 512)
+			n, _, err := upc.ReadFrom(b)
+			if tc.skip {
+				if !errors.Is(err, errNoMorePackets) {
+					t.Fatalf("want the fragment skipped (next read %v), got n=%d err=%v", errNoMorePackets, n, err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("want the frame accepted, got err=%v", err)
+			}
+			if !bytes.Equal(b[:n], dhcp) {
+				t.Fatalf("payload = %x, want %x", b[:n], dhcp)
+			}
+		})
+	}
+}

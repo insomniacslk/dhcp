@@ -105,6 +105,12 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 			continue
 		}
 
+		// A raw packet socket delivers fragments unreassembled; a non-first
+		// fragment has no UDP header and would be misparsed.
+		if ipHdr.flagsFragmentOffset()&(ipv4MoreFragments|ipv4FragmentOffsetMask) != 0 {
+			continue
+		}
+
 		ipHdr = ipv4(buf.Consume(int(ipHdr.headerLength())))
 
 		if ipHdr.transportProtocol() != udpProtocolNumber {
