@@ -47,6 +47,10 @@ func (c *Client) Renew(ctx context.Context, lease *Lease, modifiers ...dhcpv4.Mo
 		return nil, fmt.Errorf("lease is nil")
 	}
 
+	if lease.Offer == nil {
+		return nil, fmt.Errorf("lease.Offer is nil")
+	}
+
 	request, err := dhcpv4.NewRenewFromAck(lease.ACK, dhcpv4.PrependModifiers(modifiers,
 		dhcpv4.WithOption(dhcpv4.OptMaxMessageSize(MaxMessageSize)))...)
 	if err != nil {
