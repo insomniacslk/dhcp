@@ -1,3 +1,5 @@
+//go:build !windows
+
 // Package client4 is deprecated. Use "nclient4" instead.
 package client4
 
