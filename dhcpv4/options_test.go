@@ -166,12 +166,12 @@ func TestOptionsMarshal(t *testing.T) {
 		want []byte
 	}{
 		{
-			opts: nil,
+			opts: Options{},
 			want: nil,
 		},
 		{
 			opts: Options{
-				5: []byte{1, 2, 3, 4},
+				[]optionCodeValue{{5, []byte{1, 2, 3, 4}}},
 			},
 			want: []byte{
 				5 /* key */, 4 /* length */, 1, 2, 3, 4,
@@ -180,12 +180,12 @@ func TestOptionsMarshal(t *testing.T) {
 		{
 			// Test sorted key order.
 			// RFC 3046 section 2.1 states that option 82 SHALL come last.
-			opts: Options{
-				5:   []byte{1, 2, 3},
-				82:  []byte{201, 202, 203},
-				100: []byte{101, 102, 103},
-				255: []byte{},
-			},
+			opts: Options{[]optionCodeValue{
+				{5, []byte{1, 2, 3}},
+				{82, []byte{201, 202, 203}},
+				{100, []byte{101, 102, 103}},
+				{255, []byte{}},
+			}},
 			want: []byte{
 				5, 3, 1, 2, 3,
 				100, 3, 101, 102, 103,
@@ -194,9 +194,9 @@ func TestOptionsMarshal(t *testing.T) {
 		},
 		{
 			// Test RFC 3396.
-			opts: Options{
-				5: bytes.Repeat([]byte{10}, math.MaxUint8+1),
-			},
+			opts: Options{[]optionCodeValue{
+				{5, bytes.Repeat([]byte{10}, math.MaxUint8+1)},
+			}},
 			want: append(append(
 				[]byte{5, math.MaxUint8}, bytes.Repeat([]byte{10}, math.MaxUint8)...),
 				5, 1, 10,
@@ -204,19 +204,36 @@ func TestOptionsMarshal(t *testing.T) {
 		},
 		{
 			// Test 0-length options
-			opts: Options{
-				80: []byte{},
-			},
+			opts: Options{[]optionCodeValue{
+				{80, []byte{}},
+			}},
 			want: []byte{80, 0},
 		},
 		{
 			// Test special options, handled by the message marshalling code
 			// and ignored by the options marshalling code
-			opts: Options{
-				0:   []byte{}, // Padding
-				255: []byte{}, // End of options
-			},
+			opts: Options{[]optionCodeValue{
+				{255, []byte{}}, // End of options
+			}},
 			want: nil, // not written out
+		},
+		{
+			// Test padding is added
+			opts: Options{[]optionCodeValue{
+				{100, []byte{101, 102, 103}},
+				{0, []byte{}},
+				{5, []byte{1, 2, 3}},
+				{0, []byte{}},
+				{255, []byte{}},
+				{0, []byte{}},
+			}},
+			want: []byte{
+				100, 3, 101, 102, 103,
+				0,
+				5, 3, 1, 2, 3,
+				0,
+				0,
+			},
 		},
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
@@ -268,9 +285,9 @@ func TestOptionsUnmarshal(t *testing.T) {
 				3, 2, 5, 6,
 				byte(OptionEnd),
 			},
-			want: Options{
-				3: []byte{5, 6},
-			},
+			want: Options{[]optionCodeValue{
+				{3, []byte{5, 6}},
+			}},
 		},
 		{
 			// Test RFC 3396.
@@ -279,9 +296,9 @@ func TestOptionsUnmarshal(t *testing.T) {
 				3, 5, 10, 10, 10, 10, 10,
 				byte(OptionEnd),
 			),
-			want: Options{
-				3: bytes.Repeat([]byte{10}, math.MaxUint8+5),
-			},
+			want: Options{[]optionCodeValue{
+				{3, bytes.Repeat([]byte{10}, math.MaxUint8+5)},
+			}},
 		},
 		{
 			input: []byte{
@@ -289,23 +306,23 @@ func TestOptionsUnmarshal(t *testing.T) {
 				11, 3, 5, 5, 5,
 				byte(OptionEnd),
 			},
-			want: Options{
-				10: []byte{255, 254},
-				11: []byte{5, 5, 5},
-			},
+			want: Options{[]optionCodeValue{
+				{10, []byte{255, 254}},
+				{11, []byte{5, 5, 5}},
+			}},
 		},
 		{
 			input: append(
 				append([]byte{10, 2, 255, 254}, bytes.Repeat([]byte{byte(OptionPad)}, 255)...),
 				byte(OptionEnd),
 			),
-			want: Options{
-				10: []byte{255, 254},
-			},
+			want: Options{[]optionCodeValue{
+				{10, []byte{255, 254}},
+			}},
 		},
 	} {
 		t.Run(fmt.Sprintf("Test %02d", i), func(t *testing.T) {
-			opt := make(Options)
+			opt := Options{}
 			err := opt.fromBytesCheckEnd(tt.input, true)
 			if tt.wantError {
 				require.Error(t, err)

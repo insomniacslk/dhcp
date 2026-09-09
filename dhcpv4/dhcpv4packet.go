@@ -161,7 +161,7 @@ func newDHCPv4(xid TransactionID, modifiers ...Modifier) *DHCPv4 {
 		YourIPAddr:    net.IPv4zero,
 		ServerIPAddr:  net.IPv4zero,
 		GatewayIPAddr: net.IPv4zero,
-		Options:       make(Options),
+		Options:       Options{},
 	}
 	for _, mod := range modifiers {
 		mod(&d)
@@ -322,7 +322,7 @@ func FromBytes(q []byte) (*DHCPv4, error) {
 		return nil, fmt.Errorf("malformed DHCP packet: got magic cookie %v, want %v", cookie[:], magicCookie[:])
 	}
 
-	p.Options = make(Options)
+	p.Options = Options{}
 	if err := p.Options.fromBytesCheckEnd(buf.Data(), true); err != nil {
 		return nil, err
 	}
@@ -373,17 +373,12 @@ func (d *DHCPv4) GetOneOption(code OptionCode) []byte {
 
 // DeleteOption deletes an existing option with the given option code.
 func (d *DHCPv4) DeleteOption(code OptionCode) {
-	if d.Options != nil {
-		d.Options.Del(code)
-	}
+	d.Options.Del(code)
 }
 
 // UpdateOption replaces an existing option with the same option code with the
 // given one, adding it if not already present.
 func (d *DHCPv4) UpdateOption(opt Option) {
-	if d.Options == nil {
-		d.Options = make(Options)
-	}
 	d.Options.Update(opt)
 }
 

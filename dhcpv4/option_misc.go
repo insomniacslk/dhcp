@@ -21,3 +21,8 @@ func OptClientArch(archs ...iana.Arch) Option {
 func OptClientIdentifier(ident []byte) Option {
 	return OptGeneric(OptionClientIdentifier, ident)
 }
+
+// OptPadding returns a new padding option.
+func OptPadding() Option {
+	return OptGeneric(OptionPad, nil)
+}
