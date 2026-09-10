@@ -118,9 +118,10 @@ func ParseVendorData(packet dhcpv6.DHCPv6) (*VendorData, error) {
 			}
 			vd.VendorName = iana.EnterpriseIDCienaCorporation.String()
 			vd.Model = v[1] + "-" + v[2]
-			duid := packet.(*dhcpv6.Message).Options.ClientID()
-			if enterpriseDUID, ok := duid.(*dhcpv6.DUIDEN); ok {
-				vd.Serial = string(enterpriseDUID.EnterpriseIdentifier)
+			if msg, ok := packet.(*dhcpv6.Message); ok {
+				if enterpriseDUID, ok := msg.Options.ClientID().(*dhcpv6.DUIDEN); ok {
+					vd.Serial = string(enterpriseDUID.EnterpriseIdentifier)
+				}
 			}
 			return &vd, nil
 		}
