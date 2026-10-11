@@ -343,10 +343,13 @@ func getOption(code OptionCode, data []byte, vendorDecoder OptionDecoder) fmt.St
 		d = &rfc1035label.Labels{}
 
 	case OptionIPAddressLeaseTime, OptionRenewTimeValue,
-		OptionRebindingTimeValue, OptionIPv6OnlyPreferred, OptionArpCacheTimeout,
-		OptionTimeOffset:
+		OptionRebindingTimeValue, OptionIPv6OnlyPreferred, OptionArpCacheTimeout:
 		var dur Duration
 		d = &dur
+
+	case OptionTimeOffset:
+		var off TimeOffset
+		d = &off
 
 	case OptionMaximumDHCPMessageSize:
 		var u Uint16
