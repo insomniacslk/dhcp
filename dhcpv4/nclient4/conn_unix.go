@@ -125,6 +125,13 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 
 		udpHdr := udp(buf.Consume(udpHdrLen))
 
+		// The IPv4 payload was already bounded, but not the UDP length: it must
+		// cover the 8-byte header and fit inside that payload, which may be longer.
+		udpLen := int(udpHdr.length())
+		if udpLen < udpHdrLen || udpLen > ipPayloadLen {
+			continue
+		}
+
 		addr := &net.UDPAddr{
 			IP:   ipHdr.destinationAddress(),
 			Port: int(udpHdr.destinationPort()),
@@ -136,9 +143,8 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 			IP:   ipHdr.sourceAddress(),
 			Port: int(udpHdr.sourcePort()),
 		}
-		// Extra padding after the end of the IP payload is ignored; otherwise
-		// dhcp option parsing would fail.
-		dhcpLen := ipPayloadLen - udpHdrLen
+		// Bytes past the UDP length are a surplus area, not dhcp data.
+		dhcpLen := udpLen - udpHdrLen
 		if !buf.Has(dhcpLen) {
 			continue
 		}
