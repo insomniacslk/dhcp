@@ -77,3 +77,28 @@ func TestOptUserClassString(t *testing.T) {
 		"String() should contain the list of user classes",
 	)
 }
+
+func TestOptUserClassTruncatedAfterValid(t *testing.T) {
+	// Valid entry "ABC" followed by a truncated entry (declared length 5, only 1 byte)
+	data := []byte{0, 3, 'A', 'B', 'C', 0, 5, 'X'}
+	var opt OptUserClass
+	err := opt.FromBytes(data)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, uio.ErrBufferTooShort), "expected ErrBufferTooShort, got %v", err)
+}
+
+func TestOptUserClassMicrosoftFormat(t *testing.T) {
+	data := []byte{
+		'l', 'i', 'n', 'u', 'x', 'b', 'o', 'o', 't',
+	}
+	var opt OptUserClass
+	err := opt.FromBytes(data)
+	require.NoError(t, err)
+
+	require.Contains(
+		t,
+		opt.String(),
+		"User Class: [linuxboot]",
+		"String() should contain the list of user classes",
+	)
+}
