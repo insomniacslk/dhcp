@@ -87,16 +87,19 @@ func (upc *BroadcastRawUDPConn) ReadFrom(b []byte) (int, net.Addr, error) {
 	ipHdrMaxLen := ipv4MaximumHeaderSize
 	udpHdrLen := udpMinimumSize
 
+	// Reuse one backing buffer for the whole call so a flood of dropped frames
+	// does not allocate a fresh buffer per read.
+	recvBuf := make([]byte, ipHdrMaxLen+udpHdrLen+len(b))
+
 	for {
-		pkt := make([]byte, ipHdrMaxLen+udpHdrLen+len(b))
-		n, _, err := upc.PacketConn.ReadFrom(pkt)
+		n, _, err := upc.PacketConn.ReadFrom(recvBuf)
 		if err != nil {
 			return 0, nil, err
 		}
 		if n == 0 {
 			return 0, nil, io.EOF
 		}
-		pkt = pkt[:n]
+		pkt := recvBuf[:n]
 		buf := uio.NewBigEndianBuffer(pkt)
 
 		ipHdr := ipv4(buf.Data())
