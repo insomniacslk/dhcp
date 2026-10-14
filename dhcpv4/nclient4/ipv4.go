@@ -353,7 +353,13 @@ func udp4pkt(packet []byte, dest *net.UDPAddr, src *net.UDPAddr) []byte {
 
 	xsum := checksum(packet, pseudoHeaderchecksum(
 		ipv4hdr.transportProtocol(), ipv4fields.SrcAddr, ipv4fields.DstAddr))
-	udphdr.setChecksum(^udphdr.calculateChecksum(xsum, udphdr.length()))
+	// A zero field means the sender generated no checksum, so RFC 768 puts a
+	// calculated zero on the wire as its one's-complement equivalent.
+	udpChecksum := ^udphdr.calculateChecksum(xsum, udphdr.length())
+	if udpChecksum == 0 {
+		udpChecksum = 0xffff
+	}
+	udphdr.setChecksum(udpChecksum)
 
 	hdr.WriteBytes(packet)
 	return hdr.Data()
