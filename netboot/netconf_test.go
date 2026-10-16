@@ -130,3 +130,21 @@ func TestGetNetConfFromPacketv4(t *testing.T) {
 	require.Equal(t, 1, len(netconf.Routers))
 	require.Equal(t, net.ParseIP("10.0.0.254").To4(), netconf.Routers[0])
 }
+
+func TestResolvConfRejectsInjectedSearchDomain(t *testing.T) {
+	// A single label whose bytes contain a newline, as a DHCP server can send
+	// in the domain search option.
+	label := "corp\noptions ndots:15"
+	raw := append([]byte{byte(len(label))}, label...)
+	raw = append(raw, 0)
+	d, _ := dhcpv4.New(
+		dhcpv4.WithNetmask(net.IPv4Mask(255, 255, 255, 0)),
+		dhcpv4.WithYourIP(net.ParseIP("10.0.0.1")),
+		dhcpv4.WithDNS(net.ParseIP("10.10.0.1")),
+		dhcpv4.WithGeneric(dhcpv4.OptionDNSDomainSearchList, append(raw, []byte("\x0cslackware.it\x00")...)),
+	)
+
+	netconf, err := GetNetConfFromPacketv4(d)
+	require.NoError(t, err)
+	require.Equal(t, "nameserver 10.10.0.1\nsearch slackware.it\n", resolvConf(netconf))
+}

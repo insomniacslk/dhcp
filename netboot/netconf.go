@@ -175,6 +175,44 @@ func IfUp(ifname string, timeout time.Duration) (_ *net.Interface, err error) {
 	return nil, fmt.Errorf("timed out while waiting for %s to come up", ifname)
 }
 
+// isValidSearchDomain reports whether name can be written to a resolv.conf
+// search line. Labels decoded from DHCP may contain arbitrary bytes, so
+// whitespace, newlines or comment characters would otherwise let a DHCP server
+// inject extra resolv.conf directives.
+func isValidSearchDomain(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i := 0; i < len(name); i++ {
+		c := name[i]
+		switch {
+		case c >= 'a' && c <= 'z', c >= 'A' && c <= 'Z', c >= '0' && c <= '9':
+		case c == '-', c == '_', c == '.':
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// resolvConf returns the resolv.conf content for netconf.
+func resolvConf(netconf *NetConf) string {
+	resolvconf := ""
+	for _, ns := range netconf.DNSServers {
+		resolvconf += fmt.Sprintf("nameserver %s\n", ns)
+	}
+	var search []string
+	for _, domain := range netconf.DNSSearchList {
+		if isValidSearchDomain(domain) {
+			search = append(search, domain)
+		}
+	}
+	if len(search) > 0 {
+		resolvconf += fmt.Sprintf("search %s\n", strings.Join(search, " "))
+	}
+	return resolvconf
+}
+
 // ConfigureInterface configures a network interface with the configuration held by a
 // NetConf structure
 func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
@@ -198,14 +236,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
 		}
 	}
 	// configure /etc/resolv.conf
-	resolvconf := ""
-	for _, ns := range netconf.DNSServers {
-		resolvconf += fmt.Sprintf("nameserver %s\n", ns)
-	}
-	if len(netconf.DNSSearchList) > 0 {
-		resolvconf += fmt.Sprintf("search %s\n", strings.Join(netconf.DNSSearchList, " "))
-	}
-	if err = os.WriteFile("/etc/resolv.conf", []byte(resolvconf), 0644); err != nil {
+	if err = os.WriteFile("/etc/resolv.conf", []byte(resolvConf(netconf)), 0644); err != nil {
 		return fmt.Errorf("could not write resolv.conf file %v", err)
 	}
 
