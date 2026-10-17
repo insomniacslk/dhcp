@@ -175,6 +175,27 @@ func IfUp(ifname string, timeout time.Duration) (_ *net.Interface, err error) {
 	return nil, fmt.Errorf("timed out while waiting for %s to come up", ifname)
 }
 
+// resolvConf returns the resolv.conf content for netconf.
+func resolvConf(netconf *NetConf) string {
+	resolvconf := ""
+	for _, ns := range netconf.DNSServers {
+		resolvconf += fmt.Sprintf("nameserver %s\n", ns)
+	}
+	// Search domains come from DHCP labels, which may hold arbitrary bytes.
+	// Skip any that would break out of the search line.
+	var search []string
+	for _, domain := range netconf.DNSSearchList {
+		if domain == "" || strings.ContainsAny(domain, " \t\r\n\v\f#;") {
+			continue
+		}
+		search = append(search, domain)
+	}
+	if len(search) > 0 {
+		resolvconf += fmt.Sprintf("search %s\n", strings.Join(search, " "))
+	}
+	return resolvconf
+}
+
 // ConfigureInterface configures a network interface with the configuration held by a
 // NetConf structure
 func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
@@ -198,14 +219,7 @@ func ConfigureInterface(ifname string, netconf *NetConf) (err error) {
 		}
 	}
 	// configure /etc/resolv.conf
-	resolvconf := ""
-	for _, ns := range netconf.DNSServers {
-		resolvconf += fmt.Sprintf("nameserver %s\n", ns)
-	}
-	if len(netconf.DNSSearchList) > 0 {
-		resolvconf += fmt.Sprintf("search %s\n", strings.Join(netconf.DNSSearchList, " "))
-	}
-	if err = os.WriteFile("/etc/resolv.conf", []byte(resolvconf), 0644); err != nil {
+	if err = os.WriteFile("/etc/resolv.conf", []byte(resolvConf(netconf)), 0644); err != nil {
 		return fmt.Errorf("could not write resolv.conf file %v", err)
 	}
 
