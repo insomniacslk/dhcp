@@ -659,6 +659,22 @@ func (d *DHCPv4) DomainSearch() *rfc1035label.Labels {
 	return labels
 }
 
+// TimeOffset returns the client's UTC offset, or def if the option is
+// missing or not four bytes. A positive duration is east of UTC.
+//
+// The time offset option is described by RFC 2132, Section 3.4.
+func (d *DHCPv4) TimeOffset(def time.Duration) time.Duration {
+	v := d.Options.Get(OptionTimeOffset)
+	if v == nil {
+		return def
+	}
+	var off TimeOffset
+	if err := off.FromBytes(v); err != nil {
+		return def
+	}
+	return time.Duration(off)
+}
+
 // IPAddressLeaseTime returns the IP address lease time or the given
 // default duration if not present.
 //
