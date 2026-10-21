@@ -237,6 +237,26 @@ func NewRenewFromAck(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	)...)
 }
 
+// NewRebindFromAck builds a DHCPv4 REBIND-style request from the ACK of a lease. REBIND requests
+// must be broadcast and request the Server Identifier option, as specified by RFC 2131, section 4.3.2.
+func NewRebindFromAck(ack *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
+	return New(PrependModifiers(modifiers,
+		WithReply(ack),
+		WithMessageType(MessageTypeRequest),
+		// The client IP must be filled in with the IP offered to the client
+		WithClientIP(ack.YourIPAddr),
+		// The rebinding request must use broadcast
+		WithBroadcast(true),
+		WithRequestedOptions(
+			OptionSubnetMask,
+			OptionRouter,
+			OptionDomainName,
+			OptionDomainNameServer,
+			OptionServerIdentifier,
+		),
+	)...)
+}
+
 // NewReplyFromRequest builds a DHCPv4 reply from a request.
 func NewReplyFromRequest(request *DHCPv4, modifiers ...Modifier) (*DHCPv4, error) {
 	return New(PrependModifiers(modifiers,
