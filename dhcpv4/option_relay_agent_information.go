@@ -34,7 +34,7 @@ func (r RelayOptions) String() string {
 
 // FromBytes parses relay agent options from data.
 func (r *RelayOptions) FromBytes(data []byte) error {
-	r.Options = make(Options)
+	r.Options = Options{}
 	return r.Options.FromBytes(data)
 }
 

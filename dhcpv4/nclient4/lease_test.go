@@ -139,7 +139,7 @@ func (sll *testServerLeaseList) testLeaseReleaseHandle(conn net.PacketConn, peer
 		return fmt.Errorf("gateway IP is %v, expect 0", m.GatewayIPAddr)
 	}
 	mustlist, maylist := sll.getCheckList()
-	for o := range m.Options {
+	for o := range m.Options.All() {
 		foundInMust := false
 		foundInMay := false
 		if _, ok := mustlist[o]; ok {
