@@ -86,6 +86,9 @@ func (op *OptIAPrefix) FromBytes(data []byte) error {
 	op.ValidLifetime = t2.Duration
 
 	length := buf.Read8()
+	if length > 128 {
+		return fmt.Errorf("invalid prefix length %d in IAPrefix option", length)
+	}
 	ip := net.IP(buf.CopyN(net.IPv6len))
 
 	if length == 0 {

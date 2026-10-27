@@ -147,8 +147,16 @@ func (op *Opt4RDMapRule) String() string {
 // The input data does not include option code and length bytes.
 func (op *Opt4RDMapRule) FromBytes(data []byte) error {
 	buf := uio.NewBigEndianBuffer(data)
-	op.Prefix4.Mask = net.CIDRMask(int(buf.Read8()), 32)
-	op.Prefix6.Mask = net.CIDRMask(int(buf.Read8()), 128)
+	prefix4Len := buf.Read8()
+	if prefix4Len > 32 {
+		return fmt.Errorf("invalid IPv4 prefix length %d in 4RD map rule option", prefix4Len)
+	}
+	prefix6Len := buf.Read8()
+	if prefix6Len > 128 {
+		return fmt.Errorf("invalid IPv6 prefix length %d in 4RD map rule option", prefix6Len)
+	}
+	op.Prefix4.Mask = net.CIDRMask(int(prefix4Len), 32)
+	op.Prefix6.Mask = net.CIDRMask(int(prefix6Len), 128)
 	op.EABitsLength = buf.Read8()
 	op.WKPAuthorized = (buf.Read8() & opt4RDWKPAuthorizedMask) != 0
 	op.Prefix4.IP = net.IP(buf.CopyN(net.IPv4len))

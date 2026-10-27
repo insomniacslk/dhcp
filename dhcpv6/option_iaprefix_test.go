@@ -148,6 +148,21 @@ func TestIAPrefixParseAndGetter(t *testing.T) {
 	}
 }
 
+func TestIAPrefixInvalidPrefixLength(t *testing.T) {
+	buf := []byte{
+		0, 26, // IAPrefix option code
+		0, 25, // length
+		0, 0, 0, 1, // PreferredLifetime
+		0, 0, 0, 2, // ValidLifetime
+		129,                                                        // prefix length
+		0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // v6-prefix
+	}
+	var mo PDOptions
+	err := mo.FromBytes(buf)
+	require.Error(t, err)
+	require.Empty(t, mo.Prefixes())
+}
+
 func TestOptIAPrefixString(t *testing.T) {
 	buf := []byte{
 		0x00, 0x00, 0x00, 60, // preferredLifetime

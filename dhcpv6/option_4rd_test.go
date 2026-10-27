@@ -329,6 +329,43 @@ func TestOpt4RDNonMapRuleString(t *testing.T) {
 		"String() should contain the domain PMTU")
 }
 
+func TestOpt4RDMapRuleInvalidPrefixLength(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		buf  []byte
+	}{
+		{
+			name: "ipv4 prefix length 33",
+			buf: append([]byte{
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				33, // prefix4-length
+				16, // prefix6-length
+				8,  // ea-len
+				0,  // WKPAuthorized
+			}, bytes.Repeat([]byte{0x00}, 4+16)...),
+		},
+		{
+			name: "ipv6 prefix length 129",
+			buf: append([]byte{
+				0, 98, // 4RD Map Rule option
+				0, 24, // length
+				16,  // prefix4-length
+				129, // prefix6-length
+				8,   // ea-len
+				0,   // WKPAuthorized
+			}, bytes.Repeat([]byte{0x00}, 4+16)...),
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var frdo FourRDOptions
+			err := frdo.FromBytes(tt.buf)
+			require.Error(t, err)
+			require.Empty(t, frdo.MapRules())
+		})
+	}
+}
+
 func TestOpt4RDMapRuleToBytes(t *testing.T) {
 	opt := Opt4RDMapRule{
 		EABitsLength:  32,
