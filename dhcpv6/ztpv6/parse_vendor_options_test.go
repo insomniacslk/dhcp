@@ -128,3 +128,24 @@ func TestParseVendorDataWithVendorClass(t *testing.T) {
 		})
 	}
 }
+
+// TestParseVendorDataCienaRelayMessage ensures ParseVendorData does not panic
+// when handed a RelayMessage (rather than a *Message) carrying a Ciena vendor
+// class option. The ztpv6 helpers are documented to run on relayed packets, so
+// a *RelayMessage is a legitimate input.
+func TestParseVendorDataCienaRelayMessage(t *testing.T) {
+	relay := &dhcpv6.RelayMessage{
+		MessageType: dhcpv6.MessageTypeRelayForward,
+	}
+	relay.Options.Add(&dhcpv6.OptVendorClass{
+		EnterpriseNumber: uint32(iana.EnterpriseIDCienaCorporation),
+		Data:             [][]byte{[]byte("1271-23422Z11-123")},
+	})
+
+	vd, err := ParseVendorData(relay)
+	require.NoError(t, err)
+	require.Equal(t, &VendorData{
+		VendorName: iana.EnterpriseIDCienaCorporation.String(),
+		Model:      "23422Z11-123",
+	}, vd)
+}
