@@ -159,8 +159,8 @@ func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
 	return nil
 }
 
-// sortedKeys returns an ordered slice of option keys from the Options map, for
-// use in serializing options to binary.
+// sortedKeys returns the slice of option keys from the Options map,
+// ensuring 82 comes last, for use in serializing options to binary.
 func (o Options) sortedKeys() []int {
 	// Send all values for a given key
 	var codes []int
@@ -177,8 +177,6 @@ func (o Options) sortedKeys() []int {
 		}
 		codes = append(codes, int(k))
 	}
-
-	sort.Ints(codes)
 
 	if hasOptAgentInfo {
 		codes = append(codes, optAgentInfo)
