@@ -106,6 +106,7 @@ func (o Options) FromBytes(data []byte) error {
 
 const (
 	optPad       = 0
+	optMsgType   = 53
 	optAgentInfo = 82
 	optEnd       = 255
 )
@@ -159,13 +160,19 @@ func (o Options) fromBytesCheckEnd(data []byte, checkEndOption bool) error {
 	return nil
 }
 
-// sortedKeys returns an ordered slice of option keys from the Options map, for
-// use in serializing options to binary.
+// sortedKeys returns the slice of option keys from the Options map,
+// ensuring 82 comes last, for use in serializing options to binary.
 func (o Options) sortedKeys() []int {
 	// Send all values for a given key
 	var codes []int
-	var hasOptAgentInfo, hasOptEnd bool
+	var hasOptMsgType, hasOptAgentInfo, hasOptEnd bool
 	for k := range o {
+		// RFC 2131 section 3 states that option 53 must be included in every message.
+		// For interoperability it should come first.
+		if k == optMsgType {
+			hasOptMsgType = true
+			continue
+		}
 		// RFC 3046 section 2.1 states that option 82 SHALL come last (ignoring End).
 		if k == optAgentInfo {
 			hasOptAgentInfo = true
@@ -180,6 +187,9 @@ func (o Options) sortedKeys() []int {
 
 	sort.Ints(codes)
 
+	if hasOptMsgType {
+		codes = append([]int{optMsgType}, codes...)
+	}
 	if hasOptAgentInfo {
 		codes = append(codes, optAgentInfo)
 	}
