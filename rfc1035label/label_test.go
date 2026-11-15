@@ -1,6 +1,7 @@
 package rfc1035label
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -171,4 +172,33 @@ func FuzzLabel(f *testing.F) {
 		}
 		labels.ToBytes()
 	})
+}
+
+func TestLabelsFromBytesMaxNameLength(t *testing.T) {
+	label63 := append([]byte{63}, bytes.Repeat([]byte{'a'}, 63)...)
+	label61 := append([]byte{61}, bytes.Repeat([]byte{'a'}, 61)...)
+
+	// 3*64 + 62 + 1 = 255 octets: the longest valid name.
+	data := bytes.Join([][]byte{label63, label63, label63, label61, {0}}, nil)
+	require.Equal(t, 255, len(data))
+	labels, err := FromBytes(data)
+	require.NoError(t, err)
+	require.Equal(t, 1, len(labels.Labels))
+
+	// 4*64 + 1 = 257 octets.
+	data = bytes.Join([][]byte{label63, label63, label63, label63, {0}}, nil)
+	_, err = FromBytes(data)
+	require.Error(t, err)
+}
+
+func TestCompressedLabelTooLong(t *testing.T) {
+	label63 := append([]byte{63}, bytes.Repeat([]byte{'a'}, 63)...)
+	data := bytes.Join([][]byte{
+		// 3*64 + 1 = 193 octets
+		label63, label63, label63, {0},
+		// 64 octets followed by a pointer to the name above: 257 octets
+		label63, {192, 0},
+	}, nil)
+	_, err := FromBytes(data)
+	require.Error(t, err)
 }

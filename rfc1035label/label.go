@@ -93,12 +93,18 @@ func FromBytes(data []byte) (*Labels, error) {
 // length or missing bytes.
 var ErrBufferTooShort = errors.New("rfc1035label: buffer too short")
 
+// maxNameLength is the maximum length of a domain name in octets, including
+// the label length octets and the terminating zero-length label, as per RFC
+// 1035 Section 3.1.
+const maxNameLength = 255
+
 // fromBytes decodes a serialized stream and returns a list of labels
 func labelsFromBytes(buf []byte) ([]string, error) {
 	var (
 		labels          = make([]string, 0)
 		pos, oldPos     int
 		label           string
+		nameLength      = 1 // the terminating zero-length label
 		handlingPointer bool
 	)
 
@@ -118,6 +124,7 @@ func labelsFromBytes(buf []byte) ([]string, error) {
 		if length == 0 {
 			labels = append(labels, label)
 			label = ""
+			nameLength = 1
 			if handlingPointer {
 				pos = oldPos
 				handlingPointer = false
@@ -137,6 +144,10 @@ func labelsFromBytes(buf []byte) ([]string, error) {
 		} else {
 			if pos+length > len(buf) {
 				return nil, ErrBufferTooShort
+			}
+			nameLength += 1 + length
+			if nameLength > maxNameLength {
+				return nil, errors.New("rfc1035label: domain name too long")
 			}
 			chunk = string(buf[pos : pos+length])
 			if label != "" {
