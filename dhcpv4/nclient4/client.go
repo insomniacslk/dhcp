@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build go1.12
 // +build go1.12
 
 // Package nclient4 is a small, minimum-functionality client for DHCPv4.
@@ -143,6 +144,10 @@ type Client struct {
 	// bufferCap is the channel capacity for each TransactionID.
 	bufferCap int
 
+	// Store creation date -> Used to define numSeconds request field
+	// 		some servers won't respond if numSeconds fields is not set.
+	creationDate time.Time
+
 	// serverAddr is the UDP address to send all packets to.
 	//
 	// This may be an actual broadcast address, or a unicast address.
@@ -177,13 +182,14 @@ func NewWithConn(conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts ...Clie
 
 func new(iface string, conn net.PacketConn, ifaceHWAddr net.HardwareAddr, opts ...ClientOpt) (*Client, error) {
 	c := &Client{
-		ifaceHWAddr: ifaceHWAddr,
-		timeout:     DefaultTimeout,
-		retry:       DefaultRetries,
-		serverAddr:  DefaultServers,
-		bufferCap:   defaultBufferCap,
-		conn:        conn,
-		logger:      EmptyLogger{},
+		ifaceHWAddr:  ifaceHWAddr,
+		timeout:      DefaultTimeout,
+		retry:        DefaultRetries,
+		serverAddr:   DefaultServers,
+		bufferCap:    defaultBufferCap,
+		creationDate: time.Now(),
+		conn:         conn,
+		logger:       EmptyLogger{},
 
 		done:    make(chan struct{}),
 		pending: make(map[dhcpv4.TransactionID]*pendingCh),
@@ -563,6 +569,9 @@ func (err *ErrTransactionIDInUse) Error() string {
 // The returned lambda function must be called after all desired responses have
 // been received in order to return the Transaction ID to the usable pool.
 func (c *Client) send(dest *net.UDPAddr, msg *dhcpv4.DHCPv4) (resp <-chan *dhcpv4.DHCPv4, cancel func(), err error) {
+	// Update time since trying to acquire lease
+	msg.NumSeconds = uint16(time.Now().Second() - c.creationDate.Second())
+
 	c.pendingMu.Lock()
 	if _, ok := c.pending[msg.TransactionID]; ok {
 		c.pendingMu.Unlock()
