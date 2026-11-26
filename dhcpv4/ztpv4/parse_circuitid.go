@@ -20,9 +20,9 @@ var circuitRegexs = []*regexp.Regexp{
 	// Juniper QFX et-0/0/0:0.0 and xe-0/0/0:0.0
 	regexp.MustCompile("^(et|xe)-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+):(?P<subport>[0-9]+).*$"),
 	// Juniper PTX et-0/0/0.0
-	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+)$"),
+	regexp.MustCompile("^et-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)\\.(?P<subport>[0-9]+)$"),
 	// Juniper EX ge-0/0/0.0
-	regexp.MustCompile("^ge-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+).(?P<subport>[0-9]+).*"),
+	regexp.MustCompile("^ge-(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)\\.(?P<subport>[0-9]+).*"),
 	// Arista Ethernet3/17/1
 	// Sometimes Arista prepend circuit id type(1 byte) and length(1 byte) not using ^
 	regexp.MustCompile("Ethernet(?P<slot>[0-9]+)/(?P<mod>[0-9]+)/(?P<port>[0-9]+)$"),
@@ -36,7 +36,7 @@ var circuitRegexs = []*regexp.Regexp{
 	// Nexus Ethernet1/3
 	regexp.MustCompile("^Ethernet(?P<slot>[0-9]+)/(?P<port>[0-9]+)$"),
 	// Juniper bundle interface ae52.0
-	regexp.MustCompile("^ae(?P<port>[0-9]+).(?P<subport>[0-9])$"),
+	regexp.MustCompile("^ae(?P<port>[0-9]+)\\.(?P<subport>[0-9])$"),
 	// Arista bundle interface Port-Channel1
 	regexp.MustCompile("^Port-Channel(?P<port>[0-9]+)$"),
 	// Ciena interface format
